@@ -4,7 +4,7 @@ import { User, Role } from '@/lib/types'
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  login: (email: string, role: Role) => Promise<void>
+  login: (email: string, password: string) => Promise<User>
   logout: () => void
 }
 
@@ -21,21 +21,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [])
 
-  const login = async (email: string, role: Role) => {
-    // Mock login simulation
-    return new Promise<void>((resolve) => {
+  const login = async (email: string, password: string): Promise<User> => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const mockUser: User = {
-          id: '1',
-          name: role === 'MENTORA' ? 'Dra. Ana Mentora' : 'João Gestor',
-          email,
-          role,
-          clinicId: role === 'GESTOR_CLINICA' ? 'clinic-1' : undefined,
-          avatarUrl: `https://img.usecurling.com/ppl/medium?gender=${role === 'MENTORA' ? 'female' : 'male'}`,
+        // Mentor Credentials logic
+        if (email === 'mentor@kpipanel.com' && password === 'mentor123') {
+          const mentorUser: User = {
+            id: 'mentor-1',
+            name: 'Dra. Ana Mentora',
+            email,
+            role: 'MENTORA',
+            avatarUrl: 'https://img.usecurling.com/ppl/medium?gender=female',
+          }
+          setUser(mentorUser)
+          localStorage.setItem('kpi_user', JSON.stringify(mentorUser))
+          resolve(mentorUser)
+          return
         }
-        setUser(mockUser)
-        localStorage.setItem('kpi_user', JSON.stringify(mockUser))
-        resolve()
+
+        // Clinic Credentials logic
+        if (email === 'clinica@kpipanel.com' && password === 'clinica123') {
+          const clinicUser: User = {
+            id: 'manager-1',
+            name: 'Gestor da Clínica',
+            email,
+            role: 'GESTOR_CLINICA',
+            clinicId: 'clinic-1', // Assigned to "Clínica Sorriso Radiante"
+            avatarUrl: 'https://img.usecurling.com/ppl/medium?gender=male',
+          }
+          setUser(clinicUser)
+          localStorage.setItem('kpi_user', JSON.stringify(clinicUser))
+          resolve(clinicUser)
+          return
+        }
+
+        // Invalid credentials
+        reject(new Error('Credenciais inválidas'))
       }, 1000)
     })
   }

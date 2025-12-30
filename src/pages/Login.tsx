@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -17,20 +17,28 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import useAuthStore from '@/stores/useAuthStore'
 import { toast } from 'sonner'
-import { Role } from '@/lib/types'
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }),
-  password: z
-    .string()
-    .min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
+  password: z.string().min(1, { message: 'A senha é obrigatória.' }),
   remember: z.boolean().default(false),
 })
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuthStore()
+  const { login, isAuthenticated, user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'MENTORA') {
+        navigate('/clinicas')
+      } else if (user.clinicId) {
+        navigate(`/dashboard/${user.clinicId}`)
+      }
+    }
+  }, [isAuthenticated, user, navigate])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,22 +52,17 @@ export default function Login() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
     try {
-      // Mock logic to determine role based on email
-      const role: Role = values.email.toLowerCase().includes('mentor')
-        ? 'MENTORA'
-        : 'GESTOR_CLINICA'
-
-      await login(values.email, role)
+      const loggedUser = await login(values.email, values.password)
 
       toast.success(`Bem-vindo de volta!`)
 
-      if (role === 'MENTORA') {
+      if (loggedUser.role === 'MENTORA') {
         navigate('/clinicas')
-      } else {
-        navigate('/dashboard/clinic-1')
+      } else if (loggedUser.clinicId) {
+        navigate(`/dashboard/${loggedUser.clinicId}`)
       }
     } catch (error) {
-      toast.error('Erro ao realizar login. Tente novamente.')
+      toast.error('Erro ao realizar login. Verifique suas credenciais.')
       console.error(error)
     } finally {
       setIsLoading(false)
@@ -101,7 +104,7 @@ export default function Login() {
               Acesse sua conta
             </h1>
             <p className="text-sm text-muted-foreground">
-              Digite seu email e senha para entrar no painel
+              Digite suas credenciais para acessar o painel
             </p>
           </div>
 
@@ -114,7 +117,7 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="nome@exemplo.com" {...field} />
+                      <Input placeholder="nome@kpipanel.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -170,9 +173,10 @@ export default function Login() {
             </form>
           </Form>
 
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Dica: Use "mentor@kpi.com" para acesso MENTORA</p>
-            <p>ou "gestor@kpi.com" para acesso GESTOR_CLINICA</p>
+          <div className="text-center text-xs text-muted-foreground border p-4 rounded-md bg-muted/30">
+            <p className="font-semibold mb-1">Credenciais de Teste:</p>
+            <p>Mentora: mentor@kpipanel.com / mentor123</p>
+            <p>Clínica: clinica@kpipanel.com / clinica123</p>
           </div>
         </div>
       </div>

@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import {
   Calendar as CalendarIcon,
   Download,
   Info,
   AlertTriangle,
   FileText,
+  Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { KPICard } from '@/components/KPICard'
 import useDataStore from '@/stores/useDataStore'
+import useAuthStore from '@/stores/useAuthStore'
 import { MONTHS } from '@/lib/types'
 import {
   Tooltip,
@@ -31,10 +33,36 @@ import { SummaryModal } from '@/components/SummaryModal'
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { calculateKPIs, calculateAlerts, getClinic } = useDataStore()
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
 
   const [selectedMonth, setSelectedMonth] = useState<string>('12')
   const [selectedYear, setSelectedYear] = useState<string>('2023')
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+
+  // Access Control Check
+  if (
+    user?.role === 'GESTOR_CLINICA' &&
+    clinicId &&
+    user.clinicId !== clinicId
+  ) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
+        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Lock className="h-6 w-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+          <p className="text-muted-foreground mt-2">
+            Você não tem permissão para visualizar os dados desta clínica.
+          </p>
+        </div>
+        <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
+          Voltar para meu Dashboard
+        </Button>
+      </div>
+    )
+  }
 
   const currentMonth = parseInt(selectedMonth)
   const currentYear = parseInt(selectedYear)

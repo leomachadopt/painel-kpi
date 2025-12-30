@@ -888,10 +888,6 @@ body{
   margin-bottom: 1.5rem;
 }
 
-.mb-8{
-  margin-bottom: 2rem;
-}
-
 .ml-1{
   margin-left: 0.25rem;
 }
@@ -1107,6 +1103,10 @@ body{
   min-height: 400px;
 }
 
+.min-h-\[50vh\]{
+  min-height: 50vh;
+}
+
 .min-h-\[80px\]{
   min-height: 80px;
 }
@@ -1173,6 +1173,10 @@ body{
 
 .w-56{
   width: 14rem;
+}
+
+.w-6{
+  width: 1.5rem;
 }
 
 .w-64{
@@ -1834,6 +1838,10 @@ body{
 
 .bg-destructive{
   background-color: hsl(var(--destructive));
+}
+
+.bg-destructive\/10{
+  background-color: hsl(var(--destructive) / 0.1);
 }
 
 .bg-emerald-50{

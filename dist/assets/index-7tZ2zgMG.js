@@ -19161,6 +19161,18 @@ var LoaderCircle = createLucideIcon("loader-circle", [["path", {
 	d: "M21 12a9 9 0 1 1-6.219-8.56",
 	key: "13zald"
 }]]);
+var Lock = createLucideIcon("lock", [["rect", {
+	width: "18",
+	height: "11",
+	x: "3",
+	y: "11",
+	rx: "2",
+	ry: "2",
+	key: "1w4ew1"
+}], ["path", {
+	d: "M7 11V7a5 5 0 0 1 10 0v4",
+	key: "fwvmzm"
+}]]);
 var LogOut = createLucideIcon("log-out", [
 	["path", {
 		d: "m16 17 5-5-5-5",
@@ -29939,20 +29951,37 @@ const AuthProvider = ({ children }) => {
 		const storedUser = localStorage.getItem("kpi_user");
 		if (storedUser) setUser(JSON.parse(storedUser));
 	}, []);
-	const login = async (email$1, role) => {
-		return new Promise((resolve) => {
+	const login = async (email$1, password) => {
+		return new Promise((resolve, reject) => {
 			setTimeout(() => {
-				const mockUser = {
-					id: "1",
-					name: role === "MENTORA" ? "Dra. Ana Mentora" : "João Gestor",
-					email: email$1,
-					role,
-					clinicId: role === "GESTOR_CLINICA" ? "clinic-1" : void 0,
-					avatarUrl: `https://img.usecurling.com/ppl/medium?gender=${role === "MENTORA" ? "female" : "male"}`
-				};
-				setUser(mockUser);
-				localStorage.setItem("kpi_user", JSON.stringify(mockUser));
-				resolve();
+				if (email$1 === "mentor@kpipanel.com" && password === "mentor123") {
+					const mentorUser = {
+						id: "mentor-1",
+						name: "Dra. Ana Mentora",
+						email: email$1,
+						role: "MENTORA",
+						avatarUrl: "https://img.usecurling.com/ppl/medium?gender=female"
+					};
+					setUser(mentorUser);
+					localStorage.setItem("kpi_user", JSON.stringify(mentorUser));
+					resolve(mentorUser);
+					return;
+				}
+				if (email$1 === "clinica@kpipanel.com" && password === "clinica123") {
+					const clinicUser = {
+						id: "manager-1",
+						name: "Gestor da Clínica",
+						email: email$1,
+						role: "GESTOR_CLINICA",
+						clinicId: "clinic-1",
+						avatarUrl: "https://img.usecurling.com/ppl/medium?gender=male"
+					};
+					setUser(clinicUser);
+					localStorage.setItem("kpi_user", JSON.stringify(clinicUser));
+					resolve(clinicUser);
+					return;
+				}
+				reject(/* @__PURE__ */ new Error("Credenciais inválidas"));
 			}, 1e3);
 		});
 	};
@@ -29975,13 +30004,23 @@ var useAuthStore = () => {
 var useAuthStore_default = useAuthStore;
 var formSchema$1 = object({
 	email: string().email({ message: "Email inválido." }),
-	password: string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
+	password: string().min(1, { message: "A senha é obrigatória." }),
 	remember: boolean().default(false)
 });
 function Login() {
 	const navigate = useNavigate();
-	const { login } = useAuthStore_default();
+	const { login, isAuthenticated, user } = useAuthStore_default();
 	const [isLoading, setIsLoading] = (0, import_react.useState)(false);
+	(0, import_react.useEffect)(() => {
+		if (isAuthenticated && user) {
+			if (user.role === "MENTORA") navigate("/clinicas");
+			else if (user.clinicId) navigate(`/dashboard/${user.clinicId}`);
+		}
+	}, [
+		isAuthenticated,
+		user,
+		navigate
+	]);
 	const form = useForm({
 		resolver: a(formSchema$1),
 		defaultValues: {
@@ -29993,13 +30032,12 @@ function Login() {
 	async function onSubmit(values) {
 		setIsLoading(true);
 		try {
-			const role = values.email.toLowerCase().includes("mentor") ? "MENTORA" : "GESTOR_CLINICA";
-			await login(values.email, role);
+			const loggedUser = await login(values.email, values.password);
 			toast.success(`Bem-vindo de volta!`);
-			if (role === "MENTORA") navigate("/clinicas");
-			else navigate("/dashboard/clinic-1");
+			if (loggedUser.role === "MENTORA") navigate("/clinicas");
+			else if (loggedUser.clinicId) navigate(`/dashboard/${loggedUser.clinicId}`);
 		} catch (error) {
-			toast.error("Erro ao realizar login. Tente novamente.");
+			toast.error("Erro ao realizar login. Verifique suas credenciais.");
 			console.error(error);
 		} finally {
 			setIsLoading(false);
@@ -30048,7 +30086,7 @@ function Login() {
 							children: "Acesse sua conta"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 							className: "text-sm text-muted-foreground",
-							children: "Digite seu email e senha para entrar no painel"
+							children: "Digite suas credenciais para acessar o painel"
 						})]
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
@@ -30063,7 +30101,7 @@ function Login() {
 									render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Email" }),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-											placeholder: "nome@exemplo.com",
+											placeholder: "nome@kpipanel.com",
 											...field
 										}) }),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
@@ -30117,8 +30155,15 @@ function Login() {
 						})
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "text-center text-xs text-muted-foreground",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Dica: Use \"mentor@kpi.com\" para acesso MENTORA" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "ou \"gestor@kpi.com\" para acesso GESTOR_CLINICA" })]
+						className: "text-center text-xs text-muted-foreground border p-4 rounded-md bg-muted/30",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "font-semibold mb-1",
+								children: "Credenciais de Teste:"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Mentora: mentor@kpipanel.com / mentor123" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Clínica: clinica@kpipanel.com / clinica123" })
+						]
 					})
 				]
 			})
@@ -30583,24 +30628,12 @@ function Clinics() {
 	const navigate = useNavigate();
 	const CURRENT_MONTH = 12;
 	const CURRENT_YEAR = 2023;
+	(0, import_react.useEffect)(() => {
+		if (user && user.role !== "MENTORA") if (user.clinicId) navigate(`/dashboard/${user.clinicId}`);
+		else navigate("/");
+	}, [user, navigate]);
 	const filteredClinics = clinics.filter((clinic) => clinic.name.toLowerCase().includes(searchTerm.toLowerCase()));
-	if (user?.role !== "MENTORA") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "p-8 flex flex-col items-center justify-center h-full text-center",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-				className: "text-3xl font-bold mb-4",
-				children: "Acesso Restrito"
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "text-muted-foreground mb-8",
-				children: "Esta área é exclusiva para mentores."
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-				onClick: () => navigate(`/dashboard/${user?.clinicId}`),
-				children: "Ir para meu Dashboard"
-			})
-		]
-	});
+	if (user?.role !== "MENTORA") return null;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-1 flex-col gap-8 p-8",
 		children: [
@@ -30611,7 +30644,7 @@ function Clinics() {
 					children: "Gestão de Clínicas"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "text-muted-foreground",
-					children: "Visão geral de desempenho e alertas da rede."
+					children: "Painel da Mentora: Visão geral de desempenho e alertas da rede."
 				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
 					onClick: () => navigate("#"),
 					className: "w-full sm:w-auto",
@@ -33963,9 +33996,31 @@ function SummaryModal({ open, onOpenChange, summary }) {
 function Dashboard() {
 	const { clinicId } = useParams();
 	const { calculateKPIs, calculateAlerts, getClinic } = useDataStore_default();
+	const { user } = useAuthStore_default();
+	const navigate = useNavigate();
 	const [selectedMonth, setSelectedMonth] = (0, import_react.useState)("12");
 	const [selectedYear, setSelectedYear] = (0, import_react.useState)("2023");
 	const [isSummaryOpen, setIsSummaryOpen] = (0, import_react.useState)(false);
+	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-6 w-6 text-destructive" })
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "text-2xl font-bold text-foreground",
+				children: "Acesso Negado"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-muted-foreground mt-2",
+				children: "Você não tem permissão para visualizar os dados desta clínica."
+			})] }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+				onClick: () => navigate(`/dashboard/${user.clinicId}`),
+				children: "Voltar para meu Dashboard"
+			})
+		]
+	});
 	const currentMonth = parseInt(selectedMonth);
 	const currentYear = parseInt(selectedYear);
 	const kpis = (0, import_react.useMemo)(() => {
@@ -34166,8 +34221,29 @@ function Inputs() {
 	const { clinicId } = useParams();
 	const navigate = useNavigate();
 	const { addMonthlyData, getClinic, getMonthlyData } = useDataStore_default();
+	const { user } = useAuthStore_default();
 	const [isSubmitting, setIsSubmitting] = (0, import_react.useState)(false);
 	const [currentStep, setCurrentStep] = (0, import_react.useState)(0);
+	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-6 w-6 text-destructive" })
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "text-2xl font-bold text-foreground",
+				children: "Acesso Negado"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-muted-foreground mt-2",
+				children: "Você não tem permissão para editar dados desta clínica."
+			})] }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+				onClick: () => navigate(`/dashboard/${user.clinicId}`),
+				children: "Voltar para meu Dashboard"
+			})
+		]
+	});
 	const clinic = clinicId ? getClinic(clinicId) : void 0;
 	const form = useForm({
 		resolver: a(formSchema),
@@ -36519,7 +36595,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 				value,
 				getSnapshot
 			]);
-			useEffect$3(function() {
+			useEffect$5(function() {
 				checkIfSnapshotChanged(inst) && forceUpdate({ inst });
 				return subscribe$1(function() {
 					checkIfSnapshotChanged(inst) && forceUpdate({ inst });
@@ -36542,7 +36618,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 			return getSnapshot();
 		}
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$8 = React$5.useState, useEffect$3 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$8 = React$5.useState, useEffect$5 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
 		exports.useSyncExternalStore = void 0 !== React$5.useSyncExternalStore ? React$5.useSyncExternalStore : shim;
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
@@ -36940,4 +37016,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-DRQc9NaA.js.map
+//# sourceMappingURL=index-7tZ2zgMG.js.map

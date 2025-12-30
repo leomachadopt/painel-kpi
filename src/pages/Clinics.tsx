@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, MapPin, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -25,22 +25,24 @@ export default function Clinics() {
   const CURRENT_MONTH = 12
   const CURRENT_YEAR = 2023
 
+  // Effect to redirect non-mentors
+  useEffect(() => {
+    if (user && user.role !== 'MENTORA') {
+      if (user.clinicId) {
+        navigate(`/dashboard/${user.clinicId}`)
+      } else {
+        navigate('/')
+      }
+    }
+  }, [user, navigate])
+
   const filteredClinics = clinics.filter((clinic) =>
     clinic.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+  // Guard clause while redirection happens
   if (user?.role !== 'MENTORA') {
-    return (
-      <div className="p-8 flex flex-col items-center justify-center h-full text-center">
-        <h1 className="text-3xl font-bold mb-4">Acesso Restrito</h1>
-        <p className="text-muted-foreground mb-8">
-          Esta área é exclusiva para mentores.
-        </p>
-        <Button onClick={() => navigate(`/dashboard/${user?.clinicId}`)}>
-          Ir para meu Dashboard
-        </Button>
-      </div>
-    )
+    return null
   }
 
   return (
@@ -51,7 +53,7 @@ export default function Clinics() {
             Gestão de Clínicas
           </h1>
           <p className="text-muted-foreground">
-            Visão geral de desempenho e alertas da rede.
+            Painel da Mentora: Visão geral de desempenho e alertas da rede.
           </p>
         </div>
         <Button onClick={() => navigate('#')} className="w-full sm:w-auto">

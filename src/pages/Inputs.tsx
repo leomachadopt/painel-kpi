@@ -11,6 +11,7 @@ import {
   Copy,
   Plus,
   Trash2,
+  Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import useDataStore from '@/stores/useDataStore'
+import useAuthStore from '@/stores/useAuthStore'
 import { MONTHS } from '@/lib/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -54,7 +56,7 @@ const formSchema = z.object({
   revenueDentistry: z.coerce.number().min(0),
   revenueOthers: z.coerce.number().min(0),
   revenueAcceptedPlans: z.coerce.number().min(0),
-  plansAccepted: z.coerce.number().min(0), // Also Step 2 but input in Step 1
+  plansAccepted: z.coerce.number().min(0),
   cabinets: z.array(cabinetSchema),
 
   // Step 2: Commercial/Clinical
@@ -71,9 +73,6 @@ const formSchema = z.object({
 
   // Step 3: Operational
   avgWaitTime: z.coerce.number().min(0),
-  // agendaOwner is not in the new 4-step wizard spec, but keeping it as it was in original code
-  // assuming it might be needed. If not, I'll hide it. Spec says "Available and occupied hours per room, and average wait time".
-  // I will hide agendaOwner for now to strictly follow spec or keep it optional. I'll keep it hidden to reduce clutter.
 
   // Step 4: Experience
   nps: z.coerce.number().min(0).max(100),
@@ -92,8 +91,33 @@ export default function Inputs() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const navigate = useNavigate()
   const { addMonthlyData, getClinic, getMonthlyData } = useDataStore()
+  const { user } = useAuthStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+
+  // Access Control Check
+  if (
+    user?.role === 'GESTOR_CLINICA' &&
+    clinicId &&
+    user.clinicId !== clinicId
+  ) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
+        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Lock className="h-6 w-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+          <p className="text-muted-foreground mt-2">
+            Você não tem permissão para editar dados desta clínica.
+          </p>
+        </div>
+        <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
+          Voltar para meu Dashboard
+        </Button>
+      </div>
+    )
+  }
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
