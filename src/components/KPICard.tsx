@@ -42,15 +42,8 @@ export function KPICard({ kpi }: KPICardProps) {
 
   const formatValue = (val: number, unit: string) => {
     if (unit === 'currency') {
-      return new Intl.NumberFormat('pt-BR', {
+      return new Intl.NumberFormat('pt-PT', {
         style: 'currency',
-        currency: 'BRL', // Using BRL as per mocked locale but user story mentions € (Euro). Keeping BRL for now as per previous context or I can switch to EUR if needed.
-        // The user story mentions "83.500 €". I should probably switch to EUR or BRL based on locale.
-        // However, the project context shows BRL usage. I will stick to BRL format for consistency with existing code unless explicitly forced to change currency symbol globally.
-        // User story says "83.500 €". I'll use EUR symbol for display if possible, or just standard currency formatting.
-        // Let's stick to 'pt-BR' formatting but maybe 'EUR' currency if the user story implies European context.
-        // Given "Painel KPI de Clínicas" and Portuguese, BRL is common, but € implies Portugal/Europe.
-        // I will use 'EUR' to align with the User Story "83.500 €".
         currency: 'EUR',
         maximumFractionDigits: 0,
       }).format(val)
@@ -64,7 +57,7 @@ export function KPICard({ kpi }: KPICardProps) {
     if (unit === 'time') {
       return `${val} min`
     }
-    return val.toLocaleString('pt-BR')
+    return val.toLocaleString('pt-PT')
   }
 
   return (
@@ -101,7 +94,7 @@ export function KPICard({ kpi }: KPICardProps) {
             )}
             <span
               className={cn('font-medium', {
-                'text-emerald-600': isPositive && kpi.status !== 'danger', // Contextual logic
+                'text-emerald-600': isPositive && kpi.status !== 'danger',
                 'text-rose-600': isNegative && kpi.status !== 'success',
               })}
             >

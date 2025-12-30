@@ -169,7 +169,7 @@ export function ProspectingChart({ data }: { data: MonthlyData }) {
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
-          Total Registros: {data.entryCounts?.prospecting || 0}
+          Total Registos: {data.entryCounts?.prospecting || 0}
         </div>
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
           <BarChart data={chartData}>
@@ -215,7 +215,7 @@ export function CabinetChart({ data }: { data: MonthlyData }) {
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
-          Registros de Ocupação: {data.entryCounts?.cabinets || 0}
+          Registos de Ocupação: {data.entryCounts?.cabinets || 0}
         </div>
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
           <BarChart data={chartData}>
@@ -316,7 +316,7 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
-          Registros: {data.entryCounts?.sources || 0}
+          Registos: {data.entryCounts?.sources || 0}
         </div>
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
           <BarChart data={chartData} layout="vertical" margin={{ left: 40 }}>

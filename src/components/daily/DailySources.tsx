@@ -85,7 +85,7 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
       id: Math.random().toString(36),
       ...data,
     })
-    toast.success('Fonte registrada com sucesso!')
+    toast.success('Fonte registada com sucesso!')
     form.reset({
       date: data.date,
       patientName: '',

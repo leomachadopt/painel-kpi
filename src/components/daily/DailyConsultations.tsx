@@ -10,7 +10,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form'
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
@@ -46,7 +45,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       id: Math.random().toString(36),
       ...data,
     })
-    toast.success('1ª Consulta registrada!')
+    toast.success('1.ª Consulta registada!')
     form.reset({
       date: data.date,
       patientName: '',
@@ -157,7 +156,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           name="planValue"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor do Plano (R$)</FormLabel>
+              <FormLabel>Valor do Plano (€)</FormLabel>
               <FormControl>
                 <Input type="number" step="0.01" {...field} />
               </FormControl>

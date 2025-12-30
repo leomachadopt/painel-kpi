@@ -50,7 +50,7 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
       id: Math.random().toString(36),
       ...data,
     })
-    toast.success('Tempo de atendimento registrado!')
+    toast.success('Tempo de atendimento registado!')
     form.reset({
       date: data.date,
       patientName: '',

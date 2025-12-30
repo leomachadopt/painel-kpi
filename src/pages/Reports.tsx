@@ -61,7 +61,7 @@ export default function Reports() {
         <Lock className="h-12 w-12 text-destructive opacity-50" />
         <h1 className="text-2xl font-bold">Acesso Negado</h1>
         <Button onClick={() => navigate(`/relatorios/${user?.clinicId}`)}>
-          Voltar para meus Relatórios
+          Voltar aos meus Relatórios
         </Button>
       </div>
     )
@@ -130,7 +130,7 @@ export default function Reports() {
       <Tabs defaultValue="financial" className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
-          <TabsTrigger value="consultations">1ªs Consultas</TabsTrigger>
+          <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="serviceTime">Tempos</TabsTrigger>

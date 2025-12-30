@@ -34,7 +34,6 @@ export default function Inputs() {
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
-  // Access Control Check
   if (
     user?.role === 'GESTOR_CLINICA' &&
     clinicId &&
@@ -45,7 +44,7 @@ export default function Inputs() {
         <Lock className="h-12 w-12 text-destructive opacity-50" />
         <h1 className="text-2xl font-bold">Acesso Negado</h1>
         <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
-          Voltar para meu Dashboard
+          Voltar ao meu Dashboard
         </Button>
       </div>
     )
@@ -58,7 +57,7 @@ export default function Inputs() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Diário Clínico</h1>
         <p className="text-muted-foreground">
-          {clinic.name} • Registros operacionais diários.
+          {clinic.name} • Registos operacionais diários.
         </p>
       </div>
 
@@ -76,7 +75,7 @@ export default function Inputs() {
             className="flex flex-col gap-1 py-2 h-auto"
           >
             <UserPlus className="h-4 w-4" />
-            1ªs Consultas
+            1.ªs Consultas
           </TabsTrigger>
           <TabsTrigger
             value="prospecting"
@@ -114,7 +113,7 @@ export default function Inputs() {
               <CardHeader>
                 <CardTitle>Lançamento Financeiro</CardTitle>
                 <CardDescription>
-                  Registre receitas diárias por categoria e gabinete.
+                  Registe as receitas diárias por categoria e gabinete.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -126,7 +125,7 @@ export default function Inputs() {
           <TabsContent value="consultations">
             <Card>
               <CardHeader>
-                <CardTitle>1ªs Consultas</CardTitle>
+                <CardTitle>1.ªs Consultas</CardTitle>
                 <CardDescription>
                   Acompanhe o desfecho das primeiras consultas.
                 </CardDescription>
@@ -156,7 +155,7 @@ export default function Inputs() {
               <CardHeader>
                 <CardTitle>Ocupação de Gabinetes</CardTitle>
                 <CardDescription>
-                  Registre as horas utilizadas em cada gabinete.
+                  Registe as horas utilizadas em cada gabinete.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -170,7 +169,7 @@ export default function Inputs() {
               <CardHeader>
                 <CardTitle>Tempo de Atendimento</CardTitle>
                 <CardDescription>
-                  Monitore a pontualidade e motivos de atraso.
+                  Monitorize a pontualidade e motivos de atraso.
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -25,7 +25,6 @@ export default function Clinics() {
   const CURRENT_MONTH = 12
   const CURRENT_YEAR = 2023
 
-  // Effect to redirect non-mentors
   useEffect(() => {
     if (user && user.role !== 'MENTORA') {
       if (user.clinicId) {
@@ -40,7 +39,6 @@ export default function Clinics() {
     clinic.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Guard clause while redirection happens
   if (user?.role !== 'MENTORA') {
     return null
   }
@@ -65,7 +63,7 @@ export default function Clinics() {
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar clínicas por nome, responsável..."
+          placeholder="Pesquisar clínicas por nome, responsável..."
           className="pl-9 max-w-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -87,7 +85,6 @@ export default function Clinics() {
 
           const alertCount = alerts.length
 
-          // Visual status based on revenue KPI Status from calculation engine
           const revenueStatus = revenueKPI?.status || 'danger'
           const statusColor = {
             success: 'bg-emerald-500',
@@ -136,7 +133,7 @@ export default function Clinics() {
                     className="flex items-center gap-1"
                   >
                     <AlertTriangle className="h-3 w-3" />
-                    {alertCount} Alert(s)
+                    {alertCount} Alerta(s)
                   </Badge>
                 )}
               </CardHeader>
@@ -144,7 +141,7 @@ export default function Clinics() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Faturamento vs Meta
+                      Faturação vs Meta
                     </span>
                     <span className={`font-bold ${statusTextColor}`}>
                       {revenuePercent.toFixed(1)}%
@@ -184,7 +181,7 @@ export default function Clinics() {
                   variant="ghost"
                   className="w-full text-primary hover:text-primary/80 font-medium h-8"
                 >
-                  Acessar Dashboard
+                  Aceder ao Dashboard
                 </Button>
               </CardFooter>
             </Card>

@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Minus, Plus, Save } from 'lucide-react'
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
-import { Clinic, DailyProspectingEntry } from '@/lib/types'
+import { Clinic } from '@/lib/types'
 
 export function DailyProspecting({ clinic }: { clinic: Clinic }) {
   const { saveProspectingEntry, getProspectingEntry } = useDataStore()
@@ -45,7 +45,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
       date,
       ...counters,
     })
-    toast.success('Dados de prospecção salvos!')
+    toast.success('Dados de prospecção guardados!')
   }
 
   const CounterRow = ({
@@ -96,11 +96,11 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
         <h3 className="font-semibold text-sm text-muted-foreground uppercase">
           Conversão
         </h3>
-        <CounterRow label="1ªs Consultas Agendadas" field="scheduled" />
+        <CounterRow label="1.ªs Consultas Agendadas" field="scheduled" />
       </div>
 
       <Button onClick={handleSave} className="w-full">
-        <Save className="mr-2 h-4 w-4" /> Salvar Totais do Dia
+        <Save className="mr-2 h-4 w-4" /> Guardar Totais do Dia
       </Button>
     </div>
   )

@@ -56,7 +56,7 @@ export function CabinetTable({
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center">
-                Nenhum registro de ocupação no período.
+                Nenhum registo de ocupação no período.
               </TableCell>
             </TableRow>
           )}

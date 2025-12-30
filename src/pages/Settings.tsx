@@ -33,7 +33,7 @@ export default function Settings() {
 
   const handleSave = () => {
     updateClinicConfig(clinic.id, config)
-    toast.success('Configurações salvas com sucesso!')
+    toast.success('Configurações guardadas com sucesso!')
   }
 
   const ListEditor = ({
@@ -115,11 +115,11 @@ export default function Settings() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground">
-            Gerencie as listas, campanhas e parâmetros da clínica.
+            Gerir as listas, campanhas e parâmetros da clínica.
           </p>
         </div>
         <Button onClick={handleSave}>
-          <Save className="mr-2 h-4 w-4" /> Salvar Alterações
+          <Save className="mr-2 h-4 w-4" /> Guardar Alterações
         </Button>
       </div>
 
@@ -189,7 +189,7 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>Gabinetes</CardTitle>
               <CardDescription>
-                Gerencie os gabinetes e horas disponíveis.
+                Gerir os gabinetes e horas disponíveis.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -207,7 +207,7 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>Corpo Clínico</CardTitle>
               <CardDescription>
-                Lista de médicos para registro de tempo.
+                Lista de médicos para registo de tempo.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -20,7 +20,7 @@ import { toast } from 'sonner'
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }),
-  password: z.string().min(1, { message: 'A senha é obrigatória.' }),
+  password: z.string().min(1, { message: 'A palavra-passe é obrigatória.' }),
   remember: z.boolean().default(false),
 })
 
@@ -29,7 +29,6 @@ export default function Login() {
   const { login, isAuthenticated, user } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === 'MENTORA') {
@@ -54,7 +53,7 @@ export default function Login() {
     try {
       const loggedUser = await login(values.email, values.password)
 
-      toast.success(`Bem-vindo de volta!`)
+      toast.success(`Bem-vindo(a) de volta!`)
 
       if (loggedUser.role === 'MENTORA') {
         navigate('/clinicas')
@@ -62,7 +61,7 @@ export default function Login() {
         navigate(`/dashboard/${loggedUser.clinicId}`)
       }
     } catch (error) {
-      toast.error('Erro ao realizar login. Verifique suas credenciais.')
+      toast.error('Erro ao realizar login. Verifique as suas credenciais.')
       console.error(error)
     } finally {
       setIsLoading(false)
@@ -87,7 +86,7 @@ export default function Login() {
               das suas clínicas com inteligência."
             </p>
             <footer className="text-sm opacity-80">
-              — Equipe de Sucesso do Cliente
+              — Equipa de Sucesso do Cliente
             </footer>
           </blockquote>
         </div>
@@ -101,10 +100,10 @@ export default function Login() {
         <div className="w-full max-w-sm space-y-6">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Acesse sua conta
+              Aceda à sua conta
             </h1>
             <p className="text-sm text-muted-foreground">
-              Digite suas credenciais para acessar o painel
+              Digite as suas credenciais para aceder ao painel
             </p>
           </div>
 
@@ -128,7 +127,7 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel>Palavra-passe</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••" {...field} />
                     </FormControl>
@@ -162,7 +161,7 @@ export default function Login() {
                   className="text-sm font-medium text-primary hover:underline"
                   onClick={(e) => e.preventDefault()}
                 >
-                  Esqueci minha senha
+                  Esqueci-me da palavra-passe
                 </a>
               </div>
 

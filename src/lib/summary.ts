@@ -9,7 +9,7 @@ export interface SummaryData {
 
 export const formatKPIValue = (val: number, unit: string) => {
   if (unit === 'currency') {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
       currency: 'EUR',
       maximumFractionDigits: 0,
@@ -24,19 +24,20 @@ export const formatKPIValue = (val: number, unit: string) => {
   if (unit === 'time') {
     return `${val} min`
   }
-  return val.toLocaleString('pt-BR')
+  return val.toLocaleString('pt-PT')
 }
 
 const ALERT_ACTION_MAP: Record<string, string> = {
   acceptance_rate:
     'Agendar treino de apresentação de planos e objeções com a equipa.',
   leads:
-    'Rever campanhas digitais e programar ações de indicação de pacientes satisfeitos.',
+    'Rever campanhas digitais e programar ações de recomendação de pacientes satisfeitos.',
   billing: 'Rever estratégia comercial e volume de primeiras consultas.',
   ticket: 'Analisar mix de tratamentos e tabela de preços.',
   occupancy: 'Otimizar agenda e confirmar presenças para reduzir ociosidade.',
-  nps: 'Realizar pesquisa de satisfação detalhada e contactar detratores.',
-  complaints: 'Gerir reclamações pendentes e treinar equipa em atendimento.',
+  nps: 'Realizar inquérito de satisfação detalhado e contactar detratores.',
+  complaints:
+    'Gerir reclamações pendentes e dar formação à equipa em atendimento.',
   aligners: 'Focar em campanhas de alinhadores e formação clínica.',
 }
 
@@ -112,7 +113,7 @@ export const generateSummary = (
       fullText += `• ${a}\n`
     })
   } else {
-    fullText += `• Manter monitoramento dos indicadores.\n`
+    fullText += `• Manter monitorização dos indicadores.\n`
   }
 
   return { strengths, criticalPoints, actions, fullText }

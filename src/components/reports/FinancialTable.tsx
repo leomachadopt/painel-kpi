@@ -45,9 +45,9 @@ export function FinancialTable({
                 <TableCell>{getCategoryName(entry.categoryId)}</TableCell>
                 <TableCell>{getCabinetName(entry.cabinetId)}</TableCell>
                 <TableCell className="text-right font-medium">
-                  {new Intl.NumberFormat('pt-BR', {
+                  {new Intl.NumberFormat('pt-PT', {
                     style: 'currency',
-                    currency: 'BRL',
+                    currency: 'EUR',
                   }).format(entry.value)}
                 </TableCell>
               </TableRow>

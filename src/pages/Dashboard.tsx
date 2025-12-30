@@ -53,7 +53,6 @@ export default function Dashboard() {
   const currentYear = parseInt(selectedYear)
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
-  // Determine access permission
   const hasAccess = !(
     user?.role === 'GESTOR_CLINICA' &&
     clinicId &&
@@ -86,7 +85,6 @@ export default function Dashboard() {
     )
   }, [clinic, currentMonth, currentYear, kpis, alerts, hasAccess])
 
-  // Access Control View
   if (!hasAccess && clinicId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
@@ -96,11 +94,11 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
           <p className="text-muted-foreground mt-2">
-            Você não tem permissão para visualizar os dados desta clínica.
+            Não tem permissão para visualizar os dados desta clínica.
           </p>
         </div>
         <Button onClick={() => navigate(`/dashboard/${user?.clinicId}`)}>
-          Voltar para meu Dashboard
+          Voltar ao meu Dashboard
         </Button>
       </div>
     )
@@ -195,7 +193,7 @@ export default function Dashboard() {
                 <Info className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Monitoramento dos 12 pilares de sucesso da clínica.</p>
+                <p>Monitorização dos 12 pilares de sucesso da clínica.</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

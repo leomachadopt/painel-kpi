@@ -51,7 +51,7 @@ export function ProspectingTable({ data }: { data: DailyProspectingEntry[] }) {
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="h-24 text-center">
-                Nenhum registro de prospecção no período.
+                Nenhum registo de prospecção no período.
               </TableCell>
             </TableRow>
           )}

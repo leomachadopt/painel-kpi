@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { DailyConsultationEntry } from '@/lib/types'
-import { Check, X, Minus } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 
 export function ConsultationTable({
   data,
@@ -66,9 +66,9 @@ export function ConsultationTable({
                 </TableCell>
                 <TableCell className="text-right">
                   {entry.planValue > 0
-                    ? new Intl.NumberFormat('pt-BR', {
+                    ? new Intl.NumberFormat('pt-PT', {
                         style: 'currency',
-                        currency: 'BRL',
+                        currency: 'EUR',
                       }).format(entry.planValue)
                     : '-'}
                 </TableCell>
@@ -77,7 +77,7 @@ export function ConsultationTable({
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="h-24 text-center">
-                Nenhuma consulta registrada no período.
+                Nenhuma consulta registada no período.
               </TableCell>
             </TableRow>
           )}

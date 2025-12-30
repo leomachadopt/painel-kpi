@@ -75,7 +75,7 @@ export function SourceTable({
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center">
-                Nenhum registro de fonte no período.
+                Nenhum registo de fonte no período.
               </TableCell>
             </TableRow>
           )}

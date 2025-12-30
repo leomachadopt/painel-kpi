@@ -363,7 +363,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.revenueTotal < clinic.targetRevenue * 0.9) {
       alerts.push({
         id: 'billing',
-        rule: 'Faturamento',
+        rule: 'Faturação',
         message: 'Faturação abaixo da meta.',
         severity: 'destructive',
       })
@@ -409,7 +409,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const kpis: KPI[] = []
     kpis.push({
       id: 'revenue_monthly',
-      name: 'Faturamento Mensal',
+      name: 'Faturação Mensal',
       value: current.revenueTotal,
       unit: 'currency',
       change: calcChange(current.revenueTotal, previous?.revenueTotal),

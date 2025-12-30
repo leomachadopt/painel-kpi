@@ -26,7 +26,7 @@ const DEFAULT_CONFIG = {
   ],
   campaigns: [
     { id: 'camp-1', name: 'Verão 2024' },
-    { id: 'camp-2', name: 'Volta às Aulas' },
+    { id: 'camp-2', name: 'Regresso às Aulas' },
     { id: 'camp-3', name: 'Institucional' },
   ],
 }

@@ -75,7 +75,7 @@ export function ServiceTimeTable({
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="h-24 text-center">
-                Nenhum registro de tempo no período.
+                Nenhum registo de tempo no período.
               </TableCell>
             </TableRow>
           )}
