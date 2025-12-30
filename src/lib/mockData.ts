@@ -21,6 +21,13 @@ const DEFAULT_CONFIG = {
     { id: 'src-2', name: 'Meta Ads' },
     { id: 'src-3', name: 'Indicação' },
     { id: 'src-4', name: 'Passante' },
+    { id: 'src-5', name: 'Pesquisa Orgânica' },
+    { id: 'src-6', name: 'Amigo' },
+  ],
+  campaigns: [
+    { id: 'camp-1', name: 'Verão 2024' },
+    { id: 'camp-2', name: 'Volta às Aulas' },
+    { id: 'camp-3', name: 'Institucional' },
   ],
 }
 
@@ -129,6 +136,47 @@ export const generateMockData = (
     const complaints = Math.random() > 0.8 ? 3 : 1
     const alignersStarted = Math.random() > 0.3 ? 12 : 9
 
+    // Mock aggregates for charts
+    const revenueByCategory = {
+      Alinhadores: revenueAligners,
+      Odontopediatria: revenuePediatrics,
+      Dentisteria: revenueDentistry,
+      Outros: revenueOthers,
+    }
+
+    const leadsByChannel = {
+      Instagram: Math.floor(leads * 0.4),
+      Google: Math.floor(leads * 0.3),
+      WhatsApp: Math.floor(leads * 0.2),
+      Outros: Math.floor(leads * 0.1),
+    }
+
+    const sourceDistribution = {
+      'Google Ads': Math.floor(Math.random() * 30),
+      Indicação: Math.floor(Math.random() * 20),
+      Passante: Math.floor(Math.random() * 10),
+      'Meta Ads': Math.floor(Math.random() * 15),
+    }
+
+    const campaignDistribution = {
+      'Verão 2024': Math.floor(Math.random() * 20),
+      Institucional: Math.floor(Math.random() * 15),
+    }
+
+    const delayReasons = {
+      patient: Math.floor(Math.random() * 10),
+      doctor: Math.floor(Math.random() * 5),
+    }
+
+    const entryCounts = {
+      financial: Math.floor(Math.random() * 50) + 50,
+      consultations: Math.floor(Math.random() * 20) + 10,
+      prospecting: 30, // 1 per day
+      cabinets: 60, // 2 per day
+      serviceTime: Math.floor(Math.random() * 80) + 20,
+      sources: Math.floor(Math.random() * 15) + 5,
+    }
+
     return {
       id: `${clinicId}-${year}-${i + 1}`,
       clinicId,
@@ -165,6 +213,12 @@ export const generateMockData = (
       complaints,
       expenses: revenueTotal * 0.6,
       marketingCost: 5000,
+      revenueByCategory,
+      leadsByChannel,
+      sourceDistribution,
+      campaignDistribution,
+      delayReasons,
+      entryCounts,
     }
   })
 }

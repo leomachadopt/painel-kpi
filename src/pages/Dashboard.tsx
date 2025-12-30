@@ -29,10 +29,19 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { generateSummary } from '@/lib/summary'
 import { SummaryModal } from '@/components/SummaryModal'
+import {
+  RevenueChart,
+  ConsultationFunnel,
+  ProspectingChart,
+  CabinetChart,
+  DelaysChart,
+  SourcesChart,
+} from '@/components/dashboard/Charts'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
-  const { calculateKPIs, calculateAlerts, getClinic } = useDataStore()
+  const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData } =
+    useDataStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
@@ -60,6 +69,11 @@ export default function Dashboard() {
     if (!clinicId || !hasAccess) return []
     return calculateAlerts(clinicId, currentMonth, currentYear)
   }, [clinicId, currentMonth, currentYear, calculateAlerts, hasAccess])
+
+  const monthlyData = useMemo(() => {
+    if (!clinicId || !hasAccess) return undefined
+    return getMonthlyData(clinicId, currentMonth, currentYear)
+  }, [clinicId, currentMonth, currentYear, getMonthlyData, hasAccess])
 
   const summary = useMemo(() => {
     if (!clinic || !hasAccess) return null
@@ -192,6 +206,21 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Advanced Charts Section */}
+      {monthlyData && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Análise Operacional</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <RevenueChart data={monthlyData} />
+            <ConsultationFunnel data={monthlyData} />
+            <ProspectingChart data={monthlyData} />
+            <CabinetChart data={monthlyData} />
+            <DelaysChart data={monthlyData} />
+            <SourcesChart data={monthlyData} />
+          </div>
+        </div>
+      )}
 
       {/* Summary Modal */}
       {summary && (

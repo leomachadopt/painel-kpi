@@ -12,6 +12,7 @@ export interface ClinicConfiguration {
   cabinets: { id: string; name: string; standardHours: number }[]
   doctors: { id: string; name: string }[]
   sources: { id: string; name: string }[]
+  campaigns: { id: string; name: string }[]
 }
 
 export interface Clinic {
@@ -88,6 +89,21 @@ export interface MonthlyData {
   // Legacy/Basic
   expenses: number
   marketingCost: number
+
+  // Dashboard Aggregates (New)
+  revenueByCategory: Record<string, number>
+  leadsByChannel: Record<string, number>
+  sourceDistribution: Record<string, number>
+  campaignDistribution: Record<string, number>
+  delayReasons: { patient: number; doctor: number }
+  entryCounts: {
+    financial: number
+    consultations: number
+    prospecting: number
+    cabinets: number
+    serviceTime: number
+    sources: number
+  }
 }
 
 // Daily Event Types
@@ -148,6 +164,9 @@ export interface DailySourceEntry {
   code: string
   isReferral: boolean
   sourceId: string
+  referralName?: string
+  referralCode?: string
+  campaignId?: string
 }
 
 export interface KPI {

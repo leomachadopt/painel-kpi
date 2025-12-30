@@ -21,22 +21,15 @@ export default function Settings() {
   const { clinics, updateClinicConfig } = useDataStore()
   const navigate = useNavigate()
 
-  // Mentor can select clinic, Manager sees only theirs
   const [selectedClinicId, setSelectedClinicId] = useState(
     user?.clinicId || clinics[0]?.id,
   )
 
   const clinic = clinics.find((c) => c.id === selectedClinicId)
 
-  // Local state for editing before save
   const [config, setConfig] = useState(clinic?.configuration)
 
   if (!clinic || !config) return <div className="p-8">Carregando...</div>
-
-  // Sync state if clinic changes
-  if (clinic.id !== selectedClinicId) {
-    // This is a bit unsafe in render, but for mock simplicity
-  }
 
   const handleSave = () => {
     updateClinicConfig(clinic.id, config)
@@ -88,7 +81,7 @@ export default function Settings() {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
           {items.map((item) => (
             <div
               key={item.id}
@@ -122,7 +115,7 @@ export default function Settings() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground">
-            Gerencie as listas e parâmetros da clínica.
+            Gerencie as listas, campanhas e parâmetros da clínica.
           </p>
         </div>
         <Button onClick={handleSave}>
@@ -130,13 +123,46 @@ export default function Settings() {
         </Button>
       </div>
 
-      <Tabs defaultValue="categories">
+      <Tabs defaultValue="sources">
         <TabsList>
+          <TabsTrigger value="sources">Fontes & Campanhas</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
-          <TabsTrigger value="sources">Fontes</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="sources" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fontes de Aquisição</CardTitle>
+              <CardDescription>
+                Canais por onde os pacientes chegam.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ListEditor
+                title="Fonte"
+                items={config.sources}
+                onUpdate={(items) => setConfig({ ...config, sources: items })}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Campanhas de Marketing</CardTitle>
+              <CardDescription>
+                Campanhas ativas no Google/Meta Ads.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ListEditor
+                title="Campanha"
+                items={config.campaigns || []}
+                onUpdate={(items) => setConfig({ ...config, campaigns: items })}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="categories">
           <Card>
@@ -189,22 +215,6 @@ export default function Settings() {
                 title="Médico"
                 items={config.doctors}
                 onUpdate={(items) => setConfig({ ...config, doctors: items })}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="sources">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fontes de Aquisição</CardTitle>
-              <CardDescription>Canais de marketing e origem.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ListEditor
-                title="Fonte"
-                items={config.sources}
-                onUpdate={(items) => setConfig({ ...config, sources: items })}
               />
             </CardContent>
           </Card>
