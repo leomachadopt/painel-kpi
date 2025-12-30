@@ -8,6 +8,7 @@ import {
   ChevronDown,
   User,
   Settings,
+  FileText,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -133,6 +134,20 @@ export function AppSidebar() {
                   >
                     <FileInput />
                     <span>Diário</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Relatórios"
+                  isActive={location.pathname.includes('/relatorios')}
+                >
+                  <Link
+                    to={`/relatorios/${currentClinic?.id || user?.clinicId}`}
+                  >
+                    <FileText />
+                    <span>Relatórios</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

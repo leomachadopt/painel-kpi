@@ -13,6 +13,7 @@ import {
   ClinicConfiguration,
 } from '@/lib/types'
 import { MOCK_CLINICS, MOCK_DATA } from '@/lib/mockData'
+import { generateMockEntries } from '@/lib/mockEntries'
 import { getMonth, getYear, parseISO } from 'date-fns'
 
 interface DataState {
@@ -46,6 +47,14 @@ interface DataState {
     clinicId: string,
     date: string,
   ) => DailyProspectingEntry | undefined
+
+  // Entries Access
+  financialEntries: Record<string, DailyFinancialEntry[]>
+  consultationEntries: Record<string, DailyConsultationEntry[]>
+  prospectingEntries: Record<string, DailyProspectingEntry[]>
+  cabinetEntries: Record<string, DailyCabinetUsageEntry[]>
+  serviceTimeEntries: Record<string, DailyServiceTimeEntry[]>
+  sourceEntries: Record<string, DailySourceEntry[]>
 }
 
 const DataContext = createContext<DataState | null>(null)
@@ -55,10 +64,46 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [monthlyData, setMonthlyData] =
     useState<Record<string, MonthlyData[]>>(MOCK_DATA)
 
-  // Local state for daily entries (In a real app, this would be DB backed)
+  // Initialize with mocks
+  const initialMocks1 = generateMockEntries('clinic-1')
+  const initialMocks2 = generateMockEntries('clinic-2')
+
+  const [financialEntries, setFinancialEntries] = useState<
+    Record<string, DailyFinancialEntry[]>
+  >({
+    'clinic-1': initialMocks1.financialEntries,
+    'clinic-2': initialMocks2.financialEntries,
+  })
+  const [consultationEntries, setConsultationEntries] = useState<
+    Record<string, DailyConsultationEntry[]>
+  >({
+    'clinic-1': initialMocks1.consultationEntries,
+    'clinic-2': initialMocks2.consultationEntries,
+  })
   const [prospectingEntries, setProspectingEntries] = useState<
     Record<string, DailyProspectingEntry[]>
-  >({})
+  >({
+    'clinic-1': initialMocks1.prospectingEntries,
+    'clinic-2': initialMocks2.prospectingEntries,
+  })
+  const [cabinetEntries, setCabinetEntries] = useState<
+    Record<string, DailyCabinetUsageEntry[]>
+  >({
+    'clinic-1': initialMocks1.cabinetEntries,
+    'clinic-2': initialMocks2.cabinetEntries,
+  })
+  const [serviceTimeEntries, setServiceTimeEntries] = useState<
+    Record<string, DailyServiceTimeEntry[]>
+  >({
+    'clinic-1': initialMocks1.serviceTimeEntries,
+    'clinic-2': initialMocks2.serviceTimeEntries,
+  })
+  const [sourceEntries, setSourceEntries] = useState<
+    Record<string, DailySourceEntry[]>
+  >({
+    'clinic-1': initialMocks1.sourceEntries,
+    'clinic-2': initialMocks2.sourceEntries,
+  })
 
   const getClinic = (id: string) => clinics.find((c) => c.id === id)
 
@@ -95,7 +140,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
-  // Helper to ensure monthly data exists before update
   const ensureMonthlyData = (clinicId: string, date: string) => {
     const d = parseISO(date)
     const month = getMonth(d) + 1
@@ -123,7 +167,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
       const newData = [...clinicData]
       const dataCopy = { ...newData[idx] }
-      // Deep copy nested structures to ensure immutability
+      // Deep copy nested structures
       dataCopy.cabinets = dataCopy.cabinets.map((c) => ({ ...c }))
       dataCopy.revenueByCategory = { ...dataCopy.revenueByCategory }
       dataCopy.leadsByChannel = { ...dataCopy.leadsByChannel }
@@ -139,13 +183,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const addFinancialEntry = (clinicId: string, entry: DailyFinancialEntry) => {
+    setFinancialEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
     const data = ensureMonthlyData(clinicId, entry.date)
     if (!data) return
 
     updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
       d.revenueTotal += entry.value
       d.entryCounts.financial += 1
-
       const clinic = getClinic(clinicId)
       const catName =
         clinic?.configuration.categories.find((c) => c.id === entry.categoryId)
@@ -158,14 +206,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         d.revenueDentistry += entry.value
       else d.revenueOthers += entry.value
 
-      // Update dynamic category revenue
       d.revenueByCategory[catName] =
         (d.revenueByCategory[catName] || 0) + entry.value
-
       const cab = d.cabinets.find((c) => c.id === entry.cabinetId)
-      if (cab) {
-        cab.revenue += entry.value
-      }
+      if (cab) cab.revenue += entry.value
     })
   }
 
@@ -173,6 +217,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     entry: DailyConsultationEntry,
   ) => {
+    setConsultationEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
     const data = ensureMonthlyData(clinicId, entry.date)
     if (!data) return
 
@@ -209,9 +258,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       d.entryCounts.prospecting += 1
       d.leads += 1
       d.firstConsultationsScheduled += entry.scheduled > 0 ? 1 : 0
-
-      // Update leads channel distribution
-      // This is a rough accumulation for mock. In production, sum all entries.
       d.leadsByChannel.Email = (d.leadsByChannel.Email || 0) + entry.email
       d.leadsByChannel.SMS = (d.leadsByChannel.SMS || 0) + entry.sms
       d.leadsByChannel.WhatsApp =
@@ -229,6 +275,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     entry: DailyCabinetUsageEntry,
   ) => {
+    setCabinetEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
     const data = ensureMonthlyData(clinicId, entry.date)
     if (!data) return
 
@@ -245,6 +296,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     entry: DailyServiceTimeEntry,
   ) => {
+    setServiceTimeEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
     const data = ensureMonthlyData(clinicId, entry.date)
     if (!data) return
 
@@ -264,6 +320,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const addSourceEntry = (clinicId: string, entry: DailySourceEntry) => {
+    setSourceEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
     const data = ensureMonthlyData(clinicId, entry.date)
     if (!data) return
 
@@ -272,7 +333,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (entry.isReferral) {
         d.referralsSpontaneous += 1
       }
-      // Update Source Distribution
       const clinic = getClinic(clinicId)
       const sourceName =
         clinic?.configuration.sources.find((s) => s.id === entry.sourceId)
@@ -281,7 +341,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       d.sourceDistribution[sourceName] =
         (d.sourceDistribution[sourceName] || 0) + 1
 
-      // Update Campaign Distribution
       if (entry.campaignId) {
         const campName =
           clinic?.configuration.campaigns.find((c) => c.id === entry.campaignId)
@@ -299,11 +358,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   ): Alert[] => {
     const current = getMonthlyData(clinicId, month, year)
     const clinic = getClinic(clinicId)
-
     if (!current || !clinic) return []
-
     const alerts: Alert[] = []
-
     if (current.revenueTotal < clinic.targetRevenue * 0.9) {
       alerts.push({
         id: 'billing',
@@ -320,7 +376,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         severity: 'destructive',
       })
     }
-
     return alerts
   }
 
@@ -336,9 +391,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       month === 1 ? year - 1 : year,
     )
     const clinic = getClinic(clinicId)
-
     if (!current || !clinic) return []
-
     const getStatus = (
       v: number,
       t: number,
@@ -354,7 +407,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       !p ? 0 : ((c - p) / p) * 100
 
     const kpis: KPI[] = []
-
     kpis.push({
       id: 'revenue_monthly',
       name: 'Faturamento Mensal',
@@ -364,7 +416,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       status: getStatus(current.revenueTotal, clinic.targetRevenue),
       target: clinic.targetRevenue,
     })
-
     kpis.push({
       id: 'nps',
       name: 'NPS',
@@ -374,7 +425,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       status: getStatus(current.nps, clinic.targetNPS),
       target: clinic.targetNPS,
     })
-
     return kpis
   }
 
@@ -396,6 +446,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addServiceTimeEntry,
         addSourceEntry,
         getProspectingEntry,
+        financialEntries,
+        consultationEntries,
+        prospectingEntries,
+        cabinetEntries,
+        serviceTimeEntries,
+        sourceEntries,
       },
     },
     children,
