@@ -40,12 +40,40 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState<string>('2023')
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
 
-  // Access Control Check
-  if (
+  const currentMonth = parseInt(selectedMonth)
+  const currentYear = parseInt(selectedYear)
+  const clinic = clinicId ? getClinic(clinicId) : undefined
+
+  // Determine access permission
+  const hasAccess = !(
     user?.role === 'GESTOR_CLINICA' &&
     clinicId &&
     user.clinicId !== clinicId
-  ) {
+  )
+
+  const kpis = useMemo(() => {
+    if (!clinicId || !hasAccess) return []
+    return calculateKPIs(clinicId, currentMonth, currentYear)
+  }, [clinicId, currentMonth, currentYear, calculateKPIs, hasAccess])
+
+  const alerts = useMemo(() => {
+    if (!clinicId || !hasAccess) return []
+    return calculateAlerts(clinicId, currentMonth, currentYear)
+  }, [clinicId, currentMonth, currentYear, calculateAlerts, hasAccess])
+
+  const summary = useMemo(() => {
+    if (!clinic || !hasAccess) return null
+    return generateSummary(
+      clinic.name,
+      MONTHS[currentMonth - 1],
+      currentYear,
+      kpis,
+      alerts,
+    )
+  }, [clinic, currentMonth, currentYear, kpis, alerts, hasAccess])
+
+  // Access Control View
+  if (!hasAccess && clinicId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -57,38 +85,12 @@ export default function Dashboard() {
             Você não tem permissão para visualizar os dados desta clínica.
           </p>
         </div>
-        <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
+        <Button onClick={() => navigate(`/dashboard/${user?.clinicId}`)}>
           Voltar para meu Dashboard
         </Button>
       </div>
     )
   }
-
-  const currentMonth = parseInt(selectedMonth)
-  const currentYear = parseInt(selectedYear)
-
-  const kpis = useMemo(() => {
-    if (!clinicId) return []
-    return calculateKPIs(clinicId, currentMonth, currentYear)
-  }, [clinicId, currentMonth, currentYear, calculateKPIs])
-
-  const alerts = useMemo(() => {
-    if (!clinicId) return []
-    return calculateAlerts(clinicId, currentMonth, currentYear)
-  }, [clinicId, currentMonth, currentYear, calculateAlerts])
-
-  const clinic = clinicId ? getClinic(clinicId) : undefined
-
-  const summary = useMemo(() => {
-    if (!clinic) return null
-    return generateSummary(
-      clinic.name,
-      MONTHS[currentMonth - 1],
-      currentYear,
-      kpis,
-      alerts,
-    )
-  }, [clinic, currentMonth, currentYear, kpis, alerts])
 
   if (!clinic) {
     return <div className="p-8">Clínica não encontrada.</div>

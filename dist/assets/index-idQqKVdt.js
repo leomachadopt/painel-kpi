@@ -34001,7 +34001,42 @@ function Dashboard() {
 	const [selectedMonth, setSelectedMonth] = (0, import_react.useState)("12");
 	const [selectedYear, setSelectedYear] = (0, import_react.useState)("2023");
 	const [isSummaryOpen, setIsSummaryOpen] = (0, import_react.useState)(false);
-	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+	const currentMonth = parseInt(selectedMonth);
+	const currentYear = parseInt(selectedYear);
+	const clinic = clinicId ? getClinic(clinicId) : void 0;
+	const hasAccess = !(user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId);
+	const kpis = (0, import_react.useMemo)(() => {
+		if (!clinicId || !hasAccess) return [];
+		return calculateKPIs(clinicId, currentMonth, currentYear);
+	}, [
+		clinicId,
+		currentMonth,
+		currentYear,
+		calculateKPIs,
+		hasAccess
+	]);
+	const alerts = (0, import_react.useMemo)(() => {
+		if (!clinicId || !hasAccess) return [];
+		return calculateAlerts(clinicId, currentMonth, currentYear);
+	}, [
+		clinicId,
+		currentMonth,
+		currentYear,
+		calculateAlerts,
+		hasAccess
+	]);
+	const summary = (0, import_react.useMemo)(() => {
+		if (!clinic || !hasAccess) return null;
+		return generateSummary(clinic.name, MONTHS[currentMonth - 1], currentYear, kpis, alerts);
+	}, [
+		clinic,
+		currentMonth,
+		currentYear,
+		kpis,
+		alerts,
+		hasAccess
+	]);
+	if (!hasAccess && clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -34016,42 +34051,11 @@ function Dashboard() {
 				children: "Você não tem permissão para visualizar os dados desta clínica."
 			})] }),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-				onClick: () => navigate(`/dashboard/${user.clinicId}`),
+				onClick: () => navigate(`/dashboard/${user?.clinicId}`),
 				children: "Voltar para meu Dashboard"
 			})
 		]
 	});
-	const currentMonth = parseInt(selectedMonth);
-	const currentYear = parseInt(selectedYear);
-	const kpis = (0, import_react.useMemo)(() => {
-		if (!clinicId) return [];
-		return calculateKPIs(clinicId, currentMonth, currentYear);
-	}, [
-		clinicId,
-		currentMonth,
-		currentYear,
-		calculateKPIs
-	]);
-	const alerts = (0, import_react.useMemo)(() => {
-		if (!clinicId) return [];
-		return calculateAlerts(clinicId, currentMonth, currentYear);
-	}, [
-		clinicId,
-		currentMonth,
-		currentYear,
-		calculateAlerts
-	]);
-	const clinic = clinicId ? getClinic(clinicId) : void 0;
-	const summary = (0, import_react.useMemo)(() => {
-		if (!clinic) return null;
-		return generateSummary(clinic.name, MONTHS[currentMonth - 1], currentYear, kpis, alerts);
-	}, [
-		clinic,
-		currentMonth,
-		currentYear,
-		kpis,
-		alerts
-	]);
 	if (!clinic) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "p-8",
 		children: "Clínica não encontrada."
@@ -34224,26 +34228,6 @@ function Inputs() {
 	const { user } = useAuthStore_default();
 	const [isSubmitting, setIsSubmitting] = (0, import_react.useState)(false);
 	const [currentStep, setCurrentStep] = (0, import_react.useState)(0);
-	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-6 w-6 text-destructive" })
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-				className: "text-2xl font-bold text-foreground",
-				children: "Acesso Negado"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "text-muted-foreground mt-2",
-				children: "Você não tem permissão para editar dados desta clínica."
-			})] }),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-				onClick: () => navigate(`/dashboard/${user.clinicId}`),
-				children: "Voltar para meu Dashboard"
-			})
-		]
-	});
 	const clinic = clinicId ? getClinic(clinicId) : void 0;
 	const form = useForm({
 		resolver: a(formSchema),
@@ -34283,6 +34267,30 @@ function Inputs() {
 	const { fields, append, remove } = useFieldArray({
 		control: form.control,
 		name: "cabinets"
+	});
+	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-6 w-6 text-destructive" })
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "text-2xl font-bold text-foreground",
+				children: "Acesso Negado"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-muted-foreground mt-2",
+				children: "Você não tem permissão para editar dados desta clínica."
+			})] }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+				onClick: () => navigate(`/dashboard/${user.clinicId}`),
+				children: "Voltar para meu Dashboard"
+			})
+		]
+	});
+	if (!clinic) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "p-8",
+		children: "Clínica não encontrada."
 	});
 	const handleCopyPreviousMonth = () => {
 		if (!clinicId) return;
@@ -34327,10 +34335,6 @@ function Inputs() {
 		setIsSubmitting(false);
 		navigate(`/dashboard/${clinicId}`);
 	}
-	if (!clinic) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		className: "p-8",
-		children: "Clínica não encontrada."
-	});
 	const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
 	const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -37016,4 +37020,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-7tZ2zgMG.js.map
+//# sourceMappingURL=index-idQqKVdt.js.map

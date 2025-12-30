@@ -95,30 +95,6 @@ export default function Inputs() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
 
-  // Access Control Check
-  if (
-    user?.role === 'GESTOR_CLINICA' &&
-    clinicId &&
-    user.clinicId !== clinicId
-  ) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
-        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
-          <Lock className="h-6 w-6 text-destructive" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
-          <p className="text-muted-foreground mt-2">
-            Você não tem permissão para editar dados desta clínica.
-          </p>
-        </div>
-        <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
-          Voltar para meu Dashboard
-        </Button>
-      </div>
-    )
-  }
-
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -163,6 +139,32 @@ export default function Inputs() {
     control: form.control,
     name: 'cabinets',
   })
+
+  // Access Control Check
+  if (
+    user?.role === 'GESTOR_CLINICA' &&
+    clinicId &&
+    user.clinicId !== clinicId
+  ) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
+        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Lock className="h-6 w-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+          <p className="text-muted-foreground mt-2">
+            Você não tem permissão para editar dados desta clínica.
+          </p>
+        </div>
+        <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
+          Voltar para meu Dashboard
+        </Button>
+      </div>
+    )
+  }
+
+  if (!clinic) return <div className="p-8">Clínica não encontrada.</div>
 
   const handleCopyPreviousMonth = () => {
     if (!clinicId) return
@@ -230,8 +232,6 @@ export default function Inputs() {
     setIsSubmitting(false)
     navigate(`/dashboard/${clinicId}`)
   }
-
-  if (!clinic) return <div className="p-8">Clínica não encontrada.</div>
 
   const nextStep = () =>
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1))
