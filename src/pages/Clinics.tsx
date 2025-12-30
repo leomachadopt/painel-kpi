@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Search, Plus, MapPin, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,15 +13,36 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import useDataStore from '@/stores/useDataStore'
+import useAuthStore from '@/stores/useAuthStore'
 
 export default function Clinics() {
   const { clinics } = useDataStore()
+  const { user } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
+
+  // Only allow access if role is MENTORA, otherwise redirect or show single clinic
+  // Though this page is usually for listing.
+  // We filter anyway.
 
   const filteredClinics = clinics.filter((clinic) =>
     clinic.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  if (user?.role !== 'MENTORA') {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold">Acesso Restrito</h1>
+        <p>Você não tem permissão para visualizar todas as clínicas.</p>
+        <Button
+          onClick={() => navigate(`/dashboard/${user?.clinicId}`)}
+          className="mt-4"
+        >
+          Ir para meu Dashboard
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-8 p-8">
@@ -88,10 +109,15 @@ export default function Clinics() {
                   <span className="font-medium">{clinic.lastUpdate}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Status de Dados</span>
-                  <span className="flex items-center text-emerald-600 font-medium">
-                    <Activity className="mr-1 h-3 w-3" />
-                    Em dia
+                  <span className="text-muted-foreground">
+                    Meta Faturamento
+                  </span>
+                  <span className="font-medium">
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                      notation: 'compact',
+                    }).format(clinic.targetRevenue)}
                   </span>
                 </div>
               </div>

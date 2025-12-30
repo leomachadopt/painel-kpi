@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { AlertTriangle, Calendar as CalendarIcon, Download } from 'lucide-react'
+import { Calendar as CalendarIcon, Download, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -28,17 +26,26 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
-  ResponsiveContainer,
   Line,
   LineChart,
+  PieChart,
+  Pie,
+  Cell,
+  Label,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { calculateKPIs, getClinic, getMonthlyData } = useDataStore()
 
-  const [selectedMonth, setSelectedMonth] = useState<string>('12') // Default December
+  const [selectedMonth, setSelectedMonth] = useState<string>('12')
   const [selectedYear, setSelectedYear] = useState<string>('2023')
 
   const currentMonth = parseInt(selectedMonth)
@@ -54,11 +61,10 @@ export default function Dashboard() {
     ? getMonthlyData(clinicId, currentMonth, currentYear)
     : undefined
 
-  // Identify alerts
   const criticalKPIs = kpis.filter((k) => k.status === 'danger')
 
   // Prepare chart data (Last 6 months)
-  const chartData = useMemo(() => {
+  const historyData = useMemo(() => {
     if (!clinicId) return []
     const data = []
     for (let i = 5; i >= 0; i--) {
@@ -72,24 +78,49 @@ export default function Dashboard() {
       if (d) {
         data.push({
           name: MONTHS[m - 1].slice(0, 3),
-          revenue: d.revenue,
+          revenue: d.revenueTotal,
           expenses: d.expenses,
-          patients: d.newPatients,
+          nps: d.nps,
+          occupancy:
+            (d.cabinets.reduce((acc, c) => acc + c.hoursOccupied, 0) /
+              d.cabinets.reduce((acc, c) => acc + c.hoursAvailable, 0)) *
+            100,
         })
       }
     }
     return data
   }, [clinicId, currentMonth, currentYear, getMonthlyData])
 
+  const revenueDistributionData = useMemo(() => {
+    if (!monthlyData) return []
+    return [
+      {
+        name: 'Alinhadores',
+        value: monthlyData.revenueAligners,
+        fill: 'hsl(var(--chart-1))',
+      },
+      {
+        name: 'Odontopediatria',
+        value: monthlyData.revenuePediatrics,
+        fill: 'hsl(var(--chart-2))',
+      },
+      {
+        name: 'Dentisteria',
+        value: monthlyData.revenueDentistry,
+        fill: 'hsl(var(--chart-3))',
+      },
+      {
+        name: 'Outros',
+        value: monthlyData.revenueOthers,
+        fill: 'hsl(var(--chart-4))',
+      },
+    ].filter((d) => d.value > 0)
+  }, [monthlyData])
+
   const chartConfig = {
-    revenue: {
-      label: 'Faturamento',
-      color: 'hsl(var(--chart-1))',
-    },
-    expenses: {
-      label: 'Custos',
-      color: 'hsl(var(--chart-2))',
-    },
+    revenue: { label: 'Faturamento', color: 'hsl(var(--chart-1))' },
+    expenses: { label: 'Custos', color: 'hsl(var(--chart-2))' },
+    nps: { label: 'NPS', color: 'hsl(var(--chart-3))' },
   }
 
   if (!clinic) {
@@ -103,8 +134,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Visão geral de performance:{' '}
-            <span className="font-semibold text-foreground">{clinic.name}</span>
+            {clinic.name} - {MONTHS[currentMonth - 1]} {currentYear}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -139,15 +169,15 @@ export default function Dashboard() {
       {/* Alerts */}
       {criticalKPIs.length > 0 && (
         <Alert variant="destructive" className="animate-fade-in">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Atenção Necessária</AlertTitle>
+          <TrendingUp className="h-4 w-4" />
+          <AlertTitle>Oportunidades de Melhoria</AlertTitle>
           <AlertDescription>
-            {criticalKPIs.length} indicador(es) estão abaixo da meta crítica:
+            {criticalKPIs.length} indicador(es) abaixo da meta crítica:
             <span className="font-semibold">
               {' '}
               {criticalKPIs.map((k) => k.name).join(', ')}
             </span>
-            . Verifique os planos de ação sugeridos.
+            .
           </AlertDescription>
         </Alert>
       )}
@@ -163,11 +193,12 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Faturamento vs Custos (Últimos 6 meses)</CardTitle>
+            <CardTitle>Faturamento vs Custos</CardTitle>
+            <CardDescription>Evolução últimos 6 meses</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={chartData}>
+              <BarChart data={historyData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="name"
@@ -198,21 +229,100 @@ export default function Dashboard() {
             </ChartContainer>
           </CardContent>
         </Card>
+
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Novos Pacientes</CardTitle>
+            <CardTitle>Distribuição de Receita</CardTitle>
+            <CardDescription>Por categoria no mês atual</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0">
+            <ChartContainer
+              config={{
+                aligners: {
+                  label: 'Alinhadores',
+                  color: 'hsl(var(--chart-1))',
+                },
+                pediatrics: {
+                  label: 'Pediatria',
+                  color: 'hsl(var(--chart-2))',
+                },
+                dentistry: {
+                  label: 'Dentisteria',
+                  color: 'hsl(var(--chart-3))',
+                },
+                others: { label: 'Outros', color: 'hsl(var(--chart-4))' },
+              }}
+              className="mx-auto aspect-square max-h-[300px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Pie
+                  data={revenueDistributionData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  strokeWidth={5}
+                >
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-3xl font-bold"
+                            >
+                              {monthlyData?.revenueTotal
+                                ? `R$${(monthlyData.revenueTotal / 1000).toFixed(0)}k`
+                                : '0'}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground text-xs"
+                            >
+                              Total
+                            </tspan>
+                          </text>
+                        )
+                      }
+                    }}
+                  />
+                  {revenueDistributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <ChartLegend content={<ChartLegendContent />} />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-7">
+          <CardHeader>
+            <CardTitle>Taxa de Ocupação & NPS</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer
               config={{
-                patients: {
-                  label: 'Pacientes',
-                  color: 'hsl(var(--chart-3))',
+                occupancy: {
+                  label: 'Ocupação (%)',
+                  color: 'hsl(var(--chart-4))',
                 },
+                nps: { label: 'NPS', color: 'hsl(var(--chart-5))' },
               }}
               className="h-[300px] w-full"
             >
-              <LineChart data={chartData}>
+              <LineChart data={historyData}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="name"
@@ -220,15 +330,30 @@ export default function Dashboard() {
                   tickMargin={10}
                   axisLine={false}
                 />
-                <YAxis axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" axisLine={false} tickLine={false} />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
                 <Line
+                  yAxisId="left"
                   type="monotone"
-                  dataKey="patients"
-                  stroke="var(--color-patients)"
+                  dataKey="occupancy"
+                  stroke="var(--color-occupancy)"
                   strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 8 }}
+                  name="Ocupação %"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="nps"
+                  stroke="var(--color-nps)"
+                  strokeWidth={2}
+                  name="NPS"
                 />
               </LineChart>
             </ChartContainer>

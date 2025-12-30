@@ -27,11 +27,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setTimeout(() => {
         const mockUser: User = {
           id: '1',
-          name: role === 'mentor' ? 'Dra. Ana Mentora' : 'João Gestor',
+          name: role === 'MENTORA' ? 'Dra. Ana Mentora' : 'João Gestor',
           email,
           role,
-          clinicId: role === 'gestor' ? 'clinic-1' : undefined,
-          avatarUrl: `https://img.usecurling.com/ppl/medium?gender=${role === 'mentor' ? 'female' : 'male'}`,
+          clinicId: role === 'GESTOR_CLINICA' ? 'clinic-1' : undefined,
+          avatarUrl: `https://img.usecurling.com/ppl/medium?gender=${role === 'MENTORA' ? 'female' : 'male'}`,
         }
         setUser(mockUser)
         localStorage.setItem('kpi_user', JSON.stringify(mockUser))

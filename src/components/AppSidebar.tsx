@@ -29,7 +29,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
-import { cn } from '@/lib/utils'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
@@ -37,10 +36,10 @@ export function AppSidebar() {
   const location = useLocation()
   const { isMobile } = useSidebar()
 
-  const clinicId = location.pathname.split('/')[2] // Simple extraction from /dashboard/:id
+  const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
 
-  const isMentor = user?.role === 'mentor'
+  const isMentor = user?.role === 'MENTORA'
 
   return (
     <Sidebar collapsible="icon">
@@ -106,7 +105,7 @@ export function AppSidebar() {
             </SidebarMenuItem>
           )}
 
-          {(currentClinic || user?.role === 'gestor') && (
+          {(currentClinic || user?.role === 'GESTOR_CLINICA') && (
             <>
               <SidebarMenuItem>
                 <SidebarMenuButton

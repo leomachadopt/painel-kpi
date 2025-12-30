@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import useAuthStore from '@/stores/useAuthStore'
 import { toast } from 'sonner'
+import { Role } from '@/lib/types'
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }),
@@ -44,12 +45,15 @@ export default function Login() {
     setIsLoading(true)
     try {
       // Mock logic to determine role based on email
-      const role = values.email.includes('mentor') ? 'mentor' : 'gestor'
+      const role: Role = values.email.toLowerCase().includes('mentor')
+        ? 'MENTORA'
+        : 'GESTOR_CLINICA'
+
       await login(values.email, role)
 
       toast.success(`Bem-vindo de volta!`)
 
-      if (role === 'mentor') {
+      if (role === 'MENTORA') {
         navigate('/clinicas')
       } else {
         navigate('/dashboard/clinic-1')
@@ -167,8 +171,8 @@ export default function Login() {
           </Form>
 
           <div className="text-center text-xs text-muted-foreground">
-            <p>Dica: Use "mentor@kpi.com" para acesso Mentor</p>
-            <p>ou "gestor@kpi.com" para acesso Gestor</p>
+            <p>Dica: Use "mentor@kpi.com" para acesso MENTORA</p>
+            <p>ou "gestor@kpi.com" para acesso GESTOR_CLINICA</p>
           </div>
         </div>
       </div>
