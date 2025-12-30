@@ -30154,7 +30154,7 @@ function Badge({ className, variant, ...props }) {
 		...props
 	});
 }
-var MOCK_CLINICS = [{
+const MOCK_CLINICS = [{
 	id: "clinic-1",
 	name: "Clínica Sorriso Radiante",
 	ownerName: "Dr. Pedro Santos",
@@ -30227,9 +30227,10 @@ var MOCK_CLINICS = [{
 		kids: 25
 	}
 }];
-var generateMockData = (clinicId, year) => {
+const generateMockData = (clinicId, year) => {
 	return Array.from({ length: 12 }, (_$1, i$2) => {
-		const revenueTotal = Math.floor(Math.random() * 5e4) + 7e4;
+		const randomFactor = Math.random();
+		const revenueTotal = Math.floor(randomFactor * 5e4) + 7e4;
 		const revenueAligners = revenueTotal * .4;
 		const revenuePediatrics = revenueTotal * .2;
 		const revenueDentistry = revenueTotal * .3;
@@ -30250,9 +30251,14 @@ var generateMockData = (clinicId, year) => {
 		const plansAccepted = Math.floor(Math.random() * 15) + 15;
 		const plansPresentedAdults = Math.floor(Math.random() * 20) + 10;
 		const plansPresentedKids = Math.floor(Math.random() * 15) + 10;
-		const revenueAcceptedPlans = plansAccepted * (Math.random() * 800 + 1e3);
+		const ticketBase = Math.random() > .3 ? 1250 : 1e3;
+		const revenueAcceptedPlans = plansAccepted * (Math.random() * 600 + ticketBase);
 		const plansNotAccepted = plansPresentedAdults + plansPresentedKids - plansAccepted;
 		const plansNotAcceptedFollowUp = Math.floor(plansNotAccepted * .8);
+		const nps = Math.random() > .2 ? 85 : 75;
+		const leads = Math.random() > .2 ? 90 : 70;
+		const complaints = Math.random() > .8 ? 3 : 1;
+		const alignersStarted = Math.random() > .3 ? 12 : 9;
 		return {
 			id: `${clinicId}-${year}-${i$2 + 1}`,
 			clinicId,
@@ -30268,10 +30274,10 @@ var generateMockData = (clinicId, year) => {
 			plansPresentedAdults,
 			plansPresentedKids,
 			plansAccepted,
-			alignersStarted: Math.floor(Math.random() * 8) + 8,
+			alignersStarted,
 			appointmentsIntegrated: Math.floor(Math.random() * 50) + 140,
 			appointmentsTotal: 200,
-			leads: Math.floor(Math.random() * 40) + 60,
+			leads,
 			firstConsultationsScheduled: 50,
 			firstConsultationsAttended: Math.floor(Math.random() * 10) + 35,
 			plansNotAccepted: plansNotAccepted > 0 ? plansNotAccepted : 0,
@@ -30283,16 +30289,16 @@ var generateMockData = (clinicId, year) => {
 				sales: 40,
 				leadership: 20
 			},
-			nps: Math.floor(Math.random() * 20) + 75,
+			nps,
 			referralsSpontaneous: Math.floor(Math.random() * 5) + 5,
 			referralsBase2025: 8,
-			complaints: Math.floor(Math.random() * 4),
+			complaints,
 			expenses: revenueTotal * .6,
 			marketingCost: 5e3
 		};
 	});
 };
-var MOCK_DATA = {
+const MOCK_DATA = {
 	"clinic-1": generateMockData("clinic-1", 2023),
 	"clinic-2": generateMockData("clinic-2", 2023)
 };
@@ -30316,6 +30322,74 @@ const DataProvider = ({ children }) => {
 				[data.clinicId]: newData
 			};
 		});
+	};
+	const calculateAlerts = (clinicId, month, year) => {
+		const current = getMonthlyData(clinicId, month, year);
+		const clinic = getClinic(clinicId);
+		if (!current || !clinic) return [];
+		const alerts = [];
+		if (current.revenueTotal < clinic.targetRevenue * .9) alerts.push({
+			id: "billing",
+			rule: "Faturamento",
+			message: "Faturação abaixo da meta. Verificar taxa de aceitação e número de planos apresentados.",
+			severity: "destructive"
+		});
+		if (current.alignersStarted < 11) alerts.push({
+			id: "aligners",
+			rule: "Alinhadores",
+			message: "Alinhadores abaixo da meta de 11–12. Rever apresentações de planos e campanhas ativas para alinhadores.",
+			severity: "destructive"
+		});
+		const currentTicket = current.plansAccepted > 0 ? current.revenueAcceptedPlans / current.plansAccepted : 0;
+		let sumTicket = 0;
+		let countTicket = 0;
+		for (let i$2 = 1; i$2 <= 3; i$2++) {
+			let pm = month - i$2;
+			let py = year;
+			if (pm <= 0) {
+				pm += 12;
+				py--;
+			}
+			const prev = getMonthlyData(clinicId, pm, py);
+			if (prev && prev.plansAccepted > 0) {
+				sumTicket += prev.revenueAcceptedPlans / prev.plansAccepted;
+				countTicket++;
+			}
+		}
+		const avg3Month = countTicket > 0 ? sumTicket / countTicket : 0;
+		if (currentTicket < 1200 || avg3Month > 0 && currentTicket < avg3Month * .85) alerts.push({
+			id: "ticket",
+			rule: "Ticket Médio",
+			message: "Ticket médio em queda. Rever planeamento clínico e aplicação do Protocolo 1.",
+			severity: "destructive"
+		});
+		if (current.leads < 80) alerts.push({
+			id: "leads",
+			rule: "Leads",
+			message: "Leads abaixo da meta. Reforçar marketing digital e ações de indicação.",
+			severity: "destructive"
+		});
+		const totalAvail = current.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0);
+		const totalOccupied = current.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0);
+		if ((totalAvail > 0 ? totalOccupied / totalAvail * 100 : 0) < 70) alerts.push({
+			id: "occupancy",
+			rule: "Ocupação",
+			message: "Ocupação baixa. Rever fluxos e agendamentos (vagas ociosas, horários de pico, etc.).",
+			severity: "destructive"
+		});
+		if (current.nps < 80) alerts.push({
+			id: "nps",
+			rule: "NPS",
+			message: "NPS abaixo de 80. Investigar causas: atendimento, tempo de espera, comunicação ou estrutura.",
+			severity: "destructive"
+		});
+		if (current.complaints > 2) alerts.push({
+			id: "complaints",
+			rule: "Reclamações",
+			message: "Reclamações acima do limite (0–2). Abrir plano de ação específico.",
+			severity: "destructive"
+		});
+		return alerts;
 	};
 	const calculateKPIs = (clinicId, month, year) => {
 		const current = getMonthlyData(clinicId, month, year);
@@ -30381,46 +30455,42 @@ const DataProvider = ({ children }) => {
 			target: `${clinic.targetOccupancyRate}%`
 		});
 		const attendanceRate = current.firstConsultationsScheduled > 0 ? current.firstConsultationsAttended / current.firstConsultationsScheduled * 100 : 0;
-		const prevAttendanceRate = (previous?.firstConsultationsScheduled || 0) > 0 ? (previous?.firstConsultationsAttended || 0) / previous.firstConsultationsScheduled * 100 : 0;
 		kpis.push({
 			id: "attendance_rate",
 			name: "Taxa de Comparecimento",
 			value: attendanceRate,
 			unit: "percent",
-			change: attendanceRate - prevAttendanceRate,
+			change: attendanceRate - ((previous?.firstConsultationsScheduled || 0) > 0 ? (previous?.firstConsultationsAttended || 0) / previous.firstConsultationsScheduled * 100 : 0),
 			status: getStatus(attendanceRate, clinic.targetAttendanceRate),
 			target: clinic.targetAttendanceRate
 		});
 		const followUpRate = current.plansNotAccepted > 0 ? current.plansNotAcceptedFollowUp / current.plansNotAccepted * 100 : 100;
-		const prevFollowUpRate = (previous?.plansNotAccepted || 0) > 0 ? (previous?.plansNotAcceptedFollowUp || 0) / previous.plansNotAccepted * 100 : 100;
 		kpis.push({
 			id: "followup_rate",
 			name: "Taxa de Follow-up",
 			value: followUpRate,
 			unit: "percent",
-			change: followUpRate - prevFollowUpRate,
+			change: followUpRate - ((previous?.plansNotAccepted || 0) > 0 ? (previous?.plansNotAcceptedFollowUp || 0) / previous.plansNotAccepted * 100 : 100),
 			status: getStatus(followUpRate, clinic.targetFollowUpRate),
 			target: clinic.targetFollowUpRate
 		});
 		const integratedRate = current.appointmentsTotal > 0 ? current.appointmentsIntegrated / current.appointmentsTotal * 100 : 0;
-		const prevIntegratedRate = (previous?.appointmentsTotal || 0) > 0 ? (previous?.appointmentsIntegrated || 0) / previous.appointmentsTotal * 100 : 0;
 		kpis.push({
 			id: "integrated_cases",
 			name: "Casos Integrados",
 			value: integratedRate,
 			unit: "percent",
-			change: integratedRate - prevIntegratedRate,
+			change: integratedRate - ((previous?.appointmentsTotal || 0) > 0 ? (previous?.appointmentsIntegrated || 0) / previous.appointmentsTotal * 100 : 0),
 			status: getStatus(integratedRate, clinic.targetIntegrationRate),
 			target: clinic.targetIntegrationRate
 		});
 		const revenuePerCabinet = current.cabinets.length > 0 ? current.revenueTotal / current.cabinets.length : 0;
-		const prevRevenuePerCabinet = (previous?.cabinets.length || 0) > 0 ? (previous?.revenueTotal || 0) / previous.cabinets.length : 0;
 		kpis.push({
 			id: "revenue_per_cabinet",
 			name: "Fat. por Gabinete",
 			value: revenuePerCabinet,
 			unit: "currency",
-			change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
+			change: calcChange(revenuePerCabinet, (previous?.cabinets.length || 0) > 0 ? (previous?.revenueTotal || 0) / previous.cabinets.length : 0),
 			status: getStatus(revenuePerCabinet, clinic.targetRevenuePerCabinet),
 			target: clinic.targetRevenuePerCabinet
 		});
@@ -30467,7 +30537,8 @@ const DataProvider = ({ children }) => {
 		getClinic,
 		getMonthlyData,
 		addMonthlyData,
-		calculateKPIs
+		calculateKPIs,
+		calculateAlerts
 	} }, children);
 };
 var useDataStore = () => {
@@ -30477,7 +30548,7 @@ var useDataStore = () => {
 };
 var useDataStore_default = useDataStore;
 function Clinics() {
-	const { clinics, calculateKPIs } = useDataStore_default();
+	const { clinics, calculateKPIs, calculateAlerts } = useDataStore_default();
 	const { user } = useAuthStore_default();
 	const [searchTerm, setSearchTerm] = (0, import_react.useState)("");
 	const navigate = useNavigate();
@@ -30531,11 +30602,12 @@ function Clinics() {
 				className: "grid gap-6 sm:grid-cols-2 lg:grid-cols-3",
 				children: filteredClinics.map((clinic) => {
 					const kpis = calculateKPIs(clinic.id, CURRENT_MONTH, CURRENT_YEAR);
+					const alerts = calculateAlerts(clinic.id, CURRENT_MONTH, CURRENT_YEAR);
 					const revenueKPI = kpis.find((k) => k.id === "revenue_monthly");
 					const alignersKPI = kpis.find((k) => k.id === "aligner_starts");
 					const npsKPI = kpis.find((k) => k.id === "nps");
 					const revenuePercent = revenueKPI ? revenueKPI.value / clinic.targetRevenue * 100 : 0;
-					const alertCount = kpis.filter((k) => k.status === "danger").length;
+					const alertCount = alerts.length;
 					const revenueStatus = revenueKPI?.status || "danger";
 					const statusColor = {
 						success: "bg-emerald-500",
@@ -32653,9 +32725,35 @@ const MONTHS = [
 	"Novembro",
 	"Dezembro"
 ];
+var alertVariants = cva("relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground", {
+	variants: { variant: {
+		default: "bg-background text-foreground",
+		destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive"
+	} },
+	defaultVariants: { variant: "default" }
+});
+var Alert = import_react.forwardRef(({ className, variant, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	ref,
+	role: "alert",
+	className: cn(alertVariants({ variant }), className),
+	...props
+}));
+Alert.displayName = "Alert";
+var AlertTitle = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h5", {
+	ref,
+	className: cn("mb-1 font-medium leading-none tracking-tight", className),
+	...props
+}));
+AlertTitle.displayName = "AlertTitle";
+var AlertDescription = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	ref,
+	className: cn("text-sm [&_p]:leading-relaxed", className),
+	...props
+}));
+AlertDescription.displayName = "AlertDescription";
 function Dashboard() {
 	const { clinicId } = useParams();
-	const { calculateKPIs, getClinic } = useDataStore_default();
+	const { calculateKPIs, calculateAlerts, getClinic } = useDataStore_default();
 	const [selectedMonth, setSelectedMonth] = (0, import_react.useState)("12");
 	const [selectedYear, setSelectedYear] = (0, import_react.useState)("2023");
 	const currentMonth = parseInt(selectedMonth);
@@ -32669,6 +32767,15 @@ function Dashboard() {
 		currentYear,
 		calculateKPIs
 	]);
+	const alerts = (0, import_react.useMemo)(() => {
+		if (!clinicId) return [];
+		return calculateAlerts(clinicId, currentMonth, currentYear);
+	}, [
+		clinicId,
+		currentMonth,
+		currentYear,
+		calculateAlerts
+	]);
 	const clinic = clinicId ? getClinic(clinicId) : void 0;
 	if (!clinic) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "p-8",
@@ -32676,70 +32783,95 @@ function Dashboard() {
 	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col gap-8 p-8",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-				className: "text-3xl font-bold tracking-tight mb-2",
-				children: "Dashboard de Performance"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2 text-muted-foreground",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "font-medium text-foreground",
-						children: clinic.name
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "•" }),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-						MONTHS[currentMonth - 1],
-						" ",
-						currentYear
-					] })
-				]
-			})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-						value: selectedMonth,
-						onValueChange: setSelectedMonth,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectTrigger, {
-							className: "w-[140px]",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "mr-2 h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Mês" })]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: MONTHS.map((month, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-							value: (index$1 + 1).toString(),
-							children: month
-						}, index$1)) })]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-						value: selectedYear,
-						onValueChange: setSelectedYear,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-							className: "w-[100px]",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Ano" })
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-							value: "2023",
-							children: "2023"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-							value: "2024",
-							children: "2024"
-						})] })]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-						variant: "outline",
-						size: "icon",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "h-4 w-4" })
-					})
-				]
-			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex items-center gap-2 mb-4",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-				className: "text-xl font-semibold",
-				children: "Indicadores-Chave"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tooltip, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, { className: "h-4 w-4 text-muted-foreground" }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Monitoramento dos 12 pilares de sucesso da clínica." }) })] }) })]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-			children: kpis.map((kpi) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KPICard, { kpi }, kpi.id))
-		})] })]
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+					className: "text-3xl font-bold tracking-tight mb-2",
+					children: "Dashboard de Performance"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2 text-muted-foreground",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "font-medium text-foreground",
+							children: clinic.name
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "•" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+							MONTHS[currentMonth - 1],
+							" ",
+							currentYear
+						] })
+					]
+				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+							value: selectedMonth,
+							onValueChange: setSelectedMonth,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectTrigger, {
+								className: "w-[140px]",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "mr-2 h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Mês" })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: MONTHS.map((month, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+								value: (index$1 + 1).toString(),
+								children: month
+							}, index$1)) })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+							value: selectedYear,
+							onValueChange: setSelectedYear,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
+								className: "w-[100px]",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Ano" })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+								value: "2023",
+								children: "2023"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+								value: "2024",
+								children: "2024"
+							})] })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+							variant: "outline",
+							size: "icon",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "h-4 w-4" })
+						})
+					]
+				})]
+			}),
+			alerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "animate-fade-in-down",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
+					className: "text-xl font-semibold mb-4 flex items-center gap-2",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, { className: "h-5 w-5 text-destructive" }),
+						"Alertas Críticos (",
+						alerts.length,
+						")"
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "grid gap-3",
+					children: alerts.map((alert) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Alert, {
+						variant: alert.severity,
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, { className: "h-4 w-4" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertTitle, { children: alert.rule }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AlertDescription, { children: alert.message })
+						]
+					}, alert.id))
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2 mb-4",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "text-xl font-semibold",
+					children: "Indicadores-Chave"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tooltip, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, { className: "h-4 w-4 text-muted-foreground" }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Monitoramento dos 12 pilares de sucesso da clínica." }) })] }) })]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+				children: kpis.map((kpi) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KPICard, { kpi }, kpi.id))
+			})] })
+		]
 	});
 }
 var cabinetSchema = object({
@@ -35850,4 +35982,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-CKSww-6Q.js.map
+//# sourceMappingURL=index-B52_DuTB.js.map

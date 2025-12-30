@@ -16,7 +16,7 @@ import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 
 export default function Clinics() {
-  const { clinics, calculateKPIs } = useDataStore()
+  const { clinics, calculateKPIs, calculateAlerts } = useDataStore()
   const { user } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
@@ -73,6 +73,8 @@ export default function Clinics() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredClinics.map((clinic) => {
           const kpis = calculateKPIs(clinic.id, CURRENT_MONTH, CURRENT_YEAR)
+          const alerts = calculateAlerts(clinic.id, CURRENT_MONTH, CURRENT_YEAR)
+
           const revenueKPI = kpis.find((k) => k.id === 'revenue_monthly')
           const alignersKPI = kpis.find((k) => k.id === 'aligner_starts')
           const npsKPI = kpis.find((k) => k.id === 'nps')
@@ -81,7 +83,7 @@ export default function Clinics() {
             ? (revenueKPI.value / clinic.targetRevenue) * 100
             : 0
 
-          const alertCount = kpis.filter((k) => k.status === 'danger').length
+          const alertCount = alerts.length
 
           // Visual status based on revenue KPI Status from calculation engine
           const revenueStatus = revenueKPI?.status || 'danger'

@@ -1,6 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { Calendar as CalendarIcon, Download, Info } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  Download,
+  Info,
+  AlertTriangle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -18,10 +23,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
-  const { calculateKPIs, getClinic } = useDataStore()
+  const { calculateKPIs, calculateAlerts, getClinic } = useDataStore()
 
   const [selectedMonth, setSelectedMonth] = useState<string>('12')
   const [selectedYear, setSelectedYear] = useState<string>('2023')
@@ -33,6 +39,11 @@ export default function Dashboard() {
     if (!clinicId) return []
     return calculateKPIs(clinicId, currentMonth, currentYear)
   }, [clinicId, currentMonth, currentYear, calculateKPIs])
+
+  const alerts = useMemo(() => {
+    if (!clinicId) return []
+    return calculateAlerts(clinicId, currentMonth, currentYear)
+  }, [clinicId, currentMonth, currentYear, calculateAlerts])
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
@@ -84,6 +95,25 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Alerts Section */}
+      {alerts.length > 0 && (
+        <div className="animate-fade-in-down">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Alertas Críticos ({alerts.length})
+          </h2>
+          <div className="grid gap-3">
+            {alerts.map((alert) => (
+              <Alert key={alert.id} variant={alert.severity}>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{alert.rule}</AlertTitle>
+                <AlertDescription>{alert.message}</AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Grid - 12 Cards */}
       <div>

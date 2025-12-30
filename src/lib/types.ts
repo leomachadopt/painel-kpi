@@ -95,6 +95,13 @@ export interface KPI {
   target?: number | string
 }
 
+export interface Alert {
+  id: string
+  rule: string
+  message: string
+  severity: 'warning' | 'destructive'
+}
+
 export interface User {
   id: string
   name: string
