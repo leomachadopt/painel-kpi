@@ -5,6 +5,7 @@ import {
   Download,
   Info,
   AlertTriangle,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +25,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { generateSummary } from '@/lib/summary'
+import { SummaryModal } from '@/components/SummaryModal'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -31,6 +34,7 @@ export default function Dashboard() {
 
   const [selectedMonth, setSelectedMonth] = useState<string>('12')
   const [selectedYear, setSelectedYear] = useState<string>('2023')
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
 
   const currentMonth = parseInt(selectedMonth)
   const currentYear = parseInt(selectedYear)
@@ -47,6 +51,17 @@ export default function Dashboard() {
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
+  const summary = useMemo(() => {
+    if (!clinic) return null
+    return generateSummary(
+      clinic.name,
+      MONTHS[currentMonth - 1],
+      currentYear,
+      kpis,
+      alerts,
+    )
+  }, [clinic, currentMonth, currentYear, kpis, alerts])
+
   if (!clinic) {
     return <div className="p-8">Clínica não encontrada.</div>
   }
@@ -54,9 +69,9 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-8 p-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6">
+      <div className="flex flex-col gap-4 border-b pb-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+          <h1 className="mb-2 text-3xl font-bold tracking-tight">
             Dashboard de Performance
           </h1>
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -67,39 +82,50 @@ export default function Dashboard() {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[140px]">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Mês" />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((month, index) => (
-                <SelectItem key={index} value={(index + 1).toString()}>
-                  {month}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Ano" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2023">2023</SelectItem>
-              <SelectItem value="2024">2024</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setIsSummaryOpen(true)}
+          >
+            <FileText className="h-4 w-4" />
+            Gerar resumo para reunião
           </Button>
+
+          <div className="flex items-center gap-2">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[140px]">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((month, index) => (
+                  <SelectItem key={index} value={(index + 1).toString()}>
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2023">2023</SelectItem>
+                <SelectItem value="2024">2024</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon">
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Alerts Section */}
       {alerts.length > 0 && (
         <div className="animate-fade-in-down">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-destructive" />
             Alertas Críticos ({alerts.length})
           </h2>
@@ -117,7 +143,7 @@ export default function Dashboard() {
 
       {/* KPI Grid - 12 Cards */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
           <TooltipProvider>
             <Tooltip>
@@ -136,6 +162,15 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Summary Modal */}
+      {summary && (
+        <SummaryModal
+          open={isSummaryOpen}
+          onOpenChange={setIsSummaryOpen}
+          summary={summary}
+        />
+      )}
     </div>
   )
 }

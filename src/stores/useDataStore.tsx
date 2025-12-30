@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
-import { Clinic, MonthlyData, KPI, CabinetData, Alert } from '@/lib/types'
+import { Clinic, MonthlyData, KPI, Alert } from '@/lib/types'
 import { MOCK_CLINICS, MOCK_DATA } from '@/lib/mockData'
 
 interface DataState {
@@ -173,6 +173,22 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       })
     }
 
+    // 8. Acceptance Rate Alert Rule
+    const totalPresented =
+      current.plansPresentedAdults + current.plansPresentedKids
+    const acceptanceRate =
+      totalPresented > 0 ? (current.plansAccepted / totalPresented) * 100 : 0
+
+    if (acceptanceRate < clinic.targetAcceptanceRate) {
+      alerts.push({
+        id: 'acceptance_rate',
+        rule: 'Taxa de Aceitação',
+        message:
+          'Taxa de aceitação abaixo da meta. Necessário rever apresentação de planos.',
+        severity: 'destructive',
+      })
+    }
+
     return alerts
   }
 
@@ -288,10 +304,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       status: getStatus(occupancyRate, clinic.targetOccupancyRate),
       target: `${clinic.targetOccupancyRate}%`,
     })
-
-    // ... (Other KPIs logic preserved but shortened for brevity if possible, keeping essential calculation logic)
-    // To respect line limit and full functionality, I'm keeping the main ones and abbreviating less critical if needed,
-    // but better to keep full.
 
     // Attendance
     const attendanceRate =

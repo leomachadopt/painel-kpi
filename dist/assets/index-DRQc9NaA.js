@@ -18042,7 +18042,7 @@ function handleAndDispatchCustomEvent$1(name, handler, detail, { discrete }) {
 	if (discrete) dispatchDiscreteCustomEvent(target, event);
 	else target.dispatchEvent(event);
 }
-var Root$7 = DismissableLayer;
+var Root$8 = DismissableLayer;
 var Branch = DismissableLayerBranch;
 var useLayoutEffect2 = globalThis?.document ? import_react.useLayoutEffect : () => {};
 var import_react_dom$5 = /* @__PURE__ */ __toESM(require_react_dom(), 1);
@@ -18058,7 +18058,7 @@ var Portal = import_react.forwardRef((props, forwardedRef) => {
 	}), container) : null;
 });
 Portal.displayName = PORTAL_NAME$5;
-function useStateMachine(initialState, machine) {
+function useStateMachine$1(initialState, machine) {
 	return import_react.useReducer((state, event) => {
 		return machine[state][event] ?? state;
 	}, initialState);
@@ -18076,7 +18076,7 @@ function usePresence(present) {
 	const stylesRef = import_react.useRef(null);
 	const prevPresentRef = import_react.useRef(present);
 	const prevAnimationNameRef = import_react.useRef("none");
-	const [state, send] = useStateMachine(present ? "mounted" : "unmounted", {
+	const [state, send] = useStateMachine$1(present ? "mounted" : "unmounted", {
 		mounted: {
 			UNMOUNT: "unmounted",
 			ANIMATION_OUT: "unmountSuspended"
@@ -18233,7 +18233,7 @@ var VisuallyHidden = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 VisuallyHidden.displayName = NAME$3;
-var Root$6 = VisuallyHidden;
+var Root$7 = VisuallyHidden;
 var import_react_dom$4 = /* @__PURE__ */ __toESM(require_react_dom(), 1);
 var PROVIDER_NAME$1 = "ToastProvider";
 var [Collection$3, useCollection$3, createCollectionScope$3] = createCollection("Toast");
@@ -18266,13 +18266,13 @@ var ToastProvider$1 = (props) => {
 	});
 };
 ToastProvider$1.displayName = PROVIDER_NAME$1;
-var VIEWPORT_NAME$1 = "ToastViewport";
+var VIEWPORT_NAME$2 = "ToastViewport";
 var VIEWPORT_DEFAULT_HOTKEY = ["F8"];
 var VIEWPORT_PAUSE = "toast.viewportPause";
 var VIEWPORT_RESUME = "toast.viewportResume";
 var ToastViewport$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeToast, hotkey = VIEWPORT_DEFAULT_HOTKEY, label = "Notifications ({hotkey})", ...viewportProps } = props;
-	const context = useToastProviderContext(VIEWPORT_NAME$1, __scopeToast);
+	const context = useToastProviderContext(VIEWPORT_NAME$2, __scopeToast);
 	const getItems = useCollection$3(__scopeToast);
 	const wrapperRef = import_react.useRef(null);
 	const headFocusProxyRef = import_react.useRef(null);
@@ -18388,7 +18388,7 @@ var ToastViewport$1 = import_react.forwardRef((props, forwardedRef) => {
 		]
 	});
 });
-ToastViewport$1.displayName = VIEWPORT_NAME$1;
+ToastViewport$1.displayName = VIEWPORT_NAME$2;
 var FOCUS_PROXY_NAME = "ToastFocusProxy";
 var FocusProxy = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeToast, onFocusFromOutsideViewport, ...proxyProps } = props;
@@ -18532,7 +18532,7 @@ var ToastImpl = import_react.forwardRef((props, forwardedRef) => {
 		onClose: handleClose,
 		children: import_react_dom$4.createPortal(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$3.ItemSlot, {
 			scope: __scopeToast,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$7, {
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$8, {
 				asChild: true,
 				onEscapeKeyDown: composeEventHandlers(onEscapeKeyDown, () => {
 					if (!context.isFocusedToastEscapeKeyDownRef.current) handleClose();
@@ -18761,7 +18761,7 @@ function focusFirst$3(candidates) {
 	});
 }
 var Provider$1 = ToastProvider$1;
-var Viewport$1 = ToastViewport$1;
+var Viewport$2 = ToastViewport$1;
 var Root2$3 = Toast$2;
 var Title$1 = ToastTitle$1;
 var Description$1 = ToastDescription$1;
@@ -19083,6 +19083,28 @@ var FileInput = createLucideIcon("file-input", [
 	["path", {
 		d: "m9 18 3-3-3-3",
 		key: "112psh"
+	}]
+]);
+var FileText = createLucideIcon("file-text", [
+	["path", {
+		d: "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+		key: "1oefj6"
+	}],
+	["path", {
+		d: "M14 2v5a1 1 0 0 0 1 1h5",
+		key: "wfsgrz"
+	}],
+	["path", {
+		d: "M10 9H8",
+		key: "b1mrlr"
+	}],
+	["path", {
+		d: "M16 13H8",
+		key: "t4e002"
+	}],
+	["path", {
+		d: "M16 17H8",
+		key: "z1uh3a"
 	}]
 ]);
 var Info = createLucideIcon("info", [
@@ -20668,12 +20690,12 @@ function cn(...inputs) {
 	return twMerge(clsx(inputs));
 }
 var ToastProvider = Provider$1;
-var ToastViewport = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Viewport$1, {
+var ToastViewport = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Viewport$2, {
 	ref,
 	className: cn("fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]", className),
 	...props
 }));
-ToastViewport.displayName = Viewport$1.displayName;
+ToastViewport.displayName = Viewport$2.displayName;
 var toastVariants = cva("group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full", {
 	variants: { variant: {
 		default: "border bg-background text-foreground",
@@ -21068,10 +21090,10 @@ var Observer = class {
 			if (typeof id !== "string" && typeof id !== "number") return { unwrap };
 			else return Object.assign(id, { unwrap });
 		};
-		this.custom = (jsx$25, data) => {
+		this.custom = (jsx$26, data) => {
 			const id = (data == null ? void 0 : data.id) || toastsCounter++;
 			this.create({
-				jsx: jsx$25(id),
+				jsx: jsx$26(id),
 				id,
 				...data
 			});
@@ -23207,7 +23229,7 @@ var Arrow$1 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 Arrow$1.displayName = NAME$2;
-var Root$5 = Arrow$1;
+var Root$6 = Arrow$1;
 function useSize(element) {
 	const [size$3, setSize] = import_react.useState(void 0);
 	useLayoutEffect2(() => {
@@ -23424,7 +23446,7 @@ var PopperArrow = import_react.forwardRef(function PopperArrow2(props, forwarded
 			}[contentContext.placedSide],
 			visibility: contentContext.shouldHideArrow ? "hidden" : void 0
 		},
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$5, {
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$6, {
 			...arrowProps,
 			ref: forwardedRef,
 			style: {
@@ -23806,7 +23828,7 @@ var TooltipContentImpl = import_react.forwardRef((props, forwardedRef) => {
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Slottable, { children }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisuallyHiddenContentContextProvider, {
 				scope: __scopeTooltip,
 				isInside: true,
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$6, {
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$7, {
 					id: context.contentId,
 					role: "tooltip",
 					children: ariaLabel || children
@@ -29618,14 +29640,14 @@ var Label$3 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 Label$3.displayName = NAME$1;
-var Root$4 = Label$3;
+var Root$5 = Label$3;
 var labelVariants = cva("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70");
-var Label$2 = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$4, {
+var Label$2 = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$5, {
 	ref,
 	className: cn(labelVariants(), className),
 	...props
 }));
-Label$2.displayName = Root$4.displayName;
+Label$2.displayName = Root$5.displayName;
 var Form = FormProvider;
 var FormFieldContext = import_react.createContext({});
 var FormField = ({ ...props }) => {
@@ -30387,6 +30409,13 @@ const DataProvider = ({ children }) => {
 			id: "complaints",
 			rule: "Reclamações",
 			message: "Reclamações acima do limite (0–2). Abrir plano de ação específico.",
+			severity: "destructive"
+		});
+		const totalPresented = current.plansPresentedAdults + current.plansPresentedKids;
+		if ((totalPresented > 0 ? current.plansAccepted / totalPresented * 100 : 0) < clinic.targetAcceptanceRate) alerts.push({
+			id: "acceptance_rate",
+			rule: "Taxa de Aceitação",
+			message: "Taxa de aceitação abaixo da meta. Necessário rever apresentação de planos.",
 			severity: "destructive"
 		});
 		return alerts;
@@ -32177,11 +32206,11 @@ var SelectPopperPosition = import_react.forwardRef((props, forwardedRef) => {
 });
 SelectPopperPosition.displayName = POPPER_POSITION_NAME;
 var [SelectViewportProvider, useSelectViewportContext] = createSelectContext(CONTENT_NAME$3, {});
-var VIEWPORT_NAME = "SelectViewport";
+var VIEWPORT_NAME$1 = "SelectViewport";
 var SelectViewport = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, nonce, ...viewportProps } = props;
-	const contentContext = useSelectContentContext(VIEWPORT_NAME, __scopeSelect);
-	const viewportContext = useSelectViewportContext(VIEWPORT_NAME, __scopeSelect);
+	const contentContext = useSelectContentContext(VIEWPORT_NAME$1, __scopeSelect);
+	const viewportContext = useSelectViewportContext(VIEWPORT_NAME$1, __scopeSelect);
 	const composedRefs = useComposedRefs(forwardedRef, contentContext.onViewportChange);
 	const prevScrollTopRef = import_react.useRef(0);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", {
@@ -32227,7 +32256,7 @@ var SelectViewport = import_react.forwardRef((props, forwardedRef) => {
 		})
 	})] });
 });
-SelectViewport.displayName = VIEWPORT_NAME;
+SelectViewport.displayName = VIEWPORT_NAME$1;
 var GROUP_NAME$3 = "SelectGroup";
 var [SelectGroupContextProvider, useSelectGroupContext] = createSelectContext(GROUP_NAME$3);
 var SelectGroup$1 = import_react.forwardRef((props, forwardedRef) => {
@@ -32562,7 +32591,7 @@ var Value = SelectValue$1;
 var Icon = SelectIcon;
 var Portal$3 = SelectPortal;
 var Content2$2 = SelectContent$1;
-var Viewport = SelectViewport;
+var Viewport$1 = SelectViewport;
 var Label$1 = SelectLabel$1;
 var Item$1 = SelectItem$1;
 var ItemText = SelectItemText;
@@ -32603,7 +32632,7 @@ var SelectContent = import_react.forwardRef(({ className, children, position = "
 	...props,
 	children: [
 		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectScrollUpButton, {}),
-		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Viewport, {
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Viewport$1, {
 			className: cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"),
 			children
 		}),
@@ -32751,11 +32780,1192 @@ var AlertDescription = import_react.forwardRef(({ className, ...props }, ref) =>
 	...props
 }));
 AlertDescription.displayName = "AlertDescription";
+const formatKPIValue = (val, unit) => {
+	if (unit === "currency") return new Intl.NumberFormat("pt-BR", {
+		style: "currency",
+		currency: "EUR",
+		maximumFractionDigits: 0
+	}).format(val);
+	if (unit === "percent") return `${val.toFixed(1)}%`;
+	if (unit === "ratio") return `${val.toFixed(2)}x`;
+	if (unit === "time") return `${val} min`;
+	return val.toLocaleString("pt-BR");
+};
+var ALERT_ACTION_MAP = {
+	acceptance_rate: "Agendar treino de apresentação de planos e objeções com a equipa.",
+	leads: "Rever campanhas digitais e programar ações de indicação de pacientes satisfeitos.",
+	billing: "Rever estratégia comercial e volume de primeiras consultas.",
+	ticket: "Analisar mix de tratamentos e tabela de preços.",
+	occupancy: "Otimizar agenda e confirmar presenças para reduzir ociosidade.",
+	nps: "Realizar pesquisa de satisfação detalhada e contactar detratores.",
+	complaints: "Gerir reclamações pendentes e treinar equipa em atendimento.",
+	aligners: "Focar em campanhas de alinhadores e formação clínica."
+};
+const generateSummary = (clinicName, monthName, year, kpis, alerts) => {
+	const strengths = kpis.filter((k) => k.status === "success").sort((a$1, b$1) => b$1.change - a$1.change).slice(0, 3).map((k) => ({
+		name: k.name,
+		value: formatKPIValue(k.value, k.unit),
+		change: k.change
+	}));
+	const criticalPoints = kpis.filter((k) => k.status === "danger").sort((a$1, b$1) => a$1.change - b$1.change).slice(0, 3).map((k) => ({
+		name: k.name,
+		value: formatKPIValue(k.value, k.unit),
+		change: k.change
+	}));
+	const actions = alerts.slice(0, 3).map((alert) => ALERT_ACTION_MAP[alert.id] || `Analisar ${alert.rule} e traçar plano de correção.`);
+	let fullText = `📋 *Resumo de Performance - ${clinicName}*\n`;
+	fullText += `📅 ${monthName} ${year}\n\n`;
+	fullText += `✅ *Pontos Fortes*\n`;
+	if (strengths.length > 0) strengths.forEach((s$2) => {
+		const changeStr = s$2.change > 0 ? `+${s$2.change.toFixed(1)}%` : `${s$2.change.toFixed(1)}%`;
+		fullText += `• ${s$2.name}: ${s$2.value} (${changeStr} vs mês ant.)\n`;
+	});
+	else fullText += `• Nenhum ponto forte destacado este mês.\n`;
+	fullText += `\n`;
+	fullText += `⚠️ *Pontos Críticos*\n`;
+	if (criticalPoints.length > 0) criticalPoints.forEach((c) => {
+		const changeStr = c.change > 0 ? `+${c.change.toFixed(1)}%` : `${c.change.toFixed(1)}%`;
+		fullText += `• ${c.name}: ${c.value} (${changeStr} vs mês ant.)\n`;
+	});
+	else fullText += `• Nenhum ponto crítico destacado este mês.\n`;
+	fullText += `\n`;
+	fullText += `🚀 *Ações Recomendadas*\n`;
+	if (actions.length > 0) actions.forEach((a$1) => {
+		fullText += `• ${a$1}\n`;
+	});
+	else fullText += `• Manter monitoramento dos indicadores.\n`;
+	return {
+		strengths,
+		criticalPoints,
+		actions,
+		fullText
+	};
+};
+var DIALOG_NAME = "Dialog";
+var [createDialogContext, createDialogScope] = createContextScope$1(DIALOG_NAME);
+var [DialogProvider, useDialogContext] = createDialogContext(DIALOG_NAME);
+var Dialog$1 = (props) => {
+	const { __scopeDialog, children, open: openProp, defaultOpen, onOpenChange, modal = true } = props;
+	const triggerRef = import_react.useRef(null);
+	const contentRef = import_react.useRef(null);
+	const [open, setOpen] = useControllableState({
+		prop: openProp,
+		defaultProp: defaultOpen ?? false,
+		onChange: onOpenChange,
+		caller: DIALOG_NAME
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogProvider, {
+		scope: __scopeDialog,
+		triggerRef,
+		contentRef,
+		contentId: useId(),
+		titleId: useId(),
+		descriptionId: useId(),
+		open,
+		onOpenChange: setOpen,
+		onOpenToggle: import_react.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
+		modal,
+		children
+	});
+};
+Dialog$1.displayName = DIALOG_NAME;
+var TRIGGER_NAME$1 = "DialogTrigger";
+var DialogTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, ...triggerProps } = props;
+	const context = useDialogContext(TRIGGER_NAME$1, __scopeDialog);
+	const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
+		type: "button",
+		"aria-haspopup": "dialog",
+		"aria-expanded": context.open,
+		"aria-controls": context.contentId,
+		"data-state": getState(context.open),
+		...triggerProps,
+		ref: composedTriggerRef,
+		onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
+	});
+});
+DialogTrigger$1.displayName = TRIGGER_NAME$1;
+var PORTAL_NAME$2 = "DialogPortal";
+var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, { forceMount: void 0 });
+var DialogPortal$1 = (props) => {
+	const { __scopeDialog, forceMount, children, container } = props;
+	const context = useDialogContext(PORTAL_NAME$2, __scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PortalProvider$1, {
+		scope: __scopeDialog,
+		forceMount,
+		children: import_react.Children.map(children, (child) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+			present: forceMount || context.open,
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Portal, {
+				asChild: true,
+				container,
+				children: child
+			})
+		}))
+	});
+};
+DialogPortal$1.displayName = PORTAL_NAME$2;
+var OVERLAY_NAME = "DialogOverlay";
+var DialogOverlay$1 = import_react.forwardRef((props, forwardedRef) => {
+	const portalContext = usePortalContext$1(OVERLAY_NAME, props.__scopeDialog);
+	const { forceMount = portalContext.forceMount, ...overlayProps } = props;
+	const context = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
+	return context.modal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || context.open,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlayImpl, {
+			...overlayProps,
+			ref: forwardedRef
+		})
+	}) : null;
+});
+DialogOverlay$1.displayName = OVERLAY_NAME;
+var Slot$2 = /* @__PURE__ */ createSlot("DialogOverlay.RemoveScroll");
+var DialogOverlayImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, ...overlayProps } = props;
+	const context = useDialogContext(OVERLAY_NAME, __scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Combination_default, {
+		as: Slot$2,
+		allowPinchZoom: true,
+		shards: [context.contentRef],
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			"data-state": getState(context.open),
+			...overlayProps,
+			ref: forwardedRef,
+			style: {
+				pointerEvents: "auto",
+				...overlayProps.style
+			}
+		})
+	});
+});
+var CONTENT_NAME$2 = "DialogContent";
+var DialogContent$1 = import_react.forwardRef((props, forwardedRef) => {
+	const portalContext = usePortalContext$1(CONTENT_NAME$2, props.__scopeDialog);
+	const { forceMount = portalContext.forceMount, ...contentProps } = props;
+	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || context.open,
+		children: context.modal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentModal, {
+			...contentProps,
+			ref: forwardedRef
+		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentNonModal, {
+			...contentProps,
+			ref: forwardedRef
+		})
+	});
+});
+DialogContent$1.displayName = CONTENT_NAME$2;
+var DialogContentModal = import_react.forwardRef((props, forwardedRef) => {
+	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	const contentRef = import_react.useRef(null);
+	const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
+	import_react.useEffect(() => {
+		const content = contentRef.current;
+		if (content) return hideOthers(content);
+	}, []);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentImpl, {
+		...props,
+		ref: composedRefs,
+		trapFocus: context.open,
+		disableOutsidePointerEvents: true,
+		onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
+			event.preventDefault();
+			context.triggerRef.current?.focus();
+		}),
+		onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
+			const originalEvent = event.detail.originalEvent;
+			const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
+			if (originalEvent.button === 2 || ctrlLeftClick) event.preventDefault();
+		}),
+		onFocusOutside: composeEventHandlers(props.onFocusOutside, (event) => event.preventDefault())
+	});
+});
+var DialogContentNonModal = import_react.forwardRef((props, forwardedRef) => {
+	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	const hasInteractedOutsideRef = import_react.useRef(false);
+	const hasPointerDownOutsideRef = import_react.useRef(false);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentImpl, {
+		...props,
+		ref: forwardedRef,
+		trapFocus: false,
+		disableOutsidePointerEvents: false,
+		onCloseAutoFocus: (event) => {
+			props.onCloseAutoFocus?.(event);
+			if (!event.defaultPrevented) {
+				if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
+				event.preventDefault();
+			}
+			hasInteractedOutsideRef.current = false;
+			hasPointerDownOutsideRef.current = false;
+		},
+		onInteractOutside: (event) => {
+			props.onInteractOutside?.(event);
+			if (!event.defaultPrevented) {
+				hasInteractedOutsideRef.current = true;
+				if (event.detail.originalEvent.type === "pointerdown") hasPointerDownOutsideRef.current = true;
+			}
+			const target = event.target;
+			if (context.triggerRef.current?.contains(target)) event.preventDefault();
+			if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) event.preventDefault();
+		}
+	});
+});
+var DialogContentImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
+	const context = useDialogContext(CONTENT_NAME$2, __scopeDialog);
+	const contentRef = import_react.useRef(null);
+	const composedRefs = useComposedRefs(forwardedRef, contentRef);
+	useFocusGuards();
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FocusScope, {
+		asChild: true,
+		loop: true,
+		trapped: trapFocus,
+		onMountAutoFocus: onOpenAutoFocus,
+		onUnmountAutoFocus: onCloseAutoFocus,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DismissableLayer, {
+			role: "dialog",
+			id: context.contentId,
+			"aria-describedby": context.descriptionId,
+			"aria-labelledby": context.titleId,
+			"data-state": getState(context.open),
+			...contentProps,
+			ref: composedRefs,
+			onDismiss: () => context.onOpenChange(false)
+		})
+	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TitleWarning, { titleId: context.titleId }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DescriptionWarning, {
+		contentRef,
+		descriptionId: context.descriptionId
+	})] })] });
+});
+var TITLE_NAME = "DialogTitle";
+var DialogTitle$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, ...titleProps } = props;
+	const context = useDialogContext(TITLE_NAME, __scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.h2, {
+		id: context.titleId,
+		...titleProps,
+		ref: forwardedRef
+	});
+});
+DialogTitle$1.displayName = TITLE_NAME;
+var DESCRIPTION_NAME = "DialogDescription";
+var DialogDescription$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, ...descriptionProps } = props;
+	const context = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.p, {
+		id: context.descriptionId,
+		...descriptionProps,
+		ref: forwardedRef
+	});
+});
+DialogDescription$1.displayName = DESCRIPTION_NAME;
+var CLOSE_NAME = "DialogClose";
+var DialogClose$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeDialog, ...closeProps } = props;
+	const context = useDialogContext(CLOSE_NAME, __scopeDialog);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
+		type: "button",
+		...closeProps,
+		ref: forwardedRef,
+		onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
+	});
+});
+DialogClose$1.displayName = CLOSE_NAME;
+function getState(open) {
+	return open ? "open" : "closed";
+}
+var TITLE_WARNING_NAME = "DialogTitleWarning";
+var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
+	contentName: CONTENT_NAME$2,
+	titleName: TITLE_NAME,
+	docsSlug: "dialog"
+});
+var TitleWarning = ({ titleId }) => {
+	const titleWarningContext = useWarningContext(TITLE_WARNING_NAME);
+	const MESSAGE = `\`${titleWarningContext.contentName}\` requires a \`${titleWarningContext.titleName}\` for the component to be accessible for screen reader users.
+
+If you want to hide the \`${titleWarningContext.titleName}\`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/${titleWarningContext.docsSlug}`;
+	import_react.useEffect(() => {
+		if (titleId) {
+			if (!document.getElementById(titleId)) console.error(MESSAGE);
+		}
+	}, [MESSAGE, titleId]);
+	return null;
+};
+var DESCRIPTION_WARNING_NAME = "DialogDescriptionWarning";
+var DescriptionWarning = ({ contentRef, descriptionId }) => {
+	const MESSAGE = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${useWarningContext(DESCRIPTION_WARNING_NAME).contentName}}.`;
+	import_react.useEffect(() => {
+		const describedById = contentRef.current?.getAttribute("aria-describedby");
+		if (descriptionId && describedById) {
+			if (!document.getElementById(descriptionId)) console.warn(MESSAGE);
+		}
+	}, [
+		MESSAGE,
+		contentRef,
+		descriptionId
+	]);
+	return null;
+};
+var Root$4 = Dialog$1;
+var Portal$2 = DialogPortal$1;
+var Overlay = DialogOverlay$1;
+var Content = DialogContent$1;
+var Title = DialogTitle$1;
+var Description = DialogDescription$1;
+var Close = DialogClose$1;
+var Dialog = Root$4;
+var DialogPortal = Portal$2;
+var DialogOverlay = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Overlay, {
+	ref,
+	className: cn("fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className),
+	...props
+}));
+DialogOverlay.displayName = Overlay.displayName;
+var DialogContent = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content, {
+	ref,
+	className: cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg overflow-y-auto max-h-screen", className),
+	...props,
+	children: [children, /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Close, {
+		className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			className: "sr-only",
+			children: "Close"
+		})]
+	})]
+})] }));
+DialogContent.displayName = Content.displayName;
+var DialogHeader = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	className: cn("flex flex-col space-y-1.5 text-center sm:text-left", className),
+	...props
+});
+DialogHeader.displayName = "DialogHeader";
+var DialogFooter = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	className: cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className),
+	...props
+});
+DialogFooter.displayName = "DialogFooter";
+var DialogTitle = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Title, {
+	ref,
+	className: cn("text-lg font-semibold leading-none tracking-tight", className),
+	...props
+}));
+DialogTitle.displayName = Title.displayName;
+var DialogDescription = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Description, {
+	ref,
+	className: cn("text-sm text-muted-foreground", className),
+	...props
+}));
+DialogDescription.displayName = Description.displayName;
+function useStateMachine(initialState, machine) {
+	return import_react.useReducer((state, event) => {
+		return machine[state][event] ?? state;
+	}, initialState);
+}
+var SCROLL_AREA_NAME = "ScrollArea";
+var [createScrollAreaContext, createScrollAreaScope] = createContextScope$1(SCROLL_AREA_NAME);
+var [ScrollAreaProvider, useScrollAreaContext] = createScrollAreaContext(SCROLL_AREA_NAME);
+var ScrollArea$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeScrollArea, type = "hover", dir, scrollHideDelay = 600, ...scrollAreaProps } = props;
+	const [scrollArea, setScrollArea] = import_react.useState(null);
+	const [viewport, setViewport] = import_react.useState(null);
+	const [content, setContent] = import_react.useState(null);
+	const [scrollbarX, setScrollbarX] = import_react.useState(null);
+	const [scrollbarY, setScrollbarY] = import_react.useState(null);
+	const [cornerWidth, setCornerWidth] = import_react.useState(0);
+	const [cornerHeight, setCornerHeight] = import_react.useState(0);
+	const [scrollbarXEnabled, setScrollbarXEnabled] = import_react.useState(false);
+	const [scrollbarYEnabled, setScrollbarYEnabled] = import_react.useState(false);
+	const composedRefs = useComposedRefs(forwardedRef, (node) => setScrollArea(node));
+	const direction = useDirection(dir);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaProvider, {
+		scope: __scopeScrollArea,
+		type,
+		dir: direction,
+		scrollHideDelay,
+		scrollArea,
+		viewport,
+		onViewportChange: setViewport,
+		content,
+		onContentChange: setContent,
+		scrollbarX,
+		onScrollbarXChange: setScrollbarX,
+		scrollbarXEnabled,
+		onScrollbarXEnabledChange: setScrollbarXEnabled,
+		scrollbarY,
+		onScrollbarYChange: setScrollbarY,
+		scrollbarYEnabled,
+		onScrollbarYEnabledChange: setScrollbarYEnabled,
+		onCornerWidthChange: setCornerWidth,
+		onCornerHeightChange: setCornerHeight,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			dir: direction,
+			...scrollAreaProps,
+			ref: composedRefs,
+			style: {
+				position: "relative",
+				["--radix-scroll-area-corner-width"]: cornerWidth + "px",
+				["--radix-scroll-area-corner-height"]: cornerHeight + "px",
+				...props.style
+			}
+		})
+	});
+});
+ScrollArea$1.displayName = SCROLL_AREA_NAME;
+var VIEWPORT_NAME = "ScrollAreaViewport";
+var ScrollAreaViewport = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeScrollArea, children, nonce, ...viewportProps } = props;
+	const context = useScrollAreaContext(VIEWPORT_NAME, __scopeScrollArea);
+	const composedRefs = useComposedRefs(forwardedRef, import_react.useRef(null), context.onViewportChange);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", {
+		dangerouslySetInnerHTML: { __html: `[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}` },
+		nonce
+	}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+		"data-radix-scroll-area-viewport": "",
+		...viewportProps,
+		ref: composedRefs,
+		style: {
+			overflowX: context.scrollbarXEnabled ? "scroll" : "hidden",
+			overflowY: context.scrollbarYEnabled ? "scroll" : "hidden",
+			...props.style
+		},
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			ref: context.onContentChange,
+			style: {
+				minWidth: "100%",
+				display: "table"
+			},
+			children
+		})
+	})] });
+});
+ScrollAreaViewport.displayName = VIEWPORT_NAME;
+var SCROLLBAR_NAME = "ScrollAreaScrollbar";
+var ScrollAreaScrollbar = import_react.forwardRef((props, forwardedRef) => {
+	const { forceMount, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const { onScrollbarXEnabledChange, onScrollbarYEnabledChange } = context;
+	const isHorizontal = props.orientation === "horizontal";
+	import_react.useEffect(() => {
+		isHorizontal ? onScrollbarXEnabledChange(true) : onScrollbarYEnabledChange(true);
+		return () => {
+			isHorizontal ? onScrollbarXEnabledChange(false) : onScrollbarYEnabledChange(false);
+		};
+	}, [
+		isHorizontal,
+		onScrollbarXEnabledChange,
+		onScrollbarYEnabledChange
+	]);
+	return context.type === "hover" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarHover, {
+		...scrollbarProps,
+		ref: forwardedRef,
+		forceMount
+	}) : context.type === "scroll" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarScroll, {
+		...scrollbarProps,
+		ref: forwardedRef,
+		forceMount
+	}) : context.type === "auto" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarAuto, {
+		...scrollbarProps,
+		ref: forwardedRef,
+		forceMount
+	}) : context.type === "always" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarVisible, {
+		...scrollbarProps,
+		ref: forwardedRef
+	}) : null;
+});
+ScrollAreaScrollbar.displayName = SCROLLBAR_NAME;
+var ScrollAreaScrollbarHover = import_react.forwardRef((props, forwardedRef) => {
+	const { forceMount, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const [visible, setVisible] = import_react.useState(false);
+	import_react.useEffect(() => {
+		const scrollArea = context.scrollArea;
+		let hideTimer = 0;
+		if (scrollArea) {
+			const handlePointerEnter = () => {
+				window.clearTimeout(hideTimer);
+				setVisible(true);
+			};
+			const handlePointerLeave = () => {
+				hideTimer = window.setTimeout(() => setVisible(false), context.scrollHideDelay);
+			};
+			scrollArea.addEventListener("pointerenter", handlePointerEnter);
+			scrollArea.addEventListener("pointerleave", handlePointerLeave);
+			return () => {
+				window.clearTimeout(hideTimer);
+				scrollArea.removeEventListener("pointerenter", handlePointerEnter);
+				scrollArea.removeEventListener("pointerleave", handlePointerLeave);
+			};
+		}
+	}, [context.scrollArea, context.scrollHideDelay]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || visible,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarAuto, {
+			"data-state": visible ? "visible" : "hidden",
+			...scrollbarProps,
+			ref: forwardedRef
+		})
+	});
+});
+var ScrollAreaScrollbarScroll = import_react.forwardRef((props, forwardedRef) => {
+	const { forceMount, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const isHorizontal = props.orientation === "horizontal";
+	const debounceScrollEnd = useDebounceCallback(() => send("SCROLL_END"), 100);
+	const [state, send] = useStateMachine("hidden", {
+		hidden: { SCROLL: "scrolling" },
+		scrolling: {
+			SCROLL_END: "idle",
+			POINTER_ENTER: "interacting"
+		},
+		interacting: {
+			SCROLL: "interacting",
+			POINTER_LEAVE: "idle"
+		},
+		idle: {
+			HIDE: "hidden",
+			SCROLL: "scrolling",
+			POINTER_ENTER: "interacting"
+		}
+	});
+	import_react.useEffect(() => {
+		if (state === "idle") {
+			const hideTimer = window.setTimeout(() => send("HIDE"), context.scrollHideDelay);
+			return () => window.clearTimeout(hideTimer);
+		}
+	}, [
+		state,
+		context.scrollHideDelay,
+		send
+	]);
+	import_react.useEffect(() => {
+		const viewport = context.viewport;
+		const scrollDirection = isHorizontal ? "scrollLeft" : "scrollTop";
+		if (viewport) {
+			let prevScrollPos = viewport[scrollDirection];
+			const handleScroll$1 = () => {
+				const scrollPos = viewport[scrollDirection];
+				if (prevScrollPos !== scrollPos) {
+					send("SCROLL");
+					debounceScrollEnd();
+				}
+				prevScrollPos = scrollPos;
+			};
+			viewport.addEventListener("scroll", handleScroll$1);
+			return () => viewport.removeEventListener("scroll", handleScroll$1);
+		}
+	}, [
+		context.viewport,
+		isHorizontal,
+		send,
+		debounceScrollEnd
+	]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || state !== "hidden",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarVisible, {
+			"data-state": state === "hidden" ? "hidden" : "visible",
+			...scrollbarProps,
+			ref: forwardedRef,
+			onPointerEnter: composeEventHandlers(props.onPointerEnter, () => send("POINTER_ENTER")),
+			onPointerLeave: composeEventHandlers(props.onPointerLeave, () => send("POINTER_LEAVE"))
+		})
+	});
+});
+var ScrollAreaScrollbarAuto = import_react.forwardRef((props, forwardedRef) => {
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const { forceMount, ...scrollbarProps } = props;
+	const [visible, setVisible] = import_react.useState(false);
+	const isHorizontal = props.orientation === "horizontal";
+	const handleResize = useDebounceCallback(() => {
+		if (context.viewport) {
+			const isOverflowX = context.viewport.offsetWidth < context.viewport.scrollWidth;
+			const isOverflowY = context.viewport.offsetHeight < context.viewport.scrollHeight;
+			setVisible(isHorizontal ? isOverflowX : isOverflowY);
+		}
+	}, 10);
+	useResizeObserver(context.viewport, handleResize);
+	useResizeObserver(context.content, handleResize);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || visible,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarVisible, {
+			"data-state": visible ? "visible" : "hidden",
+			...scrollbarProps,
+			ref: forwardedRef
+		})
+	});
+});
+var ScrollAreaScrollbarVisible = import_react.forwardRef((props, forwardedRef) => {
+	const { orientation = "vertical", ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const thumbRef = import_react.useRef(null);
+	const pointerOffsetRef = import_react.useRef(0);
+	const [sizes, setSizes] = import_react.useState({
+		content: 0,
+		viewport: 0,
+		scrollbar: {
+			size: 0,
+			paddingStart: 0,
+			paddingEnd: 0
+		}
+	});
+	const thumbRatio = getThumbRatio(sizes.viewport, sizes.content);
+	const commonProps = {
+		...scrollbarProps,
+		sizes,
+		onSizesChange: setSizes,
+		hasThumb: Boolean(thumbRatio > 0 && thumbRatio < 1),
+		onThumbChange: (thumb) => thumbRef.current = thumb,
+		onThumbPointerUp: () => pointerOffsetRef.current = 0,
+		onThumbPointerDown: (pointerPos) => pointerOffsetRef.current = pointerPos
+	};
+	function getScrollPosition(pointerPos, dir) {
+		return getScrollPositionFromPointer(pointerPos, pointerOffsetRef.current, sizes, dir);
+	}
+	if (orientation === "horizontal") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarX, {
+		...commonProps,
+		ref: forwardedRef,
+		onThumbPositionChange: () => {
+			if (context.viewport && thumbRef.current) {
+				const scrollPos = context.viewport.scrollLeft;
+				const offset$3 = getThumbOffsetFromScroll(scrollPos, sizes, context.dir);
+				thumbRef.current.style.transform = `translate3d(${offset$3}px, 0, 0)`;
+			}
+		},
+		onWheelScroll: (scrollPos) => {
+			if (context.viewport) context.viewport.scrollLeft = scrollPos;
+		},
+		onDragScroll: (pointerPos) => {
+			if (context.viewport) context.viewport.scrollLeft = getScrollPosition(pointerPos, context.dir);
+		}
+	});
+	if (orientation === "vertical") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarY, {
+		...commonProps,
+		ref: forwardedRef,
+		onThumbPositionChange: () => {
+			if (context.viewport && thumbRef.current) {
+				const scrollPos = context.viewport.scrollTop;
+				const offset$3 = getThumbOffsetFromScroll(scrollPos, sizes);
+				thumbRef.current.style.transform = `translate3d(0, ${offset$3}px, 0)`;
+			}
+		},
+		onWheelScroll: (scrollPos) => {
+			if (context.viewport) context.viewport.scrollTop = scrollPos;
+		},
+		onDragScroll: (pointerPos) => {
+			if (context.viewport) context.viewport.scrollTop = getScrollPosition(pointerPos);
+		}
+	});
+	return null;
+});
+var ScrollAreaScrollbarX = import_react.forwardRef((props, forwardedRef) => {
+	const { sizes, onSizesChange, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const [computedStyle, setComputedStyle] = import_react.useState();
+	const ref = import_react.useRef(null);
+	const composeRefs$1 = useComposedRefs(forwardedRef, ref, context.onScrollbarXChange);
+	import_react.useEffect(() => {
+		if (ref.current) setComputedStyle(getComputedStyle(ref.current));
+	}, [ref]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarImpl, {
+		"data-orientation": "horizontal",
+		...scrollbarProps,
+		ref: composeRefs$1,
+		sizes,
+		style: {
+			bottom: 0,
+			left: context.dir === "rtl" ? "var(--radix-scroll-area-corner-width)" : 0,
+			right: context.dir === "ltr" ? "var(--radix-scroll-area-corner-width)" : 0,
+			["--radix-scroll-area-thumb-width"]: getThumbSize(sizes) + "px",
+			...props.style
+		},
+		onThumbPointerDown: (pointerPos) => props.onThumbPointerDown(pointerPos.x),
+		onDragScroll: (pointerPos) => props.onDragScroll(pointerPos.x),
+		onWheelScroll: (event, maxScrollPos) => {
+			if (context.viewport) {
+				const scrollPos = context.viewport.scrollLeft + event.deltaX;
+				props.onWheelScroll(scrollPos);
+				if (isScrollingWithinScrollbarBounds(scrollPos, maxScrollPos)) event.preventDefault();
+			}
+		},
+		onResize: () => {
+			if (ref.current && context.viewport && computedStyle) onSizesChange({
+				content: context.viewport.scrollWidth,
+				viewport: context.viewport.offsetWidth,
+				scrollbar: {
+					size: ref.current.clientWidth,
+					paddingStart: toInt(computedStyle.paddingLeft),
+					paddingEnd: toInt(computedStyle.paddingRight)
+				}
+			});
+		}
+	});
+});
+var ScrollAreaScrollbarY = import_react.forwardRef((props, forwardedRef) => {
+	const { sizes, onSizesChange, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, props.__scopeScrollArea);
+	const [computedStyle, setComputedStyle] = import_react.useState();
+	const ref = import_react.useRef(null);
+	const composeRefs$1 = useComposedRefs(forwardedRef, ref, context.onScrollbarYChange);
+	import_react.useEffect(() => {
+		if (ref.current) setComputedStyle(getComputedStyle(ref.current));
+	}, [ref]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbarImpl, {
+		"data-orientation": "vertical",
+		...scrollbarProps,
+		ref: composeRefs$1,
+		sizes,
+		style: {
+			top: 0,
+			right: context.dir === "ltr" ? 0 : void 0,
+			left: context.dir === "rtl" ? 0 : void 0,
+			bottom: "var(--radix-scroll-area-corner-height)",
+			["--radix-scroll-area-thumb-height"]: getThumbSize(sizes) + "px",
+			...props.style
+		},
+		onThumbPointerDown: (pointerPos) => props.onThumbPointerDown(pointerPos.y),
+		onDragScroll: (pointerPos) => props.onDragScroll(pointerPos.y),
+		onWheelScroll: (event, maxScrollPos) => {
+			if (context.viewport) {
+				const scrollPos = context.viewport.scrollTop + event.deltaY;
+				props.onWheelScroll(scrollPos);
+				if (isScrollingWithinScrollbarBounds(scrollPos, maxScrollPos)) event.preventDefault();
+			}
+		},
+		onResize: () => {
+			if (ref.current && context.viewport && computedStyle) onSizesChange({
+				content: context.viewport.scrollHeight,
+				viewport: context.viewport.offsetHeight,
+				scrollbar: {
+					size: ref.current.clientHeight,
+					paddingStart: toInt(computedStyle.paddingTop),
+					paddingEnd: toInt(computedStyle.paddingBottom)
+				}
+			});
+		}
+	});
+});
+var [ScrollbarProvider, useScrollbarContext] = createScrollAreaContext(SCROLLBAR_NAME);
+var ScrollAreaScrollbarImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeScrollArea, sizes, hasThumb, onThumbChange, onThumbPointerUp, onThumbPointerDown, onThumbPositionChange, onDragScroll, onWheelScroll, onResize, ...scrollbarProps } = props;
+	const context = useScrollAreaContext(SCROLLBAR_NAME, __scopeScrollArea);
+	const [scrollbar, setScrollbar] = import_react.useState(null);
+	const composeRefs$1 = useComposedRefs(forwardedRef, (node) => setScrollbar(node));
+	const rectRef = import_react.useRef(null);
+	const prevWebkitUserSelectRef = import_react.useRef("");
+	const viewport = context.viewport;
+	const maxScrollPos = sizes.content - sizes.viewport;
+	const handleWheelScroll = useCallbackRef(onWheelScroll);
+	const handleThumbPositionChange = useCallbackRef(onThumbPositionChange);
+	const handleResize = useDebounceCallback(onResize, 10);
+	function handleDragScroll(event) {
+		if (rectRef.current) onDragScroll({
+			x: event.clientX - rectRef.current.left,
+			y: event.clientY - rectRef.current.top
+		});
+	}
+	import_react.useEffect(() => {
+		const handleWheel = (event) => {
+			const element = event.target;
+			if (scrollbar?.contains(element)) handleWheelScroll(event, maxScrollPos);
+		};
+		document.addEventListener("wheel", handleWheel, { passive: false });
+		return () => document.removeEventListener("wheel", handleWheel, { passive: false });
+	}, [
+		viewport,
+		scrollbar,
+		maxScrollPos,
+		handleWheelScroll
+	]);
+	import_react.useEffect(handleThumbPositionChange, [sizes, handleThumbPositionChange]);
+	useResizeObserver(scrollbar, handleResize);
+	useResizeObserver(context.content, handleResize);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollbarProvider, {
+		scope: __scopeScrollArea,
+		scrollbar,
+		hasThumb,
+		onThumbChange: useCallbackRef(onThumbChange),
+		onThumbPointerUp: useCallbackRef(onThumbPointerUp),
+		onThumbPositionChange: handleThumbPositionChange,
+		onThumbPointerDown: useCallbackRef(onThumbPointerDown),
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			...scrollbarProps,
+			ref: composeRefs$1,
+			style: {
+				position: "absolute",
+				...scrollbarProps.style
+			},
+			onPointerDown: composeEventHandlers(props.onPointerDown, (event) => {
+				if (event.button === 0) {
+					event.target.setPointerCapture(event.pointerId);
+					rectRef.current = scrollbar.getBoundingClientRect();
+					prevWebkitUserSelectRef.current = document.body.style.webkitUserSelect;
+					document.body.style.webkitUserSelect = "none";
+					if (context.viewport) context.viewport.style.scrollBehavior = "auto";
+					handleDragScroll(event);
+				}
+			}),
+			onPointerMove: composeEventHandlers(props.onPointerMove, handleDragScroll),
+			onPointerUp: composeEventHandlers(props.onPointerUp, (event) => {
+				const element = event.target;
+				if (element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId);
+				document.body.style.webkitUserSelect = prevWebkitUserSelectRef.current;
+				if (context.viewport) context.viewport.style.scrollBehavior = "";
+				rectRef.current = null;
+			})
+		})
+	});
+});
+var THUMB_NAME = "ScrollAreaThumb";
+var ScrollAreaThumb = import_react.forwardRef((props, forwardedRef) => {
+	const { forceMount, ...thumbProps } = props;
+	const scrollbarContext = useScrollbarContext(THUMB_NAME, props.__scopeScrollArea);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || scrollbarContext.hasThumb,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaThumbImpl, {
+			ref: forwardedRef,
+			...thumbProps
+		})
+	});
+});
+var ScrollAreaThumbImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeScrollArea, style, ...thumbProps } = props;
+	const scrollAreaContext = useScrollAreaContext(THUMB_NAME, __scopeScrollArea);
+	const scrollbarContext = useScrollbarContext(THUMB_NAME, __scopeScrollArea);
+	const { onThumbPositionChange } = scrollbarContext;
+	const composedRef = useComposedRefs(forwardedRef, (node) => scrollbarContext.onThumbChange(node));
+	const removeUnlinkedScrollListenerRef = import_react.useRef(void 0);
+	const debounceScrollEnd = useDebounceCallback(() => {
+		if (removeUnlinkedScrollListenerRef.current) {
+			removeUnlinkedScrollListenerRef.current();
+			removeUnlinkedScrollListenerRef.current = void 0;
+		}
+	}, 100);
+	import_react.useEffect(() => {
+		const viewport = scrollAreaContext.viewport;
+		if (viewport) {
+			const handleScroll$1 = () => {
+				debounceScrollEnd();
+				if (!removeUnlinkedScrollListenerRef.current) {
+					removeUnlinkedScrollListenerRef.current = addUnlinkedScrollListener(viewport, onThumbPositionChange);
+					onThumbPositionChange();
+				}
+			};
+			onThumbPositionChange();
+			viewport.addEventListener("scroll", handleScroll$1);
+			return () => viewport.removeEventListener("scroll", handleScroll$1);
+		}
+	}, [
+		scrollAreaContext.viewport,
+		debounceScrollEnd,
+		onThumbPositionChange
+	]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+		"data-state": scrollbarContext.hasThumb ? "visible" : "hidden",
+		...thumbProps,
+		ref: composedRef,
+		style: {
+			width: "var(--radix-scroll-area-thumb-width)",
+			height: "var(--radix-scroll-area-thumb-height)",
+			...style
+		},
+		onPointerDownCapture: composeEventHandlers(props.onPointerDownCapture, (event) => {
+			const thumbRect = event.target.getBoundingClientRect();
+			const x$1 = event.clientX - thumbRect.left;
+			const y = event.clientY - thumbRect.top;
+			scrollbarContext.onThumbPointerDown({
+				x: x$1,
+				y
+			});
+		}),
+		onPointerUp: composeEventHandlers(props.onPointerUp, scrollbarContext.onThumbPointerUp)
+	});
+});
+ScrollAreaThumb.displayName = THUMB_NAME;
+var CORNER_NAME = "ScrollAreaCorner";
+var ScrollAreaCorner = import_react.forwardRef((props, forwardedRef) => {
+	const context = useScrollAreaContext(CORNER_NAME, props.__scopeScrollArea);
+	const hasBothScrollbarsVisible = Boolean(context.scrollbarX && context.scrollbarY);
+	return context.type !== "scroll" && hasBothScrollbarsVisible ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaCornerImpl, {
+		...props,
+		ref: forwardedRef
+	}) : null;
+});
+ScrollAreaCorner.displayName = CORNER_NAME;
+var ScrollAreaCornerImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeScrollArea, ...cornerProps } = props;
+	const context = useScrollAreaContext(CORNER_NAME, __scopeScrollArea);
+	const [width, setWidth] = import_react.useState(0);
+	const [height, setHeight] = import_react.useState(0);
+	const hasSize = Boolean(width && height);
+	useResizeObserver(context.scrollbarX, () => {
+		const height2 = context.scrollbarX?.offsetHeight || 0;
+		context.onCornerHeightChange(height2);
+		setHeight(height2);
+	});
+	useResizeObserver(context.scrollbarY, () => {
+		const width2 = context.scrollbarY?.offsetWidth || 0;
+		context.onCornerWidthChange(width2);
+		setWidth(width2);
+	});
+	return hasSize ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+		...cornerProps,
+		ref: forwardedRef,
+		style: {
+			width,
+			height,
+			position: "absolute",
+			right: context.dir === "ltr" ? 0 : void 0,
+			left: context.dir === "rtl" ? 0 : void 0,
+			bottom: 0,
+			...props.style
+		}
+	}) : null;
+});
+function toInt(value) {
+	return value ? parseInt(value, 10) : 0;
+}
+function getThumbRatio(viewportSize, contentSize) {
+	const ratio = viewportSize / contentSize;
+	return isNaN(ratio) ? 0 : ratio;
+}
+function getThumbSize(sizes) {
+	const ratio = getThumbRatio(sizes.viewport, sizes.content);
+	const scrollbarPadding = sizes.scrollbar.paddingStart + sizes.scrollbar.paddingEnd;
+	const thumbSize = (sizes.scrollbar.size - scrollbarPadding) * ratio;
+	return Math.max(thumbSize, 18);
+}
+function getScrollPositionFromPointer(pointerPos, pointerOffset, sizes, dir = "ltr") {
+	const thumbSizePx = getThumbSize(sizes);
+	const thumbCenter = thumbSizePx / 2;
+	const offset$3 = pointerOffset || thumbCenter;
+	const thumbOffsetFromEnd = thumbSizePx - offset$3;
+	const minPointerPos = sizes.scrollbar.paddingStart + offset$3;
+	const maxPointerPos = sizes.scrollbar.size - sizes.scrollbar.paddingEnd - thumbOffsetFromEnd;
+	const maxScrollPos = sizes.content - sizes.viewport;
+	const scrollRange = dir === "ltr" ? [0, maxScrollPos] : [maxScrollPos * -1, 0];
+	return linearScale([minPointerPos, maxPointerPos], scrollRange)(pointerPos);
+}
+function getThumbOffsetFromScroll(scrollPos, sizes, dir = "ltr") {
+	const thumbSizePx = getThumbSize(sizes);
+	const scrollbarPadding = sizes.scrollbar.paddingStart + sizes.scrollbar.paddingEnd;
+	const scrollbar = sizes.scrollbar.size - scrollbarPadding;
+	const maxScrollPos = sizes.content - sizes.viewport;
+	const maxThumbPos = scrollbar - thumbSizePx;
+	const scrollWithoutMomentum = clamp(scrollPos, dir === "ltr" ? [0, maxScrollPos] : [maxScrollPos * -1, 0]);
+	return linearScale([0, maxScrollPos], [0, maxThumbPos])(scrollWithoutMomentum);
+}
+function linearScale(input, output) {
+	return (value) => {
+		if (input[0] === input[1] || output[0] === output[1]) return output[0];
+		const ratio = (output[1] - output[0]) / (input[1] - input[0]);
+		return output[0] + ratio * (value - input[0]);
+	};
+}
+function isScrollingWithinScrollbarBounds(scrollPos, maxScrollPos) {
+	return scrollPos > 0 && scrollPos < maxScrollPos;
+}
+var addUnlinkedScrollListener = (node, handler = () => {}) => {
+	let prevPosition = {
+		left: node.scrollLeft,
+		top: node.scrollTop
+	};
+	let rAF = 0;
+	(function loop() {
+		const position = {
+			left: node.scrollLeft,
+			top: node.scrollTop
+		};
+		const isHorizontalScroll = prevPosition.left !== position.left;
+		const isVerticalScroll = prevPosition.top !== position.top;
+		if (isHorizontalScroll || isVerticalScroll) handler();
+		prevPosition = position;
+		rAF = window.requestAnimationFrame(loop);
+	})();
+	return () => window.cancelAnimationFrame(rAF);
+};
+function useDebounceCallback(callback, delay) {
+	const handleCallback = useCallbackRef(callback);
+	const debounceTimerRef = import_react.useRef(0);
+	import_react.useEffect(() => () => window.clearTimeout(debounceTimerRef.current), []);
+	return import_react.useCallback(() => {
+		window.clearTimeout(debounceTimerRef.current);
+		debounceTimerRef.current = window.setTimeout(handleCallback, delay);
+	}, [handleCallback, delay]);
+}
+function useResizeObserver(element, onResize) {
+	const handleResize = useCallbackRef(onResize);
+	useLayoutEffect2(() => {
+		let rAF = 0;
+		if (element) {
+			const resizeObserver = new ResizeObserver(() => {
+				cancelAnimationFrame(rAF);
+				rAF = window.requestAnimationFrame(handleResize);
+			});
+			resizeObserver.observe(element);
+			return () => {
+				window.cancelAnimationFrame(rAF);
+				resizeObserver.unobserve(element);
+			};
+		}
+	}, [element, handleResize]);
+}
+var Root$3 = ScrollArea$1;
+var Viewport = ScrollAreaViewport;
+var Corner = ScrollAreaCorner;
+var ScrollArea = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Root$3, {
+	ref,
+	className: cn("relative overflow-hidden", className),
+	...props,
+	children: [
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Viewport, {
+			className: "h-full w-full rounded-[inherit]",
+			children
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollBar, {}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Corner, {})
+	]
+}));
+ScrollArea.displayName = Root$3.displayName;
+var ScrollBar = import_react.forwardRef(({ className, orientation = "vertical", ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbar, {
+	ref,
+	orientation,
+	className: cn("flex touch-none select-none transition-colors", orientation === "vertical" && "h-full w-2.5 border-l border-l-transparent p-[1px]", orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent p-[1px]", className),
+	...props,
+	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaThumb, { className: "relative flex-1 rounded-full bg-border" })
+}));
+ScrollBar.displayName = ScrollAreaScrollbar.displayName;
+function SummaryModal({ open, onOpenChange, summary }) {
+	const [copied, setCopied] = (0, import_react.useState)(false);
+	(0, import_react.useEffect)(() => {
+		if (!open) setCopied(false);
+	}, [open]);
+	const handleCopy = () => {
+		navigator.clipboard.writeText(summary.fullText);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2e3);
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
+		open,
+		onOpenChange,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
+			className: "max-w-2xl",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogTitle, {
+					className: "flex items-center gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { className: "h-5 w-5 text-primary" }), "Resumo para Reunião"]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, { children: "Resumo gerado automaticamente com base nos KPIs e alertas do mês." })] }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollArea, {
+					className: "max-h-[60vh] pr-4",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-6 py-4",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-600",
+								children: "✅ Pontos Fortes"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+								className: "space-y-2",
+								children: summary.strengths.length > 0 ? summary.strengths.map((s$2, i$2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+									className: "border-l-2 border-emerald-200 pl-3 py-1 text-sm",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "font-medium text-foreground",
+											children: s$2.name
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "mx-2 text-muted-foreground",
+											children: "•"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: s$2.value }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: cn("ml-2 rounded px-1.5 py-0.5 text-xs", s$2.change >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"),
+											children: [
+												s$2.change > 0 ? "+" : "",
+												s$2.change.toFixed(1),
+												"%"
+											]
+										})
+									]
+								}, i$2)) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-sm italic text-muted-foreground",
+									children: "Nenhum ponto forte destacado."
+								})
+							})] }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "mb-3 flex items-center gap-2 text-sm font-semibold text-rose-600",
+								children: "⚠️ Pontos Críticos"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+								className: "space-y-2",
+								children: summary.criticalPoints.length > 0 ? summary.criticalPoints.map((c, i$2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+									className: "border-l-2 border-rose-200 pl-3 py-1 text-sm",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "font-medium text-foreground",
+											children: c.name
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "mx-2 text-muted-foreground",
+											children: "•"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: c.value }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: cn("ml-2 rounded px-1.5 py-0.5 text-xs", c.change >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"),
+											children: [
+												c.change > 0 ? "+" : "",
+												c.change.toFixed(1),
+												"%"
+											]
+										})
+									]
+								}, i$2)) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+									className: "text-sm italic text-muted-foreground",
+									children: "Nenhum ponto crítico destacado."
+								})
+							})] }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "mb-3 flex items-center gap-2 text-sm font-semibold text-blue-600",
+								children: "🚀 Ações Recomendadas"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "rounded-lg bg-slate-50 p-4",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+									className: "space-y-2",
+									children: summary.actions.length > 0 ? summary.actions.map((action, i$2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+										className: "flex gap-2 text-sm text-slate-700",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "font-bold text-blue-500",
+											children: "•"
+										}), action]
+									}, i$2)) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "text-sm italic text-muted-foreground",
+										children: "Manter monitoramento constante."
+									})
+								})
+							})] })
+						]
+					})
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogFooter, {
+					className: "items-center border-t pt-4 sm:justify-between",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-xs text-muted-foreground",
+						children: "Copie o texto para colar em e-mails ou documentos."
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+						onClick: handleCopy,
+						className: "gap-2 min-w-[120px]",
+						children: [copied ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "h-4 w-4" }), copied ? "Copiado!" : "Copiar Texto"]
+					})]
+				})
+			]
+		})
+	});
+}
 function Dashboard() {
 	const { clinicId } = useParams();
 	const { calculateKPIs, calculateAlerts, getClinic } = useDataStore_default();
 	const [selectedMonth, setSelectedMonth] = (0, import_react.useState)("12");
 	const [selectedYear, setSelectedYear] = (0, import_react.useState)("2023");
+	const [isSummaryOpen, setIsSummaryOpen] = (0, import_react.useState)(false);
 	const currentMonth = parseInt(selectedMonth);
 	const currentYear = parseInt(selectedYear);
 	const kpis = (0, import_react.useMemo)(() => {
@@ -32777,6 +33987,16 @@ function Dashboard() {
 		calculateAlerts
 	]);
 	const clinic = clinicId ? getClinic(clinicId) : void 0;
+	const summary = (0, import_react.useMemo)(() => {
+		if (!clinic) return null;
+		return generateSummary(clinic.name, MONTHS[currentMonth - 1], currentYear, kpis, alerts);
+	}, [
+		clinic,
+		currentMonth,
+		currentYear,
+		kpis,
+		alerts
+	]);
 	if (!clinic) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "p-8",
 		children: "Clínica não encontrada."
@@ -32785,9 +34005,9 @@ function Dashboard() {
 		className: "flex flex-col gap-8 p-8",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6",
+				className: "flex flex-col gap-4 border-b pb-6 md:flex-row md:items-center md:justify-between",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-					className: "text-3xl font-bold tracking-tight mb-2",
+					className: "mb-2 text-3xl font-bold tracking-tight",
 					children: "Dashboard de Performance"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center gap-2 text-muted-foreground",
@@ -32804,45 +34024,53 @@ function Dashboard() {
 						] })
 					]
 				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-2",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-							value: selectedMonth,
-							onValueChange: setSelectedMonth,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectTrigger, {
-								className: "w-[140px]",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "mr-2 h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Mês" })]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: MONTHS.map((month, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-								value: (index$1 + 1).toString(),
-								children: month
-							}, index$1)) })]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-							value: selectedYear,
-							onValueChange: setSelectedYear,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
-								className: "w-[100px]",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Ano" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-								value: "2023",
-								children: "2023"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-								value: "2024",
-								children: "2024"
-							})] })]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-							variant: "outline",
-							size: "icon",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "h-4 w-4" })
-						})
-					]
+					className: "flex flex-col gap-2 sm:flex-row sm:items-center",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+						variant: "outline",
+						className: "gap-2",
+						onClick: () => setIsSummaryOpen(true),
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { className: "h-4 w-4" }), "Gerar resumo para reunião"]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+								value: selectedMonth,
+								onValueChange: setSelectedMonth,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectTrigger, {
+									className: "w-[140px]",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Calendar, { className: "mr-2 h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Mês" })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: MONTHS.map((month, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+									value: (index$1 + 1).toString(),
+									children: month
+								}, index$1)) })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+								value: selectedYear,
+								onValueChange: setSelectedYear,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, {
+									className: "w-[100px]",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Ano" })
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+									value: "2023",
+									children: "2023"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+									value: "2024",
+									children: "2024"
+								})] })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+								variant: "outline",
+								size: "icon",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "h-4 w-4" })
+							})
+						]
+					})]
 				})]
 			}),
 			alerts.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "animate-fade-in-down",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h2", {
-					className: "text-xl font-semibold mb-4 flex items-center gap-2",
+					className: "mb-4 flex items-center gap-2 text-xl font-semibold",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TriangleAlert, { className: "h-5 w-5 text-destructive" }),
 						"Alertas Críticos (",
@@ -32862,7 +34090,7 @@ function Dashboard() {
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-2 mb-4",
+				className: "mb-4 flex items-center gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 					className: "text-xl font-semibold",
 					children: "Indicadores-Chave"
@@ -32870,7 +34098,12 @@ function Dashboard() {
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 				className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
 				children: kpis.map((kpi) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KPICard, { kpi }, kpi.id))
-			})] })
+			})] }),
+			summary && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SummaryModal, {
+				open: isSummaryOpen,
+				onOpenChange: setIsSummaryOpen,
+				summary
+			})
 		]
 	});
 }
@@ -33496,291 +34729,16 @@ Separator$2.displayName = NAME;
 function isValidOrientation(orientation) {
 	return ORIENTATIONS.includes(orientation);
 }
-var Root$3 = Separator$2;
-var Separator = import_react.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$3, {
+var Root$2 = Separator$2;
+var Separator = import_react.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$2, {
 	ref,
 	decorative,
 	orientation,
 	className: cn("shrink-0 bg-border", orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]", className),
 	...props
 }));
-Separator.displayName = Root$3.displayName;
-var DIALOG_NAME = "Dialog";
-var [createDialogContext, createDialogScope] = createContextScope$1(DIALOG_NAME);
-var [DialogProvider, useDialogContext] = createDialogContext(DIALOG_NAME);
-var Dialog = (props) => {
-	const { __scopeDialog, children, open: openProp, defaultOpen, onOpenChange, modal = true } = props;
-	const triggerRef = import_react.useRef(null);
-	const contentRef = import_react.useRef(null);
-	const [open, setOpen] = useControllableState({
-		prop: openProp,
-		defaultProp: defaultOpen ?? false,
-		onChange: onOpenChange,
-		caller: DIALOG_NAME
-	});
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogProvider, {
-		scope: __scopeDialog,
-		triggerRef,
-		contentRef,
-		contentId: useId(),
-		titleId: useId(),
-		descriptionId: useId(),
-		open,
-		onOpenChange: setOpen,
-		onOpenToggle: import_react.useCallback(() => setOpen((prevOpen) => !prevOpen), [setOpen]),
-		modal,
-		children
-	});
-};
-Dialog.displayName = DIALOG_NAME;
-var TRIGGER_NAME$1 = "DialogTrigger";
-var DialogTrigger = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, ...triggerProps } = props;
-	const context = useDialogContext(TRIGGER_NAME$1, __scopeDialog);
-	const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
-		type: "button",
-		"aria-haspopup": "dialog",
-		"aria-expanded": context.open,
-		"aria-controls": context.contentId,
-		"data-state": getState(context.open),
-		...triggerProps,
-		ref: composedTriggerRef,
-		onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
-	});
-});
-DialogTrigger.displayName = TRIGGER_NAME$1;
-var PORTAL_NAME$2 = "DialogPortal";
-var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, { forceMount: void 0 });
-var DialogPortal = (props) => {
-	const { __scopeDialog, forceMount, children, container } = props;
-	const context = useDialogContext(PORTAL_NAME$2, __scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PortalProvider$1, {
-		scope: __scopeDialog,
-		forceMount,
-		children: import_react.Children.map(children, (child) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
-			present: forceMount || context.open,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Portal, {
-				asChild: true,
-				container,
-				children: child
-			})
-		}))
-	});
-};
-DialogPortal.displayName = PORTAL_NAME$2;
-var OVERLAY_NAME = "DialogOverlay";
-var DialogOverlay = import_react.forwardRef((props, forwardedRef) => {
-	const portalContext = usePortalContext$1(OVERLAY_NAME, props.__scopeDialog);
-	const { forceMount = portalContext.forceMount, ...overlayProps } = props;
-	const context = useDialogContext(OVERLAY_NAME, props.__scopeDialog);
-	return context.modal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
-		present: forceMount || context.open,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlayImpl, {
-			...overlayProps,
-			ref: forwardedRef
-		})
-	}) : null;
-});
-DialogOverlay.displayName = OVERLAY_NAME;
-var Slot$2 = /* @__PURE__ */ createSlot("DialogOverlay.RemoveScroll");
-var DialogOverlayImpl = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, ...overlayProps } = props;
-	const context = useDialogContext(OVERLAY_NAME, __scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Combination_default, {
-		as: Slot$2,
-		allowPinchZoom: true,
-		shards: [context.contentRef],
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
-			"data-state": getState(context.open),
-			...overlayProps,
-			ref: forwardedRef,
-			style: {
-				pointerEvents: "auto",
-				...overlayProps.style
-			}
-		})
-	});
-});
-var CONTENT_NAME$2 = "DialogContent";
-var DialogContent = import_react.forwardRef((props, forwardedRef) => {
-	const portalContext = usePortalContext$1(CONTENT_NAME$2, props.__scopeDialog);
-	const { forceMount = portalContext.forceMount, ...contentProps } = props;
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
-		present: forceMount || context.open,
-		children: context.modal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentModal, {
-			...contentProps,
-			ref: forwardedRef
-		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentNonModal, {
-			...contentProps,
-			ref: forwardedRef
-		})
-	});
-});
-DialogContent.displayName = CONTENT_NAME$2;
-var DialogContentModal = import_react.forwardRef((props, forwardedRef) => {
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
-	const contentRef = import_react.useRef(null);
-	const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
-	import_react.useEffect(() => {
-		const content = contentRef.current;
-		if (content) return hideOthers(content);
-	}, []);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentImpl, {
-		...props,
-		ref: composedRefs,
-		trapFocus: context.open,
-		disableOutsidePointerEvents: true,
-		onCloseAutoFocus: composeEventHandlers(props.onCloseAutoFocus, (event) => {
-			event.preventDefault();
-			context.triggerRef.current?.focus();
-		}),
-		onPointerDownOutside: composeEventHandlers(props.onPointerDownOutside, (event) => {
-			const originalEvent = event.detail.originalEvent;
-			const ctrlLeftClick = originalEvent.button === 0 && originalEvent.ctrlKey === true;
-			if (originalEvent.button === 2 || ctrlLeftClick) event.preventDefault();
-		}),
-		onFocusOutside: composeEventHandlers(props.onFocusOutside, (event) => event.preventDefault())
-	});
-});
-var DialogContentNonModal = import_react.forwardRef((props, forwardedRef) => {
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
-	const hasInteractedOutsideRef = import_react.useRef(false);
-	const hasPointerDownOutsideRef = import_react.useRef(false);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentImpl, {
-		...props,
-		ref: forwardedRef,
-		trapFocus: false,
-		disableOutsidePointerEvents: false,
-		onCloseAutoFocus: (event) => {
-			props.onCloseAutoFocus?.(event);
-			if (!event.defaultPrevented) {
-				if (!hasInteractedOutsideRef.current) context.triggerRef.current?.focus();
-				event.preventDefault();
-			}
-			hasInteractedOutsideRef.current = false;
-			hasPointerDownOutsideRef.current = false;
-		},
-		onInteractOutside: (event) => {
-			props.onInteractOutside?.(event);
-			if (!event.defaultPrevented) {
-				hasInteractedOutsideRef.current = true;
-				if (event.detail.originalEvent.type === "pointerdown") hasPointerDownOutsideRef.current = true;
-			}
-			const target = event.target;
-			if (context.triggerRef.current?.contains(target)) event.preventDefault();
-			if (event.detail.originalEvent.type === "focusin" && hasPointerDownOutsideRef.current) event.preventDefault();
-		}
-	});
-});
-var DialogContentImpl = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-	const context = useDialogContext(CONTENT_NAME$2, __scopeDialog);
-	const contentRef = import_react.useRef(null);
-	const composedRefs = useComposedRefs(forwardedRef, contentRef);
-	useFocusGuards();
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FocusScope, {
-		asChild: true,
-		loop: true,
-		trapped: trapFocus,
-		onMountAutoFocus: onOpenAutoFocus,
-		onUnmountAutoFocus: onCloseAutoFocus,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DismissableLayer, {
-			role: "dialog",
-			id: context.contentId,
-			"aria-describedby": context.descriptionId,
-			"aria-labelledby": context.titleId,
-			"data-state": getState(context.open),
-			...contentProps,
-			ref: composedRefs,
-			onDismiss: () => context.onOpenChange(false)
-		})
-	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TitleWarning, { titleId: context.titleId }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DescriptionWarning, {
-		contentRef,
-		descriptionId: context.descriptionId
-	})] })] });
-});
-var TITLE_NAME = "DialogTitle";
-var DialogTitle = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, ...titleProps } = props;
-	const context = useDialogContext(TITLE_NAME, __scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.h2, {
-		id: context.titleId,
-		...titleProps,
-		ref: forwardedRef
-	});
-});
-DialogTitle.displayName = TITLE_NAME;
-var DESCRIPTION_NAME = "DialogDescription";
-var DialogDescription = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, ...descriptionProps } = props;
-	const context = useDialogContext(DESCRIPTION_NAME, __scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.p, {
-		id: context.descriptionId,
-		...descriptionProps,
-		ref: forwardedRef
-	});
-});
-DialogDescription.displayName = DESCRIPTION_NAME;
-var CLOSE_NAME = "DialogClose";
-var DialogClose = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeDialog, ...closeProps } = props;
-	const context = useDialogContext(CLOSE_NAME, __scopeDialog);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
-		type: "button",
-		...closeProps,
-		ref: forwardedRef,
-		onClick: composeEventHandlers(props.onClick, () => context.onOpenChange(false))
-	});
-});
-DialogClose.displayName = CLOSE_NAME;
-function getState(open) {
-	return open ? "open" : "closed";
-}
-var TITLE_WARNING_NAME = "DialogTitleWarning";
-var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
-	contentName: CONTENT_NAME$2,
-	titleName: TITLE_NAME,
-	docsSlug: "dialog"
-});
-var TitleWarning = ({ titleId }) => {
-	const titleWarningContext = useWarningContext(TITLE_WARNING_NAME);
-	const MESSAGE = `\`${titleWarningContext.contentName}\` requires a \`${titleWarningContext.titleName}\` for the component to be accessible for screen reader users.
-
-If you want to hide the \`${titleWarningContext.titleName}\`, you can wrap it with our VisuallyHidden component.
-
-For more information, see https://radix-ui.com/primitives/docs/components/${titleWarningContext.docsSlug}`;
-	import_react.useEffect(() => {
-		if (titleId) {
-			if (!document.getElementById(titleId)) console.error(MESSAGE);
-		}
-	}, [MESSAGE, titleId]);
-	return null;
-};
-var DESCRIPTION_WARNING_NAME = "DialogDescriptionWarning";
-var DescriptionWarning = ({ contentRef, descriptionId }) => {
-	const MESSAGE = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${useWarningContext(DESCRIPTION_WARNING_NAME).contentName}}.`;
-	import_react.useEffect(() => {
-		const describedById = contentRef.current?.getAttribute("aria-describedby");
-		if (descriptionId && describedById) {
-			if (!document.getElementById(descriptionId)) console.warn(MESSAGE);
-		}
-	}, [
-		MESSAGE,
-		contentRef,
-		descriptionId
-	]);
-	return null;
-};
-var Root$2 = Dialog;
-var Portal$2 = DialogPortal;
-var Overlay = DialogOverlay;
-var Content = DialogContent;
-var Title = DialogTitle;
-var Description = DialogDescription;
-var Close = DialogClose;
-var Sheet = Root$2;
+Separator.displayName = Root$2.displayName;
+var Sheet = Root$4;
 var SheetPortal = Portal$2;
 var SheetOverlay = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Overlay, {
 	className: cn("fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className),
@@ -35547,7 +36505,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 				var cachedValue = getSnapshot();
 				objectIs(value, cachedValue) || (console.error("The result of getSnapshot should be cached to avoid an infinite loop"), didWarnUncachedGetSnapshot = !0);
 			}
-			cachedValue = useState$7({ inst: {
+			cachedValue = useState$8({ inst: {
 				value,
 				getSnapshot
 			} });
@@ -35561,7 +36519,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 				value,
 				getSnapshot
 			]);
-			useEffect$2(function() {
+			useEffect$3(function() {
 				checkIfSnapshotChanged(inst) && forceUpdate({ inst });
 				return subscribe$1(function() {
 					checkIfSnapshotChanged(inst) && forceUpdate({ inst });
@@ -35584,7 +36542,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 			return getSnapshot();
 		}
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$7 = React$5.useState, useEffect$2 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$8 = React$5.useState, useEffect$3 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
 		exports.useSyncExternalStore = void 0 !== React$5.useSyncExternalStore ? React$5.useSyncExternalStore : shim;
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
@@ -35982,4 +36940,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-B52_DuTB.js.map
+//# sourceMappingURL=index-DRQc9NaA.js.map
