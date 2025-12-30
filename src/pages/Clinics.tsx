@@ -83,13 +83,19 @@ export default function Clinics() {
 
           const alertCount = kpis.filter((k) => k.status === 'danger').length
 
-          // Visual status based on revenue goal %
-          const statusColor =
-            revenuePercent >= 100
-              ? 'bg-emerald-500'
-              : revenuePercent >= 90
-                ? 'bg-amber-400'
-                : 'bg-rose-500'
+          // Visual status based on revenue KPI Status from calculation engine
+          const revenueStatus = revenueKPI?.status || 'danger'
+          const statusColor = {
+            success: 'bg-emerald-500',
+            warning: 'bg-amber-400',
+            danger: 'bg-rose-500',
+          }[revenueStatus]
+
+          const statusTextColor = {
+            success: 'text-emerald-600',
+            warning: 'text-amber-500',
+            danger: 'text-rose-600',
+          }[revenueStatus]
 
           return (
             <Card
@@ -136,15 +142,7 @@ export default function Clinics() {
                     <span className="text-muted-foreground">
                       Faturamento vs Meta
                     </span>
-                    <span
-                      className={`font-bold ${
-                        revenuePercent >= 100
-                          ? 'text-emerald-600'
-                          : revenuePercent >= 90
-                            ? 'text-amber-500'
-                            : 'text-rose-600'
-                      }`}
-                    >
+                    <span className={`font-bold ${statusTextColor}`}>
                       {revenuePercent.toFixed(1)}%
                     </span>
                   </div>

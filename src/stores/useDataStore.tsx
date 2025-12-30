@@ -10,19 +10,26 @@ const MOCK_CLINICS: Clinic[] = [
     active: true,
     lastUpdate: 'Outubro 2023',
     logoUrl: 'https://img.usecurling.com/i?q=tooth&color=azure',
-    targetRevenue: 150000,
-    targetAlignersRange: { min: 10, max: 15 },
-    targetAvgTicket: 2500,
-    targetAcceptanceRate: 60,
-    targetOccupancyRate: 85,
-    targetNPS: 75,
-    targetIntegrationRate: 80,
+    targetRevenue: 83500,
+    targetAlignersRange: { min: 11, max: 12 },
+    targetAvgTicket: 1200,
+    targetAcceptanceRate: 65,
+    targetOccupancyRate: 70,
+    targetNPS: 80,
+    targetIntegrationRate: 85,
     targetAgendaDistribution: {
-      operational: 40,
+      operational: 30,
       planning: 20,
-      sales: 20,
+      sales: 30,
       leadership: 20,
     },
+    targetAttendanceRate: 80,
+    targetFollowUpRate: 100,
+    targetWaitTime: 10,
+    targetComplaints: 2,
+    targetLeadsRange: { min: 80, max: 100 },
+    targetRevenuePerCabinet: 25000,
+    targetPlansPresented: { adults: 15, kids: 20 },
   },
   {
     id: 'clinic-2',
@@ -31,26 +38,33 @@ const MOCK_CLINICS: Clinic[] = [
     active: true,
     lastUpdate: 'Setembro 2023',
     logoUrl: 'https://img.usecurling.com/i?q=heart&color=rose',
-    targetRevenue: 200000,
-    targetAlignersRange: { min: 20, max: 25 },
-    targetAvgTicket: 1800,
-    targetAcceptanceRate: 55,
-    targetOccupancyRate: 80,
-    targetNPS: 80,
-    targetIntegrationRate: 75,
+    targetRevenue: 100000, // Custom override
+    targetAlignersRange: { min: 15, max: 20 },
+    targetAvgTicket: 1500,
+    targetAcceptanceRate: 70,
+    targetOccupancyRate: 75,
+    targetNPS: 85,
+    targetIntegrationRate: 85,
     targetAgendaDistribution: {
-      operational: 50,
+      operational: 40,
       planning: 10,
       sales: 30,
-      leadership: 10,
+      leadership: 20,
     },
+    targetAttendanceRate: 85,
+    targetFollowUpRate: 95,
+    targetWaitTime: 8,
+    targetComplaints: 1,
+    targetLeadsRange: { min: 100, max: 120 },
+    targetRevenuePerCabinet: 30000,
+    targetPlansPresented: { adults: 20, kids: 25 },
   },
 ]
 
 // Helper to generate random data
 const generateMockData = (clinicId: string, year: number): MonthlyData[] => {
   return Array.from({ length: 12 }, (_, i) => {
-    const revenueTotal = Math.floor(Math.random() * 100000) + 100000
+    const revenueTotal = Math.floor(Math.random() * 50000) + 70000
     const revenueAligners = revenueTotal * 0.4
     const revenuePediatrics = revenueTotal * 0.2
     const revenueDentistry = revenueTotal * 0.3
@@ -62,21 +76,25 @@ const generateMockData = (clinicId: string, year: number): MonthlyData[] => {
         name: 'Gabinete 1',
         revenue: revenueTotal * 0.6,
         hoursAvailable: 160,
-        hoursOccupied: Math.floor(Math.random() * 40) + 100,
+        hoursOccupied: Math.floor(Math.random() * 60) + 90,
       },
       {
         id: 'gab-2',
         name: 'Gabinete 2',
         revenue: revenueTotal * 0.4,
         hoursAvailable: 160,
-        hoursOccupied: Math.floor(Math.random() * 40) + 80,
+        hoursOccupied: Math.floor(Math.random() * 50) + 80,
       },
     ]
 
-    const plansAccepted = Math.floor(Math.random() * 20) + 20
-    const plansPresentedAdults = Math.floor(Math.random() * 30) + 20
-    const plansPresentedKids = Math.floor(Math.random() * 10) + 5
-    const revenueAcceptedPlans = plansAccepted * (Math.random() * 1000 + 1500)
+    const plansAccepted = Math.floor(Math.random() * 15) + 15
+    const plansPresentedAdults = Math.floor(Math.random() * 20) + 10
+    const plansPresentedKids = Math.floor(Math.random() * 15) + 10
+    const revenueAcceptedPlans = plansAccepted * (Math.random() * 800 + 1000)
+
+    const plansNotAccepted =
+      plansPresentedAdults + plansPresentedKids - plansAccepted
+    const plansNotAcceptedFollowUp = Math.floor(plansNotAccepted * 0.8)
 
     return {
       id: `${clinicId}-${year}-${i + 1}`,
@@ -95,26 +113,26 @@ const generateMockData = (clinicId: string, year: number): MonthlyData[] => {
       plansPresentedAdults,
       plansPresentedKids,
       plansAccepted,
-      alignersStarted: Math.floor(Math.random() * 10) + 5,
-      appointmentsIntegrated: Math.floor(Math.random() * 100) + 50,
+      alignersStarted: Math.floor(Math.random() * 8) + 8,
+      appointmentsIntegrated: Math.floor(Math.random() * 50) + 140,
       appointmentsTotal: 200,
-      leads: Math.floor(Math.random() * 50) + 20,
-      firstConsultationsScheduled: 40,
-      firstConsultationsAttended: 35,
-      plansNotAccepted: 15,
-      plansNotAcceptedFollowUp: 10,
+      leads: Math.floor(Math.random() * 40) + 60,
+      firstConsultationsScheduled: 50,
+      firstConsultationsAttended: Math.floor(Math.random() * 10) + 35,
+      plansNotAccepted: plansNotAccepted > 0 ? plansNotAccepted : 0,
+      plansNotAcceptedFollowUp,
       // Operational
-      avgWaitTime: Math.floor(Math.random() * 15) + 5,
+      avgWaitTime: Math.floor(Math.random() * 15) + 2,
       agendaOwner: {
         operational: 80,
         planning: 20,
         sales: 40,
         leadership: 20,
       },
-      nps: Math.floor(Math.random() * 20) + 70,
-      referralsSpontaneous: Math.floor(Math.random() * 10) + 5,
-      referralsBase2025: 10,
-      complaints: Math.floor(Math.random() * 3),
+      nps: Math.floor(Math.random() * 20) + 75,
+      referralsSpontaneous: Math.floor(Math.random() * 5) + 5,
+      referralsBase2025: 8,
+      complaints: Math.floor(Math.random() * 4),
       // Legacy
       expenses: revenueTotal * 0.6,
       marketingCost: 5000,
@@ -171,13 +189,6 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
-  const getYTDRevenue = (clinicId: string, month: number, year: number) => {
-    const data = monthlyData[clinicId] || []
-    return data
-      .filter((d) => d.year === year && d.month <= month)
-      .reduce((sum, d) => sum + d.revenueTotal, 0)
-  }
-
   const calculateKPIs = (
     clinicId: string,
     month: number,
@@ -193,123 +204,43 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!current || !clinic) return []
 
-    const kpis: KPI[] = []
+    // Determine status based on traffic light system
+    // Green: >= 100% target. Yellow: 90-99% target. Red: < 90% target.
+    // Inverse (Wait/Complaints): Green if <= target. Red if > target.
+    const getStatus = (
+      value: number,
+      target: number,
+      type: 'standard' | 'inverse' = 'standard',
+    ): 'success' | 'warning' | 'danger' => {
+      if (type === 'inverse') {
+        return value <= target ? 'success' : 'danger'
+      }
+      const ratio = target > 0 ? value / target : 0
+      if (ratio >= 1) return 'success'
+      if (ratio >= 0.9) return 'warning'
+      return 'danger'
+    }
 
-    // Helper for percentage change
     const calcChange = (curr: number, prev: number | undefined) => {
       if (!prev || prev === 0) return 0
       return ((curr - prev) / prev) * 100
     }
 
-    // 1. Monthly Revenue
+    const kpis: KPI[] = []
+
+    // 1. Faturamento Mensal
     kpis.push({
       id: 'revenue_monthly',
       name: 'Faturamento Mensal',
       value: current.revenueTotal,
       unit: 'currency',
       change: calcChange(current.revenueTotal, previous?.revenueTotal),
-      status:
-        current.revenueTotal >= clinic.targetRevenue
-          ? 'success'
-          : current.revenueTotal >= clinic.targetRevenue * 0.9
-            ? 'warning'
-            : 'danger',
+      status: getStatus(current.revenueTotal, clinic.targetRevenue),
       target: clinic.targetRevenue,
     })
 
-    // 2. YTD Revenue
-    const ytdRevenue = getYTDRevenue(clinicId, month, year)
-    // No previous comparison for YTD in this context usually, or vs last year YTD
-    kpis.push({
-      id: 'revenue_ytd',
-      name: 'Faturamento Anual (YTD)',
-      value: ytdRevenue,
-      unit: 'currency',
-      change: 0,
-      status: 'success', // Logic could be complex based on annual target
-    })
-
-    // 3. Goal vs Actual Comparison
-    const goalVsActual =
-      clinic.targetRevenue > 0
-        ? (current.revenueTotal / clinic.targetRevenue) * 100
-        : 0
-    kpis.push({
-      id: 'goal_vs_actual',
-      name: 'Meta vs Realizado',
-      value: goalVsActual,
-      unit: 'percent',
-      change: 0,
-      status:
-        goalVsActual >= 100
-          ? 'success'
-          : goalVsActual >= 90
-            ? 'warning'
-            : 'danger',
-    })
-
-    // 4. Number of Aligner Starts
-    kpis.push({
-      id: 'aligner_starts',
-      name: 'Inícios Alinhadores',
-      value: current.alignersStarted,
-      unit: 'number',
-      change: current.alignersStarted - (previous?.alignersStarted || 0),
-      status:
-        current.alignersStarted >= clinic.targetAlignersRange.min
-          ? 'success'
-          : 'danger',
-      target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`,
-    })
-
-    // 5. Treatment Plans Presented
-    const plansPresented =
-      current.plansPresentedAdults + current.plansPresentedKids
-    const prevPresented =
-      (previous?.plansPresentedAdults || 0) +
-      (previous?.plansPresentedKids || 0)
-    kpis.push({
-      id: 'plans_presented',
-      name: 'Planos Apresentados',
-      value: plansPresented,
-      unit: 'number',
-      change: plansPresented - prevPresented,
-      status: 'success', // No explicit target in clinic model
-    })
-
-    // 6. Treatment Plans Accepted
-    kpis.push({
-      id: 'plans_accepted',
-      name: 'Planos Aceitos',
-      value: current.plansAccepted,
-      unit: 'number',
-      change: current.plansAccepted - (previous?.plansAccepted || 0),
-      status: 'success',
-    })
-
-    // 7. Acceptance Rate
-    const acceptanceRate =
-      plansPresented > 0 ? (current.plansAccepted / plansPresented) * 100 : 0
-    const prevAcceptanceRate =
-      prevPresented > 0
-        ? ((previous?.plansAccepted || 0) / prevPresented) * 100
-        : 0
-    kpis.push({
-      id: 'acceptance_rate',
-      name: 'Taxa de Aceitação',
-      value: acceptanceRate,
-      unit: 'percent',
-      change: acceptanceRate - prevAcceptanceRate,
-      status:
-        acceptanceRate >= clinic.targetAcceptanceRate
-          ? 'success'
-          : acceptanceRate >= clinic.targetAcceptanceRate * 0.9
-            ? 'warning'
-            : 'danger',
-      target: clinic.targetAcceptanceRate,
-    })
-
-    // 8. Average Ticket
+    // 2. Ticket Médio
+    // revenueAcceptedPlans / plansAccepted
     const avgTicket =
       current.plansAccepted > 0
         ? current.revenueAcceptedPlans / current.plansAccepted
@@ -324,16 +255,37 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       value: avgTicket,
       unit: 'currency',
       change: calcChange(avgTicket, prevAvgTicket),
-      status:
-        avgTicket >= clinic.targetAvgTicket
-          ? 'success'
-          : avgTicket >= clinic.targetAvgTicket * 0.9
-            ? 'warning'
-            : 'danger',
+      status: getStatus(avgTicket, clinic.targetAvgTicket),
       target: clinic.targetAvgTicket,
     })
 
-    // 9. Occupancy Rate
+    // 3. Taxa de Aceitação
+    // plansAccepted / (plansPresentedAdults + plansPresentedKids)
+    const totalPresented =
+      current.plansPresentedAdults + current.plansPresentedKids
+    const prevPresented =
+      (previous?.plansPresentedAdults || 0) +
+      (previous?.plansPresentedKids || 0)
+
+    const acceptanceRate =
+      totalPresented > 0 ? (current.plansAccepted / totalPresented) * 100 : 0
+    const prevAcceptanceRate =
+      prevPresented > 0
+        ? ((previous?.plansAccepted || 0) / prevPresented) * 100
+        : 0
+
+    kpis.push({
+      id: 'acceptance_rate',
+      name: 'Taxa de Aceitação',
+      value: acceptanceRate,
+      unit: 'percent',
+      change: acceptanceRate - prevAcceptanceRate,
+      status: getStatus(acceptanceRate, clinic.targetAcceptanceRate),
+      target: clinic.targetAcceptanceRate,
+    })
+
+    // 4. Taxa de Ocupação
+    // hoursOccupied / hoursAvailable
     const totalAvail = current.cabinets.reduce(
       (sum, c) => sum + c.hoursAvailable,
       0,
@@ -352,29 +304,131 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
             previous!.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0)) *
           100
         : 0
+
     kpis.push({
       id: 'occupancy_rate',
       name: 'Taxa de Ocupação',
       value: occupancyRate,
       unit: 'percent',
       change: occupancyRate - prevOccupancyRate,
-      status:
-        occupancyRate >= clinic.targetOccupancyRate
-          ? 'success'
-          : occupancyRate >= clinic.targetOccupancyRate * 0.9
-            ? 'warning'
-            : 'danger',
-      target: clinic.targetOccupancyRate,
+      status: getStatus(occupancyRate, clinic.targetOccupancyRate),
+      target: `${clinic.targetOccupancyRate}%`,
     })
 
-    // 10. Monthly Leads
+    // 5. Taxa de Comparecimento
+    // firstConsultationsAttended / firstConsultationsScheduled
+    const attendanceRate =
+      current.firstConsultationsScheduled > 0
+        ? (current.firstConsultationsAttended /
+            current.firstConsultationsScheduled) *
+          100
+        : 0
+    const prevAttendanceRate =
+      (previous?.firstConsultationsScheduled || 0) > 0
+        ? ((previous?.firstConsultationsAttended || 0) /
+            previous!.firstConsultationsScheduled) *
+          100
+        : 0
+
+    kpis.push({
+      id: 'attendance_rate',
+      name: 'Taxa de Comparecimento',
+      value: attendanceRate,
+      unit: 'percent',
+      change: attendanceRate - prevAttendanceRate,
+      status: getStatus(attendanceRate, clinic.targetAttendanceRate),
+      target: clinic.targetAttendanceRate,
+    })
+
+    // 6. Taxa de Follow-up
+    // plansNotAcceptedFollowUp / plansNotAccepted
+    const followUpRate =
+      current.plansNotAccepted > 0
+        ? (current.plansNotAcceptedFollowUp / current.plansNotAccepted) * 100
+        : 100 // Assume 100% if no rejections
+    const prevFollowUpRate =
+      (previous?.plansNotAccepted || 0) > 0
+        ? ((previous?.plansNotAcceptedFollowUp || 0) /
+            previous!.plansNotAccepted) *
+          100
+        : 100
+
+    kpis.push({
+      id: 'followup_rate',
+      name: 'Taxa de Follow-up',
+      value: followUpRate,
+      unit: 'percent',
+      change: followUpRate - prevFollowUpRate,
+      status: getStatus(followUpRate, clinic.targetFollowUpRate),
+      target: clinic.targetFollowUpRate,
+    })
+
+    // 7. Percentual de Casos Integrados
+    // appointmentsIntegrated / appointmentsTotal
+    const integratedRate =
+      current.appointmentsTotal > 0
+        ? (current.appointmentsIntegrated / current.appointmentsTotal) * 100
+        : 0
+    const prevIntegratedRate =
+      (previous?.appointmentsTotal || 0) > 0
+        ? ((previous?.appointmentsIntegrated || 0) /
+            previous!.appointmentsTotal) *
+          100
+        : 0
+
+    kpis.push({
+      id: 'integrated_cases',
+      name: 'Casos Integrados',
+      value: integratedRate,
+      unit: 'percent',
+      change: integratedRate - prevIntegratedRate,
+      status: getStatus(integratedRate, clinic.targetIntegrationRate),
+      target: clinic.targetIntegrationRate,
+    })
+
+    // 8. Faturamento por Gabinete
+    const revenuePerCabinet =
+      current.cabinets.length > 0
+        ? current.revenueTotal / current.cabinets.length
+        : 0
+    const prevRevenuePerCabinet =
+      (previous?.cabinets.length || 0) > 0
+        ? (previous?.revenueTotal || 0) / previous!.cabinets.length
+        : 0
+
+    kpis.push({
+      id: 'revenue_per_cabinet',
+      name: 'Fat. por Gabinete',
+      value: revenuePerCabinet,
+      unit: 'currency',
+      change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
+      status: getStatus(revenuePerCabinet, clinic.targetRevenuePerCabinet),
+      target: clinic.targetRevenuePerCabinet,
+    })
+
+    // 9. Inícios Alinhadores
+    kpis.push({
+      id: 'aligner_starts',
+      name: 'Inícios Alinhadores',
+      value: current.alignersStarted,
+      unit: 'number',
+      change: current.alignersStarted - (previous?.alignersStarted || 0),
+      status: getStatus(
+        current.alignersStarted,
+        clinic.targetAlignersRange.min,
+      ),
+      target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`,
+    })
+
+    // 10. Leads Mensais
     kpis.push({
       id: 'leads',
       name: 'Leads Mensais',
       value: current.leads,
       unit: 'number',
       change: current.leads - (previous?.leads || 0),
-      status: 'success', // No explicit target
+      status: getStatus(current.leads, clinic.targetLeadsRange.min),
+      target: `${clinic.targetLeadsRange.min}-${clinic.targetLeadsRange.max}`,
     })
 
     // 11. NPS
@@ -384,32 +438,31 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       value: current.nps,
       unit: 'number',
       change: current.nps - (previous?.nps || 0),
-      status:
-        current.nps >= clinic.targetNPS
-          ? 'success'
-          : current.nps >= clinic.targetNPS * 0.9
-            ? 'warning'
-            : 'danger',
+      status: getStatus(current.nps, clinic.targetNPS),
       target: clinic.targetNPS,
     })
 
-    // 12. Revenue per Treatment Room
-    const revenuePerCabinet =
-      current.cabinets.length > 0
-        ? current.revenueTotal / current.cabinets.length
-        : 0
-    const prevRevenuePerCabinet =
-      (previous?.cabinets.length || 0) > 0
-        ? (previous?.revenueTotal || 0) / previous!.cabinets.length
-        : 0
+    // 12. Tempo de Espera (Inverse)
     kpis.push({
-      id: 'revenue_per_cabinet',
-      name: 'Faturamento por Gabinete',
-      value: revenuePerCabinet,
-      unit: 'currency',
-      change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
-      status: 'success', // Target would be targetRevenue / cabinets
+      id: 'wait_time',
+      name: 'Tempo de Espera',
+      value: current.avgWaitTime,
+      unit: 'time', // treat as minutes
+      change: current.avgWaitTime - (previous?.avgWaitTime || 0),
+      status: getStatus(current.avgWaitTime, clinic.targetWaitTime, 'inverse'),
+      target: `< ${clinic.targetWaitTime} min`,
     })
+
+    // Bonus: Complaints (Inverse) - If needed as 13th or replacement
+    // kpis.push({
+    //   id: 'complaints',
+    //   name: 'Reclamações',
+    //   value: current.complaints,
+    //   unit: 'number',
+    //   change: current.complaints - (previous?.complaints || 0),
+    //   status: getStatus(current.complaints, clinic.targetComplaints, 'inverse'),
+    //   target: clinic.targetComplaints
+    // })
 
     return kpis
   }

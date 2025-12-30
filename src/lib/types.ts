@@ -16,14 +16,23 @@ export interface Clinic {
   lastUpdate?: string
 
   // Targets (Metas)
-  targetRevenue: number
-  targetAlignersRange: { min: number; max: number }
-  targetAvgTicket: number
-  targetAcceptanceRate: number // 0-100
-  targetOccupancyRate: number // 0-100
-  targetNPS: number
-  targetIntegrationRate: number // 0-100
+  targetRevenue: number // Default 83500
+  targetAlignersRange: { min: number; max: number } // Default 11-12
+  targetAvgTicket: number // Default 1200
+  targetAcceptanceRate: number // Default 65
+  targetOccupancyRate: number // Default 70-80 (use min 70 for calculation threshold)
+  targetNPS: number // Default 80
+  targetIntegrationRate: number // Default 85
   targetAgendaDistribution: AgendaDistribution
+
+  // New Targets defined in User Story
+  targetAttendanceRate: number // Default 80
+  targetFollowUpRate: number // Default 100
+  targetWaitTime: number // Default 10 (Inverse)
+  targetComplaints: number // Default 2 (Inverse)
+  targetLeadsRange: { min: number; max: number } // Default 80-100
+  targetRevenuePerCabinet: number // Default 25000
+  targetPlansPresented: { adults: number; kids: number } // Default 15, 20
 }
 
 export interface CabinetData {

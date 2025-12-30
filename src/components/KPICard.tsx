@@ -1,7 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { KPI } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { ArrowDown, ArrowUp, Minus, Target } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  Minus,
+  Target,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+} from 'lucide-react'
 
 interface KPICardProps {
   kpi: KPI
@@ -11,11 +19,39 @@ export function KPICard({ kpi }: KPICardProps) {
   const isPositive = kpi.change > 0
   const isNegative = kpi.change < 0
 
+  // Status Icons mapping
+  const StatusIcon = {
+    success: CheckCircle,
+    warning: AlertCircle,
+    danger: XCircle,
+  }[kpi.status]
+
+  // Status Color mapping for Text
+  const statusColorText = {
+    success: 'text-emerald-600',
+    warning: 'text-amber-500',
+    danger: 'text-rose-600',
+  }[kpi.status]
+
+  // Status Color mapping for Border/Icon
+  const statusColorClass = {
+    success: 'text-emerald-500',
+    warning: 'text-amber-400',
+    danger: 'text-rose-500',
+  }[kpi.status]
+
   const formatValue = (val: number, unit: string) => {
     if (unit === 'currency') {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
-        currency: 'BRL',
+        currency: 'BRL', // Using BRL as per mocked locale but user story mentions € (Euro). Keeping BRL for now as per previous context or I can switch to EUR if needed.
+        // The user story mentions "83.500 €". I should probably switch to EUR or BRL based on locale.
+        // However, the project context shows BRL usage. I will stick to BRL format for consistency with existing code unless explicitly forced to change currency symbol globally.
+        // User story says "83.500 €". I'll use EUR symbol for display if possible, or just standard currency formatting.
+        // Let's stick to 'pt-BR' formatting but maybe 'EUR' currency if the user story implies European context.
+        // Given "Painel KPI de Clínicas" and Portuguese, BRL is common, but € implies Portugal/Europe.
+        // I will use 'EUR' to align with the User Story "83.500 €".
+        currency: 'EUR',
         maximumFractionDigits: 0,
       }).format(val)
     }
@@ -25,28 +61,33 @@ export function KPICard({ kpi }: KPICardProps) {
     if (unit === 'ratio') {
       return `${val.toFixed(2)}x`
     }
+    if (unit === 'time') {
+      return `${val} min`
+    }
     return val.toLocaleString('pt-BR')
   }
 
   return (
     <Card
-      className="overflow-hidden border-t-4 data-[status=success]:border-t-emerald-500 data-[status=warning]:border-t-amber-400 data-[status=danger]:border-t-rose-500 shadow-sm hover:shadow-md transition-shadow relative"
-      data-status={kpi.status}
+      className={cn(
+        'overflow-hidden border-t-4 shadow-sm hover:shadow-md transition-shadow relative',
+        {
+          'border-t-emerald-500': kpi.status === 'success',
+          'border-t-amber-400': kpi.status === 'warning',
+          'border-t-rose-500': kpi.status === 'danger',
+        },
+      )}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-medium text-muted-foreground truncate pr-6">
           {kpi.name}
         </CardTitle>
-        <div
-          className={cn('h-2 w-2 rounded-full', {
-            'bg-emerald-500': kpi.status === 'success',
-            'bg-amber-400': kpi.status === 'warning',
-            'bg-rose-500': kpi.status === 'danger',
-          })}
-        />
+        <StatusIcon className={cn('h-5 w-5', statusColorClass)} />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold tracking-tight">
+        <div
+          className={cn('text-2xl font-bold tracking-tight', statusColorText)}
+        >
           {formatValue(kpi.value, kpi.unit)}
         </div>
         <div className="flex flex-col gap-1 mt-1">
@@ -60,7 +101,7 @@ export function KPICard({ kpi }: KPICardProps) {
             )}
             <span
               className={cn('font-medium', {
-                'text-emerald-600': isPositive && kpi.status !== 'danger',
+                'text-emerald-600': isPositive && kpi.status !== 'danger', // Contextual logic
                 'text-rose-600': isNegative && kpi.status !== 'success',
               })}
             >
@@ -69,11 +110,13 @@ export function KPICard({ kpi }: KPICardProps) {
             <span className="ml-1">vs mês anterior</span>
           </p>
           {kpi.target !== undefined && (
-            <p className="flex items-center text-xs text-muted-foreground">
+            <p className="flex items-center text-xs text-muted-foreground mt-1">
               <Target className="mr-1 h-3 w-3 opacity-50" />
               Meta:{' '}
               <span className="font-medium ml-1">
-                {formatValue(Number(kpi.target), kpi.unit)}
+                {typeof kpi.target === 'number'
+                  ? formatValue(kpi.target, kpi.unit)
+                  : kpi.target}
               </span>
             </p>
           )}

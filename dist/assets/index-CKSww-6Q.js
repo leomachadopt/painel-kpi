@@ -18970,6 +18970,51 @@ var ChevronUp = createLucideIcon("chevron-up", [["path", {
 	d: "m18 15-6-6-6 6",
 	key: "153udz"
 }]]);
+var CircleAlert = createLucideIcon("circle-alert", [
+	["circle", {
+		cx: "12",
+		cy: "12",
+		r: "10",
+		key: "1mglay"
+	}],
+	["line", {
+		x1: "12",
+		x2: "12",
+		y1: "8",
+		y2: "12",
+		key: "1pkeuh"
+	}],
+	["line", {
+		x1: "12",
+		x2: "12.01",
+		y1: "16",
+		y2: "16",
+		key: "4dfq90"
+	}]
+]);
+var CircleCheckBig = createLucideIcon("circle-check-big", [["path", {
+	d: "M21.801 10A10 10 0 1 1 17 3.335",
+	key: "yps3ct"
+}], ["path", {
+	d: "m9 11 3 3L22 4",
+	key: "1pflzl"
+}]]);
+var CircleX = createLucideIcon("circle-x", [
+	["circle", {
+		cx: "12",
+		cy: "12",
+		r: "10",
+		key: "1mglay"
+	}],
+	["path", {
+		d: "m15 9-6 6",
+		key: "1uzhvr"
+	}],
+	["path", {
+		d: "m9 9 6 6",
+		key: "z0biqf"
+	}]
+]);
 var Circle = createLucideIcon("circle", [["circle", {
 	cx: "12",
 	cy: "12",
@@ -30116,21 +30161,34 @@ var MOCK_CLINICS = [{
 	active: true,
 	lastUpdate: "Outubro 2023",
 	logoUrl: "https://img.usecurling.com/i?q=tooth&color=azure",
-	targetRevenue: 15e4,
+	targetRevenue: 83500,
 	targetAlignersRange: {
-		min: 10,
-		max: 15
+		min: 11,
+		max: 12
 	},
-	targetAvgTicket: 2500,
-	targetAcceptanceRate: 60,
-	targetOccupancyRate: 85,
-	targetNPS: 75,
-	targetIntegrationRate: 80,
+	targetAvgTicket: 1200,
+	targetAcceptanceRate: 65,
+	targetOccupancyRate: 70,
+	targetNPS: 80,
+	targetIntegrationRate: 85,
 	targetAgendaDistribution: {
-		operational: 40,
+		operational: 30,
 		planning: 20,
-		sales: 20,
+		sales: 30,
 		leadership: 20
+	},
+	targetAttendanceRate: 80,
+	targetFollowUpRate: 100,
+	targetWaitTime: 10,
+	targetComplaints: 2,
+	targetLeadsRange: {
+		min: 80,
+		max: 100
+	},
+	targetRevenuePerCabinet: 25e3,
+	targetPlansPresented: {
+		adults: 15,
+		kids: 20
 	}
 }, {
 	id: "clinic-2",
@@ -30139,26 +30197,39 @@ var MOCK_CLINICS = [{
 	active: true,
 	lastUpdate: "Setembro 2023",
 	logoUrl: "https://img.usecurling.com/i?q=heart&color=rose",
-	targetRevenue: 2e5,
+	targetRevenue: 1e5,
 	targetAlignersRange: {
-		min: 20,
-		max: 25
+		min: 15,
+		max: 20
 	},
-	targetAvgTicket: 1800,
-	targetAcceptanceRate: 55,
-	targetOccupancyRate: 80,
-	targetNPS: 80,
-	targetIntegrationRate: 75,
+	targetAvgTicket: 1500,
+	targetAcceptanceRate: 70,
+	targetOccupancyRate: 75,
+	targetNPS: 85,
+	targetIntegrationRate: 85,
 	targetAgendaDistribution: {
-		operational: 50,
+		operational: 40,
 		planning: 10,
 		sales: 30,
-		leadership: 10
+		leadership: 20
+	},
+	targetAttendanceRate: 85,
+	targetFollowUpRate: 95,
+	targetWaitTime: 8,
+	targetComplaints: 1,
+	targetLeadsRange: {
+		min: 100,
+		max: 120
+	},
+	targetRevenuePerCabinet: 3e4,
+	targetPlansPresented: {
+		adults: 20,
+		kids: 25
 	}
 }];
 var generateMockData = (clinicId, year) => {
 	return Array.from({ length: 12 }, (_$1, i$2) => {
-		const revenueTotal = Math.floor(Math.random() * 1e5) + 1e5;
+		const revenueTotal = Math.floor(Math.random() * 5e4) + 7e4;
 		const revenueAligners = revenueTotal * .4;
 		const revenuePediatrics = revenueTotal * .2;
 		const revenueDentistry = revenueTotal * .3;
@@ -30168,18 +30239,20 @@ var generateMockData = (clinicId, year) => {
 			name: "Gabinete 1",
 			revenue: revenueTotal * .6,
 			hoursAvailable: 160,
-			hoursOccupied: Math.floor(Math.random() * 40) + 100
+			hoursOccupied: Math.floor(Math.random() * 60) + 90
 		}, {
 			id: "gab-2",
 			name: "Gabinete 2",
 			revenue: revenueTotal * .4,
 			hoursAvailable: 160,
-			hoursOccupied: Math.floor(Math.random() * 40) + 80
+			hoursOccupied: Math.floor(Math.random() * 50) + 80
 		}];
-		const plansAccepted = Math.floor(Math.random() * 20) + 20;
-		const plansPresentedAdults = Math.floor(Math.random() * 30) + 20;
-		const plansPresentedKids = Math.floor(Math.random() * 10) + 5;
-		const revenueAcceptedPlans = plansAccepted * (Math.random() * 1e3 + 1500);
+		const plansAccepted = Math.floor(Math.random() * 15) + 15;
+		const plansPresentedAdults = Math.floor(Math.random() * 20) + 10;
+		const plansPresentedKids = Math.floor(Math.random() * 15) + 10;
+		const revenueAcceptedPlans = plansAccepted * (Math.random() * 800 + 1e3);
+		const plansNotAccepted = plansPresentedAdults + plansPresentedKids - plansAccepted;
+		const plansNotAcceptedFollowUp = Math.floor(plansNotAccepted * .8);
 		return {
 			id: `${clinicId}-${year}-${i$2 + 1}`,
 			clinicId,
@@ -30195,25 +30268,25 @@ var generateMockData = (clinicId, year) => {
 			plansPresentedAdults,
 			plansPresentedKids,
 			plansAccepted,
-			alignersStarted: Math.floor(Math.random() * 10) + 5,
-			appointmentsIntegrated: Math.floor(Math.random() * 100) + 50,
+			alignersStarted: Math.floor(Math.random() * 8) + 8,
+			appointmentsIntegrated: Math.floor(Math.random() * 50) + 140,
 			appointmentsTotal: 200,
-			leads: Math.floor(Math.random() * 50) + 20,
-			firstConsultationsScheduled: 40,
-			firstConsultationsAttended: 35,
-			plansNotAccepted: 15,
-			plansNotAcceptedFollowUp: 10,
-			avgWaitTime: Math.floor(Math.random() * 15) + 5,
+			leads: Math.floor(Math.random() * 40) + 60,
+			firstConsultationsScheduled: 50,
+			firstConsultationsAttended: Math.floor(Math.random() * 10) + 35,
+			plansNotAccepted: plansNotAccepted > 0 ? plansNotAccepted : 0,
+			plansNotAcceptedFollowUp,
+			avgWaitTime: Math.floor(Math.random() * 15) + 2,
 			agendaOwner: {
 				operational: 80,
 				planning: 20,
 				sales: 40,
 				leadership: 20
 			},
-			nps: Math.floor(Math.random() * 20) + 70,
-			referralsSpontaneous: Math.floor(Math.random() * 10) + 5,
-			referralsBase2025: 10,
-			complaints: Math.floor(Math.random() * 3),
+			nps: Math.floor(Math.random() * 20) + 75,
+			referralsSpontaneous: Math.floor(Math.random() * 5) + 5,
+			referralsBase2025: 8,
+			complaints: Math.floor(Math.random() * 4),
 			expenses: revenueTotal * .6,
 			marketingCost: 5e3
 		};
@@ -30244,83 +30317,31 @@ const DataProvider = ({ children }) => {
 			};
 		});
 	};
-	const getYTDRevenue = (clinicId, month, year) => {
-		return (monthlyData[clinicId] || []).filter((d) => d.year === year && d.month <= month).reduce((sum, d) => sum + d.revenueTotal, 0);
-	};
 	const calculateKPIs = (clinicId, month, year) => {
 		const current = getMonthlyData(clinicId, month, year);
 		const previous = getMonthlyData(clinicId, month === 1 ? 12 : month - 1, month === 1 ? year - 1 : year);
 		const clinic = getClinic(clinicId);
 		if (!current || !clinic) return [];
-		const kpis = [];
+		const getStatus = (value, target, type = "standard") => {
+			if (type === "inverse") return value <= target ? "success" : "danger";
+			const ratio = target > 0 ? value / target : 0;
+			if (ratio >= 1) return "success";
+			if (ratio >= .9) return "warning";
+			return "danger";
+		};
 		const calcChange = (curr, prev) => {
 			if (!prev || prev === 0) return 0;
 			return (curr - prev) / prev * 100;
 		};
+		const kpis = [];
 		kpis.push({
 			id: "revenue_monthly",
 			name: "Faturamento Mensal",
 			value: current.revenueTotal,
 			unit: "currency",
 			change: calcChange(current.revenueTotal, previous?.revenueTotal),
-			status: current.revenueTotal >= clinic.targetRevenue ? "success" : current.revenueTotal >= clinic.targetRevenue * .9 ? "warning" : "danger",
+			status: getStatus(current.revenueTotal, clinic.targetRevenue),
 			target: clinic.targetRevenue
-		});
-		const ytdRevenue = getYTDRevenue(clinicId, month, year);
-		kpis.push({
-			id: "revenue_ytd",
-			name: "Faturamento Anual (YTD)",
-			value: ytdRevenue,
-			unit: "currency",
-			change: 0,
-			status: "success"
-		});
-		const goalVsActual = clinic.targetRevenue > 0 ? current.revenueTotal / clinic.targetRevenue * 100 : 0;
-		kpis.push({
-			id: "goal_vs_actual",
-			name: "Meta vs Realizado",
-			value: goalVsActual,
-			unit: "percent",
-			change: 0,
-			status: goalVsActual >= 100 ? "success" : goalVsActual >= 90 ? "warning" : "danger"
-		});
-		kpis.push({
-			id: "aligner_starts",
-			name: "Inícios Alinhadores",
-			value: current.alignersStarted,
-			unit: "number",
-			change: current.alignersStarted - (previous?.alignersStarted || 0),
-			status: current.alignersStarted >= clinic.targetAlignersRange.min ? "success" : "danger",
-			target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`
-		});
-		const plansPresented = current.plansPresentedAdults + current.plansPresentedKids;
-		const prevPresented = (previous?.plansPresentedAdults || 0) + (previous?.plansPresentedKids || 0);
-		kpis.push({
-			id: "plans_presented",
-			name: "Planos Apresentados",
-			value: plansPresented,
-			unit: "number",
-			change: plansPresented - prevPresented,
-			status: "success"
-		});
-		kpis.push({
-			id: "plans_accepted",
-			name: "Planos Aceitos",
-			value: current.plansAccepted,
-			unit: "number",
-			change: current.plansAccepted - (previous?.plansAccepted || 0),
-			status: "success"
-		});
-		const acceptanceRate = plansPresented > 0 ? current.plansAccepted / plansPresented * 100 : 0;
-		const prevAcceptanceRate = prevPresented > 0 ? (previous?.plansAccepted || 0) / prevPresented * 100 : 0;
-		kpis.push({
-			id: "acceptance_rate",
-			name: "Taxa de Aceitação",
-			value: acceptanceRate,
-			unit: "percent",
-			change: acceptanceRate - prevAcceptanceRate,
-			status: acceptanceRate >= clinic.targetAcceptanceRate ? "success" : acceptanceRate >= clinic.targetAcceptanceRate * .9 ? "warning" : "danger",
-			target: clinic.targetAcceptanceRate
 		});
 		const avgTicket = current.plansAccepted > 0 ? current.revenueAcceptedPlans / current.plansAccepted : 0;
 		const prevAvgTicket = previous && previous.plansAccepted > 0 ? previous.revenueAcceptedPlans / previous.plansAccepted : 0;
@@ -30330,8 +30351,21 @@ const DataProvider = ({ children }) => {
 			value: avgTicket,
 			unit: "currency",
 			change: calcChange(avgTicket, prevAvgTicket),
-			status: avgTicket >= clinic.targetAvgTicket ? "success" : avgTicket >= clinic.targetAvgTicket * .9 ? "warning" : "danger",
+			status: getStatus(avgTicket, clinic.targetAvgTicket),
 			target: clinic.targetAvgTicket
+		});
+		const totalPresented = current.plansPresentedAdults + current.plansPresentedKids;
+		const prevPresented = (previous?.plansPresentedAdults || 0) + (previous?.plansPresentedKids || 0);
+		const acceptanceRate = totalPresented > 0 ? current.plansAccepted / totalPresented * 100 : 0;
+		const prevAcceptanceRate = prevPresented > 0 ? (previous?.plansAccepted || 0) / prevPresented * 100 : 0;
+		kpis.push({
+			id: "acceptance_rate",
+			name: "Taxa de Aceitação",
+			value: acceptanceRate,
+			unit: "percent",
+			change: acceptanceRate - prevAcceptanceRate,
+			status: getStatus(acceptanceRate, clinic.targetAcceptanceRate),
+			target: clinic.targetAcceptanceRate
 		});
 		const totalAvail = current.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0);
 		const totalOccupied = current.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0);
@@ -30343,8 +30377,61 @@ const DataProvider = ({ children }) => {
 			value: occupancyRate,
 			unit: "percent",
 			change: occupancyRate - prevOccupancyRate,
-			status: occupancyRate >= clinic.targetOccupancyRate ? "success" : occupancyRate >= clinic.targetOccupancyRate * .9 ? "warning" : "danger",
-			target: clinic.targetOccupancyRate
+			status: getStatus(occupancyRate, clinic.targetOccupancyRate),
+			target: `${clinic.targetOccupancyRate}%`
+		});
+		const attendanceRate = current.firstConsultationsScheduled > 0 ? current.firstConsultationsAttended / current.firstConsultationsScheduled * 100 : 0;
+		const prevAttendanceRate = (previous?.firstConsultationsScheduled || 0) > 0 ? (previous?.firstConsultationsAttended || 0) / previous.firstConsultationsScheduled * 100 : 0;
+		kpis.push({
+			id: "attendance_rate",
+			name: "Taxa de Comparecimento",
+			value: attendanceRate,
+			unit: "percent",
+			change: attendanceRate - prevAttendanceRate,
+			status: getStatus(attendanceRate, clinic.targetAttendanceRate),
+			target: clinic.targetAttendanceRate
+		});
+		const followUpRate = current.plansNotAccepted > 0 ? current.plansNotAcceptedFollowUp / current.plansNotAccepted * 100 : 100;
+		const prevFollowUpRate = (previous?.plansNotAccepted || 0) > 0 ? (previous?.plansNotAcceptedFollowUp || 0) / previous.plansNotAccepted * 100 : 100;
+		kpis.push({
+			id: "followup_rate",
+			name: "Taxa de Follow-up",
+			value: followUpRate,
+			unit: "percent",
+			change: followUpRate - prevFollowUpRate,
+			status: getStatus(followUpRate, clinic.targetFollowUpRate),
+			target: clinic.targetFollowUpRate
+		});
+		const integratedRate = current.appointmentsTotal > 0 ? current.appointmentsIntegrated / current.appointmentsTotal * 100 : 0;
+		const prevIntegratedRate = (previous?.appointmentsTotal || 0) > 0 ? (previous?.appointmentsIntegrated || 0) / previous.appointmentsTotal * 100 : 0;
+		kpis.push({
+			id: "integrated_cases",
+			name: "Casos Integrados",
+			value: integratedRate,
+			unit: "percent",
+			change: integratedRate - prevIntegratedRate,
+			status: getStatus(integratedRate, clinic.targetIntegrationRate),
+			target: clinic.targetIntegrationRate
+		});
+		const revenuePerCabinet = current.cabinets.length > 0 ? current.revenueTotal / current.cabinets.length : 0;
+		const prevRevenuePerCabinet = (previous?.cabinets.length || 0) > 0 ? (previous?.revenueTotal || 0) / previous.cabinets.length : 0;
+		kpis.push({
+			id: "revenue_per_cabinet",
+			name: "Fat. por Gabinete",
+			value: revenuePerCabinet,
+			unit: "currency",
+			change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
+			status: getStatus(revenuePerCabinet, clinic.targetRevenuePerCabinet),
+			target: clinic.targetRevenuePerCabinet
+		});
+		kpis.push({
+			id: "aligner_starts",
+			name: "Inícios Alinhadores",
+			value: current.alignersStarted,
+			unit: "number",
+			change: current.alignersStarted - (previous?.alignersStarted || 0),
+			status: getStatus(current.alignersStarted, clinic.targetAlignersRange.min),
+			target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`
 		});
 		kpis.push({
 			id: "leads",
@@ -30352,7 +30439,8 @@ const DataProvider = ({ children }) => {
 			value: current.leads,
 			unit: "number",
 			change: current.leads - (previous?.leads || 0),
-			status: "success"
+			status: getStatus(current.leads, clinic.targetLeadsRange.min),
+			target: `${clinic.targetLeadsRange.min}-${clinic.targetLeadsRange.max}`
 		});
 		kpis.push({
 			id: "nps",
@@ -30360,18 +30448,17 @@ const DataProvider = ({ children }) => {
 			value: current.nps,
 			unit: "number",
 			change: current.nps - (previous?.nps || 0),
-			status: current.nps >= clinic.targetNPS ? "success" : current.nps >= clinic.targetNPS * .9 ? "warning" : "danger",
+			status: getStatus(current.nps, clinic.targetNPS),
 			target: clinic.targetNPS
 		});
-		const revenuePerCabinet = current.cabinets.length > 0 ? current.revenueTotal / current.cabinets.length : 0;
-		const prevRevenuePerCabinet = (previous?.cabinets.length || 0) > 0 ? (previous?.revenueTotal || 0) / previous.cabinets.length : 0;
 		kpis.push({
-			id: "revenue_per_cabinet",
-			name: "Faturamento por Gabinete",
-			value: revenuePerCabinet,
-			unit: "currency",
-			change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
-			status: "success"
+			id: "wait_time",
+			name: "Tempo de Espera",
+			value: current.avgWaitTime,
+			unit: "time",
+			change: current.avgWaitTime - (previous?.avgWaitTime || 0),
+			status: getStatus(current.avgWaitTime, clinic.targetWaitTime, "inverse"),
+			target: `< ${clinic.targetWaitTime} min`
 		});
 		return kpis;
 	};
@@ -30449,7 +30536,17 @@ function Clinics() {
 					const npsKPI = kpis.find((k) => k.id === "nps");
 					const revenuePercent = revenueKPI ? revenueKPI.value / clinic.targetRevenue * 100 : 0;
 					const alertCount = kpis.filter((k) => k.status === "danger").length;
-					const statusColor = revenuePercent >= 100 ? "bg-emerald-500" : revenuePercent >= 90 ? "bg-amber-400" : "bg-rose-500";
+					const revenueStatus = revenueKPI?.status || "danger";
+					const statusColor = {
+						success: "bg-emerald-500",
+						warning: "bg-amber-400",
+						danger: "bg-rose-500"
+					}[revenueStatus];
+					const statusTextColor = {
+						success: "text-emerald-600",
+						warning: "text-amber-500",
+						danger: "text-rose-600"
+					}[revenueStatus];
 					return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
 						className: "group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg relative overflow-hidden",
 						onClick: () => navigate(`/dashboard/${clinic.id}`),
@@ -30493,7 +30590,7 @@ function Clinics() {
 											className: "text-muted-foreground",
 											children: "Faturamento vs Meta"
 										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-											className: `font-bold ${revenuePercent >= 100 ? "text-emerald-600" : revenuePercent >= 90 ? "text-amber-500" : "text-rose-600"}`,
+											className: `font-bold ${statusTextColor}`,
 											children: [revenuePercent.toFixed(1), "%"]
 										})]
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -32467,31 +32564,47 @@ SelectSeparator.displayName = Separator$3.displayName;
 function KPICard({ kpi }) {
 	const isPositive = kpi.change > 0;
 	const isNegative = kpi.change < 0;
+	const StatusIcon = {
+		success: CircleCheckBig,
+		warning: CircleAlert,
+		danger: CircleX
+	}[kpi.status];
+	const statusColorText = {
+		success: "text-emerald-600",
+		warning: "text-amber-500",
+		danger: "text-rose-600"
+	}[kpi.status];
+	const statusColorClass = {
+		success: "text-emerald-500",
+		warning: "text-amber-400",
+		danger: "text-rose-500"
+	}[kpi.status];
 	const formatValue = (val, unit) => {
 		if (unit === "currency") return new Intl.NumberFormat("pt-BR", {
 			style: "currency",
 			currency: "BRL",
+			currency: "EUR",
 			maximumFractionDigits: 0
 		}).format(val);
 		if (unit === "percent") return `${val.toFixed(1)}%`;
 		if (unit === "ratio") return `${val.toFixed(2)}x`;
+		if (unit === "time") return `${val} min`;
 		return val.toLocaleString("pt-BR");
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-		className: "overflow-hidden border-t-4 data-[status=success]:border-t-emerald-500 data-[status=warning]:border-t-amber-400 data-[status=danger]:border-t-rose-500 shadow-sm hover:shadow-md transition-shadow relative",
-		"data-status": kpi.status,
+		className: cn("overflow-hidden border-t-4 shadow-sm hover:shadow-md transition-shadow relative", {
+			"border-t-emerald-500": kpi.status === "success",
+			"border-t-amber-400": kpi.status === "warning",
+			"border-t-rose-500": kpi.status === "danger"
+		}),
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, {
 			className: "flex flex-row items-center justify-between space-y-0 pb-2",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, {
-				className: "text-sm font-medium text-muted-foreground",
+				className: "text-sm font-medium text-muted-foreground truncate pr-6",
 				children: kpi.name
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: cn("h-2 w-2 rounded-full", {
-				"bg-emerald-500": kpi.status === "success",
-				"bg-amber-400": kpi.status === "warning",
-				"bg-rose-500": kpi.status === "danger"
-			}) })]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StatusIcon, { className: cn("h-5 w-5", statusColorClass) })]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "text-2xl font-bold tracking-tight",
+			className: cn("text-2xl font-bold tracking-tight", statusColorText),
 			children: formatValue(kpi.value, kpi.unit)
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			className: "flex flex-col gap-1 mt-1",
@@ -32512,14 +32625,14 @@ function KPICard({ kpi }) {
 					})
 				]
 			}), kpi.target !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-				className: "flex items-center text-xs text-muted-foreground",
+				className: "flex items-center text-xs text-muted-foreground mt-1",
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Target, { className: "mr-1 h-3 w-3 opacity-50" }),
 					"Meta:",
 					" ",
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 						className: "font-medium ml-1",
-						children: formatValue(Number(kpi.target), kpi.unit)
+						children: typeof kpi.target === "number" ? formatValue(kpi.target, kpi.unit) : kpi.target
 					})
 				]
 			})]
@@ -35737,4 +35850,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-CBF-URQC.js.map
+//# sourceMappingURL=index-CKSww-6Q.js.map
