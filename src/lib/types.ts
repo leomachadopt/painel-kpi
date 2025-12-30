@@ -7,6 +7,13 @@ export interface AgendaDistribution {
   leadership: number
 }
 
+export interface ClinicConfiguration {
+  categories: { id: string; name: string }[]
+  cabinets: { id: string; name: string; standardHours: number }[]
+  doctors: { id: string; name: string }[]
+  sources: { id: string; name: string }[]
+}
+
 export interface Clinic {
   id: string
   name: string
@@ -14,25 +21,24 @@ export interface Clinic {
   logoUrl?: string
   active: boolean
   lastUpdate?: string
+  configuration: ClinicConfiguration
 
   // Targets (Metas)
-  targetRevenue: number // Default 83500
-  targetAlignersRange: { min: number; max: number } // Default 11-12
-  targetAvgTicket: number // Default 1200
-  targetAcceptanceRate: number // Default 65
-  targetOccupancyRate: number // Default 70-80 (use min 70 for calculation threshold)
-  targetNPS: number // Default 80
-  targetIntegrationRate: number // Default 85
+  targetRevenue: number
+  targetAlignersRange: { min: number; max: number }
+  targetAvgTicket: number
+  targetAcceptanceRate: number
+  targetOccupancyRate: number
+  targetNPS: number
+  targetIntegrationRate: number
   targetAgendaDistribution: AgendaDistribution
-
-  // New Targets defined in User Story
-  targetAttendanceRate: number // Default 80
-  targetFollowUpRate: number // Default 100
-  targetWaitTime: number // Default 10 (Inverse)
-  targetComplaints: number // Default 2 (Inverse)
-  targetLeadsRange: { min: number; max: number } // Default 80-100
-  targetRevenuePerCabinet: number // Default 25000
-  targetPlansPresented: { adults: number; kids: number } // Default 15, 20
+  targetAttendanceRate: number
+  targetFollowUpRate: number
+  targetWaitTime: number
+  targetComplaints: number
+  targetLeadsRange: { min: number; max: number }
+  targetRevenuePerCabinet: number
+  targetPlansPresented: { adults: number; kids: number }
 }
 
 export interface CabinetData {
@@ -84,12 +90,72 @@ export interface MonthlyData {
   marketingCost: number
 }
 
+// Daily Event Types
+export interface DailyFinancialEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  categoryId: string
+  value: number
+  cabinetId: string
+}
+
+export interface DailyConsultationEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  planCreated: boolean
+  planPresented: boolean
+  planAccepted: boolean
+  planValue: number
+}
+
+export interface DailyProspectingEntry {
+  id: string
+  date: string
+  scheduled: number
+  email: number
+  sms: number
+  whatsapp: number
+  instagram: number
+}
+
+export interface DailyCabinetUsageEntry {
+  id: string
+  date: string
+  cabinetId: string
+  hoursAvailable: number
+  hoursUsed: number
+}
+
+export interface DailyServiceTimeEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  doctorId: string
+  scheduledTime: string
+  actualStartTime: string
+  delayReason?: 'paciente' | 'medico'
+}
+
+export interface DailySourceEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  isReferral: boolean
+  sourceId: string
+}
+
 export interface KPI {
   id: string
   name: string
   value: number
   unit: 'currency' | 'percent' | 'number' | 'ratio' | 'time'
-  change: number // percentage vs last month
+  change: number
   status: 'success' | 'warning' | 'danger'
   description?: string
   target?: number | string
@@ -107,7 +173,7 @@ export interface User {
   name: string
   email: string
   role: Role
-  clinicId?: string // Only for gestor
+  clinicId?: string
   avatarUrl?: string
 }
 

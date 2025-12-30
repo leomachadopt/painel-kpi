@@ -18042,7 +18042,7 @@ function handleAndDispatchCustomEvent$1(name, handler, detail, { discrete }) {
 	if (discrete) dispatchDiscreteCustomEvent(target, event);
 	else target.dispatchEvent(event);
 }
-var Root$8 = DismissableLayer;
+var Root$9 = DismissableLayer;
 var Branch = DismissableLayerBranch;
 var useLayoutEffect2 = globalThis?.document ? import_react.useLayoutEffect : () => {};
 var import_react_dom$5 = /* @__PURE__ */ __toESM(require_react_dom(), 1);
@@ -18233,7 +18233,7 @@ var VisuallyHidden = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 VisuallyHidden.displayName = NAME$3;
-var Root$7 = VisuallyHidden;
+var Root$8 = VisuallyHidden;
 var import_react_dom$4 = /* @__PURE__ */ __toESM(require_react_dom(), 1);
 var PROVIDER_NAME$1 = "ToastProvider";
 var [Collection$3, useCollection$3, createCollectionScope$3] = createCollection("Toast");
@@ -18532,7 +18532,7 @@ var ToastImpl = import_react.forwardRef((props, forwardedRef) => {
 		onClose: handleClose,
 		children: import_react_dom$4.createPortal(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$3.ItemSlot, {
 			scope: __scopeToast,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$8, {
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$9, {
 				asChild: true,
 				onEscapeKeyDown: composeEventHandlers(onEscapeKeyDown, () => {
 					if (!context.isFocusedToastEscapeKeyDownRef.current) handleClose();
@@ -18762,7 +18762,7 @@ function focusFirst$3(candidates) {
 }
 var Provider$1 = ToastProvider$1;
 var Viewport$2 = ToastViewport$1;
-var Root2$3 = Toast$2;
+var Root2$4 = Toast$2;
 var Title$1 = ToastTitle$1;
 var Description$1 = ToastDescription$1;
 var Action = ToastAction$1;
@@ -18885,6 +18885,24 @@ var createLucideIcon = (iconName, iconNode) => {
 	Component.displayName = toPascalCase(iconName);
 	return Component;
 };
+var Armchair = createLucideIcon("armchair", [
+	["path", {
+		d: "M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3",
+		key: "irtipd"
+	}],
+	["path", {
+		d: "M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z",
+		key: "1qyhux"
+	}],
+	["path", {
+		d: "M5 18v2",
+		key: "ppbyun"
+	}],
+	["path", {
+		d: "M19 18v2",
+		key: "gy7782"
+	}]
+]);
 var ArrowDown = createLucideIcon("arrow-down", [["path", {
 	d: "M12 5v14",
 	key: "s699le"
@@ -18958,10 +18976,6 @@ var ChevronDown = createLucideIcon("chevron-down", [["path", {
 	d: "m6 9 6 6 6-6",
 	key: "qrunsl"
 }]]);
-var ChevronLeft = createLucideIcon("chevron-left", [["path", {
-	d: "m15 18-6-6 6-6",
-	key: "1wnfg3"
-}]]);
 var ChevronRight = createLucideIcon("chevron-right", [["path", {
 	d: "m9 18 6-6-6-6",
 	key: "mthhwq"
@@ -19016,6 +19030,15 @@ var CircleX = createLucideIcon("circle-x", [
 	}]
 ]);
 var Circle = createLucideIcon("circle", [["circle", {
+	cx: "12",
+	cy: "12",
+	r: "10",
+	key: "1mglay"
+}]]);
+var Clock = createLucideIcon("clock", [["path", {
+	d: "M12 6v6l4 2",
+	key: "mmk7yg"
+}], ["circle", {
 	cx: "12",
 	cy: "12",
 	r: "10",
@@ -19196,6 +19219,20 @@ var MapPin = createLucideIcon("map-pin", [["path", {
 	r: "3",
 	key: "ilqhr7"
 }]]);
+var Megaphone = createLucideIcon("megaphone", [
+	["path", {
+		d: "M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z",
+		key: "q8bfy3"
+	}],
+	["path", {
+		d: "M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14",
+		key: "1853fq"
+	}],
+	["path", {
+		d: "M8 6v8",
+		key: "15ugcq"
+	}]
+]);
 var Minus = createLucideIcon("minus", [["path", {
 	d: "M5 12h14",
 	key: "1ays0h"
@@ -19240,6 +19277,15 @@ var Search = createLucideIcon("search", [["path", {
 	cy: "11",
 	r: "8",
 	key: "4ej97u"
+}]]);
+var Settings$1 = createLucideIcon("settings", [["path", {
+	d: "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915",
+	key: "1i5ecw"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
 }]]);
 var Target = createLucideIcon("target", [
 	["circle", {
@@ -19295,6 +19341,32 @@ var TriangleAlert = createLucideIcon("triangle-alert", [
 	["path", {
 		d: "M12 17h.01",
 		key: "p32p05"
+	}]
+]);
+var UserPlus = createLucideIcon("user-plus", [
+	["path", {
+		d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
+		key: "1yyitq"
+	}],
+	["circle", {
+		cx: "9",
+		cy: "7",
+		r: "4",
+		key: "nufk8"
+	}],
+	["line", {
+		x1: "19",
+		x2: "19",
+		y1: "8",
+		y2: "14",
+		key: "1bvyxn"
+	}],
+	["line", {
+		x1: "22",
+		x2: "16",
+		y1: "11",
+		y2: "11",
+		key: "1shjgl"
 	}]
 ]);
 var User = createLucideIcon("user", [["path", {
@@ -20716,13 +20788,13 @@ var toastVariants = cva("group pointer-events-auto relative flex w-full items-ce
 	defaultVariants: { variant: "default" }
 });
 var Toast$1 = import_react.forwardRef(({ className, variant, ...props }, ref) => {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$3, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$4, {
 		ref,
 		className: cn(toastVariants({ variant }), className),
 		...props
 	});
 });
-Toast$1.displayName = Root2$3.displayName;
+Toast$1.displayName = Root2$4.displayName;
 var ToastAction = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Action, {
 	ref,
 	className: cn("inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive", className),
@@ -21102,10 +21174,10 @@ var Observer = class {
 			if (typeof id !== "string" && typeof id !== "number") return { unwrap };
 			else return Object.assign(id, { unwrap });
 		};
-		this.custom = (jsx$26, data) => {
+		this.custom = (jsx$28, data) => {
 			const id = (data == null ? void 0 : data.id) || toastsCounter++;
 			this.create({
-				jsx: jsx$26(id),
+				jsx: jsx$28(id),
 				id,
 				...data
 			});
@@ -23241,7 +23313,7 @@ var Arrow$1 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 Arrow$1.displayName = NAME$2;
-var Root$6 = Arrow$1;
+var Root$7 = Arrow$1;
 function useSize(element) {
 	const [size$3, setSize] = import_react.useState(void 0);
 	useLayoutEffect2(() => {
@@ -23308,11 +23380,11 @@ var PopperAnchor = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 PopperAnchor.displayName = ANCHOR_NAME$1;
-var CONTENT_NAME$5 = "PopperContent";
-var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$5);
+var CONTENT_NAME$6 = "PopperContent";
+var [PopperContentProvider, useContentContext] = createPopperContext(CONTENT_NAME$6);
 var PopperContent = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopePopper, side = "bottom", sideOffset = 0, align = "center", alignOffset = 0, arrowPadding = 0, avoidCollisions = true, collisionBoundary = [], collisionPadding: collisionPaddingProp = 0, sticky = "partial", hideWhenDetached = false, updatePositionStrategy = "optimized", onPlaced, ...contentProps } = props;
-	const context = usePopperContext(CONTENT_NAME$5, __scopePopper);
+	const context = usePopperContext(CONTENT_NAME$6, __scopePopper);
 	const [content, setContent] = import_react.useState(null);
 	const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
 	const [arrow$3, setArrow] = import_react.useState(null);
@@ -23425,7 +23497,7 @@ var PopperContent = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-PopperContent.displayName = CONTENT_NAME$5;
+PopperContent.displayName = CONTENT_NAME$6;
 var ARROW_NAME$4 = "PopperArrow";
 var OPPOSITE_SIDE = {
 	top: "bottom",
@@ -23458,7 +23530,7 @@ var PopperArrow = import_react.forwardRef(function PopperArrow2(props, forwarded
 			}[contentContext.placedSide],
 			visibility: contentContext.shouldHideArrow ? "hidden" : void 0
 		},
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$6, {
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$7, {
 			...arrowProps,
 			ref: forwardedRef,
 			style: {
@@ -23513,9 +23585,9 @@ function getSideAndAlignFromPlacement(placement) {
 	const [side, align = "center"] = placement.split("-");
 	return [side, align];
 }
-var Root2$2 = Popper;
+var Root2$3 = Popper;
 var Anchor = PopperAnchor;
-var Content$1 = PopperContent;
+var Content$2 = PopperContent;
 var Arrow = PopperArrow;
 var [createTooltipContext, createTooltipScope] = createContextScope$1("Tooltip", [createPopperScope]);
 var usePopperScope$2 = createPopperScope();
@@ -23607,7 +23679,7 @@ var Tooltip$1 = (props) => {
 			}
 		};
 	}, []);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$2, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$3, {
 		...popperScope,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipContextProvider, {
 			scope: __scopeTooltip,
@@ -23639,11 +23711,11 @@ var Tooltip$1 = (props) => {
 	});
 };
 Tooltip$1.displayName = TOOLTIP_NAME;
-var TRIGGER_NAME$4 = "TooltipTrigger";
+var TRIGGER_NAME$5 = "TooltipTrigger";
 var TooltipTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeTooltip, ...triggerProps } = props;
-	const context = useTooltipContext(TRIGGER_NAME$4, __scopeTooltip);
-	const providerContext = useTooltipProviderContext(TRIGGER_NAME$4, __scopeTooltip);
+	const context = useTooltipContext(TRIGGER_NAME$5, __scopeTooltip);
+	const providerContext = useTooltipProviderContext(TRIGGER_NAME$5, __scopeTooltip);
 	const popperScope = usePopperScope$2(__scopeTooltip);
 	const composedRefs = useComposedRefs(forwardedRef, import_react.useRef(null), context.onTriggerChange);
 	const isPointerDownRef = import_react.useRef(false);
@@ -23684,7 +23756,7 @@ var TooltipTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-TooltipTrigger$1.displayName = TRIGGER_NAME$4;
+TooltipTrigger$1.displayName = TRIGGER_NAME$5;
 var PORTAL_NAME$4 = "TooltipPortal";
 var [PortalProvider$2, usePortalContext$2] = createTooltipContext(PORTAL_NAME$4, { forceMount: void 0 });
 var TooltipPortal = (props) => {
@@ -23704,11 +23776,11 @@ var TooltipPortal = (props) => {
 	});
 };
 TooltipPortal.displayName = PORTAL_NAME$4;
-var CONTENT_NAME$4 = "TooltipContent";
+var CONTENT_NAME$5 = "TooltipContent";
 var TooltipContent$1 = import_react.forwardRef((props, forwardedRef) => {
-	const portalContext = usePortalContext$2(CONTENT_NAME$4, props.__scopeTooltip);
+	const portalContext = usePortalContext$2(CONTENT_NAME$5, props.__scopeTooltip);
 	const { forceMount = portalContext.forceMount, side = "top", ...contentProps } = props;
-	const context = useTooltipContext(CONTENT_NAME$4, props.__scopeTooltip);
+	const context = useTooltipContext(CONTENT_NAME$5, props.__scopeTooltip);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
 		present: forceMount || context.open,
 		children: context.disableHoverableContent ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TooltipContentImpl, {
@@ -23723,8 +23795,8 @@ var TooltipContent$1 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 var TooltipContentHoverable = import_react.forwardRef((props, forwardedRef) => {
-	const context = useTooltipContext(CONTENT_NAME$4, props.__scopeTooltip);
-	const providerContext = useTooltipProviderContext(CONTENT_NAME$4, props.__scopeTooltip);
+	const context = useTooltipContext(CONTENT_NAME$5, props.__scopeTooltip);
+	const providerContext = useTooltipProviderContext(CONTENT_NAME$5, props.__scopeTooltip);
 	const ref = import_react.useRef(null);
 	const composedRefs = useComposedRefs(forwardedRef, ref);
 	const [pointerGraceArea, setPointerGraceArea] = import_react.useState(null);
@@ -23801,7 +23873,7 @@ var [VisuallyHiddenContentContextProvider, useVisuallyHiddenContentContext] = cr
 var Slottable = /* @__PURE__ */ createSlottable("TooltipContent");
 var TooltipContentImpl = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeTooltip, children, "aria-label": ariaLabel, onEscapeKeyDown, onPointerDownOutside, ...contentProps } = props;
-	const context = useTooltipContext(CONTENT_NAME$4, __scopeTooltip);
+	const context = useTooltipContext(CONTENT_NAME$5, __scopeTooltip);
 	const popperScope = usePopperScope$2(__scopeTooltip);
 	const { onClose } = context;
 	import_react.useEffect(() => {
@@ -23824,7 +23896,7 @@ var TooltipContentImpl = import_react.forwardRef((props, forwardedRef) => {
 		onPointerDownOutside,
 		onFocusOutside: (event) => event.preventDefault(),
 		onDismiss: onClose,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content$1, {
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content$2, {
 			"data-state": context.stateAttribute,
 			...popperScope,
 			...contentProps,
@@ -23840,7 +23912,7 @@ var TooltipContentImpl = import_react.forwardRef((props, forwardedRef) => {
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Slottable, { children }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VisuallyHiddenContentContextProvider, {
 				scope: __scopeTooltip,
 				isInside: true,
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$7, {
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$8, {
 					id: context.contentId,
 					role: "tooltip",
 					children: ariaLabel || children
@@ -23849,7 +23921,7 @@ var TooltipContentImpl = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-TooltipContent$1.displayName = CONTENT_NAME$4;
+TooltipContent$1.displayName = CONTENT_NAME$5;
 var ARROW_NAME$3 = "TooltipArrow";
 var TooltipArrow = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeTooltip, ...arrowProps } = props;
@@ -23993,11 +24065,11 @@ function getHullPresorted(points) {
 }
 var Provider = TooltipProvider$1;
 var Root3$1 = Tooltip$1;
-var Trigger$3 = TooltipTrigger$1;
+var Trigger$4 = TooltipTrigger$1;
 var Content2$3 = TooltipContent$1;
 var TooltipProvider = Provider;
 var Tooltip = Root3$1;
-var TooltipTrigger = Trigger$3;
+var TooltipTrigger = Trigger$4;
 var TooltipContent = import_react.forwardRef(({ className, sideOffset = 4, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content2$3, {
 	ref,
 	sideOffset,
@@ -25510,248 +25582,6 @@ function createFormControl(props = {}) {
 		formControl: methods
 	};
 }
-var generateId = () => {
-	if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-	const d = typeof performance === "undefined" ? Date.now() : performance.now() * 1e3;
-	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-		const r$2 = (Math.random() * 16 + d) % 16 | 0;
-		return (c == "x" ? r$2 : r$2 & 3 | 8).toString(16);
-	});
-};
-var getFocusFieldName = (name, index$1, options$1 = {}) => options$1.shouldFocus || isUndefined(options$1.shouldFocus) ? options$1.focusName || `${name}.${isUndefined(options$1.focusIndex) ? index$1 : options$1.focusIndex}.` : "";
-var appendAt = (data, value) => [...data, ...convertToArrayPayload(value)];
-var fillEmptyArray = (value) => Array.isArray(value) ? value.map(() => void 0) : void 0;
-function insert(data, index$1, value) {
-	return [
-		...data.slice(0, index$1),
-		...convertToArrayPayload(value),
-		...data.slice(index$1)
-	];
-}
-var moveArrayAt = (data, from, to) => {
-	if (!Array.isArray(data)) return [];
-	if (isUndefined(data[to])) data[to] = void 0;
-	data.splice(to, 0, data.splice(from, 1)[0]);
-	return data;
-};
-var prependAt = (data, value) => [...convertToArrayPayload(value), ...convertToArrayPayload(data)];
-function removeAtIndexes(data, indexes) {
-	let i$2 = 0;
-	const temp = [...data];
-	for (const index$1 of indexes) {
-		temp.splice(index$1 - i$2, 1);
-		i$2++;
-	}
-	return compact(temp).length ? temp : [];
-}
-var removeArrayAt = (data, index$1) => isUndefined(index$1) ? [] : removeAtIndexes(data, convertToArrayPayload(index$1).sort((a$1, b$1) => a$1 - b$1));
-var swapArrayAt = (data, indexA, indexB) => {
-	[data[indexA], data[indexB]] = [data[indexB], data[indexA]];
-};
-var updateAt = (fieldValues, index$1, value) => {
-	fieldValues[index$1] = value;
-	return fieldValues;
-};
-function useFieldArray(props) {
-	const methods = useFormContext();
-	const { control = methods.control, name, keyName = "id", shouldUnregister, rules } = props;
-	const [fields, setFields] = import_react.useState(control._getFieldArray(name));
-	const ids = import_react.useRef(control._getFieldArray(name).map(generateId));
-	const _actioned = import_react.useRef(false);
-	control._names.array.add(name);
-	import_react.useMemo(() => rules && fields.length >= 0 && control.register(name, rules), [
-		control,
-		name,
-		fields.length,
-		rules
-	]);
-	useIsomorphicLayoutEffect$1(() => control._subjects.array.subscribe({ next: ({ values, name: fieldArrayName }) => {
-		if (fieldArrayName === name || !fieldArrayName) {
-			const fieldValues = get(values, name);
-			if (Array.isArray(fieldValues)) {
-				setFields(fieldValues);
-				ids.current = fieldValues.map(generateId);
-			}
-		}
-	} }).unsubscribe, [control, name]);
-	const updateValues = import_react.useCallback((updatedFieldArrayValues) => {
-		_actioned.current = true;
-		control._setFieldArray(name, updatedFieldArrayValues);
-	}, [control, name]);
-	const append = (value, options$1) => {
-		const appendValue = convertToArrayPayload(cloneObject(value));
-		const updatedFieldArrayValues = appendAt(control._getFieldArray(name), appendValue);
-		control._names.focus = getFocusFieldName(name, updatedFieldArrayValues.length - 1, options$1);
-		ids.current = appendAt(ids.current, appendValue.map(generateId));
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		control._setFieldArray(name, updatedFieldArrayValues, appendAt, { argA: fillEmptyArray(value) });
-	};
-	const prepend = (value, options$1) => {
-		const prependValue = convertToArrayPayload(cloneObject(value));
-		const updatedFieldArrayValues = prependAt(control._getFieldArray(name), prependValue);
-		control._names.focus = getFocusFieldName(name, 0, options$1);
-		ids.current = prependAt(ids.current, prependValue.map(generateId));
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		control._setFieldArray(name, updatedFieldArrayValues, prependAt, { argA: fillEmptyArray(value) });
-	};
-	const remove = (index$1) => {
-		const updatedFieldArrayValues = removeArrayAt(control._getFieldArray(name), index$1);
-		ids.current = removeArrayAt(ids.current, index$1);
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		!Array.isArray(get(control._fields, name)) && set(control._fields, name, void 0);
-		control._setFieldArray(name, updatedFieldArrayValues, removeArrayAt, { argA: index$1 });
-	};
-	const insert$1 = (index$1, value, options$1) => {
-		const insertValue = convertToArrayPayload(cloneObject(value));
-		const updatedFieldArrayValues = insert(control._getFieldArray(name), index$1, insertValue);
-		control._names.focus = getFocusFieldName(name, index$1, options$1);
-		ids.current = insert(ids.current, index$1, insertValue.map(generateId));
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		control._setFieldArray(name, updatedFieldArrayValues, insert, {
-			argA: index$1,
-			argB: fillEmptyArray(value)
-		});
-	};
-	const swap = (indexA, indexB) => {
-		const updatedFieldArrayValues = control._getFieldArray(name);
-		swapArrayAt(updatedFieldArrayValues, indexA, indexB);
-		swapArrayAt(ids.current, indexA, indexB);
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		control._setFieldArray(name, updatedFieldArrayValues, swapArrayAt, {
-			argA: indexA,
-			argB: indexB
-		}, false);
-	};
-	const move = (from, to) => {
-		const updatedFieldArrayValues = control._getFieldArray(name);
-		moveArrayAt(updatedFieldArrayValues, from, to);
-		moveArrayAt(ids.current, from, to);
-		updateValues(updatedFieldArrayValues);
-		setFields(updatedFieldArrayValues);
-		control._setFieldArray(name, updatedFieldArrayValues, moveArrayAt, {
-			argA: from,
-			argB: to
-		}, false);
-	};
-	const update = (index$1, value) => {
-		const updateValue = cloneObject(value);
-		const updatedFieldArrayValues = updateAt(control._getFieldArray(name), index$1, updateValue);
-		ids.current = [...updatedFieldArrayValues].map((item, i$2) => !item || i$2 === index$1 ? generateId() : ids.current[i$2]);
-		updateValues(updatedFieldArrayValues);
-		setFields([...updatedFieldArrayValues]);
-		control._setFieldArray(name, updatedFieldArrayValues, updateAt, {
-			argA: index$1,
-			argB: updateValue
-		}, true, false);
-	};
-	const replace = (value) => {
-		const updatedFieldArrayValues = convertToArrayPayload(cloneObject(value));
-		ids.current = updatedFieldArrayValues.map(generateId);
-		updateValues([...updatedFieldArrayValues]);
-		setFields([...updatedFieldArrayValues]);
-		control._setFieldArray(name, [...updatedFieldArrayValues], (data) => data, {}, true, false);
-	};
-	import_react.useEffect(() => {
-		control._state.action = false;
-		isWatched(name, control._names) && control._subjects.state.next({ ...control._formState });
-		if (_actioned.current && (!getValidationModes(control._options.mode).isOnSubmit || control._formState.isSubmitted) && !getValidationModes(control._options.reValidateMode).isOnSubmit) if (control._options.resolver) control._runSchema([name]).then((result) => {
-			control._updateIsValidating([name]);
-			const error = get(result.errors, name);
-			const existingError = get(control._formState.errors, name);
-			if (existingError ? !error && existingError.type || error && (existingError.type !== error.type || existingError.message !== error.message) : error && error.type) {
-				error ? set(control._formState.errors, name, error) : unset(control._formState.errors, name);
-				control._subjects.state.next({ errors: control._formState.errors });
-			}
-		});
-		else {
-			const field = get(control._fields, name);
-			if (field && field._f && !(getValidationModes(control._options.reValidateMode).isOnSubmit && getValidationModes(control._options.mode).isOnSubmit)) validateField(field, control._names.disabled, control._formValues, control._options.criteriaMode === VALIDATION_MODE.all, control._options.shouldUseNativeValidation, true).then((error) => !isEmptyObject(error) && control._subjects.state.next({ errors: updateFieldArrayRootError(control._formState.errors, error, name) }));
-		}
-		control._subjects.state.next({
-			name,
-			values: cloneObject(control._formValues)
-		});
-		control._names.focus && iterateFieldsByAction(control._fields, (ref, key) => {
-			if (control._names.focus && key.startsWith(control._names.focus) && ref.focus) {
-				ref.focus();
-				return 1;
-			}
-		});
-		control._names.focus = "";
-		control._setValid();
-		_actioned.current = false;
-	}, [
-		fields,
-		name,
-		control
-	]);
-	import_react.useEffect(() => {
-		!get(control._formValues, name) && control._setFieldArray(name);
-		return () => {
-			const updateMounted = (name$1, value) => {
-				const field = get(control._fields, name$1);
-				if (field && field._f) field._f.mount = value;
-			};
-			control._options.shouldUnregister || shouldUnregister ? control.unregister(name) : updateMounted(name, false);
-		};
-	}, [
-		name,
-		control,
-		keyName,
-		shouldUnregister
-	]);
-	return {
-		swap: import_react.useCallback(swap, [
-			updateValues,
-			name,
-			control
-		]),
-		move: import_react.useCallback(move, [
-			updateValues,
-			name,
-			control
-		]),
-		prepend: import_react.useCallback(prepend, [
-			updateValues,
-			name,
-			control
-		]),
-		append: import_react.useCallback(append, [
-			updateValues,
-			name,
-			control
-		]),
-		remove: import_react.useCallback(remove, [
-			updateValues,
-			name,
-			control
-		]),
-		insert: import_react.useCallback(insert$1, [
-			updateValues,
-			name,
-			control
-		]),
-		update: import_react.useCallback(update, [
-			updateValues,
-			name,
-			control
-		]),
-		replace: import_react.useCallback(replace, [
-			updateValues,
-			name,
-			control
-		]),
-		fields: import_react.useMemo(() => fields.map((field, index$1) => ({
-			...field,
-			[keyName]: ids.current[index$1] || generateId()
-		})), [fields, keyName])
-	};
-}
 function useForm(props = {}) {
 	const _formControl = import_react.useRef(void 0);
 	const _values = import_react.useRef(void 0);
@@ -26079,9 +25909,9 @@ const NUMBER_FORMAT_RANGES = {
 	float32: [-34028234663852886e22, 34028234663852886e22],
 	float64: [-Number.MAX_VALUE, Number.MAX_VALUE]
 };
-function pick(schema, mask) {
-	const currDef = schema._zod.def;
-	return clone(schema, mergeDefs(schema._zod.def, {
+function pick(schema$5, mask) {
+	const currDef = schema$5._zod.def;
+	return clone(schema$5, mergeDefs(schema$5._zod.def, {
 		get shape() {
 			const newShape = {};
 			for (const key in mask) {
@@ -26095,11 +25925,11 @@ function pick(schema, mask) {
 		checks: []
 	}));
 }
-function omit(schema, mask) {
-	const currDef = schema._zod.def;
-	return clone(schema, mergeDefs(schema._zod.def, {
+function omit(schema$5, mask) {
+	const currDef = schema$5._zod.def;
+	return clone(schema$5, mergeDefs(schema$5._zod.def, {
 		get shape() {
-			const newShape = { ...schema._zod.def.shape };
+			const newShape = { ...schema$5._zod.def.shape };
 			for (const key in mask) {
 				if (!(key in currDef.shape)) throw new Error(`Unrecognized key: "${key}"`);
 				if (!mask[key]) continue;
@@ -26111,14 +25941,14 @@ function omit(schema, mask) {
 		checks: []
 	}));
 }
-function extend(schema, shape) {
+function extend(schema$5, shape) {
 	if (!isPlainObject(shape)) throw new Error("Invalid input to extend: expected a plain object");
-	const checks = schema._zod.def.checks;
+	const checks = schema$5._zod.def.checks;
 	if (checks && checks.length > 0) throw new Error("Object schemas containing refinements cannot be extended. Use `.safeExtend()` instead.");
-	return clone(schema, mergeDefs(schema._zod.def, {
+	return clone(schema$5, mergeDefs(schema$5._zod.def, {
 		get shape() {
 			const _shape = {
-				...schema._zod.def.shape,
+				...schema$5._zod.def.shape,
 				...shape
 			};
 			assignProp(this, "shape", _shape);
@@ -26127,19 +25957,19 @@ function extend(schema, shape) {
 		checks: []
 	}));
 }
-function safeExtend(schema, shape) {
+function safeExtend(schema$5, shape) {
 	if (!isPlainObject(shape)) throw new Error("Invalid input to safeExtend: expected a plain object");
-	return clone(schema, {
-		...schema._zod.def,
+	return clone(schema$5, {
+		...schema$5._zod.def,
 		get shape() {
 			const _shape = {
-				...schema._zod.def.shape,
+				...schema$5._zod.def.shape,
 				...shape
 			};
 			assignProp(this, "shape", _shape);
 			return _shape;
 		},
-		checks: schema._zod.def.checks
+		checks: schema$5._zod.def.checks
 	});
 }
 function merge(a$1, b$1) {
@@ -26158,10 +25988,10 @@ function merge(a$1, b$1) {
 		checks: []
 	}));
 }
-function partial(Class, schema, mask) {
-	return clone(schema, mergeDefs(schema._zod.def, {
+function partial(Class, schema$5, mask) {
+	return clone(schema$5, mergeDefs(schema$5._zod.def, {
 		get shape() {
-			const oldShape = schema._zod.def.shape;
+			const oldShape = schema$5._zod.def.shape;
 			const shape = { ...oldShape };
 			if (mask) for (const key in mask) {
 				if (!(key in oldShape)) throw new Error(`Unrecognized key: "${key}"`);
@@ -26181,10 +26011,10 @@ function partial(Class, schema, mask) {
 		checks: []
 	}));
 }
-function required(Class, schema, mask) {
-	return clone(schema, mergeDefs(schema._zod.def, {
+function required(Class, schema$5, mask) {
+	return clone(schema$5, mergeDefs(schema$5._zod.def, {
 		get shape() {
-			const oldShape = schema._zod.def.shape;
+			const oldShape = schema$5._zod.def.shape;
 			const shape = { ...oldShape };
 			if (mask) for (const key in mask) {
 				if (!(key in shape)) throw new Error(`Unrecognized key: "${key}"`);
@@ -26301,9 +26131,9 @@ function formatError(error, mapper = (issue$1) => issue$1.message) {
 	processError(error);
 	return fieldErrors;
 }
-const _parse = (_Err) => (schema, value, _ctx, _params) => {
+const _parse = (_Err) => (schema$5, value, _ctx, _params) => {
 	const ctx = _ctx ? Object.assign(_ctx, { async: false }) : { async: false };
-	const result = schema._zod.run({
+	const result = schema$5._zod.run({
 		value,
 		issues: []
 	}, ctx);
@@ -26316,9 +26146,9 @@ const _parse = (_Err) => (schema, value, _ctx, _params) => {
 	return result.value;
 };
 const parse$2 = /* @__PURE__ */ _parse($ZodRealError);
-const _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
+const _parseAsync = (_Err) => async (schema$5, value, _ctx, params) => {
 	const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
-	let result = schema._zod.run({
+	let result = schema$5._zod.run({
 		value,
 		issues: []
 	}, ctx);
@@ -26331,12 +26161,12 @@ const _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
 	return result.value;
 };
 const parseAsync$1 = /* @__PURE__ */ _parseAsync($ZodRealError);
-const _safeParse = (_Err) => (schema, value, _ctx) => {
+const _safeParse = (_Err) => (schema$5, value, _ctx) => {
 	const ctx = _ctx ? {
 		..._ctx,
 		async: false
 	} : { async: false };
-	const result = schema._zod.run({
+	const result = schema$5._zod.run({
 		value,
 		issues: []
 	}, ctx);
@@ -26350,9 +26180,9 @@ const _safeParse = (_Err) => (schema, value, _ctx) => {
 	};
 };
 const safeParse$1 = /* @__PURE__ */ _safeParse($ZodRealError);
-const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
+const _safeParseAsync = (_Err) => async (schema$5, value, _ctx) => {
 	const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
-	let result = schema._zod.run({
+	let result = schema$5._zod.run({
 		value,
 		issues: []
 	}, ctx);
@@ -26366,33 +26196,33 @@ const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
 	};
 };
 const safeParseAsync$1 = /* @__PURE__ */ _safeParseAsync($ZodRealError);
-const _encode = (_Err) => (schema, value, _ctx) => {
+const _encode = (_Err) => (schema$5, value, _ctx) => {
 	const ctx = _ctx ? Object.assign(_ctx, { direction: "backward" }) : { direction: "backward" };
-	return _parse(_Err)(schema, value, ctx);
+	return _parse(_Err)(schema$5, value, ctx);
 };
-const _decode = (_Err) => (schema, value, _ctx) => {
-	return _parse(_Err)(schema, value, _ctx);
+const _decode = (_Err) => (schema$5, value, _ctx) => {
+	return _parse(_Err)(schema$5, value, _ctx);
 };
-const _encodeAsync = (_Err) => async (schema, value, _ctx) => {
+const _encodeAsync = (_Err) => async (schema$5, value, _ctx) => {
 	const ctx = _ctx ? Object.assign(_ctx, { direction: "backward" }) : { direction: "backward" };
-	return _parseAsync(_Err)(schema, value, ctx);
+	return _parseAsync(_Err)(schema$5, value, ctx);
 };
-const _decodeAsync = (_Err) => async (schema, value, _ctx) => {
-	return _parseAsync(_Err)(schema, value, _ctx);
+const _decodeAsync = (_Err) => async (schema$5, value, _ctx) => {
+	return _parseAsync(_Err)(schema$5, value, _ctx);
 };
-const _safeEncode = (_Err) => (schema, value, _ctx) => {
+const _safeEncode = (_Err) => (schema$5, value, _ctx) => {
 	const ctx = _ctx ? Object.assign(_ctx, { direction: "backward" }) : { direction: "backward" };
-	return _safeParse(_Err)(schema, value, ctx);
+	return _safeParse(_Err)(schema$5, value, ctx);
 };
-const _safeDecode = (_Err) => (schema, value, _ctx) => {
-	return _safeParse(_Err)(schema, value, _ctx);
+const _safeDecode = (_Err) => (schema$5, value, _ctx) => {
+	return _safeParse(_Err)(schema$5, value, _ctx);
 };
-const _safeEncodeAsync = (_Err) => async (schema, value, _ctx) => {
+const _safeEncodeAsync = (_Err) => async (schema$5, value, _ctx) => {
 	const ctx = _ctx ? Object.assign(_ctx, { direction: "backward" }) : { direction: "backward" };
-	return _safeParseAsync(_Err)(schema, value, ctx);
+	return _safeParseAsync(_Err)(schema$5, value, ctx);
 };
-const _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
-	return _safeParseAsync(_Err)(schema, value, _ctx);
+const _safeDecodeAsync = (_Err) => async (schema$5, value, _ctx) => {
+	return _safeParseAsync(_Err)(schema$5, value, _ctx);
 };
 const cuid = /^[cC][^\s-]{8,}$/;
 const cuid2 = /^[0-9a-z]+$/;
@@ -26432,8 +26262,8 @@ function datetime$1(args) {
 	const opts = ["Z"];
 	if (args.local) opts.push("");
 	if (args.offset) opts.push(`([+-](?:[01]\\d|2[0-3]):[0-5]\\d)`);
-	const timeRegex = `${time$2}(?:${opts.join("|")})`;
-	return /* @__PURE__ */ new RegExp(`^${dateSource}T(?:${timeRegex})$`);
+	const timeRegex$1 = `${time$2}(?:${opts.join("|")})`;
+	return /* @__PURE__ */ new RegExp(`^${dateSource}T(?:${timeRegex$1})$`);
 }
 const string$1 = (params) => {
 	const regex = params ? `[\\s\\S]{${params?.minimum ?? 0},${params?.maximum ?? ""}}` : `[\\s\\S]*`;
@@ -27472,8 +27302,8 @@ const $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
 	});
 	defineLazy(inst._zod, "pattern", () => {
 		if (def.options.every((o$1) => o$1._zod.pattern)) {
-			const patterns = def.options.map((o$1) => o$1._zod.pattern);
-			return /* @__PURE__ */ new RegExp(`^(${patterns.map((p) => cleanRegex(p.source)).join("|")})$`);
+			const patterns$1 = def.options.map((o$1) => o$1._zod.pattern);
+			return /* @__PURE__ */ new RegExp(`^(${patterns$1.map((p) => cleanRegex(p.source)).join("|")})$`);
 		}
 	});
 	const single = def.options.length === 1;
@@ -27817,12 +27647,12 @@ var $ZodRegistry = class {
 		this._map = /* @__PURE__ */ new WeakMap();
 		this._idmap = /* @__PURE__ */ new Map();
 	}
-	add(schema, ..._meta) {
+	add(schema$5, ..._meta) {
 		const meta$2 = _meta[0];
-		this._map.set(schema, meta$2);
+		this._map.set(schema$5, meta$2);
 		if (meta$2 && typeof meta$2 === "object" && "id" in meta$2) {
 			if (this._idmap.has(meta$2.id)) throw new Error(`ID ${meta$2.id} already exists in the registry`);
-			this._idmap.set(meta$2.id, schema);
+			this._idmap.set(meta$2.id, schema$5);
 		}
 		return this;
 	}
@@ -27831,27 +27661,27 @@ var $ZodRegistry = class {
 		this._idmap = /* @__PURE__ */ new Map();
 		return this;
 	}
-	remove(schema) {
-		const meta$2 = this._map.get(schema);
+	remove(schema$5) {
+		const meta$2 = this._map.get(schema$5);
 		if (meta$2 && typeof meta$2 === "object" && "id" in meta$2) this._idmap.delete(meta$2.id);
-		this._map.delete(schema);
+		this._map.delete(schema$5);
 		return this;
 	}
-	get(schema) {
-		const p = schema._zod.parent;
+	get(schema$5) {
+		const p = schema$5._zod.parent;
 		if (p) {
 			const pm = { ...this.get(p) ?? {} };
 			delete pm.id;
 			const f = {
 				...pm,
-				...this._map.get(schema)
+				...this._map.get(schema$5)
 			};
 			return Object.keys(f).length ? f : void 0;
 		}
-		return this._map.get(schema);
+		return this._map.get(schema$5);
 	}
-	has(schema) {
-		return this._map.has(schema);
+	has(schema$5) {
+		return this._map.has(schema$5);
 	}
 };
 function registry() {
@@ -28320,16 +28150,16 @@ function initializeContext(params) {
 		external: params?.external ?? void 0
 	};
 }
-function process$1(schema, ctx, _params = {
+function process$1(schema$5, ctx, _params = {
 	path: [],
 	schemaPath: []
 }) {
 	var _a$1;
-	const def = schema._zod.def;
-	const seen$1 = ctx.seen.get(schema);
+	const def = schema$5._zod.def;
+	const seen$1 = ctx.seen.get(schema$5);
 	if (seen$1) {
 		seen$1.count++;
-		if (_params.schemaPath.includes(schema)) seen$1.cycle = _params.path;
+		if (_params.schemaPath.includes(schema$5)) seen$1.cycle = _params.path;
 		return seen$1.schema;
 	}
 	const result = {
@@ -28338,40 +28168,40 @@ function process$1(schema, ctx, _params = {
 		cycle: void 0,
 		path: _params.path
 	};
-	ctx.seen.set(schema, result);
-	const overrideSchema = schema._zod.toJSONSchema?.();
+	ctx.seen.set(schema$5, result);
+	const overrideSchema = schema$5._zod.toJSONSchema?.();
 	if (overrideSchema) result.schema = overrideSchema;
 	else {
 		const params = {
 			..._params,
-			schemaPath: [..._params.schemaPath, schema],
+			schemaPath: [..._params.schemaPath, schema$5],
 			path: _params.path
 		};
-		const parent = schema._zod.parent;
+		const parent = schema$5._zod.parent;
 		if (parent) {
 			result.ref = parent;
 			process$1(parent, ctx, params);
 			ctx.seen.get(parent).isParent = true;
-		} else if (schema._zod.processJSONSchema) schema._zod.processJSONSchema(ctx, result.schema, params);
+		} else if (schema$5._zod.processJSONSchema) schema$5._zod.processJSONSchema(ctx, result.schema, params);
 		else {
 			const _json = result.schema;
 			const processor = ctx.processors[def.type];
 			if (!processor) throw new Error(`[toJSONSchema]: Non-representable type encountered: ${def.type}`);
-			processor(schema, ctx, _json, params);
+			processor(schema$5, ctx, _json, params);
 		}
 	}
-	const meta$2 = ctx.metadataRegistry.get(schema);
+	const meta$2 = ctx.metadataRegistry.get(schema$5);
 	if (meta$2) Object.assign(result.schema, meta$2);
-	if (ctx.io === "input" && isTransforming(schema)) {
+	if (ctx.io === "input" && isTransforming(schema$5)) {
 		delete result.schema.examples;
 		delete result.schema.default;
 	}
 	if (ctx.io === "input" && result.schema._prefault) (_a$1 = result.schema).default ?? (_a$1.default = result.schema._prefault);
 	delete result.schema._prefault;
-	return ctx.seen.get(schema).schema;
+	return ctx.seen.get(schema$5).schema;
 }
-function extractDefs(ctx, schema) {
-	const root = ctx.seen.get(schema);
+function extractDefs(ctx, schema$5) {
+	const root = ctx.seen.get(schema$5);
 	if (!root) throw new Error("Unprocessed schema. This is a bug in Zod.");
 	const makeURI = (entry) => {
 		const defsSegment = ctx.target === "draft-2020-12" ? "$defs" : "definitions";
@@ -28400,9 +28230,9 @@ function extractDefs(ctx, schema) {
 		const { ref, defId } = makeURI(entry);
 		seen$1.def = { ...seen$1.schema };
 		if (defId) seen$1.defId = defId;
-		const schema$1 = seen$1.schema;
-		for (const key in schema$1) delete schema$1[key];
-		schema$1.$ref = ref;
+		const schema$6 = seen$1.schema;
+		for (const key in schema$6) delete schema$6[key];
+		schema$6.$ref = ref;
 	};
 	if (ctx.cycles === "throw") for (const entry of ctx.seen.entries()) {
 		const seen$1 = entry[1];
@@ -28412,13 +28242,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 	}
 	for (const entry of ctx.seen.entries()) {
 		const seen$1 = entry[1];
-		if (schema === entry[0]) {
+		if (schema$5 === entry[0]) {
 			extractToDef(entry);
 			continue;
 		}
 		if (ctx.external) {
 			const ext = ctx.external.registry.get(entry[0])?.id;
-			if (schema !== entry[0] && ext) {
+			if (schema$5 !== entry[0] && ext) {
 				extractToDef(entry);
 				continue;
 			}
@@ -28439,13 +28269,13 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
 		}
 	}
 }
-function finalize(ctx, schema) {
-	const root = ctx.seen.get(schema);
+function finalize(ctx, schema$5) {
+	const root = ctx.seen.get(schema$5);
 	if (!root) throw new Error("Unprocessed schema. This is a bug in Zod.");
 	const flattenRef = (zodSchema) => {
 		const seen$1 = ctx.seen.get(zodSchema);
-		const schema$1 = seen$1.def ?? seen$1.schema;
-		const _cached = { ...schema$1 };
+		const schema$6 = seen$1.def ?? seen$1.schema;
+		const _cached = { ...schema$6 };
 		if (seen$1.ref === null) return;
 		const ref = seen$1.ref;
 		seen$1.ref = null;
@@ -28453,16 +28283,16 @@ function finalize(ctx, schema) {
 			flattenRef(ref);
 			const refSchema = ctx.seen.get(ref).schema;
 			if (refSchema.$ref && (ctx.target === "draft-07" || ctx.target === "draft-04" || ctx.target === "openapi-3.0")) {
-				schema$1.allOf = schema$1.allOf ?? [];
-				schema$1.allOf.push(refSchema);
+				schema$6.allOf = schema$6.allOf ?? [];
+				schema$6.allOf.push(refSchema);
 			} else {
-				Object.assign(schema$1, refSchema);
-				Object.assign(schema$1, _cached);
+				Object.assign(schema$6, refSchema);
+				Object.assign(schema$6, _cached);
 			}
 		}
 		if (!seen$1.isParent) ctx.override({
 			zodSchema,
-			jsonSchema: schema$1,
+			jsonSchema: schema$6,
 			path: seen$1.path ?? []
 		});
 	};
@@ -28473,7 +28303,7 @@ function finalize(ctx, schema) {
 	else if (ctx.target === "draft-04") result.$schema = "http://json-schema.org/draft-04/schema#";
 	else if (ctx.target === "openapi-3.0") {}
 	if (ctx.external?.uri) {
-		const id = ctx.external.registry.get(schema)?.id;
+		const id = ctx.external.registry.get(schema$5)?.id;
 		if (!id) throw new Error("Schema is missing an `id` property");
 		result.$id = ctx.external.uri(id);
 	}
@@ -28489,10 +28319,10 @@ function finalize(ctx, schema) {
 		const finalized = JSON.parse(JSON.stringify(result));
 		Object.defineProperty(finalized, "~standard", {
 			value: {
-				...schema["~standard"],
+				...schema$5["~standard"],
 				jsonSchema: {
-					input: createStandardJSONSchemaMethod(schema, "input"),
-					output: createStandardJSONSchemaMethod(schema, "output")
+					input: createStandardJSONSchemaMethod(schema$5, "input"),
+					output: createStandardJSONSchemaMethod(schema$5, "output")
 				}
 			},
 			enumerable: false,
@@ -28531,16 +28361,16 @@ function isTransforming(_schema, _ctx) {
 	}
 	return false;
 }
-const createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
+const createToJSONSchemaMethod = (schema$5, processors = {}) => (params) => {
 	const ctx = initializeContext({
 		...params,
 		processors
 	});
-	process$1(schema, ctx);
-	extractDefs(ctx, schema);
-	return finalize(ctx, schema);
+	process$1(schema$5, ctx);
+	extractDefs(ctx, schema$5);
+	return finalize(ctx, schema$5);
 };
-const createStandardJSONSchemaMethod = (schema, io) => (params) => {
+const createStandardJSONSchemaMethod = (schema$5, io) => (params) => {
 	const { libraryOptions, target } = params ?? {};
 	const ctx = initializeContext({
 		...libraryOptions ?? {},
@@ -28548,9 +28378,9 @@ const createStandardJSONSchemaMethod = (schema, io) => (params) => {
 		io,
 		processors: {}
 	});
-	process$1(schema, ctx);
-	extractDefs(ctx, schema);
-	return finalize(ctx, schema);
+	process$1(schema$5, ctx);
+	extractDefs(ctx, schema$5);
+	return finalize(ctx, schema$5);
 };
 var formatMap = {
 	guid: "uuid",
@@ -28559,10 +28389,10 @@ var formatMap = {
 	json_string: "json-string",
 	regex: ""
 };
-const stringProcessor = (schema, ctx, _json, _params) => {
+const stringProcessor = (schema$5, ctx, _json, _params) => {
 	const json = _json;
 	json.type = "string";
-	const { minimum, maximum, format, patterns, contentEncoding } = schema._zod.bag;
+	const { minimum, maximum, format, patterns: patterns$1, contentEncoding } = schema$5._zod.bag;
 	if (typeof minimum === "number") json.minLength = minimum;
 	if (typeof maximum === "number") json.maxLength = maximum;
 	if (format) {
@@ -28570,8 +28400,8 @@ const stringProcessor = (schema, ctx, _json, _params) => {
 		if (json.format === "") delete json.format;
 	}
 	if (contentEncoding) json.contentEncoding = contentEncoding;
-	if (patterns && patterns.size > 0) {
-		const regexes = [...patterns];
+	if (patterns$1 && patterns$1.size > 0) {
+		const regexes = [...patterns$1];
 		if (regexes.length === 1) json.pattern = regexes[0].source;
 		else if (regexes.length > 1) json.allOf = [...regexes.map((regex) => ({
 			...ctx.target === "draft-07" || ctx.target === "draft-04" || ctx.target === "openapi-3.0" ? { type: "string" } : {},
@@ -28579,9 +28409,9 @@ const stringProcessor = (schema, ctx, _json, _params) => {
 		}))];
 	}
 };
-const numberProcessor = (schema, ctx, _json, _params) => {
+const numberProcessor = (schema$5, ctx, _json, _params) => {
 	const json = _json;
-	const { minimum, maximum, format, multipleOf, exclusiveMaximum, exclusiveMinimum } = schema._zod.bag;
+	const { minimum, maximum, format, multipleOf, exclusiveMaximum, exclusiveMinimum } = schema$5._zod.bag;
 	if (typeof format === "string" && format.includes("int")) json.type = "integer";
 	else json.type = "number";
 	if (typeof exclusiveMinimum === "number") if (ctx.target === "draft-04" || ctx.target === "openapi-3.0") {
@@ -28611,8 +28441,8 @@ const neverProcessor = (_schema, _ctx, json, _params) => {
 	json.not = {};
 };
 const unknownProcessor = (_schema, _ctx, _json, _params) => {};
-const enumProcessor = (schema, _ctx, json, _params) => {
-	const def = schema._zod.def;
+const enumProcessor = (schema$5, _ctx, json, _params) => {
+	const def = schema$5._zod.def;
 	const values = getEnumValues(def.entries);
 	if (values.every((v) => typeof v === "number")) json.type = "number";
 	if (values.every((v) => typeof v === "string")) json.type = "string";
@@ -28624,10 +28454,10 @@ const customProcessor = (_schema, ctx, _json, _params) => {
 const transformProcessor = (_schema, ctx, _json, _params) => {
 	if (ctx.unrepresentable === "throw") throw new Error("Transforms cannot be represented in JSON Schema");
 };
-const arrayProcessor = (schema, ctx, _json, params) => {
+const arrayProcessor = (schema$5, ctx, _json, params) => {
 	const json = _json;
-	const def = schema._zod.def;
-	const { minimum, maximum } = schema._zod.bag;
+	const def = schema$5._zod.def;
+	const { minimum, maximum } = schema$5._zod.bag;
 	if (typeof minimum === "number") json.minItems = minimum;
 	if (typeof maximum === "number") json.maxItems = maximum;
 	json.type = "array";
@@ -28636,9 +28466,9 @@ const arrayProcessor = (schema, ctx, _json, params) => {
 		path: [...params.path, "items"]
 	});
 };
-const objectProcessor = (schema, ctx, _json, params) => {
+const objectProcessor = (schema$5, ctx, _json, params) => {
 	const json = _json;
-	const def = schema._zod.def;
+	const def = schema$5._zod.def;
 	json.type = "object";
 	json.properties = {};
 	const shape = def.shape;
@@ -28665,8 +28495,8 @@ const objectProcessor = (schema, ctx, _json, params) => {
 		path: [...params.path, "additionalProperties"]
 	});
 };
-const unionProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const unionProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	const isExclusive = def.inclusive === false;
 	const options$1 = def.options.map((x$1, i$2) => process$1(x$1, ctx, {
 		...params,
@@ -28679,8 +28509,8 @@ const unionProcessor = (schema, ctx, json, params) => {
 	if (isExclusive) json.oneOf = options$1;
 	else json.anyOf = options$1;
 };
-const intersectionProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const intersectionProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	const a$1 = process$1(def.left, ctx, {
 		...params,
 		path: [
@@ -28700,39 +28530,39 @@ const intersectionProcessor = (schema, ctx, json, params) => {
 	const isSimpleIntersection = (val) => "allOf" in val && Object.keys(val).length === 1;
 	json.allOf = [...isSimpleIntersection(a$1) ? a$1.allOf : [a$1], ...isSimpleIntersection(b$1) ? b$1.allOf : [b$1]];
 };
-const nullableProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const nullableProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	const inner = process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	if (ctx.target === "openapi-3.0") {
 		seen$1.ref = def.innerType;
 		json.nullable = true;
 	} else json.anyOf = [inner, { type: "null" }];
 };
-const nonoptionalProcessor = (schema, ctx, _json, params) => {
-	const def = schema._zod.def;
+const nonoptionalProcessor = (schema$5, ctx, _json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 };
-const defaultProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const defaultProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 	json.default = JSON.parse(JSON.stringify(def.defaultValue));
 };
-const prefaultProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const prefaultProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 	if (ctx.io === "input") json._prefault = JSON.parse(JSON.stringify(def.defaultValue));
 };
-const catchProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const catchProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 	let catchValue;
 	try {
@@ -28742,24 +28572,24 @@ const catchProcessor = (schema, ctx, json, params) => {
 	}
 	json.default = catchValue;
 };
-const pipeProcessor = (schema, ctx, _json, params) => {
-	const def = schema._zod.def;
+const pipeProcessor = (schema$5, ctx, _json, params) => {
+	const def = schema$5._zod.def;
 	const innerType = ctx.io === "input" ? def.in._zod.def.type === "transform" ? def.out : def.in : def.out;
 	process$1(innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = innerType;
 };
-const readonlyProcessor = (schema, ctx, json, params) => {
-	const def = schema._zod.def;
+const readonlyProcessor = (schema$5, ctx, json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 	json.readOnly = true;
 };
-const optionalProcessor = (schema, ctx, _json, params) => {
-	const def = schema._zod.def;
+const optionalProcessor = (schema$5, ctx, _json, params) => {
+	const def = schema$5._zod.def;
 	process$1(def.innerType, ctx, params);
-	const seen$1 = ctx.seen.get(schema);
+	const seen$1 = ctx.seen.get(schema$5);
 	seen$1.ref = def.innerType;
 };
 function t(r$2, e) {
@@ -29652,14 +29482,14 @@ var Label$3 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 Label$3.displayName = NAME$1;
-var Root$5 = Label$3;
+var Root$6 = Label$3;
 var labelVariants = cva("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70");
-var Label$2 = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$5, {
+var Label$1 = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$6, {
 	ref,
 	className: cn(labelVariants(), className),
 	...props
 }));
-Label$2.displayName = Root$5.displayName;
+Label$1.displayName = Root$6.displayName;
 var Form = FormProvider;
 var FormFieldContext = import_react.createContext({});
 var FormField = ({ ...props }) => {
@@ -29699,7 +29529,7 @@ var FormItem = import_react.forwardRef(({ className, ...props }, ref) => {
 FormItem.displayName = "FormItem";
 var FormLabel = import_react.forwardRef(({ className, ...props }, ref) => {
 	const { error, formItemId } = useFormField();
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$2, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
 		ref,
 		className: cn(error && "text-destructive", className),
 		htmlFor: formItemId,
@@ -29800,9 +29630,9 @@ function CheckboxProvider(props) {
 		children: isFunction(internal_do_not_use_render) ? internal_do_not_use_render(context) : children
 	});
 }
-var TRIGGER_NAME$3 = "CheckboxTrigger";
+var TRIGGER_NAME$4 = "CheckboxTrigger";
 var CheckboxTrigger = import_react.forwardRef(({ __scopeCheckbox, onKeyDown, onClick, ...checkboxProps }, forwardedRef) => {
-	const { control, value, disabled, checked, required: required$1, setControl, setChecked, hasConsumerStoppedPropagationRef, isFormControl, bubbleInput } = useCheckboxContext(TRIGGER_NAME$3, __scopeCheckbox);
+	const { control, value, disabled, checked, required: required$1, setControl, setChecked, hasConsumerStoppedPropagationRef, isFormControl, bubbleInput } = useCheckboxContext(TRIGGER_NAME$4, __scopeCheckbox);
 	const composedRefs = useComposedRefs(forwardedRef, setControl);
 	const initialCheckedStateRef = import_react.useRef(checked);
 	import_react.useEffect(() => {
@@ -29818,7 +29648,7 @@ var CheckboxTrigger = import_react.forwardRef(({ __scopeCheckbox, onKeyDown, onC
 		role: "checkbox",
 		"aria-checked": isIndeterminate$1(checked) ? "mixed" : checked,
 		"aria-required": required$1,
-		"data-state": getState$1(checked),
+		"data-state": getState$2(checked),
 		"data-disabled": disabled ? "" : void 0,
 		disabled,
 		value,
@@ -29836,7 +29666,7 @@ var CheckboxTrigger = import_react.forwardRef(({ __scopeCheckbox, onKeyDown, onC
 		})
 	});
 });
-CheckboxTrigger.displayName = TRIGGER_NAME$3;
+CheckboxTrigger.displayName = TRIGGER_NAME$4;
 var Checkbox$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeCheckbox, name, checked, defaultChecked, required: required$1, disabled, value, onCheckedChange, form, ...checkboxProps } = props;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CheckboxProvider, {
@@ -29864,7 +29694,7 @@ var CheckboxIndicator = import_react.forwardRef((props, forwardedRef) => {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
 		present: forceMount || isIndeterminate$1(context.checked) || context.checked === true,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.span, {
-			"data-state": getState$1(context.checked),
+			"data-state": getState$2(context.checked),
 			"data-disabled": context.disabled ? "" : void 0,
 			...indicatorProps,
 			ref: forwardedRef,
@@ -29876,9 +29706,9 @@ var CheckboxIndicator = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 CheckboxIndicator.displayName = INDICATOR_NAME$1;
-var BUBBLE_INPUT_NAME$1 = "CheckboxBubbleInput";
+var BUBBLE_INPUT_NAME$2 = "CheckboxBubbleInput";
 var CheckboxBubbleInput = import_react.forwardRef(({ __scopeCheckbox, ...props }, forwardedRef) => {
-	const { control, hasConsumerStoppedPropagationRef, checked, defaultChecked, required: required$1, disabled, name, value, form, bubbleInput, setBubbleInput } = useCheckboxContext(BUBBLE_INPUT_NAME$1, __scopeCheckbox);
+	const { control, hasConsumerStoppedPropagationRef, checked, defaultChecked, required: required$1, disabled, name, value, form, bubbleInput, setBubbleInput } = useCheckboxContext(BUBBLE_INPUT_NAME$2, __scopeCheckbox);
 	const composedRefs = useComposedRefs(forwardedRef, setBubbleInput);
 	const prevChecked = usePrevious(checked);
 	const controlSize = useSize(control);
@@ -29924,14 +29754,14 @@ var CheckboxBubbleInput = import_react.forwardRef(({ __scopeCheckbox, ...props }
 		}
 	});
 });
-CheckboxBubbleInput.displayName = BUBBLE_INPUT_NAME$1;
+CheckboxBubbleInput.displayName = BUBBLE_INPUT_NAME$2;
 function isFunction(value) {
 	return typeof value === "function";
 }
 function isIndeterminate$1(checked) {
 	return checked === "indeterminate";
 }
-function getState$1(checked) {
+function getState$2(checked) {
 	return isIndeterminate$1(checked) ? "indeterminate" : checked ? "checked" : "unchecked";
 }
 var Checkbox = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Checkbox$1, {
@@ -30002,7 +29832,7 @@ var useAuthStore = () => {
 	return context;
 };
 var useAuthStore_default = useAuthStore;
-var formSchema$1 = object({
+var formSchema = object({
 	email: string().email({ message: "Email inválido." }),
 	password: string().min(1, { message: "A senha é obrigatória." }),
 	remember: boolean().default(false)
@@ -30022,7 +29852,7 @@ function Login() {
 		navigate
 	]);
 	const form = useForm({
-		resolver: a(formSchema$1),
+		resolver: a(formSchema),
 		defaultValues: {
 			email: "",
 			password: "",
@@ -30221,6 +30051,64 @@ function Badge({ className, variant, ...props }) {
 		...props
 	});
 }
+var DEFAULT_CONFIG = {
+	categories: [
+		{
+			id: "cat-1",
+			name: "Alinhadores"
+		},
+		{
+			id: "cat-2",
+			name: "Odontopediatria"
+		},
+		{
+			id: "cat-3",
+			name: "Dentisteria"
+		},
+		{
+			id: "cat-4",
+			name: "Cirurgia"
+		},
+		{
+			id: "cat-5",
+			name: "Outros"
+		}
+	],
+	cabinets: [{
+		id: "gab-1",
+		name: "Gabinete 1",
+		standardHours: 8
+	}, {
+		id: "gab-2",
+		name: "Gabinete 2",
+		standardHours: 8
+	}],
+	doctors: [{
+		id: "doc-1",
+		name: "Dr. Pedro Santos"
+	}, {
+		id: "doc-2",
+		name: "Dra. Ana Silva"
+	}],
+	sources: [
+		{
+			id: "src-1",
+			name: "Google Ads"
+		},
+		{
+			id: "src-2",
+			name: "Meta Ads"
+		},
+		{
+			id: "src-3",
+			name: "Indicação"
+		},
+		{
+			id: "src-4",
+			name: "Passante"
+		}
+	]
+};
 const MOCK_CLINICS = [{
 	id: "clinic-1",
 	name: "Clínica Sorriso Radiante",
@@ -30256,7 +30144,8 @@ const MOCK_CLINICS = [{
 	targetPlansPresented: {
 		adults: 15,
 		kids: 20
-	}
+	},
+	configuration: DEFAULT_CONFIG
 }, {
 	id: "clinic-2",
 	name: "Centro Médico Vida",
@@ -30292,7 +30181,8 @@ const MOCK_CLINICS = [{
 	targetPlansPresented: {
 		adults: 20,
 		kids: 25
-	}
+	},
+	configuration: DEFAULT_CONFIG
 }];
 const generateMockData = (clinicId, year) => {
 	return Array.from({ length: 12 }, (_$1, i$2) => {
@@ -30369,11 +30259,201 @@ const MOCK_DATA = {
 	"clinic-1": generateMockData("clinic-1", 2023),
 	"clinic-2": generateMockData("clinic-2", 2023)
 };
+const daysInYear = 365.2425;
+Math.pow(10, 8) * 24 * 60 * 60 * 1e3;
+const millisecondsInMinute = 6e4;
+const millisecondsInHour = 36e5;
+const secondsInDay = 3600 * 24;
+secondsInDay * 7;
+secondsInDay * daysInYear / 12 * 3;
+const constructFromSymbol = Symbol.for("constructDateFrom");
+function constructFrom(date$2, value) {
+	if (typeof date$2 === "function") return date$2(value);
+	if (date$2 && typeof date$2 === "object" && constructFromSymbol in date$2) return date$2[constructFromSymbol](value);
+	if (date$2 instanceof Date) return new date$2.constructor(value);
+	return new Date(value);
+}
+function toDate(argument, context) {
+	return constructFrom(context || argument, argument);
+}
+function getMonth(date$2, options$1) {
+	return toDate(date$2, options$1?.in).getMonth();
+}
+function getYear(date$2, options$1) {
+	return toDate(date$2, options$1?.in).getFullYear();
+}
+function parseISO(argument, options$1) {
+	const invalidDate = () => constructFrom(options$1?.in, NaN);
+	const additionalDigits = options$1?.additionalDigits ?? 2;
+	const dateStrings = splitDateString(argument);
+	let date$2;
+	if (dateStrings.date) {
+		const parseYearResult = parseYear(dateStrings.date, additionalDigits);
+		date$2 = parseDate(parseYearResult.restDateString, parseYearResult.year);
+	}
+	if (!date$2 || isNaN(+date$2)) return invalidDate();
+	const timestamp = +date$2;
+	let time$2 = 0;
+	let offset$3;
+	if (dateStrings.time) {
+		time$2 = parseTime(dateStrings.time);
+		if (isNaN(time$2)) return invalidDate();
+	}
+	if (dateStrings.timezone) {
+		offset$3 = parseTimezone(dateStrings.timezone);
+		if (isNaN(offset$3)) return invalidDate();
+	} else {
+		const tmpDate = new Date(timestamp + time$2);
+		const result = toDate(0, options$1?.in);
+		result.setFullYear(tmpDate.getUTCFullYear(), tmpDate.getUTCMonth(), tmpDate.getUTCDate());
+		result.setHours(tmpDate.getUTCHours(), tmpDate.getUTCMinutes(), tmpDate.getUTCSeconds(), tmpDate.getUTCMilliseconds());
+		return result;
+	}
+	return toDate(timestamp + time$2 + offset$3, options$1?.in);
+}
+var patterns = {
+	dateTimeDelimiter: /[T ]/,
+	timeZoneDelimiter: /[Z ]/i,
+	timezone: /([Z+-].*)$/
+};
+var dateRegex = /^-?(?:(\d{3})|(\d{2})(?:-?(\d{2}))?|W(\d{2})(?:-?(\d{1}))?|)$/;
+var timeRegex = /^(\d{2}(?:[.,]\d*)?)(?::?(\d{2}(?:[.,]\d*)?))?(?::?(\d{2}(?:[.,]\d*)?))?$/;
+var timezoneRegex = /^([+-])(\d{2})(?::?(\d{2}))?$/;
+function splitDateString(dateString) {
+	const dateStrings = {};
+	const array$1 = dateString.split(patterns.dateTimeDelimiter);
+	let timeString;
+	if (array$1.length > 2) return dateStrings;
+	if (/:/.test(array$1[0])) timeString = array$1[0];
+	else {
+		dateStrings.date = array$1[0];
+		timeString = array$1[1];
+		if (patterns.timeZoneDelimiter.test(dateStrings.date)) {
+			dateStrings.date = dateString.split(patterns.timeZoneDelimiter)[0];
+			timeString = dateString.substr(dateStrings.date.length, dateString.length);
+		}
+	}
+	if (timeString) {
+		const token = patterns.timezone.exec(timeString);
+		if (token) {
+			dateStrings.time = timeString.replace(token[1], "");
+			dateStrings.timezone = token[1];
+		} else dateStrings.time = timeString;
+	}
+	return dateStrings;
+}
+function parseYear(dateString, additionalDigits) {
+	const regex = /* @__PURE__ */ new RegExp("^(?:(\\d{4}|[+-]\\d{" + (4 + additionalDigits) + "})|(\\d{2}|[+-]\\d{" + (2 + additionalDigits) + "})$)");
+	const captures = dateString.match(regex);
+	if (!captures) return {
+		year: NaN,
+		restDateString: ""
+	};
+	const year = captures[1] ? parseInt(captures[1]) : null;
+	const century = captures[2] ? parseInt(captures[2]) : null;
+	return {
+		year: century === null ? year : century * 100,
+		restDateString: dateString.slice((captures[1] || captures[2]).length)
+	};
+}
+function parseDate(dateString, year) {
+	if (year === null) return /* @__PURE__ */ new Date(NaN);
+	const captures = dateString.match(dateRegex);
+	if (!captures) return /* @__PURE__ */ new Date(NaN);
+	const isWeekDate = !!captures[4];
+	const dayOfYear = parseDateUnit(captures[1]);
+	const month = parseDateUnit(captures[2]) - 1;
+	const day = parseDateUnit(captures[3]);
+	const week = parseDateUnit(captures[4]);
+	const dayOfWeek = parseDateUnit(captures[5]) - 1;
+	if (isWeekDate) {
+		if (!validateWeekDate(year, week, dayOfWeek)) return /* @__PURE__ */ new Date(NaN);
+		return dayOfISOWeekYear(year, week, dayOfWeek);
+	} else {
+		const date$2 = /* @__PURE__ */ new Date(0);
+		if (!validateDate(year, month, day) || !validateDayOfYearDate(year, dayOfYear)) return /* @__PURE__ */ new Date(NaN);
+		date$2.setUTCFullYear(year, month, Math.max(dayOfYear, day));
+		return date$2;
+	}
+}
+function parseDateUnit(value) {
+	return value ? parseInt(value) : 1;
+}
+function parseTime(timeString) {
+	const captures = timeString.match(timeRegex);
+	if (!captures) return NaN;
+	const hours = parseTimeUnit(captures[1]);
+	const minutes = parseTimeUnit(captures[2]);
+	const seconds = parseTimeUnit(captures[3]);
+	if (!validateTime(hours, minutes, seconds)) return NaN;
+	return hours * millisecondsInHour + minutes * millisecondsInMinute + seconds * 1e3;
+}
+function parseTimeUnit(value) {
+	return value && parseFloat(value.replace(",", ".")) || 0;
+}
+function parseTimezone(timezoneString) {
+	if (timezoneString === "Z") return 0;
+	const captures = timezoneString.match(timezoneRegex);
+	if (!captures) return 0;
+	const sign = captures[1] === "+" ? -1 : 1;
+	const hours = parseInt(captures[2]);
+	const minutes = captures[3] && parseInt(captures[3]) || 0;
+	if (!validateTimezone(hours, minutes)) return NaN;
+	return sign * (hours * millisecondsInHour + minutes * millisecondsInMinute);
+}
+function dayOfISOWeekYear(isoWeekYear, week, day) {
+	const date$2 = /* @__PURE__ */ new Date(0);
+	date$2.setUTCFullYear(isoWeekYear, 0, 4);
+	const fourthOfJanuaryDay = date$2.getUTCDay() || 7;
+	const diff = (week - 1) * 7 + day + 1 - fourthOfJanuaryDay;
+	date$2.setUTCDate(date$2.getUTCDate() + diff);
+	return date$2;
+}
+var daysInMonths = [
+	31,
+	null,
+	31,
+	30,
+	31,
+	30,
+	31,
+	31,
+	30,
+	31,
+	30,
+	31
+];
+function isLeapYearIndex(year) {
+	return year % 400 === 0 || year % 4 === 0 && year % 100 !== 0;
+}
+function validateDate(year, month, date$2) {
+	return month >= 0 && month <= 11 && date$2 >= 1 && date$2 <= (daysInMonths[month] || (isLeapYearIndex(year) ? 29 : 28));
+}
+function validateDayOfYearDate(year, dayOfYear) {
+	return dayOfYear >= 1 && dayOfYear <= (isLeapYearIndex(year) ? 366 : 365);
+}
+function validateWeekDate(_year, week, day) {
+	return week >= 1 && week <= 53 && day >= 0 && day <= 6;
+}
+function validateTime(hours, minutes, seconds) {
+	if (hours === 24) return minutes === 0 && seconds === 0;
+	return seconds >= 0 && seconds < 60 && minutes >= 0 && minutes < 60 && hours >= 0 && hours < 25;
+}
+function validateTimezone(_hours, minutes) {
+	return minutes >= 0 && minutes <= 59;
+}
 var DataContext = (0, import_react.createContext)(null);
 const DataProvider = ({ children }) => {
-	const [clinics] = (0, import_react.useState)(MOCK_CLINICS);
+	const [clinics, setClinics] = (0, import_react.useState)(MOCK_CLINICS);
 	const [monthlyData, setMonthlyData] = (0, import_react.useState)(MOCK_DATA);
+	const [prospectingEntries, setProspectingEntries] = (0, import_react.useState)({});
 	const getClinic = (id) => clinics.find((c) => c.id === id);
+	const updateClinicConfig = (clinicId, config$1) => {
+		setClinics((prev) => prev.map((c) => c.id === clinicId ? {
+			...c,
+			configuration: config$1
+		} : c));
+	};
 	const getMonthlyData = (clinicId, month, year) => {
 		return monthlyData[clinicId]?.find((d) => d.month === month && d.year === year);
 	};
@@ -30390,6 +30470,108 @@ const DataProvider = ({ children }) => {
 			};
 		});
 	};
+	const ensureMonthlyData = (clinicId, date$2) => {
+		const d = parseISO(date$2);
+		const month = getMonth(d) + 1;
+		const year = getYear(d);
+		const current = getMonthlyData(clinicId, month, year);
+		if (!current) return;
+		return {
+			month,
+			year,
+			current: { ...current }
+		};
+	};
+	const updateMonthlyDataState = (clinicId, month, year, updater) => {
+		setMonthlyData((prev) => {
+			const clinicData = prev[clinicId] || [];
+			const idx = clinicData.findIndex((d) => d.month === month && d.year === year);
+			if (idx === -1) return prev;
+			const newData = [...clinicData];
+			const dataCopy = { ...newData[idx] };
+			dataCopy.cabinets = dataCopy.cabinets.map((c) => ({ ...c }));
+			updater(dataCopy);
+			newData[idx] = dataCopy;
+			return {
+				...prev,
+				[clinicId]: newData
+			};
+		});
+	};
+	const addFinancialEntry = (clinicId, entry) => {
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			d.revenueTotal += entry.value;
+			const catName = getClinic(clinicId)?.configuration.categories.find((c) => c.id === entry.categoryId)?.name || "";
+			if (catName.includes("Alinhadores")) d.revenueAligners += entry.value;
+			else if (catName.includes("Odontopediatria")) d.revenuePediatrics += entry.value;
+			else if (catName.includes("Dentisteria")) d.revenueDentistry += entry.value;
+			else d.revenueOthers += entry.value;
+			const cab = d.cabinets.find((c) => c.id === entry.cabinetId);
+			if (cab) cab.revenue += entry.value;
+		});
+	};
+	const addConsultationEntry = (clinicId, entry) => {
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			if (entry.planPresented) d.plansPresentedAdults += 1;
+			if (entry.planAccepted) {
+				d.plansAccepted += 1;
+				d.revenueAcceptedPlans += entry.planValue;
+				if (entry.planValue > 3e3) d.alignersStarted += 1;
+			} else if (entry.planPresented) d.plansNotAccepted += 1;
+		});
+	};
+	const saveProspectingEntry = (clinicId, entry) => {
+		setProspectingEntries((prev) => {
+			const clinicEntries = prev[clinicId] || [];
+			const idx = clinicEntries.findIndex((e) => e.date === entry.date);
+			const newEntries = [...clinicEntries];
+			if (idx >= 0) newEntries[idx] = entry;
+			else newEntries.push(entry);
+			return {
+				...prev,
+				[clinicId]: newEntries
+			};
+		});
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			d.leads += 1;
+			d.firstConsultationsScheduled += entry.scheduled > 0 ? 1 : 0;
+		});
+	};
+	const getProspectingEntry = (clinicId, date$2) => {
+		return prospectingEntries[clinicId]?.find((e) => e.date === date$2);
+	};
+	const addCabinetUsageEntry = (clinicId, entry) => {
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			const cab = d.cabinets.find((c) => c.id === entry.cabinetId);
+			if (cab) cab.hoursOccupied += entry.hoursUsed;
+		});
+	};
+	const addServiceTimeEntry = (clinicId, entry) => {
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		const [scheduledH, scheduledM] = entry.scheduledTime.split(":").map(Number);
+		const [actualH, actualM] = entry.actualStartTime.split(":").map(Number);
+		const diffMinutes = actualH * 60 + actualM - (scheduledH * 60 + scheduledM);
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			if (diffMinutes > 0) d.avgWaitTime = Math.floor((d.avgWaitTime * 10 + diffMinutes) / 11);
+			d.firstConsultationsAttended += 1;
+		});
+	};
+	const addSourceEntry = (clinicId, entry) => {
+		const data = ensureMonthlyData(clinicId, entry.date);
+		if (!data) return;
+		updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+			if (entry.isReferral) d.referralsSpontaneous += 1;
+		});
+	};
 	const calculateAlerts = (clinicId, month, year) => {
 		const current = getMonthlyData(clinicId, month, year);
 		const clinic = getClinic(clinicId);
@@ -30398,69 +30580,13 @@ const DataProvider = ({ children }) => {
 		if (current.revenueTotal < clinic.targetRevenue * .9) alerts.push({
 			id: "billing",
 			rule: "Faturamento",
-			message: "Faturação abaixo da meta. Verificar taxa de aceitação e número de planos apresentados.",
+			message: "Faturação abaixo da meta.",
 			severity: "destructive"
 		});
 		if (current.alignersStarted < 11) alerts.push({
 			id: "aligners",
 			rule: "Alinhadores",
-			message: "Alinhadores abaixo da meta de 11–12. Rever apresentações de planos e campanhas ativas para alinhadores.",
-			severity: "destructive"
-		});
-		const currentTicket = current.plansAccepted > 0 ? current.revenueAcceptedPlans / current.plansAccepted : 0;
-		let sumTicket = 0;
-		let countTicket = 0;
-		for (let i$2 = 1; i$2 <= 3; i$2++) {
-			let pm = month - i$2;
-			let py = year;
-			if (pm <= 0) {
-				pm += 12;
-				py--;
-			}
-			const prev = getMonthlyData(clinicId, pm, py);
-			if (prev && prev.plansAccepted > 0) {
-				sumTicket += prev.revenueAcceptedPlans / prev.plansAccepted;
-				countTicket++;
-			}
-		}
-		const avg3Month = countTicket > 0 ? sumTicket / countTicket : 0;
-		if (currentTicket < 1200 || avg3Month > 0 && currentTicket < avg3Month * .85) alerts.push({
-			id: "ticket",
-			rule: "Ticket Médio",
-			message: "Ticket médio em queda. Rever planeamento clínico e aplicação do Protocolo 1.",
-			severity: "destructive"
-		});
-		if (current.leads < 80) alerts.push({
-			id: "leads",
-			rule: "Leads",
-			message: "Leads abaixo da meta. Reforçar marketing digital e ações de indicação.",
-			severity: "destructive"
-		});
-		const totalAvail = current.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0);
-		const totalOccupied = current.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0);
-		if ((totalAvail > 0 ? totalOccupied / totalAvail * 100 : 0) < 70) alerts.push({
-			id: "occupancy",
-			rule: "Ocupação",
-			message: "Ocupação baixa. Rever fluxos e agendamentos (vagas ociosas, horários de pico, etc.).",
-			severity: "destructive"
-		});
-		if (current.nps < 80) alerts.push({
-			id: "nps",
-			rule: "NPS",
-			message: "NPS abaixo de 80. Investigar causas: atendimento, tempo de espera, comunicação ou estrutura.",
-			severity: "destructive"
-		});
-		if (current.complaints > 2) alerts.push({
-			id: "complaints",
-			rule: "Reclamações",
-			message: "Reclamações acima do limite (0–2). Abrir plano de ação específico.",
-			severity: "destructive"
-		});
-		const totalPresented = current.plansPresentedAdults + current.plansPresentedKids;
-		if ((totalPresented > 0 ? current.plansAccepted / totalPresented * 100 : 0) < clinic.targetAcceptanceRate) alerts.push({
-			id: "acceptance_rate",
-			rule: "Taxa de Aceitação",
-			message: "Taxa de aceitação abaixo da meta. Necessário rever apresentação de planos.",
+			message: "Alinhadores abaixo da meta.",
 			severity: "destructive"
 		});
 		return alerts;
@@ -30470,17 +30596,14 @@ const DataProvider = ({ children }) => {
 		const previous = getMonthlyData(clinicId, month === 1 ? 12 : month - 1, month === 1 ? year - 1 : year);
 		const clinic = getClinic(clinicId);
 		if (!current || !clinic) return [];
-		const getStatus = (value, target, type = "standard") => {
-			if (type === "inverse") return value <= target ? "success" : "danger";
-			const ratio = target > 0 ? value / target : 0;
-			if (ratio >= 1) return "success";
-			if (ratio >= .9) return "warning";
+		const getStatus = (v, t$1, inv = false) => {
+			if (inv) return v <= t$1 ? "success" : "danger";
+			const r$2 = t$1 > 0 ? v / t$1 : 0;
+			if (r$2 >= 1) return "success";
+			if (r$2 >= .9) return "warning";
 			return "danger";
 		};
-		const calcChange = (curr, prev) => {
-			if (!prev || prev === 0) return 0;
-			return (curr - prev) / prev * 100;
-		};
+		const calcChange = (c, p) => !p ? 0 : (c - p) / p * 100;
 		const kpis = [];
 		kpis.push({
 			id: "revenue_monthly",
@@ -30491,101 +30614,6 @@ const DataProvider = ({ children }) => {
 			status: getStatus(current.revenueTotal, clinic.targetRevenue),
 			target: clinic.targetRevenue
 		});
-		const avgTicket = current.plansAccepted > 0 ? current.revenueAcceptedPlans / current.plansAccepted : 0;
-		const prevAvgTicket = previous && previous.plansAccepted > 0 ? previous.revenueAcceptedPlans / previous.plansAccepted : 0;
-		kpis.push({
-			id: "avg_ticket",
-			name: "Ticket Médio",
-			value: avgTicket,
-			unit: "currency",
-			change: calcChange(avgTicket, prevAvgTicket),
-			status: getStatus(avgTicket, clinic.targetAvgTicket),
-			target: clinic.targetAvgTicket
-		});
-		const totalPresented = current.plansPresentedAdults + current.plansPresentedKids;
-		const prevPresented = (previous?.plansPresentedAdults || 0) + (previous?.plansPresentedKids || 0);
-		const acceptanceRate = totalPresented > 0 ? current.plansAccepted / totalPresented * 100 : 0;
-		const prevAcceptanceRate = prevPresented > 0 ? (previous?.plansAccepted || 0) / prevPresented * 100 : 0;
-		kpis.push({
-			id: "acceptance_rate",
-			name: "Taxa de Aceitação",
-			value: acceptanceRate,
-			unit: "percent",
-			change: acceptanceRate - prevAcceptanceRate,
-			status: getStatus(acceptanceRate, clinic.targetAcceptanceRate),
-			target: clinic.targetAcceptanceRate
-		});
-		const totalAvail = current.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0);
-		const totalOccupied = current.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0);
-		const occupancyRate = totalAvail > 0 ? totalOccupied / totalAvail * 100 : 0;
-		const prevOccupancyRate = (previous?.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0) || 0) > 0 ? (previous?.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0) || 0) / previous.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0) * 100 : 0;
-		kpis.push({
-			id: "occupancy_rate",
-			name: "Taxa de Ocupação",
-			value: occupancyRate,
-			unit: "percent",
-			change: occupancyRate - prevOccupancyRate,
-			status: getStatus(occupancyRate, clinic.targetOccupancyRate),
-			target: `${clinic.targetOccupancyRate}%`
-		});
-		const attendanceRate = current.firstConsultationsScheduled > 0 ? current.firstConsultationsAttended / current.firstConsultationsScheduled * 100 : 0;
-		kpis.push({
-			id: "attendance_rate",
-			name: "Taxa de Comparecimento",
-			value: attendanceRate,
-			unit: "percent",
-			change: attendanceRate - ((previous?.firstConsultationsScheduled || 0) > 0 ? (previous?.firstConsultationsAttended || 0) / previous.firstConsultationsScheduled * 100 : 0),
-			status: getStatus(attendanceRate, clinic.targetAttendanceRate),
-			target: clinic.targetAttendanceRate
-		});
-		const followUpRate = current.plansNotAccepted > 0 ? current.plansNotAcceptedFollowUp / current.plansNotAccepted * 100 : 100;
-		kpis.push({
-			id: "followup_rate",
-			name: "Taxa de Follow-up",
-			value: followUpRate,
-			unit: "percent",
-			change: followUpRate - ((previous?.plansNotAccepted || 0) > 0 ? (previous?.plansNotAcceptedFollowUp || 0) / previous.plansNotAccepted * 100 : 100),
-			status: getStatus(followUpRate, clinic.targetFollowUpRate),
-			target: clinic.targetFollowUpRate
-		});
-		const integratedRate = current.appointmentsTotal > 0 ? current.appointmentsIntegrated / current.appointmentsTotal * 100 : 0;
-		kpis.push({
-			id: "integrated_cases",
-			name: "Casos Integrados",
-			value: integratedRate,
-			unit: "percent",
-			change: integratedRate - ((previous?.appointmentsTotal || 0) > 0 ? (previous?.appointmentsIntegrated || 0) / previous.appointmentsTotal * 100 : 0),
-			status: getStatus(integratedRate, clinic.targetIntegrationRate),
-			target: clinic.targetIntegrationRate
-		});
-		const revenuePerCabinet = current.cabinets.length > 0 ? current.revenueTotal / current.cabinets.length : 0;
-		kpis.push({
-			id: "revenue_per_cabinet",
-			name: "Fat. por Gabinete",
-			value: revenuePerCabinet,
-			unit: "currency",
-			change: calcChange(revenuePerCabinet, (previous?.cabinets.length || 0) > 0 ? (previous?.revenueTotal || 0) / previous.cabinets.length : 0),
-			status: getStatus(revenuePerCabinet, clinic.targetRevenuePerCabinet),
-			target: clinic.targetRevenuePerCabinet
-		});
-		kpis.push({
-			id: "aligner_starts",
-			name: "Inícios Alinhadores",
-			value: current.alignersStarted,
-			unit: "number",
-			change: current.alignersStarted - (previous?.alignersStarted || 0),
-			status: getStatus(current.alignersStarted, clinic.targetAlignersRange.min),
-			target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`
-		});
-		kpis.push({
-			id: "leads",
-			name: "Leads Mensais",
-			value: current.leads,
-			unit: "number",
-			change: current.leads - (previous?.leads || 0),
-			status: getStatus(current.leads, clinic.targetLeadsRange.min),
-			target: `${clinic.targetLeadsRange.min}-${clinic.targetLeadsRange.max}`
-		});
 		kpis.push({
 			id: "nps",
 			name: "NPS",
@@ -30595,24 +30623,23 @@ const DataProvider = ({ children }) => {
 			status: getStatus(current.nps, clinic.targetNPS),
 			target: clinic.targetNPS
 		});
-		kpis.push({
-			id: "wait_time",
-			name: "Tempo de Espera",
-			value: current.avgWaitTime,
-			unit: "time",
-			change: current.avgWaitTime - (previous?.avgWaitTime || 0),
-			status: getStatus(current.avgWaitTime, clinic.targetWaitTime, "inverse"),
-			target: `< ${clinic.targetWaitTime} min`
-		});
 		return kpis;
 	};
 	return import_react.createElement(DataContext.Provider, { value: {
 		clinics,
 		getClinic,
+		updateClinicConfig,
 		getMonthlyData,
 		addMonthlyData,
 		calculateKPIs,
-		calculateAlerts
+		calculateAlerts,
+		addFinancialEntry,
+		addConsultationEntry,
+		saveProspectingEntry,
+		addCabinetUsageEntry,
+		addServiceTimeEntry,
+		addSourceEntry,
+		getProspectingEntry
 	} }, children);
 };
 var useDataStore = () => {
@@ -31719,7 +31746,7 @@ var Select$1 = (props) => {
 	const isFormControl = trigger ? form || !!trigger.closest("form") : true;
 	const [nativeOptionsSet, setNativeOptionsSet] = import_react.useState(/* @__PURE__ */ new Set());
 	const nativeSelectKey = Array.from(nativeOptionsSet).map((option) => option.props.value).join(";");
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$2, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$3, {
 		...popperScope,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectProvider, {
 			required: required$1,
@@ -31770,11 +31797,11 @@ var Select$1 = (props) => {
 	});
 };
 Select$1.displayName = SELECT_NAME;
-var TRIGGER_NAME$2 = "SelectTrigger";
+var TRIGGER_NAME$3 = "SelectTrigger";
 var SelectTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, disabled = false, ...triggerProps } = props;
 	const popperScope = usePopperScope$1(__scopeSelect);
-	const context = useSelectContext(TRIGGER_NAME$2, __scopeSelect);
+	const context = useSelectContext(TRIGGER_NAME$3, __scopeSelect);
 	const isDisabled = context.disabled || disabled;
 	const composedRefs = useComposedRefs(forwardedRef, context.onTriggerChange);
 	const getItems = useCollection$2(__scopeSelect);
@@ -31836,7 +31863,7 @@ var SelectTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-SelectTrigger$1.displayName = TRIGGER_NAME$2;
+SelectTrigger$1.displayName = TRIGGER_NAME$3;
 var VALUE_NAME = "SelectValue";
 var SelectValue$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, className, style, children, placeholder = "", ...valueProps } = props;
@@ -31874,9 +31901,9 @@ var SelectPortal = (props) => {
 	});
 };
 SelectPortal.displayName = PORTAL_NAME$3;
-var CONTENT_NAME$3 = "SelectContent";
+var CONTENT_NAME$4 = "SelectContent";
 var SelectContent$1 = import_react.forwardRef((props, forwardedRef) => {
-	const context = useSelectContext(CONTENT_NAME$3, props.__scopeSelect);
+	const context = useSelectContext(CONTENT_NAME$4, props.__scopeSelect);
 	const [fragment, setFragment] = import_react.useState();
 	useLayoutEffect2(() => {
 		setFragment(new DocumentFragment());
@@ -31896,14 +31923,14 @@ var SelectContent$1 = import_react.forwardRef((props, forwardedRef) => {
 		ref: forwardedRef
 	});
 });
-SelectContent$1.displayName = CONTENT_NAME$3;
+SelectContent$1.displayName = CONTENT_NAME$4;
 var CONTENT_MARGIN = 10;
-var [SelectContentProvider, useSelectContentContext] = createSelectContext(CONTENT_NAME$3);
+var [SelectContentProvider, useSelectContentContext] = createSelectContext(CONTENT_NAME$4);
 var CONTENT_IMPL_NAME = "SelectContentImpl";
 var Slot$3 = /* @__PURE__ */ createSlot("SelectContent.RemoveScroll");
 var SelectContentImpl = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, position = "item-aligned", onCloseAutoFocus, onEscapeKeyDown, onPointerDownOutside, side, sideOffset, align, alignOffset, arrowPadding, collisionBoundary, collisionPadding, sticky, hideWhenDetached, avoidCollisions, ...contentProps } = props;
-	const context = useSelectContext(CONTENT_NAME$3, __scopeSelect);
+	const context = useSelectContext(CONTENT_NAME$4, __scopeSelect);
 	const [content, setContent] = import_react.useState(null);
 	const [viewport, setViewport] = import_react.useState(null);
 	const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
@@ -32093,8 +32120,8 @@ SelectContentImpl.displayName = CONTENT_IMPL_NAME;
 var ITEM_ALIGNED_POSITION_NAME = "SelectItemAlignedPosition";
 var SelectItemAlignedPosition = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, onPlaced, ...popperProps } = props;
-	const context = useSelectContext(CONTENT_NAME$3, __scopeSelect);
-	const contentContext = useSelectContentContext(CONTENT_NAME$3, __scopeSelect);
+	const context = useSelectContext(CONTENT_NAME$4, __scopeSelect);
+	const contentContext = useSelectContentContext(CONTENT_NAME$4, __scopeSelect);
 	const [contentWrapper, setContentWrapper] = import_react.useState(null);
 	const [content, setContent] = import_react.useState(null);
 	const composedRefs = useComposedRefs(forwardedRef, (node) => setContent(node));
@@ -32220,7 +32247,7 @@ var POPPER_POSITION_NAME = "SelectPopperPosition";
 var SelectPopperPosition = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, align = "start", collisionPadding = CONTENT_MARGIN, ...popperProps } = props;
 	const popperScope = usePopperScope$1(__scopeSelect);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content$1, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content$2, {
 		...popperScope,
 		...popperProps,
 		ref: forwardedRef,
@@ -32238,7 +32265,7 @@ var SelectPopperPosition = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 SelectPopperPosition.displayName = POPPER_POSITION_NAME;
-var [SelectViewportProvider, useSelectViewportContext] = createSelectContext(CONTENT_NAME$3, {});
+var [SelectViewportProvider, useSelectViewportContext] = createSelectContext(CONTENT_NAME$4, {});
 var VIEWPORT_NAME$1 = "SelectViewport";
 var SelectViewport = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeSelect, nonce, ...viewportProps } = props;
@@ -32551,7 +32578,7 @@ var SelectArrow = import_react.forwardRef((props, forwardedRef) => {
 	}) : null;
 });
 SelectArrow.displayName = ARROW_NAME$2;
-var BUBBLE_INPUT_NAME = "SelectBubbleInput";
+var BUBBLE_INPUT_NAME$1 = "SelectBubbleInput";
 var SelectBubbleInput = import_react.forwardRef(({ __scopeSelect, value, ...props }, forwardedRef) => {
 	const ref = import_react.useRef(null);
 	const composedRefs = useComposedRefs(forwardedRef, ref);
@@ -32577,7 +32604,7 @@ var SelectBubbleInput = import_react.forwardRef(({ __scopeSelect, value, ...prop
 		defaultValue: value
 	});
 });
-SelectBubbleInput.displayName = BUBBLE_INPUT_NAME;
+SelectBubbleInput.displayName = BUBBLE_INPUT_NAME$1;
 function shouldShowPlaceholder(value) {
 	return value === "" || value === void 0;
 }
@@ -32618,23 +32645,23 @@ function findNextItem(items, search, currentItem) {
 function wrapArray$2(array$1, startIndex) {
 	return array$1.map((_$1, index$1) => array$1[(startIndex + index$1) % array$1.length]);
 }
-var Root2$1 = Select$1;
-var Trigger$2 = SelectTrigger$1;
+var Root2$2 = Select$1;
+var Trigger$3 = SelectTrigger$1;
 var Value = SelectValue$1;
 var Icon = SelectIcon;
 var Portal$3 = SelectPortal;
 var Content2$2 = SelectContent$1;
 var Viewport$1 = SelectViewport;
-var Label$1 = SelectLabel$1;
+var Label$2 = SelectLabel$1;
 var Item$1 = SelectItem$1;
 var ItemText = SelectItemText;
 var ItemIndicator$1 = SelectItemIndicator;
 var ScrollUpButton = SelectScrollUpButton$1;
 var ScrollDownButton = SelectScrollDownButton$1;
 var Separator$3 = SelectSeparator$1;
-var Select = Root2$1;
+var Select = Root2$2;
 var SelectValue = Value;
-var SelectTrigger = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Trigger$2, {
+var SelectTrigger = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Trigger$3, {
 	ref,
 	className: cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1", className),
 	...props,
@@ -32643,7 +32670,7 @@ var SelectTrigger = import_react.forwardRef(({ className, children, ...props }, 
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "h-4 w-4 opacity-50" })
 	})]
 }));
-SelectTrigger.displayName = Trigger$2.displayName;
+SelectTrigger.displayName = Trigger$3.displayName;
 var SelectScrollUpButton = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollUpButton, {
 	ref,
 	className: cn("flex cursor-default items-center justify-center py-1", className),
@@ -32673,12 +32700,12 @@ var SelectContent = import_react.forwardRef(({ className, children, position = "
 	]
 }) }));
 SelectContent.displayName = Content2$2.displayName;
-var SelectLabel = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, {
+var SelectLabel = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$2, {
 	ref,
 	className: cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className),
 	...props
 }));
-SelectLabel.displayName = Label$1.displayName;
+SelectLabel.displayName = Label$2.displayName;
 var SelectItem = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Item$1, {
 	ref,
 	className: cn("relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", className),
@@ -32902,23 +32929,23 @@ var Dialog$1 = (props) => {
 	});
 };
 Dialog$1.displayName = DIALOG_NAME;
-var TRIGGER_NAME$1 = "DialogTrigger";
+var TRIGGER_NAME$2 = "DialogTrigger";
 var DialogTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeDialog, ...triggerProps } = props;
-	const context = useDialogContext(TRIGGER_NAME$1, __scopeDialog);
+	const context = useDialogContext(TRIGGER_NAME$2, __scopeDialog);
 	const composedTriggerRef = useComposedRefs(forwardedRef, context.triggerRef);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
 		type: "button",
 		"aria-haspopup": "dialog",
 		"aria-expanded": context.open,
 		"aria-controls": context.contentId,
-		"data-state": getState(context.open),
+		"data-state": getState$1(context.open),
 		...triggerProps,
 		ref: composedTriggerRef,
 		onClick: composeEventHandlers(props.onClick, context.onOpenToggle)
 	});
 });
-DialogTrigger$1.displayName = TRIGGER_NAME$1;
+DialogTrigger$1.displayName = TRIGGER_NAME$2;
 var PORTAL_NAME$2 = "DialogPortal";
 var [PortalProvider$1, usePortalContext$1] = createDialogContext(PORTAL_NAME$2, { forceMount: void 0 });
 var DialogPortal$1 = (props) => {
@@ -32961,7 +32988,7 @@ var DialogOverlayImpl = import_react.forwardRef((props, forwardedRef) => {
 		allowPinchZoom: true,
 		shards: [context.contentRef],
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
-			"data-state": getState(context.open),
+			"data-state": getState$1(context.open),
 			...overlayProps,
 			ref: forwardedRef,
 			style: {
@@ -32971,11 +32998,11 @@ var DialogOverlayImpl = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-var CONTENT_NAME$2 = "DialogContent";
+var CONTENT_NAME$3 = "DialogContent";
 var DialogContent$1 = import_react.forwardRef((props, forwardedRef) => {
-	const portalContext = usePortalContext$1(CONTENT_NAME$2, props.__scopeDialog);
+	const portalContext = usePortalContext$1(CONTENT_NAME$3, props.__scopeDialog);
 	const { forceMount = portalContext.forceMount, ...contentProps } = props;
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	const context = useDialogContext(CONTENT_NAME$3, props.__scopeDialog);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
 		present: forceMount || context.open,
 		children: context.modal ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentModal, {
@@ -32987,9 +33014,9 @@ var DialogContent$1 = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-DialogContent$1.displayName = CONTENT_NAME$2;
+DialogContent$1.displayName = CONTENT_NAME$3;
 var DialogContentModal = import_react.forwardRef((props, forwardedRef) => {
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	const context = useDialogContext(CONTENT_NAME$3, props.__scopeDialog);
 	const contentRef = import_react.useRef(null);
 	const composedRefs = useComposedRefs(forwardedRef, context.contentRef, contentRef);
 	import_react.useEffect(() => {
@@ -33014,7 +33041,7 @@ var DialogContentModal = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 var DialogContentNonModal = import_react.forwardRef((props, forwardedRef) => {
-	const context = useDialogContext(CONTENT_NAME$2, props.__scopeDialog);
+	const context = useDialogContext(CONTENT_NAME$3, props.__scopeDialog);
 	const hasInteractedOutsideRef = import_react.useRef(false);
 	const hasPointerDownOutsideRef = import_react.useRef(false);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogContentImpl, {
@@ -33045,7 +33072,7 @@ var DialogContentNonModal = import_react.forwardRef((props, forwardedRef) => {
 });
 var DialogContentImpl = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeDialog, trapFocus, onOpenAutoFocus, onCloseAutoFocus, ...contentProps } = props;
-	const context = useDialogContext(CONTENT_NAME$2, __scopeDialog);
+	const context = useDialogContext(CONTENT_NAME$3, __scopeDialog);
 	const contentRef = import_react.useRef(null);
 	const composedRefs = useComposedRefs(forwardedRef, contentRef);
 	useFocusGuards();
@@ -33060,7 +33087,7 @@ var DialogContentImpl = import_react.forwardRef((props, forwardedRef) => {
 			id: context.contentId,
 			"aria-describedby": context.descriptionId,
 			"aria-labelledby": context.titleId,
-			"data-state": getState(context.open),
+			"data-state": getState$1(context.open),
 			...contentProps,
 			ref: composedRefs,
 			onDismiss: () => context.onOpenChange(false)
@@ -33104,12 +33131,12 @@ var DialogClose$1 = import_react.forwardRef((props, forwardedRef) => {
 	});
 });
 DialogClose$1.displayName = CLOSE_NAME;
-function getState(open) {
+function getState$1(open) {
 	return open ? "open" : "closed";
 }
 var TITLE_WARNING_NAME = "DialogTitleWarning";
 var [WarningProvider, useWarningContext] = createContext2(TITLE_WARNING_NAME, {
-	contentName: CONTENT_NAME$2,
+	contentName: CONTENT_NAME$3,
 	titleName: TITLE_NAME,
 	docsSlug: "dialog"
 });
@@ -33142,14 +33169,14 @@ var DescriptionWarning = ({ contentRef, descriptionId }) => {
 	]);
 	return null;
 };
-var Root$4 = Dialog$1;
+var Root$5 = Dialog$1;
 var Portal$2 = DialogPortal$1;
 var Overlay = DialogOverlay$1;
-var Content = DialogContent$1;
+var Content$1 = DialogContent$1;
 var Title = DialogTitle$1;
 var Description = DialogDescription$1;
 var Close = DialogClose$1;
-var Dialog = Root$4;
+var Dialog = Root$5;
 var DialogPortal = Portal$2;
 var DialogOverlay = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Overlay, {
 	ref,
@@ -33157,7 +33184,7 @@ var DialogOverlay = import_react.forwardRef(({ className, ...props }, ref) => /*
 	...props
 }));
 DialogOverlay.displayName = Overlay.displayName;
-var DialogContent = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content, {
+var DialogContent = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content$1, {
 	ref,
 	className: cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg overflow-y-auto max-h-screen", className),
 	...props,
@@ -33169,7 +33196,7 @@ var DialogContent = import_react.forwardRef(({ className, children, ...props }, 
 		})]
 	})]
 })] }));
-DialogContent.displayName = Content.displayName;
+DialogContent.displayName = Content$1.displayName;
 var DialogHeader = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 	className: cn("flex flex-col space-y-1.5 text-center sm:text-left", className),
 	...props
@@ -33650,10 +33677,10 @@ var ScrollAreaScrollbarImpl = import_react.forwardRef((props, forwardedRef) => {
 		})
 	});
 });
-var THUMB_NAME = "ScrollAreaThumb";
+var THUMB_NAME$1 = "ScrollAreaThumb";
 var ScrollAreaThumb = import_react.forwardRef((props, forwardedRef) => {
 	const { forceMount, ...thumbProps } = props;
-	const scrollbarContext = useScrollbarContext(THUMB_NAME, props.__scopeScrollArea);
+	const scrollbarContext = useScrollbarContext(THUMB_NAME$1, props.__scopeScrollArea);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
 		present: forceMount || scrollbarContext.hasThumb,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaThumbImpl, {
@@ -33664,8 +33691,8 @@ var ScrollAreaThumb = import_react.forwardRef((props, forwardedRef) => {
 });
 var ScrollAreaThumbImpl = import_react.forwardRef((props, forwardedRef) => {
 	const { __scopeScrollArea, style, ...thumbProps } = props;
-	const scrollAreaContext = useScrollAreaContext(THUMB_NAME, __scopeScrollArea);
-	const scrollbarContext = useScrollbarContext(THUMB_NAME, __scopeScrollArea);
+	const scrollAreaContext = useScrollAreaContext(THUMB_NAME$1, __scopeScrollArea);
+	const scrollbarContext = useScrollbarContext(THUMB_NAME$1, __scopeScrollArea);
 	const { onThumbPositionChange } = scrollbarContext;
 	const composedRef = useComposedRefs(forwardedRef, (node) => scrollbarContext.onThumbChange(node));
 	const removeUnlinkedScrollListenerRef = import_react.useRef(void 0);
@@ -33715,7 +33742,7 @@ var ScrollAreaThumbImpl = import_react.forwardRef((props, forwardedRef) => {
 		onPointerUp: composeEventHandlers(props.onPointerUp, scrollbarContext.onThumbPointerUp)
 	});
 });
-ScrollAreaThumb.displayName = THUMB_NAME;
+ScrollAreaThumb.displayName = THUMB_NAME$1;
 var CORNER_NAME = "ScrollAreaCorner";
 var ScrollAreaCorner = import_react.forwardRef((props, forwardedRef) => {
 	const context = useScrollAreaContext(CORNER_NAME, props.__scopeScrollArea);
@@ -33844,10 +33871,10 @@ function useResizeObserver(element, onResize) {
 		}
 	}, [element, handleResize]);
 }
-var Root$3 = ScrollArea$1;
+var Root$4 = ScrollArea$1;
 var Viewport = ScrollAreaViewport;
 var Corner = ScrollAreaCorner;
-var ScrollArea = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Root$3, {
+var ScrollArea = import_react.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Root$4, {
 	ref,
 	className: cn("relative overflow-hidden", className),
 	...props,
@@ -33860,7 +33887,7 @@ var ScrollArea = import_react.forwardRef(({ className, children, ...props }, ref
 		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Corner, {})
 	]
 }));
-ScrollArea.displayName = Root$3.displayName;
+ScrollArea.displayName = Root$4.displayName;
 var ScrollBar = import_react.forwardRef(({ className, orientation = "vertical", ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollAreaScrollbar, {
 	ref,
 	orientation,
@@ -34166,122 +34193,1163 @@ function Dashboard() {
 		]
 	});
 }
-var cabinetSchema = object({
-	id: string(),
-	name: string(),
-	revenue: number().min(0),
-	hoursAvailable: number().min(0),
-	hoursOccupied: number().min(0)
+var ENTRY_FOCUS = "rovingFocusGroup.onEntryFocus";
+var EVENT_OPTIONS = {
+	bubbles: false,
+	cancelable: true
+};
+var GROUP_NAME$2 = "RovingFocusGroup";
+var [Collection$1, useCollection$1, createCollectionScope$1] = createCollection(GROUP_NAME$2);
+var [createRovingFocusGroupContext, createRovingFocusGroupScope] = createContextScope$1(GROUP_NAME$2, [createCollectionScope$1]);
+var [RovingFocusProvider, useRovingFocusContext] = createRovingFocusGroupContext(GROUP_NAME$2);
+var RovingFocusGroup = import_react.forwardRef((props, forwardedRef) => {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.Provider, {
+		scope: props.__scopeRovingFocusGroup,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.Slot, {
+			scope: props.__scopeRovingFocusGroup,
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RovingFocusGroupImpl, {
+				...props,
+				ref: forwardedRef
+			})
+		})
+	});
 });
-var formSchema = object({
-	month: string(),
-	year: string(),
-	revenueTotal: number().min(0),
-	revenueAligners: number().min(0),
-	revenuePediatrics: number().min(0),
-	revenueDentistry: number().min(0),
-	revenueOthers: number().min(0),
-	revenueAcceptedPlans: number().min(0),
-	plansAccepted: number().min(0),
-	cabinets: array(cabinetSchema),
-	plansPresentedAdults: number().min(0),
-	plansPresentedKids: number().min(0),
-	alignersStarted: number().min(0),
-	appointmentsIntegrated: number().min(0),
-	appointmentsTotal: number().min(0),
-	leads: number().min(0),
-	firstConsultationsScheduled: number().min(0),
-	firstConsultationsAttended: number().min(0),
-	plansNotAccepted: number().min(0),
-	plansNotAcceptedFollowUp: number().min(0),
-	avgWaitTime: number().min(0),
-	nps: number().min(0).max(100),
-	referralsSpontaneous: number().min(0),
-	complaints: number().min(0)
+RovingFocusGroup.displayName = GROUP_NAME$2;
+var RovingFocusGroupImpl = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeRovingFocusGroup, orientation, loop = false, dir, currentTabStopId: currentTabStopIdProp, defaultCurrentTabStopId, onCurrentTabStopIdChange, onEntryFocus, preventScrollOnEntryFocus = false, ...groupProps } = props;
+	const ref = import_react.useRef(null);
+	const composedRefs = useComposedRefs(forwardedRef, ref);
+	const direction = useDirection(dir);
+	const [currentTabStopId, setCurrentTabStopId] = useControllableState({
+		prop: currentTabStopIdProp,
+		defaultProp: defaultCurrentTabStopId ?? null,
+		onChange: onCurrentTabStopIdChange,
+		caller: GROUP_NAME$2
+	});
+	const [isTabbingBackOut, setIsTabbingBackOut] = import_react.useState(false);
+	const handleEntryFocus = useCallbackRef(onEntryFocus);
+	const getItems = useCollection$1(__scopeRovingFocusGroup);
+	const isClickFocusRef = import_react.useRef(false);
+	const [focusableItemsCount, setFocusableItemsCount] = import_react.useState(0);
+	import_react.useEffect(() => {
+		const node = ref.current;
+		if (node) {
+			node.addEventListener(ENTRY_FOCUS, handleEntryFocus);
+			return () => node.removeEventListener(ENTRY_FOCUS, handleEntryFocus);
+		}
+	}, [handleEntryFocus]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RovingFocusProvider, {
+		scope: __scopeRovingFocusGroup,
+		orientation,
+		dir: direction,
+		loop,
+		currentTabStopId,
+		onItemFocus: import_react.useCallback((tabStopId) => setCurrentTabStopId(tabStopId), [setCurrentTabStopId]),
+		onItemShiftTab: import_react.useCallback(() => setIsTabbingBackOut(true), []),
+		onFocusableItemAdd: import_react.useCallback(() => setFocusableItemsCount((prevCount) => prevCount + 1), []),
+		onFocusableItemRemove: import_react.useCallback(() => setFocusableItemsCount((prevCount) => prevCount - 1), []),
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			tabIndex: isTabbingBackOut || focusableItemsCount === 0 ? -1 : 0,
+			"data-orientation": orientation,
+			...groupProps,
+			ref: composedRefs,
+			style: {
+				outline: "none",
+				...props.style
+			},
+			onMouseDown: composeEventHandlers(props.onMouseDown, () => {
+				isClickFocusRef.current = true;
+			}),
+			onFocus: composeEventHandlers(props.onFocus, (event) => {
+				const isKeyboardFocus = !isClickFocusRef.current;
+				if (event.target === event.currentTarget && isKeyboardFocus && !isTabbingBackOut) {
+					const entryFocusEvent = new CustomEvent(ENTRY_FOCUS, EVENT_OPTIONS);
+					event.currentTarget.dispatchEvent(entryFocusEvent);
+					if (!entryFocusEvent.defaultPrevented) {
+						const items = getItems().filter((item) => item.focusable);
+						focusFirst$1([
+							items.find((item) => item.active),
+							items.find((item) => item.id === currentTabStopId),
+							...items
+						].filter(Boolean).map((item) => item.ref.current), preventScrollOnEntryFocus);
+					}
+				}
+				isClickFocusRef.current = false;
+			}),
+			onBlur: composeEventHandlers(props.onBlur, () => setIsTabbingBackOut(false))
+		})
+	});
 });
-var STEPS = [
-	{
-		id: 0,
-		title: "Financeiro",
-		description: "Receitas e Gabinetes"
-	},
-	{
-		id: 1,
-		title: "Comercial/Clínico",
-		description: "Funil e Atendimentos"
-	},
-	{
-		id: 2,
-		title: "Operacional",
-		description: "Ocupação e Tempos"
-	},
-	{
-		id: 3,
-		title: "Experiência",
-		description: "NPS e Indicações"
+var ITEM_NAME$2 = "RovingFocusGroupItem";
+var RovingFocusGroupItem = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeRovingFocusGroup, focusable = true, active = false, tabStopId, children, ...itemProps } = props;
+	const autoId = useId();
+	const id = tabStopId || autoId;
+	const context = useRovingFocusContext(ITEM_NAME$2, __scopeRovingFocusGroup);
+	const isCurrentTabStop = context.currentTabStopId === id;
+	const getItems = useCollection$1(__scopeRovingFocusGroup);
+	const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context;
+	import_react.useEffect(() => {
+		if (focusable) {
+			onFocusableItemAdd();
+			return () => onFocusableItemRemove();
+		}
+	}, [
+		focusable,
+		onFocusableItemAdd,
+		onFocusableItemRemove
+	]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.ItemSlot, {
+		scope: __scopeRovingFocusGroup,
+		id,
+		focusable,
+		active,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.span, {
+			tabIndex: isCurrentTabStop ? 0 : -1,
+			"data-orientation": context.orientation,
+			...itemProps,
+			ref: forwardedRef,
+			onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
+				if (!focusable) event.preventDefault();
+				else context.onItemFocus(id);
+			}),
+			onFocus: composeEventHandlers(props.onFocus, () => context.onItemFocus(id)),
+			onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
+				if (event.key === "Tab" && event.shiftKey) {
+					context.onItemShiftTab();
+					return;
+				}
+				if (event.target !== event.currentTarget) return;
+				const focusIntent = getFocusIntent(event, context.orientation, context.dir);
+				if (focusIntent !== void 0) {
+					if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+					event.preventDefault();
+					let candidateNodes = getItems().filter((item) => item.focusable).map((item) => item.ref.current);
+					if (focusIntent === "last") candidateNodes.reverse();
+					else if (focusIntent === "prev" || focusIntent === "next") {
+						if (focusIntent === "prev") candidateNodes.reverse();
+						const currentIndex = candidateNodes.indexOf(event.currentTarget);
+						candidateNodes = context.loop ? wrapArray$1(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
+					}
+					setTimeout(() => focusFirst$1(candidateNodes));
+				}
+			}),
+			children: typeof children === "function" ? children({
+				isCurrentTabStop,
+				hasTabStop: currentTabStopId != null
+			}) : children
+		})
+	});
+});
+RovingFocusGroupItem.displayName = ITEM_NAME$2;
+var MAP_KEY_TO_FOCUS_INTENT = {
+	ArrowLeft: "prev",
+	ArrowUp: "prev",
+	ArrowRight: "next",
+	ArrowDown: "next",
+	PageUp: "first",
+	Home: "first",
+	PageDown: "last",
+	End: "last"
+};
+function getDirectionAwareKey(key, dir) {
+	if (dir !== "rtl") return key;
+	return key === "ArrowLeft" ? "ArrowRight" : key === "ArrowRight" ? "ArrowLeft" : key;
+}
+function getFocusIntent(event, orientation, dir) {
+	const key = getDirectionAwareKey(event.key, dir);
+	if (orientation === "vertical" && ["ArrowLeft", "ArrowRight"].includes(key)) return void 0;
+	if (orientation === "horizontal" && ["ArrowUp", "ArrowDown"].includes(key)) return void 0;
+	return MAP_KEY_TO_FOCUS_INTENT[key];
+}
+function focusFirst$1(candidates, preventScroll = false) {
+	const PREVIOUSLY_FOCUSED_ELEMENT = document.activeElement;
+	for (const candidate of candidates) {
+		if (candidate === PREVIOUSLY_FOCUSED_ELEMENT) return;
+		candidate.focus({ preventScroll });
+		if (document.activeElement !== PREVIOUSLY_FOCUSED_ELEMENT) return;
 	}
-];
+}
+function wrapArray$1(array$1, startIndex) {
+	return array$1.map((_$1, index$1) => array$1[(startIndex + index$1) % array$1.length]);
+}
+var Root$3 = RovingFocusGroup;
+var Item = RovingFocusGroupItem;
+var TABS_NAME = "Tabs";
+var [createTabsContext, createTabsScope] = createContextScope$1(TABS_NAME, [createRovingFocusGroupScope]);
+var useRovingFocusGroupScope$1 = createRovingFocusGroupScope();
+var [TabsProvider, useTabsContext] = createTabsContext(TABS_NAME);
+var Tabs$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeTabs, value: valueProp, onValueChange, defaultValue, orientation = "horizontal", dir, activationMode = "automatic", ...tabsProps } = props;
+	const direction = useDirection(dir);
+	const [value, setValue] = useControllableState({
+		prop: valueProp,
+		onChange: onValueChange,
+		defaultProp: defaultValue ?? "",
+		caller: TABS_NAME
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsProvider, {
+		scope: __scopeTabs,
+		baseId: useId(),
+		value,
+		onValueChange: setValue,
+		orientation,
+		dir: direction,
+		activationMode,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			dir: direction,
+			"data-orientation": orientation,
+			...tabsProps,
+			ref: forwardedRef
+		})
+	});
+});
+Tabs$1.displayName = TABS_NAME;
+var TAB_LIST_NAME = "TabsList";
+var TabsList$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeTabs, loop = true, ...listProps } = props;
+	const context = useTabsContext(TAB_LIST_NAME, __scopeTabs);
+	const rovingFocusGroupScope = useRovingFocusGroupScope$1(__scopeTabs);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$3, {
+		asChild: true,
+		...rovingFocusGroupScope,
+		orientation: context.orientation,
+		dir: context.dir,
+		loop,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			role: "tablist",
+			"aria-orientation": context.orientation,
+			...listProps,
+			ref: forwardedRef
+		})
+	});
+});
+TabsList$1.displayName = TAB_LIST_NAME;
+var TRIGGER_NAME$1 = "TabsTrigger";
+var TabsTrigger$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeTabs, value, disabled = false, ...triggerProps } = props;
+	const context = useTabsContext(TRIGGER_NAME$1, __scopeTabs);
+	const rovingFocusGroupScope = useRovingFocusGroupScope$1(__scopeTabs);
+	const triggerId = makeTriggerId(context.baseId, value);
+	const contentId = makeContentId(context.baseId, value);
+	const isSelected = value === context.value;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Item, {
+		asChild: true,
+		...rovingFocusGroupScope,
+		focusable: !disabled,
+		active: isSelected,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
+			type: "button",
+			role: "tab",
+			"aria-selected": isSelected,
+			"aria-controls": contentId,
+			"data-state": isSelected ? "active" : "inactive",
+			"data-disabled": disabled ? "" : void 0,
+			disabled,
+			id: triggerId,
+			...triggerProps,
+			ref: forwardedRef,
+			onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
+				if (!disabled && event.button === 0 && event.ctrlKey === false) context.onValueChange(value);
+				else event.preventDefault();
+			}),
+			onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
+				if ([" ", "Enter"].includes(event.key)) context.onValueChange(value);
+			}),
+			onFocus: composeEventHandlers(props.onFocus, () => {
+				const isAutomaticActivation = context.activationMode !== "manual";
+				if (!isSelected && !disabled && isAutomaticActivation) context.onValueChange(value);
+			})
+		})
+	});
+});
+TabsTrigger$1.displayName = TRIGGER_NAME$1;
+var CONTENT_NAME$2 = "TabsContent";
+var TabsContent$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeTabs, value, forceMount, children, ...contentProps } = props;
+	const context = useTabsContext(CONTENT_NAME$2, __scopeTabs);
+	const triggerId = makeTriggerId(context.baseId, value);
+	const contentId = makeContentId(context.baseId, value);
+	const isSelected = value === context.value;
+	const isMountAnimationPreventedRef = import_react.useRef(isSelected);
+	import_react.useEffect(() => {
+		const rAF = requestAnimationFrame(() => isMountAnimationPreventedRef.current = false);
+		return () => cancelAnimationFrame(rAF);
+	}, []);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Presence, {
+		present: forceMount || isSelected,
+		children: ({ present }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
+			"data-state": isSelected ? "active" : "inactive",
+			"data-orientation": context.orientation,
+			role: "tabpanel",
+			"aria-labelledby": triggerId,
+			hidden: !present,
+			id: contentId,
+			tabIndex: 0,
+			...contentProps,
+			ref: forwardedRef,
+			style: {
+				...props.style,
+				animationDuration: isMountAnimationPreventedRef.current ? "0s" : void 0
+			},
+			children: present && children
+		})
+	});
+});
+TabsContent$1.displayName = CONTENT_NAME$2;
+function makeTriggerId(baseId, value) {
+	return `${baseId}-trigger-${value}`;
+}
+function makeContentId(baseId, value) {
+	return `${baseId}-content-${value}`;
+}
+var Root2$1 = Tabs$1;
+var List = TabsList$1;
+var Trigger$1 = TabsTrigger$1;
+var Content = TabsContent$1;
+var Tabs = Root2$1;
+var TabsList = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(List, {
+	ref,
+	className: cn("inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground", className),
+	...props
+}));
+TabsList.displayName = List.displayName;
+var TabsTrigger = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trigger$1, {
+	ref,
+	className: cn("inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm", className),
+	...props
+}));
+TabsTrigger.displayName = Trigger$1.displayName;
+var TabsContent = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content, {
+	ref,
+	className: cn("mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", className),
+	...props
+}));
+TabsContent.displayName = Content.displayName;
+var schema$4 = object({
+	date: string(),
+	patientName: string().min(1, "Nome obrigatório"),
+	code: string().min(1, "Código obrigatório"),
+	categoryId: string().min(1, "Categoria obrigatória"),
+	value: number().min(.01, "Valor deve ser positivo"),
+	cabinetId: string().min(1, "Gabinete obrigatório")
+});
+function DailyFinancials({ clinic }) {
+	const { addFinancialEntry } = useDataStore_default();
+	const form = useForm({
+		resolver: a(schema$4),
+		defaultValues: {
+			date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+			patientName: "",
+			code: "",
+			categoryId: "",
+			value: 0,
+			cabinetId: ""
+		}
+	});
+	const onSubmit = (data) => {
+		addFinancialEntry(clinic.id, {
+			id: Math.random().toString(36),
+			...data
+		});
+		toast.success("Receita lançada com sucesso!");
+		form.reset({
+			date: data.date,
+			patientName: "",
+			code: "",
+			categoryId: "",
+			value: 0,
+			cabinetId: ""
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
+		...form,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: form.handleSubmit(onSubmit),
+			className: "space-y-4 max-w-lg",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "date",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Data" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								type: "date",
+								...field
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+						] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "code",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Código / ID" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+								placeholder: "000",
+								...field
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+						] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "patientName",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Nome do Paciente" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							placeholder: "Ex: João Silva",
+							...field
+						}) }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+					] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "categoryId",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Categoria" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+								onValueChange: field.onChange,
+								value: field.value,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Selecione" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: clinic.configuration.categories.map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+									value: c.id,
+									children: c.name
+								}, c.id)) })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+						] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "cabinetId",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Gabinete" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+								onValueChange: field.onChange,
+								value: field.value,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Selecione" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: clinic.configuration.cabinets.map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+									value: c.id,
+									children: c.name
+								}, c.id)) })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+						] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "value",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Valor (R$)" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "number",
+							step: "0.01",
+							...field
+						}) }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
+					] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "submit",
+					className: "w-full",
+					children: "Lançar Receita"
+				})
+			]
+		})
+	});
+}
+var SWITCH_NAME = "Switch";
+var [createSwitchContext, createSwitchScope] = createContextScope$1(SWITCH_NAME);
+var [SwitchProvider, useSwitchContext] = createSwitchContext(SWITCH_NAME);
+var Switch$1 = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeSwitch, name, checked: checkedProp, defaultChecked, required: required$1, disabled, value = "on", onCheckedChange, form, ...switchProps } = props;
+	const [button, setButton] = import_react.useState(null);
+	const composedRefs = useComposedRefs(forwardedRef, (node) => setButton(node));
+	const hasConsumerStoppedPropagationRef = import_react.useRef(false);
+	const isFormControl = button ? form || !!button.closest("form") : true;
+	const [checked, setChecked] = useControllableState({
+		prop: checkedProp,
+		defaultProp: defaultChecked ?? false,
+		onChange: onCheckedChange,
+		caller: SWITCH_NAME
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SwitchProvider, {
+		scope: __scopeSwitch,
+		checked,
+		disabled,
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.button, {
+			type: "button",
+			role: "switch",
+			"aria-checked": checked,
+			"aria-required": required$1,
+			"data-state": getState(checked),
+			"data-disabled": disabled ? "" : void 0,
+			disabled,
+			value,
+			...switchProps,
+			ref: composedRefs,
+			onClick: composeEventHandlers(props.onClick, (event) => {
+				setChecked((prevChecked) => !prevChecked);
+				if (isFormControl) {
+					hasConsumerStoppedPropagationRef.current = event.isPropagationStopped();
+					if (!hasConsumerStoppedPropagationRef.current) event.stopPropagation();
+				}
+			})
+		}), isFormControl && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SwitchBubbleInput, {
+			control: button,
+			bubbles: !hasConsumerStoppedPropagationRef.current,
+			name,
+			value,
+			checked,
+			required: required$1,
+			disabled,
+			form,
+			style: { transform: "translateX(-100%)" }
+		})]
+	});
+});
+Switch$1.displayName = SWITCH_NAME;
+var THUMB_NAME = "SwitchThumb";
+var SwitchThumb = import_react.forwardRef((props, forwardedRef) => {
+	const { __scopeSwitch, ...thumbProps } = props;
+	const context = useSwitchContext(THUMB_NAME, __scopeSwitch);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.span, {
+		"data-state": getState(context.checked),
+		"data-disabled": context.disabled ? "" : void 0,
+		...thumbProps,
+		ref: forwardedRef
+	});
+});
+SwitchThumb.displayName = THUMB_NAME;
+var BUBBLE_INPUT_NAME = "SwitchBubbleInput";
+var SwitchBubbleInput = import_react.forwardRef(({ __scopeSwitch, control, checked, bubbles = true, ...props }, forwardedRef) => {
+	const ref = import_react.useRef(null);
+	const composedRefs = useComposedRefs(ref, forwardedRef);
+	const prevChecked = usePrevious(checked);
+	const controlSize = useSize(control);
+	import_react.useEffect(() => {
+		const input = ref.current;
+		if (!input) return;
+		const inputProto = window.HTMLInputElement.prototype;
+		const setChecked = Object.getOwnPropertyDescriptor(inputProto, "checked").set;
+		if (prevChecked !== checked && setChecked) {
+			const event = new Event("click", { bubbles });
+			setChecked.call(input, checked);
+			input.dispatchEvent(event);
+		}
+	}, [
+		prevChecked,
+		checked,
+		bubbles
+	]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+		type: "checkbox",
+		"aria-hidden": true,
+		defaultChecked: checked,
+		...props,
+		tabIndex: -1,
+		ref: composedRefs,
+		style: {
+			...props.style,
+			...controlSize,
+			position: "absolute",
+			pointerEvents: "none",
+			opacity: 0,
+			margin: 0
+		}
+	});
+});
+SwitchBubbleInput.displayName = BUBBLE_INPUT_NAME;
+function getState(checked) {
+	return checked ? "checked" : "unchecked";
+}
+var Root$2 = Switch$1;
+var Thumb = SwitchThumb;
+var Switch = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$2, {
+	className: cn("peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input", className),
+	...props,
+	ref,
+	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Thumb, { className: cn("pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0") })
+}));
+Switch.displayName = Root$2.displayName;
+var schema$3 = object({
+	date: string(),
+	patientName: string().min(1, "Nome obrigatório"),
+	code: string().min(1, "Código obrigatório"),
+	planCreated: boolean(),
+	planPresented: boolean(),
+	planAccepted: boolean(),
+	planValue: number().min(0)
+});
+function DailyConsultations({ clinic }) {
+	const { addConsultationEntry } = useDataStore_default();
+	const form = useForm({
+		resolver: a(schema$3),
+		defaultValues: {
+			date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+			patientName: "",
+			code: "",
+			planCreated: false,
+			planPresented: false,
+			planAccepted: false,
+			planValue: 0
+		}
+	});
+	const onSubmit = (data) => {
+		addConsultationEntry(clinic.id, {
+			id: Math.random().toString(36),
+			...data
+		});
+		toast.success("1ª Consulta registrada!");
+		form.reset({
+			date: data.date,
+			patientName: "",
+			code: "",
+			planCreated: false,
+			planPresented: false,
+			planAccepted: false,
+			planValue: 0
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
+		...form,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: form.handleSubmit(onSubmit),
+			className: "space-y-4 max-w-lg",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "date",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Data" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "date",
+							...field
+						}) })] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "code",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Código" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							placeholder: "000",
+							...field
+						}) })] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "patientName",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Nome do Paciente" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						placeholder: "Paciente",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-col gap-4 p-4 border rounded-md bg-muted/20",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+							control: form.control,
+							name: "planCreated",
+							render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
+								className: "flex items-center justify-between space-y-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Plano Criado?" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+									checked: field.value,
+									onCheckedChange: field.onChange
+								}) })]
+							})
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+							control: form.control,
+							name: "planPresented",
+							render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
+								className: "flex items-center justify-between space-y-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Plano Apresentado?" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+									checked: field.value,
+									onCheckedChange: field.onChange
+								}) })]
+							})
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+							control: form.control,
+							name: "planAccepted",
+							render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
+								className: "flex items-center justify-between space-y-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Plano Aceite?" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+									checked: field.value,
+									onCheckedChange: field.onChange
+								}) })]
+							})
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "planValue",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Valor do Plano (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						type: "number",
+						step: "0.01",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "submit",
+					className: "w-full",
+					children: "Lançar Consulta"
+				})
+			]
+		})
+	});
+}
+function DailyProspecting({ clinic }) {
+	const { saveProspectingEntry, getProspectingEntry } = useDataStore_default();
+	const [date$2, setDate] = (0, import_react.useState)((/* @__PURE__ */ new Date()).toISOString().split("T")[0]);
+	const [counters, setCounters] = (0, import_react.useState)({
+		scheduled: 0,
+		email: 0,
+		sms: 0,
+		whatsapp: 0,
+		instagram: 0
+	});
+	(0, import_react.useEffect)(() => {
+		const entry = getProspectingEntry(clinic.id, date$2);
+		if (entry) setCounters({
+			scheduled: entry.scheduled,
+			email: entry.email,
+			sms: entry.sms,
+			whatsapp: entry.whatsapp,
+			instagram: entry.instagram
+		});
+		else setCounters({
+			scheduled: 0,
+			email: 0,
+			sms: 0,
+			whatsapp: 0,
+			instagram: 0
+		});
+	}, [
+		date$2,
+		clinic.id,
+		getProspectingEntry
+	]);
+	const adjust = (key, delta) => {
+		setCounters((prev) => ({
+			...prev,
+			[key]: Math.max(0, prev[key] + delta)
+		}));
+	};
+	const handleSave = () => {
+		saveProspectingEntry(clinic.id, {
+			id: `${clinic.id}-${date$2}`,
+			date: date$2,
+			...counters
+		});
+		toast.success("Dados de prospecção salvos!");
+	};
+	const CounterRow = ({ label, field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex items-center justify-between p-3 border rounded-lg",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			className: "font-medium",
+			children: label
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-center gap-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					variant: "outline",
+					size: "icon",
+					onClick: () => adjust(field, -1),
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Minus, { className: "h-4 w-4" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+					className: "w-8 text-center text-lg font-bold",
+					children: counters[field]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					variant: "outline",
+					size: "icon",
+					onClick: () => adjust(field, 1),
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "h-4 w-4" })
+				})
+			]
+		})]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "space-y-6 max-w-lg",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Label$1, { children: "Data de Referência" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "date",
+					value: date$2,
+					onChange: (e) => setDate(e.target.value)
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "space-y-3",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+						className: "font-semibold text-sm text-muted-foreground uppercase",
+						children: "Canais (Leads Recebidos)"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CounterRow, {
+						label: "Emails",
+						field: "email"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CounterRow, {
+						label: "SMS",
+						field: "sms"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CounterRow, {
+						label: "WhatsApp",
+						field: "whatsapp"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CounterRow, {
+						label: "Instagram",
+						field: "instagram"
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "space-y-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+					className: "font-semibold text-sm text-muted-foreground uppercase",
+					children: "Conversão"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CounterRow, {
+					label: "1ªs Consultas Agendadas",
+					field: "scheduled"
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+				onClick: handleSave,
+				className: "w-full",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, { className: "mr-2 h-4 w-4" }), " Salvar Totais do Dia"]
+			})
+		]
+	});
+}
+var schema$2 = object({
+	date: string(),
+	cabinetId: string().min(1, "Selecione um gabinete"),
+	hoursUsed: number().min(0)
+});
+function DailyCabinets({ clinic }) {
+	const { addCabinetUsageEntry } = useDataStore_default();
+	const form = useForm({
+		resolver: a(schema$2),
+		defaultValues: {
+			date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+			cabinetId: "",
+			hoursUsed: 0
+		}
+	});
+	const selectedGab = clinic.configuration.cabinets.find((c) => c.id === form.watch("cabinetId"));
+	const onSubmit = (data) => {
+		addCabinetUsageEntry(clinic.id, {
+			id: Math.random().toString(36),
+			hoursAvailable: selectedGab?.standardHours || 0,
+			...data
+		});
+		toast.success("Ocupação lançada!");
+		form.reset({
+			date: data.date,
+			cabinetId: "",
+			hoursUsed: 0
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
+		...form,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: form.handleSubmit(onSubmit),
+			className: "space-y-4 max-w-lg",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "date",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Data" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						type: "date",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "cabinetId",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Gabinete" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+						onValueChange: field.onChange,
+						value: field.value,
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Selecione" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: clinic.configuration.cabinets.map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+							value: c.id,
+							children: c.name
+						}, c.id)) })]
+					})] })
+				}),
+				selectedGab && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "text-sm text-muted-foreground p-2 bg-secondary/20 rounded",
+					children: [
+						"Horas Disponíveis Padrão:",
+						" ",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("strong", { children: [selectedGab.standardHours, "h"] })
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "hoursUsed",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Horas Utilizadas (Ocupadas)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						type: "number",
+						step: "0.5",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "submit",
+					className: "w-full",
+					children: "Lançar Utilização"
+				})
+			]
+		})
+	});
+}
+var schema$1 = object({
+	date: string(),
+	patientName: string().min(1),
+	code: string().min(1),
+	doctorId: string().min(1),
+	scheduledTime: string(),
+	actualStartTime: string(),
+	delayReason: _enum(["paciente", "medico"]).optional()
+});
+function DailyServiceTime({ clinic }) {
+	const { addServiceTimeEntry } = useDataStore_default();
+	const form = useForm({
+		resolver: a(schema$1),
+		defaultValues: {
+			date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+			patientName: "",
+			code: "",
+			doctorId: "",
+			scheduledTime: "09:00",
+			actualStartTime: "09:00"
+		}
+	});
+	const onSubmit = (data) => {
+		addServiceTimeEntry(clinic.id, {
+			id: Math.random().toString(36),
+			...data
+		});
+		toast.success("Tempo de atendimento registrado!");
+		form.reset({
+			date: data.date,
+			patientName: "",
+			code: "",
+			doctorId: "",
+			scheduledTime: "09:00",
+			actualStartTime: "09:00"
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
+		...form,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: form.handleSubmit(onSubmit),
+			className: "space-y-4 max-w-lg",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "date",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Data" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "date",
+							...field
+						}) })] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "code",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Código" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							placeholder: "000",
+							...field
+						}) })] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "patientName",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Paciente" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						placeholder: "Nome",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "doctorId",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Médico" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+						onValueChange: field.onChange,
+						value: field.value,
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Selecione" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: clinic.configuration.doctors.map((d) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+							value: d.id,
+							children: d.name
+						}, d.id)) })]
+					})] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "scheduledTime",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Hora Agendada" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "time",
+							...field
+						}) })] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "actualStartTime",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Início Real" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "time",
+							...field
+						}) })] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "delayReason",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Motivo Atraso (Se houver)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+						onValueChange: field.onChange,
+						value: field.value,
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Nenhum" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+							value: "paciente",
+							children: "Paciente"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+							value: "medico",
+							children: "Médico"
+						})] })]
+					})] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "submit",
+					className: "w-full",
+					children: "Lançar Atendimento"
+				})
+			]
+		})
+	});
+}
+var schema = object({
+	date: string(),
+	patientName: string().min(1),
+	code: string().min(1),
+	isReferral: boolean(),
+	sourceId: string().min(1)
+});
+function DailySources({ clinic }) {
+	const { addSourceEntry } = useDataStore_default();
+	const form = useForm({
+		resolver: a(schema),
+		defaultValues: {
+			date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+			patientName: "",
+			code: "",
+			isReferral: false,
+			sourceId: ""
+		}
+	});
+	const onSubmit = (data) => {
+		addSourceEntry(clinic.id, {
+			id: Math.random().toString(36),
+			...data
+		});
+		toast.success("Fonte registrada!");
+		form.reset({
+			date: data.date,
+			patientName: "",
+			code: "",
+			isReferral: false,
+			sourceId: ""
+		});
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
+		...form,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+			onSubmit: form.handleSubmit(onSubmit),
+			className: "space-y-4 max-w-lg",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "grid grid-cols-2 gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "date",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Data" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							type: "date",
+							...field
+						}) })] })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+						control: form.control,
+						name: "code",
+						render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Código" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+							placeholder: "000",
+							...field
+						}) })] })
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "patientName",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Paciente" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						placeholder: "Nome",
+						...field
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "isReferral",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
+						className: "flex flex-row items-center justify-between rounded-lg border p-4",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "space-y-0.5",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
+								className: "text-base",
+								children: "É Indicação?"
+							})
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Switch, {
+							checked: field.value,
+							onCheckedChange: field.onChange
+						}) })]
+					})
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
+					control: form.control,
+					name: "sourceId",
+					render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Fonte de Chegada" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
+						onValueChange: field.onChange,
+						value: field.value,
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, { placeholder: "Selecione" }) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: clinic.configuration.sources.map((s$2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
+							value: s$2.id,
+							children: s$2.name
+						}, s$2.id)) })]
+					})] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					type: "submit",
+					className: "w-full",
+					children: "Lançar Fonte"
+				})
+			]
+		})
+	});
+}
 function Inputs() {
 	const { clinicId } = useParams();
 	const navigate = useNavigate();
-	const { addMonthlyData, getClinic, getMonthlyData } = useDataStore_default();
+	const { getClinic } = useDataStore_default();
 	const { user } = useAuthStore_default();
-	const [isSubmitting, setIsSubmitting] = (0, import_react.useState)(false);
-	const [currentStep, setCurrentStep] = (0, import_react.useState)(0);
 	const clinic = clinicId ? getClinic(clinicId) : void 0;
-	const form = useForm({
-		resolver: a(formSchema),
-		defaultValues: {
-			month: /* @__PURE__ */ ((/* @__PURE__ */ new Date()).getMonth() + 1).toString(),
-			year: "2023",
-			revenueTotal: 0,
-			revenueAligners: 0,
-			revenuePediatrics: 0,
-			revenueDentistry: 0,
-			revenueOthers: 0,
-			revenueAcceptedPlans: 0,
-			plansAccepted: 0,
-			cabinets: [{
-				id: "gab-1",
-				name: "Gabinete 1",
-				revenue: 0,
-				hoursAvailable: 160,
-				hoursOccupied: 0
-			}],
-			plansPresentedAdults: 0,
-			plansPresentedKids: 0,
-			alignersStarted: 0,
-			appointmentsIntegrated: 0,
-			appointmentsTotal: 0,
-			leads: 0,
-			firstConsultationsScheduled: 0,
-			firstConsultationsAttended: 0,
-			plansNotAccepted: 0,
-			plansNotAcceptedFollowUp: 0,
-			avgWaitTime: 0,
-			nps: 0,
-			referralsSpontaneous: 0,
-			complaints: 0
-		}
-	});
-	const { fields, append, remove } = useFieldArray({
-		control: form.control,
-		name: "cabinets"
-	});
 	if (user?.role === "GESTOR_CLINICA" && clinicId && user.clinicId !== clinicId) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4",
 		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-6 w-6 text-destructive" })
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-				className: "text-2xl font-bold text-foreground",
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: "h-12 w-12 text-destructive opacity-50" }),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+				className: "text-2xl font-bold",
 				children: "Acesso Negado"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "text-muted-foreground mt-2",
-				children: "Você não tem permissão para editar dados desta clínica."
-			})] }),
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 				onClick: () => navigate(`/dashboard/${user.clinicId}`),
 				children: "Voltar para meu Dashboard"
@@ -34292,456 +35360,242 @@ function Inputs() {
 		className: "p-8",
 		children: "Clínica não encontrada."
 	});
-	const handleCopyPreviousMonth = () => {
-		if (!clinicId) return;
-		const month = parseInt(form.getValues("month"));
-		const year = parseInt(form.getValues("year"));
-		let prevMonth = month - 1;
-		let prevYear = year;
-		if (prevMonth === 0) {
-			prevMonth = 12;
-			prevYear -= 1;
-		}
-		const prevData = getMonthlyData(clinicId, prevMonth, prevYear);
-		if (prevData) {
-			Object.keys(prevData).forEach((key) => {
-				if (key in form.getValues()) form.setValue(key, prevData[key]);
-			});
-			form.setValue("cabinets", prevData.cabinets.map((c) => ({ ...c })));
-			toast.success(`Dados copiados de ${MONTHS[prevMonth - 1]} ${prevYear}.`);
-		} else toast.error("Nenhum dado encontrado no mês anterior.");
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex flex-col gap-8 p-8 max-w-6xl mx-auto w-full",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+			className: "text-3xl font-bold tracking-tight",
+			children: "Diário Clínico"
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+			className: "text-muted-foreground",
+			children: [clinic.name, " • Registros operacionais diários."]
+		})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tabs, {
+			defaultValue: "financial",
+			className: "w-full",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsList, {
+				className: "grid w-full grid-cols-3 lg:grid-cols-6 h-auto",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "financial",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { className: "h-4 w-4" }), "Financeiro"]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "consultations",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserPlus, { className: "h-4 w-4" }), "1ªs Consultas"]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "prospecting",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Megaphone, { className: "h-4 w-4" }), "Prospecção"]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "cabinets",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Armchair, { className: "h-4 w-4" }), "Gabinetes"]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "serviceTime",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "h-4 w-4" }), "Tempos"]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsTrigger, {
+						value: "sources",
+						className: "flex flex-col gap-1 py-2 h-auto",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, { className: "h-4 w-4" }), "Fontes"]
+					})
+				]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "mt-6",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "financial",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Lançamento Financeiro" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Registre receitas diárias por categoria e gabinete." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailyFinancials, { clinic }) })] })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "consultations",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "1ªs Consultas" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Acompanhe o desfecho das primeiras consultas." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailyConsultations, { clinic }) })] })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "prospecting",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Dashboard de Prospecção" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Contadores diários de leads e agendamentos." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailyProspecting, { clinic }) })] })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "cabinets",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Ocupação de Gabinetes" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Registre as horas utilizadas em cada gabinete." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailyCabinets, { clinic }) })] })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "serviceTime",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Tempo de Atendimento" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Monitore a pontualidade e motivos de atraso." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailyServiceTime, { clinic }) })] })
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+						value: "sources",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Origem do Paciente" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Identifique como o paciente conheceu a clínica." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DailySources, { clinic }) })] })
+					})
+				]
+			})]
+		})]
+	});
+}
+function Settings() {
+	const { user } = useAuthStore_default();
+	const { clinics, updateClinicConfig } = useDataStore_default();
+	useNavigate();
+	const [selectedClinicId, setSelectedClinicId] = (0, import_react.useState)(user?.clinicId || clinics[0]?.id);
+	const clinic = clinics.find((c) => c.id === selectedClinicId);
+	const [config$1, setConfig] = (0, import_react.useState)(clinic?.configuration);
+	if (!clinic || !config$1) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "p-8",
+		children: "Carregando..."
+	});
+	if (clinic.id !== selectedClinicId) {}
+	const handleSave = () => {
+		updateClinicConfig(clinic.id, config$1);
+		toast.success("Configurações salvas com sucesso!");
 	};
-	async function onSubmit(values) {
-		if (!clinicId) return;
-		setIsSubmitting(true);
-		await new Promise((resolve) => setTimeout(resolve, 1e3));
-		addMonthlyData({
-			id: `${clinicId}-${values.year}-${values.month}`,
-			clinicId,
-			month: parseInt(values.month),
-			year: parseInt(values.year),
-			...values,
-			agendaOwner: {
-				operational: 0,
-				planning: 0,
-				sales: 0,
-				leadership: 0
-			},
-			referralsBase2025: 10,
-			expenses: values.revenueTotal * .6,
-			marketingCost: 5e3
+	const ListEditor = ({ title, items, onUpdate }) => {
+		const [newItem, setNewItem] = (0, import_react.useState)("");
+		const [newHours, setNewHours] = (0, import_react.useState)("8");
+		const add = () => {
+			if (!newItem) return;
+			const entry = {
+				id: Math.random().toString(36),
+				name: newItem
+			};
+			if (title === "Gabinetes") entry.standardHours = parseFloat(newHours);
+			onUpdate([...items, entry]);
+			setNewItem("");
+		};
+		const remove = (id) => {
+			onUpdate(items.filter((i$2) => i$2.id !== id));
+		};
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "space-y-4",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex gap-2",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						placeholder: `Novo ${title}`,
+						value: newItem,
+						onChange: (e) => setNewItem(e.target.value)
+					}),
+					title === "Gabinetes" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+						type: "number",
+						placeholder: "Horas",
+						className: "w-24",
+						value: newHours,
+						onChange: (e) => setNewHours(e.target.value)
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						onClick: add,
+						size: "icon",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "h-4 w-4" })
+					})
+				]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "space-y-2",
+				children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center justify-between p-2 border rounded bg-background",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: item.name }), item.standardHours && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "text-muted-foreground text-sm",
+							children: [
+								"(",
+								item.standardHours,
+								"h)"
+							]
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+						variant: "ghost",
+						size: "icon",
+						onClick: () => remove(item.id),
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "h-4 w-4 text-destructive" })
+					})]
+				}, item.id))
+			})]
 		});
-		toast.success("Lançamento realizado!", { description: "Os KPIs foram recalculados com sucesso." });
-		setIsSubmitting(false);
-		navigate(`/dashboard/${clinicId}`);
-	}
-	const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-	const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "flex flex-col gap-8 p-8 max-w-4xl mx-auto w-full",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex flex-col md:flex-row justify-between items-start md:items-center gap-4",
+			className: "flex justify-between items-center",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 				className: "text-3xl font-bold tracking-tight",
-				children: "Assistente de Lançamentos"
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				children: "Configurações"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "text-muted-foreground",
-				children: [clinic.name, " • Insira os dados do mês."]
+				children: "Gerencie as listas e parâmetros da clínica."
 			})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-				variant: "outline",
-				onClick: handleCopyPreviousMonth,
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Copy, { className: "mr-2 h-4 w-4" }), "Copiar mês anterior"]
+				onClick: handleSave,
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, { className: "mr-2 h-4 w-4" }), " Salvar Alterações"]
 			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
-			...form,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-				onSubmit: form.handleSubmit(onSubmit),
-				className: "space-y-8",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-						className: "p-4 grid grid-cols-2 gap-4",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-							control: form.control,
-							name: "month",
-							render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Mês de Referência" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-								onValueChange: field.onChange,
-								defaultValue: field.value,
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {}) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectContent, { children: MONTHS.map((month, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-									value: (index$1 + 1).toString(),
-									children: month
-								}, index$1)) })]
-							})] })
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-							control: form.control,
-							name: "year",
-							render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Ano" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Select, {
-								onValueChange: field.onChange,
-								defaultValue: field.value,
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectTrigger, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectValue, {}) }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SelectContent, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-									value: "2023",
-									children: "2023"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectItem, {
-									value: "2024",
-									children: "2024"
-								})] })]
-							})] })
-						})]
-					}) }),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex justify-between relative",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "absolute top-1/2 left-0 w-full h-1 bg-secondary/20 -z-10 -translate-y-1/2 rounded-full" }), STEPS.map((step, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: cn("flex flex-col items-center gap-2 bg-background px-2 transition-all", index$1 === currentStep ? "scale-110 text-primary" : index$1 < currentStep ? "text-primary/70" : "text-muted-foreground"),
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: cn("flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold text-sm", index$1 === currentStep ? "border-primary bg-primary text-primary-foreground" : index$1 < currentStep ? "border-primary bg-background text-primary" : "border-muted bg-background"),
-								children: index$1 + 1
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "hidden sm:block text-xs font-medium",
-								children: step.title
-							})]
-						}, step.id))]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Tabs, {
+			defaultValue: "categories",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TabsList, { children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
+						value: "categories",
+						children: "Categorias"
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
-						className: "min-h-[400px]",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: STEPS[currentStep].title }) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
-							className: "space-y-6",
-							children: [
-								currentStep === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "space-y-6",
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "grid grid-cols-1 md:grid-cols-2 gap-4",
-											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "revenueTotal",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Faturamento Total (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "revenueAligners",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Alinhadores (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "revenuePediatrics",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Odontopediatria (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "revenueDentistry",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Dentisteria (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "revenueOthers",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Outros (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												})
-											]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "revenueAcceptedPlans",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Receita de Planos Aceitos (R$)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "plansAccepted",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Número de Planos Aceitos" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											})]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "border rounded-lg p-4 bg-muted/20",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "flex items-center justify-between mb-4",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-													className: "font-semibold text-sm",
-													children: "Receita por Gabinete"
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-													type: "button",
-													variant: "ghost",
-													size: "sm",
-													onClick: () => append({
-														id: `gab-${fields.length + 1}`,
-														name: `Gabinete ${fields.length + 1}`,
-														revenue: 0,
-														hoursAvailable: 160,
-														hoursOccupied: 0
-													}),
-													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "h-3 w-3 mr-1" }), " Adicionar"]
-												})]
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "space-y-2",
-												children: fields.map((field, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													className: "flex gap-2 items-center",
-													children: [
-														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-															control: form.control,
-															name: `cabinets.${index$1}.name`,
-															render: ({ field: field$1 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormItem, {
-																className: "flex-1",
-																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	...field$1,
-																	placeholder: "Nome"
-																}) })
-															})
-														}),
-														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-															control: form.control,
-															name: `cabinets.${index$1}.revenue`,
-															render: ({ field: field$1 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormItem, {
-																className: "flex-1",
-																children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-																	type: "number",
-																	...field$1,
-																	placeholder: "Receita"
-																}) })
-															})
-														}),
-														/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-															type: "button",
-															variant: "ghost",
-															size: "icon",
-															onClick: () => remove(index$1),
-															children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "h-4 w-4 text-destructive" })
-														})
-													]
-												}, field.id))
-											})]
-										})
-									]
-								}),
-								currentStep === 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "grid grid-cols-1 md:grid-cols-2 gap-6",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "space-y-4",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-												className: "font-semibold text-sm border-b pb-2",
-												children: "Funil de Vendas"
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "plansPresentedAdults",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Planos Apres. (Adulto)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "plansPresentedKids",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Planos Apres. (Criança)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "plansNotAccepted",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Planos Não Aceitos" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "leads",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Leads (Total)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											})
-										]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "space-y-4",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-												className: "font-semibold text-sm border-b pb-2",
-												children: "Atendimentos e Produção"
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "firstConsultationsScheduled",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "1ª Cons. Agendadas" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "firstConsultationsAttended",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "1ª Cons. Realizadas" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "alignersStarted",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Inícios de Alinhadores" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "grid grid-cols-2 gap-2",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "appointmentsTotal",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Total Atend." }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-													control: form.control,
-													name: "appointmentsIntegrated",
-													render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Atend. Integrados" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) })] })
-												})]
-											})
-										]
-									})]
-								}),
-								currentStep === 2 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "space-y-6",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "space-y-4",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-												className: "font-semibold text-sm border-b pb-2",
-												children: "Ocupação de Gabinetes"
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-												className: "text-xs text-muted-foreground",
-												children: "Informe as horas disponíveis e ocupadas para cada gabinete definido no passo financeiro."
-											}),
-											fields.map((field, index$1) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "grid grid-cols-3 gap-4 items-end border p-4 rounded-md bg-muted/20",
-												children: [
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-														className: "font-medium text-sm pt-2",
-														children: form.watch(`cabinets.${index$1}.name`)
-													}),
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-														control: form.control,
-														name: `cabinets.${index$1}.hoursAvailable`,
-														render: ({ field: field$1 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-															className: "text-xs",
-															children: "Horas Disponíveis"
-														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-															type: "number",
-															...field$1
-														}) })] })
-													}),
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-														control: form.control,
-														name: `cabinets.${index$1}.hoursOccupied`,
-														render: ({ field: field$1 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-															className: "text-xs",
-															children: "Horas Ocupadas"
-														}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-															type: "number",
-															...field$1
-														}) })] })
-													})
-												]
-											}, field.id))
-										]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "max-w-xs",
-										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-											control: form.control,
-											name: "avgWaitTime",
-											render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Tempo Médio de Espera (min)" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												type: "number",
-												...field
-											}) })] })
-										})
-									})]
-								}),
-								currentStep === 3 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-									className: "space-y-6",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "grid grid-cols-1 md:grid-cols-3 gap-6",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "nps",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "NPS do Mês" }),
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-														type: "number",
-														...field
-													}) }),
-													/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {})
-												] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "referralsSpontaneous",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Indicações Espontâneas" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-												control: form.control,
-												name: "complaints",
-												render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, { children: "Número de Reclamações" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-													type: "number",
-													...field
-												}) })] })
-											})
-										]
-									})
-								})
-							]
-						})]
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
+						value: "cabinets",
+						children: "Gabinetes"
 					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex justify-between mt-8",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-							type: "button",
-							variant: "outline",
-							onClick: prevStep,
-							disabled: currentStep === 0,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "mr-2 h-4 w-4" }), "Anterior"]
-						}), currentStep < STEPS.length - 1 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-							type: "button",
-							onClick: nextStep,
-							children: ["Próximo", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "ml-2 h-4 w-4" })]
-						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
-							type: "submit",
-							disabled: isSubmitting,
-							children: [isSubmitting ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "mr-2 h-4 w-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Save, { className: "mr-2 h-4 w-4" }), "Salvar e Calcular KPIs"]
-						})]
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
+						value: "doctors",
+						children: "Médicos"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsTrigger, {
+						value: "sources",
+						children: "Fontes"
 					})
-				]
-			})
+				] }),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+					value: "categories",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Categorias Financeiras" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Defina as categorias de receita." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListEditor, {
+						title: "Categoria",
+						items: config$1.categories,
+						onUpdate: (items) => setConfig({
+							...config$1,
+							categories: items
+						})
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+					value: "cabinets",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Gabinetes" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Gerencie os gabinetes e horas disponíveis." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListEditor, {
+						title: "Gabinetes",
+						items: config$1.cabinets,
+						onUpdate: (items) => setConfig({
+							...config$1,
+							cabinets: items
+						})
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+					value: "doctors",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Corpo Clínico" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Lista de médicos para registro de tempo." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListEditor, {
+						title: "Médico",
+						items: config$1.doctors,
+						onUpdate: (items) => setConfig({
+							...config$1,
+							doctors: items
+						})
+					}) })] })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TabsContent, {
+					value: "sources",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardHeader, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardTitle, { children: "Fontes de Aquisição" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardDescription, { children: "Canais de marketing e origem." })] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardContent, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListEditor, {
+						title: "Fonte",
+						items: config$1.sources,
+						onUpdate: (items) => setConfig({
+							...config$1,
+							sources: items
+						})
+					}) })] })
+				})
+			]
 		})]
 	});
 }
@@ -34809,16 +35663,16 @@ Separator$2.displayName = NAME;
 function isValidOrientation(orientation) {
 	return ORIENTATIONS.includes(orientation);
 }
-var Root$2 = Separator$2;
-var Separator = import_react.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$2, {
+var Root$1 = Separator$2;
+var Separator = import_react.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$1, {
 	ref,
 	decorative,
 	orientation,
 	className: cn("shrink-0 bg-border", orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]", className),
 	...props
 }));
-Separator.displayName = Root$2.displayName;
-var Sheet = Root$4;
+Separator.displayName = Root$1.displayName;
+var Sheet = Root$5;
 var SheetPortal = Portal$2;
 var SheetOverlay = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Overlay, {
 	className: cn("fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className),
@@ -34835,7 +35689,7 @@ var sheetVariants = cva("fixed z-50 gap-4 bg-background p-6 shadow-lg transition
 	} },
 	defaultVariants: { side: "right" }
 });
-var SheetContent = import_react.forwardRef(({ side = "right", className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content, {
+var SheetContent = import_react.forwardRef(({ side = "right", className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Content$1, {
 	ref,
 	className: cn(sheetVariants({ side }), className),
 	...props,
@@ -34847,7 +35701,7 @@ var SheetContent = import_react.forwardRef(({ side = "right", className, childre
 		})]
 	})]
 })] }));
-SheetContent.displayName = Content.displayName;
+SheetContent.displayName = Content$1.displayName;
 var SheetHeader = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 	className: cn("flex flex-col space-y-2 text-center sm:text-left", className),
 	...props
@@ -35237,188 +36091,6 @@ var SidebarMenuSubButton = import_react.forwardRef(({ asChild = false, size: siz
 	});
 });
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
-var ENTRY_FOCUS = "rovingFocusGroup.onEntryFocus";
-var EVENT_OPTIONS = {
-	bubbles: false,
-	cancelable: true
-};
-var GROUP_NAME$2 = "RovingFocusGroup";
-var [Collection$1, useCollection$1, createCollectionScope$1] = createCollection(GROUP_NAME$2);
-var [createRovingFocusGroupContext, createRovingFocusGroupScope] = createContextScope$1(GROUP_NAME$2, [createCollectionScope$1]);
-var [RovingFocusProvider, useRovingFocusContext] = createRovingFocusGroupContext(GROUP_NAME$2);
-var RovingFocusGroup = import_react.forwardRef((props, forwardedRef) => {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.Provider, {
-		scope: props.__scopeRovingFocusGroup,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.Slot, {
-			scope: props.__scopeRovingFocusGroup,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RovingFocusGroupImpl, {
-				...props,
-				ref: forwardedRef
-			})
-		})
-	});
-});
-RovingFocusGroup.displayName = GROUP_NAME$2;
-var RovingFocusGroupImpl = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeRovingFocusGroup, orientation, loop = false, dir, currentTabStopId: currentTabStopIdProp, defaultCurrentTabStopId, onCurrentTabStopIdChange, onEntryFocus, preventScrollOnEntryFocus = false, ...groupProps } = props;
-	const ref = import_react.useRef(null);
-	const composedRefs = useComposedRefs(forwardedRef, ref);
-	const direction = useDirection(dir);
-	const [currentTabStopId, setCurrentTabStopId] = useControllableState({
-		prop: currentTabStopIdProp,
-		defaultProp: defaultCurrentTabStopId ?? null,
-		onChange: onCurrentTabStopIdChange,
-		caller: GROUP_NAME$2
-	});
-	const [isTabbingBackOut, setIsTabbingBackOut] = import_react.useState(false);
-	const handleEntryFocus = useCallbackRef(onEntryFocus);
-	const getItems = useCollection$1(__scopeRovingFocusGroup);
-	const isClickFocusRef = import_react.useRef(false);
-	const [focusableItemsCount, setFocusableItemsCount] = import_react.useState(0);
-	import_react.useEffect(() => {
-		const node = ref.current;
-		if (node) {
-			node.addEventListener(ENTRY_FOCUS, handleEntryFocus);
-			return () => node.removeEventListener(ENTRY_FOCUS, handleEntryFocus);
-		}
-	}, [handleEntryFocus]);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RovingFocusProvider, {
-		scope: __scopeRovingFocusGroup,
-		orientation,
-		dir: direction,
-		loop,
-		currentTabStopId,
-		onItemFocus: import_react.useCallback((tabStopId) => setCurrentTabStopId(tabStopId), [setCurrentTabStopId]),
-		onItemShiftTab: import_react.useCallback(() => setIsTabbingBackOut(true), []),
-		onFocusableItemAdd: import_react.useCallback(() => setFocusableItemsCount((prevCount) => prevCount + 1), []),
-		onFocusableItemRemove: import_react.useCallback(() => setFocusableItemsCount((prevCount) => prevCount - 1), []),
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.div, {
-			tabIndex: isTabbingBackOut || focusableItemsCount === 0 ? -1 : 0,
-			"data-orientation": orientation,
-			...groupProps,
-			ref: composedRefs,
-			style: {
-				outline: "none",
-				...props.style
-			},
-			onMouseDown: composeEventHandlers(props.onMouseDown, () => {
-				isClickFocusRef.current = true;
-			}),
-			onFocus: composeEventHandlers(props.onFocus, (event) => {
-				const isKeyboardFocus = !isClickFocusRef.current;
-				if (event.target === event.currentTarget && isKeyboardFocus && !isTabbingBackOut) {
-					const entryFocusEvent = new CustomEvent(ENTRY_FOCUS, EVENT_OPTIONS);
-					event.currentTarget.dispatchEvent(entryFocusEvent);
-					if (!entryFocusEvent.defaultPrevented) {
-						const items = getItems().filter((item) => item.focusable);
-						focusFirst$1([
-							items.find((item) => item.active),
-							items.find((item) => item.id === currentTabStopId),
-							...items
-						].filter(Boolean).map((item) => item.ref.current), preventScrollOnEntryFocus);
-					}
-				}
-				isClickFocusRef.current = false;
-			}),
-			onBlur: composeEventHandlers(props.onBlur, () => setIsTabbingBackOut(false))
-		})
-	});
-});
-var ITEM_NAME$2 = "RovingFocusGroupItem";
-var RovingFocusGroupItem = import_react.forwardRef((props, forwardedRef) => {
-	const { __scopeRovingFocusGroup, focusable = true, active = false, tabStopId, children, ...itemProps } = props;
-	const autoId = useId();
-	const id = tabStopId || autoId;
-	const context = useRovingFocusContext(ITEM_NAME$2, __scopeRovingFocusGroup);
-	const isCurrentTabStop = context.currentTabStopId === id;
-	const getItems = useCollection$1(__scopeRovingFocusGroup);
-	const { onFocusableItemAdd, onFocusableItemRemove, currentTabStopId } = context;
-	import_react.useEffect(() => {
-		if (focusable) {
-			onFocusableItemAdd();
-			return () => onFocusableItemRemove();
-		}
-	}, [
-		focusable,
-		onFocusableItemAdd,
-		onFocusableItemRemove
-	]);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Collection$1.ItemSlot, {
-		scope: __scopeRovingFocusGroup,
-		id,
-		focusable,
-		active,
-		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Primitive$1.span, {
-			tabIndex: isCurrentTabStop ? 0 : -1,
-			"data-orientation": context.orientation,
-			...itemProps,
-			ref: forwardedRef,
-			onMouseDown: composeEventHandlers(props.onMouseDown, (event) => {
-				if (!focusable) event.preventDefault();
-				else context.onItemFocus(id);
-			}),
-			onFocus: composeEventHandlers(props.onFocus, () => context.onItemFocus(id)),
-			onKeyDown: composeEventHandlers(props.onKeyDown, (event) => {
-				if (event.key === "Tab" && event.shiftKey) {
-					context.onItemShiftTab();
-					return;
-				}
-				if (event.target !== event.currentTarget) return;
-				const focusIntent = getFocusIntent(event, context.orientation, context.dir);
-				if (focusIntent !== void 0) {
-					if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-					event.preventDefault();
-					let candidateNodes = getItems().filter((item) => item.focusable).map((item) => item.ref.current);
-					if (focusIntent === "last") candidateNodes.reverse();
-					else if (focusIntent === "prev" || focusIntent === "next") {
-						if (focusIntent === "prev") candidateNodes.reverse();
-						const currentIndex = candidateNodes.indexOf(event.currentTarget);
-						candidateNodes = context.loop ? wrapArray$1(candidateNodes, currentIndex + 1) : candidateNodes.slice(currentIndex + 1);
-					}
-					setTimeout(() => focusFirst$1(candidateNodes));
-				}
-			}),
-			children: typeof children === "function" ? children({
-				isCurrentTabStop,
-				hasTabStop: currentTabStopId != null
-			}) : children
-		})
-	});
-});
-RovingFocusGroupItem.displayName = ITEM_NAME$2;
-var MAP_KEY_TO_FOCUS_INTENT = {
-	ArrowLeft: "prev",
-	ArrowUp: "prev",
-	ArrowRight: "next",
-	ArrowDown: "next",
-	PageUp: "first",
-	Home: "first",
-	PageDown: "last",
-	End: "last"
-};
-function getDirectionAwareKey(key, dir) {
-	if (dir !== "rtl") return key;
-	return key === "ArrowLeft" ? "ArrowRight" : key === "ArrowRight" ? "ArrowLeft" : key;
-}
-function getFocusIntent(event, orientation, dir) {
-	const key = getDirectionAwareKey(event.key, dir);
-	if (orientation === "vertical" && ["ArrowLeft", "ArrowRight"].includes(key)) return void 0;
-	if (orientation === "horizontal" && ["ArrowUp", "ArrowDown"].includes(key)) return void 0;
-	return MAP_KEY_TO_FOCUS_INTENT[key];
-}
-function focusFirst$1(candidates, preventScroll = false) {
-	const PREVIOUSLY_FOCUSED_ELEMENT = document.activeElement;
-	for (const candidate of candidates) {
-		if (candidate === PREVIOUSLY_FOCUSED_ELEMENT) return;
-		candidate.focus({ preventScroll });
-		if (document.activeElement !== PREVIOUSLY_FOCUSED_ELEMENT) return;
-	}
-}
-function wrapArray$1(array$1, startIndex) {
-	return array$1.map((_$1, index$1) => array$1[(startIndex + index$1) % array$1.length]);
-}
-var Root$1 = RovingFocusGroup;
-var Item = RovingFocusGroupItem;
 var SELECTION_KEYS = ["Enter", " "];
 var FIRST_KEYS = [
 	"ArrowDown",
@@ -35477,7 +36149,7 @@ var Menu = (props) => {
 			document.removeEventListener("pointermove", handlePointer, { capture: true });
 		};
 	}, []);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$2, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$3, {
 		...popperScope,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MenuProvider, {
 			scope: __scopeMenu,
@@ -35659,7 +36331,7 @@ var MenuContentImpl = import_react.forwardRef((props, forwardedRef) => {
 					onFocusOutside,
 					onInteractOutside,
 					onDismiss,
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$1, {
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root$3, {
 						asChild: true,
 						...rovingFocusGroupScope,
 						dir: rootContext.dir,
@@ -35671,7 +36343,7 @@ var MenuContentImpl = import_react.forwardRef((props, forwardedRef) => {
 							if (!rootContext.isUsingKeyboardRef.current) event.preventDefault();
 						}),
 						preventScrollOnEntryFocus: true,
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content$1, {
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Content$2, {
 							role: "menu",
 							"aria-orientation": "vertical",
 							"data-state": getOpenState(context.open),
@@ -35932,7 +36604,7 @@ var MenuSub = (props) => {
 		if (parentMenuContext.open === false) handleOpenChange(false);
 		return () => handleOpenChange(false);
 	}, [parentMenuContext.open, handleOpenChange]);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$2, {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Root2$3, {
 		...popperScope,
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MenuProvider, {
 			scope: __scopeMenu,
@@ -36585,7 +37257,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 				var cachedValue = getSnapshot();
 				objectIs(value, cachedValue) || (console.error("The result of getSnapshot should be cached to avoid an infinite loop"), didWarnUncachedGetSnapshot = !0);
 			}
-			cachedValue = useState$8({ inst: {
+			cachedValue = useState$9({ inst: {
 				value,
 				getSnapshot
 			} });
@@ -36599,7 +37271,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 				value,
 				getSnapshot
 			]);
-			useEffect$5(function() {
+			useEffect$6(function() {
 				checkIfSnapshotChanged(inst) && forceUpdate({ inst });
 				return subscribe$1(function() {
 					checkIfSnapshotChanged(inst) && forceUpdate({ inst });
@@ -36622,7 +37294,7 @@ var require_use_sync_external_store_shim_development = /* @__PURE__ */ __commonJ
 			return getSnapshot();
 		}
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$8 = React$5.useState, useEffect$5 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+		var React$5 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState$9 = React$5.useState, useEffect$6 = React$5.useEffect, useLayoutEffect$1 = React$5.useLayoutEffect, useDebugValue = React$5.useDebugValue, didWarnOld18Alpha = !1, didWarnUncachedGetSnapshot = !1, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
 		exports.useSyncExternalStore = void 0 !== React$5.useSyncExternalStore ? React$5.useSyncExternalStore : shim;
 		"undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
 	})();
@@ -36816,23 +37488,35 @@ function AppSidebar() {
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Building2, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Clínicas" })]
 					})
 				}) }),
-				(currentClinic || user?.role === "GESTOR_CLINICA") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
-					asChild: true,
-					tooltip: "Dashboard",
-					isActive: location.pathname.includes("/dashboard"),
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
-						to: `/dashboard/${currentClinic?.id || user?.clinicId}`,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutDashboard, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Dashboard" })]
-					})
-				}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
-					asChild: true,
-					tooltip: "Lançamentos",
-					isActive: location.pathname.includes("/lancamentos"),
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
-						to: `/lancamentos/${currentClinic?.id || user?.clinicId}`,
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileInput, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Lançamentos" })]
-					})
-				}) })] }),
+				(currentClinic || user?.role === "GESTOR_CLINICA") && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
+						asChild: true,
+						tooltip: "Dashboard",
+						isActive: location.pathname.includes("/dashboard"),
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+							to: `/dashboard/${currentClinic?.id || user?.clinicId}`,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LayoutDashboard, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Dashboard" })]
+						})
+					}) }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
+						asChild: true,
+						tooltip: "Diário",
+						isActive: location.pathname.includes("/lancamentos"),
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+							to: `/lancamentos/${currentClinic?.id || user?.clinicId}`,
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileInput, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Diário" })]
+						})
+					}) }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
+						asChild: true,
+						tooltip: "Configurações",
+						isActive: location.pathname.includes("/configuracoes"),
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+							to: "/configuracoes",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings$1, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Configurações" })]
+						})
+					}) })
+				] }),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
 					asChild: true,
 					tooltip: "Alertas",
@@ -37007,6 +37691,10 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
 						path: "/lancamentos/:clinicId",
 						element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Inputs, {})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
+						path: "/configuracoes",
+						element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, {})
 					})
 				]
 			}),
@@ -37020,4 +37708,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, { chil
 var App_default = App;
 (0, import_client.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ (0, import_jsx_runtime.jsx)(App_default, {}));
 
-//# sourceMappingURL=index-idQqKVdt.js.map
+//# sourceMappingURL=index-Ey-UE_tl.js.map

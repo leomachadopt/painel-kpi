@@ -1,5 +1,29 @@
 import { Clinic, MonthlyData, CabinetData } from '@/lib/types'
 
+const DEFAULT_CONFIG = {
+  categories: [
+    { id: 'cat-1', name: 'Alinhadores' },
+    { id: 'cat-2', name: 'Odontopediatria' },
+    { id: 'cat-3', name: 'Dentisteria' },
+    { id: 'cat-4', name: 'Cirurgia' },
+    { id: 'cat-5', name: 'Outros' },
+  ],
+  cabinets: [
+    { id: 'gab-1', name: 'Gabinete 1', standardHours: 8 },
+    { id: 'gab-2', name: 'Gabinete 2', standardHours: 8 },
+  ],
+  doctors: [
+    { id: 'doc-1', name: 'Dr. Pedro Santos' },
+    { id: 'doc-2', name: 'Dra. Ana Silva' },
+  ],
+  sources: [
+    { id: 'src-1', name: 'Google Ads' },
+    { id: 'src-2', name: 'Meta Ads' },
+    { id: 'src-3', name: 'Indicação' },
+    { id: 'src-4', name: 'Passante' },
+  ],
+}
+
 export const MOCK_CLINICS: Clinic[] = [
   {
     id: 'clinic-1',
@@ -28,6 +52,7 @@ export const MOCK_CLINICS: Clinic[] = [
     targetLeadsRange: { min: 80, max: 100 },
     targetRevenuePerCabinet: 25000,
     targetPlansPresented: { adults: 15, kids: 20 },
+    configuration: DEFAULT_CONFIG,
   },
   {
     id: 'clinic-2',
@@ -36,7 +61,7 @@ export const MOCK_CLINICS: Clinic[] = [
     active: true,
     lastUpdate: 'Setembro 2023',
     logoUrl: 'https://img.usecurling.com/i?q=heart&color=rose',
-    targetRevenue: 100000, // Custom override
+    targetRevenue: 100000,
     targetAlignersRange: { min: 15, max: 20 },
     targetAvgTicket: 1500,
     targetAcceptanceRate: 70,
@@ -56,6 +81,7 @@ export const MOCK_CLINICS: Clinic[] = [
     targetLeadsRange: { min: 100, max: 120 },
     targetRevenuePerCabinet: 30000,
     targetPlansPresented: { adults: 20, kids: 25 },
+    configuration: DEFAULT_CONFIG,
   },
 ]
 
@@ -64,9 +90,8 @@ export const generateMockData = (
   year: number,
 ): MonthlyData[] => {
   return Array.from({ length: 12 }, (_, i) => {
-    // Generate varied data to trigger alerts randomly
     const randomFactor = Math.random()
-    const revenueTotal = Math.floor(randomFactor * 50000) + 70000 // 70k-120k
+    const revenueTotal = Math.floor(randomFactor * 50000) + 70000
     const revenueAligners = revenueTotal * 0.4
     const revenuePediatrics = revenueTotal * 0.2
     const revenueDentistry = revenueTotal * 0.3
@@ -92,16 +117,13 @@ export const generateMockData = (
     const plansAccepted = Math.floor(Math.random() * 15) + 15
     const plansPresentedAdults = Math.floor(Math.random() * 20) + 10
     const plansPresentedKids = Math.floor(Math.random() * 15) + 10
-    // Ticket varied: sometimes low (<1200) sometimes high
     const ticketBase = Math.random() > 0.3 ? 1250 : 1000
     const revenueAcceptedPlans =
       plansAccepted * (Math.random() * 600 + ticketBase)
-
     const plansNotAccepted =
       plansPresentedAdults + plansPresentedKids - plansAccepted
     const plansNotAcceptedFollowUp = Math.floor(plansNotAccepted * 0.8)
 
-    // NPS and Leads varied
     const nps = Math.random() > 0.2 ? 85 : 75
     const leads = Math.random() > 0.2 ? 90 : 70
     const complaints = Math.random() > 0.8 ? 3 : 1
@@ -112,7 +134,6 @@ export const generateMockData = (
       clinicId,
       month: i + 1,
       year,
-      // Financial
       revenueTotal,
       revenueAligners,
       revenuePediatrics,
@@ -120,19 +141,17 @@ export const generateMockData = (
       revenueOthers,
       revenueAcceptedPlans,
       cabinets,
-      // Commercial
       plansPresentedAdults,
       plansPresentedKids,
       plansAccepted,
-      alignersStarted: alignersStarted,
+      alignersStarted,
       appointmentsIntegrated: Math.floor(Math.random() * 50) + 140,
       appointmentsTotal: 200,
-      leads: leads,
+      leads,
       firstConsultationsScheduled: 50,
       firstConsultationsAttended: Math.floor(Math.random() * 10) + 35,
       plansNotAccepted: plansNotAccepted > 0 ? plansNotAccepted : 0,
       plansNotAcceptedFollowUp,
-      // Operational
       avgWaitTime: Math.floor(Math.random() * 15) + 2,
       agendaOwner: {
         operational: 80,
@@ -140,11 +159,10 @@ export const generateMockData = (
         sales: 40,
         leadership: 20,
       },
-      nps: nps,
+      nps,
       referralsSpontaneous: Math.floor(Math.random() * 5) + 5,
       referralsBase2025: 8,
-      complaints: complaints,
-      // Legacy
+      complaints,
       expenses: revenueTotal * 0.6,
       marketingCost: 5000,
     }

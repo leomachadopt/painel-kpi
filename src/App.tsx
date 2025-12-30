@@ -6,6 +6,7 @@ import Login from '@/pages/Login'
 import Clinics from '@/pages/Clinics'
 import Dashboard from '@/pages/Dashboard'
 import Inputs from '@/pages/Inputs'
+import Settings from '@/pages/Settings'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/clinicas" element={<Clinics />} />
               <Route path="/dashboard/:clinicId" element={<Dashboard />} />
               <Route path="/lancamentos/:clinicId" element={<Inputs />} />
+              <Route path="/configuracoes" element={<Settings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

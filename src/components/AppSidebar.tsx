@@ -7,6 +7,7 @@ import {
   LogOut,
   ChevronDown,
   User,
+  Settings,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -124,14 +125,27 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Lançamentos"
+                  tooltip="Diário"
                   isActive={location.pathname.includes('/lancamentos')}
                 >
                   <Link
                     to={`/lancamentos/${currentClinic?.id || user?.clinicId}`}
                   >
                     <FileInput />
-                    <span>Lançamentos</span>
+                    <span>Diário</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Configurações"
+                  isActive={location.pathname.includes('/configuracoes')}
+                >
+                  <Link to="/configuracoes">
+                    <Settings />
+                    <span>Configurações</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
