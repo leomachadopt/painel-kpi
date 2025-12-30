@@ -70,7 +70,7 @@ export interface MonthlyData {
   referralsBase2025: number
   complaints: number
 
-  // Legacy/Basic (Kept for compatibility or additional calculations)
+  // Legacy/Basic
   expenses: number
   marketingCost: number
 }

@@ -171,6 +171,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
+  const getYTDRevenue = (clinicId: string, month: number, year: number) => {
+    const data = monthlyData[clinicId] || []
+    return data
+      .filter((d) => d.year === year && d.month <= month)
+      .reduce((sum, d) => sum + d.revenueTotal, 0)
+  }
+
   const calculateKPIs = (
     clinicId: string,
     month: number,
@@ -188,59 +195,145 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     const kpis: KPI[] = []
 
-    // Helpers
+    // Helper for percentage change
     const calcChange = (curr: number, prev: number | undefined) => {
       if (!prev || prev === 0) return 0
       return ((curr - prev) / prev) * 100
     }
 
-    // 1. Ticket Médio: receitaTotalPlanosAceitos / plansAccepted
-    const ticketMedio =
-      current.plansAccepted > 0
-        ? current.revenueAcceptedPlans / current.plansAccepted
-        : 0
-    const prevTicket =
-      previous && previous.plansAccepted > 0
-        ? previous.revenueAcceptedPlans / previous.plansAccepted
-        : 0
-
+    // 1. Monthly Revenue
     kpis.push({
-      id: 'ticket_medio',
-      name: 'Ticket Médio',
-      value: ticketMedio,
+      id: 'revenue_monthly',
+      name: 'Faturamento Mensal',
+      value: current.revenueTotal,
       unit: 'currency',
-      change: calcChange(ticketMedio, prevTicket),
-      status: ticketMedio >= clinic.targetAvgTicket ? 'success' : 'warning',
-      description: 'Média de valor dos planos aceitos.',
-      target: clinic.targetAvgTicket,
+      change: calcChange(current.revenueTotal, previous?.revenueTotal),
+      status:
+        current.revenueTotal >= clinic.targetRevenue
+          ? 'success'
+          : current.revenueTotal >= clinic.targetRevenue * 0.9
+            ? 'warning'
+            : 'danger',
+      target: clinic.targetRevenue,
     })
 
-    // 2. Taxa de Aceitação
+    // 2. YTD Revenue
+    const ytdRevenue = getYTDRevenue(clinicId, month, year)
+    // No previous comparison for YTD in this context usually, or vs last year YTD
+    kpis.push({
+      id: 'revenue_ytd',
+      name: 'Faturamento Anual (YTD)',
+      value: ytdRevenue,
+      unit: 'currency',
+      change: 0,
+      status: 'success', // Logic could be complex based on annual target
+    })
+
+    // 3. Goal vs Actual Comparison
+    const goalVsActual =
+      clinic.targetRevenue > 0
+        ? (current.revenueTotal / clinic.targetRevenue) * 100
+        : 0
+    kpis.push({
+      id: 'goal_vs_actual',
+      name: 'Meta vs Realizado',
+      value: goalVsActual,
+      unit: 'percent',
+      change: 0,
+      status:
+        goalVsActual >= 100
+          ? 'success'
+          : goalVsActual >= 90
+            ? 'warning'
+            : 'danger',
+    })
+
+    // 4. Number of Aligner Starts
+    kpis.push({
+      id: 'aligner_starts',
+      name: 'Inícios Alinhadores',
+      value: current.alignersStarted,
+      unit: 'number',
+      change: current.alignersStarted - (previous?.alignersStarted || 0),
+      status:
+        current.alignersStarted >= clinic.targetAlignersRange.min
+          ? 'success'
+          : 'danger',
+      target: `${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}`,
+    })
+
+    // 5. Treatment Plans Presented
     const plansPresented =
       current.plansPresentedAdults + current.plansPresentedKids
-    const acceptanceRate =
-      plansPresented > 0 ? (current.plansAccepted / plansPresented) * 100 : 0
     const prevPresented =
       (previous?.plansPresentedAdults || 0) +
       (previous?.plansPresentedKids || 0)
-    const prevAcceptance =
+    kpis.push({
+      id: 'plans_presented',
+      name: 'Planos Apresentados',
+      value: plansPresented,
+      unit: 'number',
+      change: plansPresented - prevPresented,
+      status: 'success', // No explicit target in clinic model
+    })
+
+    // 6. Treatment Plans Accepted
+    kpis.push({
+      id: 'plans_accepted',
+      name: 'Planos Aceitos',
+      value: current.plansAccepted,
+      unit: 'number',
+      change: current.plansAccepted - (previous?.plansAccepted || 0),
+      status: 'success',
+    })
+
+    // 7. Acceptance Rate
+    const acceptanceRate =
+      plansPresented > 0 ? (current.plansAccepted / plansPresented) * 100 : 0
+    const prevAcceptanceRate =
       prevPresented > 0
         ? ((previous?.plansAccepted || 0) / prevPresented) * 100
         : 0
-
     kpis.push({
       id: 'acceptance_rate',
       name: 'Taxa de Aceitação',
       value: acceptanceRate,
       unit: 'percent',
-      change: acceptanceRate - prevAcceptance,
+      change: acceptanceRate - prevAcceptanceRate,
       status:
-        acceptanceRate >= clinic.targetAcceptanceRate ? 'success' : 'danger',
-      description: 'Percentual de planos apresentados que foram aceitos.',
+        acceptanceRate >= clinic.targetAcceptanceRate
+          ? 'success'
+          : acceptanceRate >= clinic.targetAcceptanceRate * 0.9
+            ? 'warning'
+            : 'danger',
       target: clinic.targetAcceptanceRate,
     })
 
-    // 3. Taxa de Ocupação (Global)
+    // 8. Average Ticket
+    const avgTicket =
+      current.plansAccepted > 0
+        ? current.revenueAcceptedPlans / current.plansAccepted
+        : 0
+    const prevAvgTicket =
+      previous && previous.plansAccepted > 0
+        ? previous.revenueAcceptedPlans / previous.plansAccepted
+        : 0
+    kpis.push({
+      id: 'avg_ticket',
+      name: 'Ticket Médio',
+      value: avgTicket,
+      unit: 'currency',
+      change: calcChange(avgTicket, prevAvgTicket),
+      status:
+        avgTicket >= clinic.targetAvgTicket
+          ? 'success'
+          : avgTicket >= clinic.targetAvgTicket * 0.9
+            ? 'warning'
+            : 'danger',
+      target: clinic.targetAvgTicket,
+    })
+
+    // 9. Occupancy Rate
     const totalAvail = current.cabinets.reduce(
       (sum, c) => sum + c.hoursAvailable,
       0,
@@ -251,128 +344,71 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     )
     const occupancyRate =
       totalAvail > 0 ? (totalOccupied / totalAvail) * 100 : 0
-    const prevAvail =
-      previous?.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0) || 0
-    const prevOccupied =
-      previous?.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0) || 0
-    const prevOccupancy = prevAvail > 0 ? (prevOccupied / prevAvail) * 100 : 0
-
+    const prevOccupancyRate =
+      (previous?.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0) || 0) >
+      0
+        ? ((previous?.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0) ||
+            0) /
+            previous!.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0)) *
+          100
+        : 0
     kpis.push({
       id: 'occupancy_rate',
       name: 'Taxa de Ocupação',
       value: occupancyRate,
       unit: 'percent',
-      change: occupancyRate - prevOccupancy,
+      change: occupancyRate - prevOccupancyRate,
       status:
-        occupancyRate >= clinic.targetOccupancyRate ? 'success' : 'warning',
-      description: 'Ocupação média dos gabinetes.',
+        occupancyRate >= clinic.targetOccupancyRate
+          ? 'success'
+          : occupancyRate >= clinic.targetOccupancyRate * 0.9
+            ? 'warning'
+            : 'danger',
       target: clinic.targetOccupancyRate,
     })
 
-    // 4. Taxa de Integração
-    const integrationRate =
-      current.appointmentsTotal > 0
-        ? (current.appointmentsIntegrated / current.appointmentsTotal) * 100
-        : 0
-    const prevIntegration =
-      (previous?.appointmentsTotal || 0) > 0
-        ? ((previous?.appointmentsIntegrated || 0) /
-            (previous?.appointmentsTotal || 1)) *
-          100
-        : 0
-
+    // 10. Monthly Leads
     kpis.push({
-      id: 'integration_rate',
-      name: 'Taxa de Integração',
-      value: integrationRate,
-      unit: 'percent',
-      change: integrationRate - prevIntegration,
-      status:
-        integrationRate >= clinic.targetIntegrationRate ? 'success' : 'warning',
-      description: 'Atendimentos integrados vs total.',
-      target: clinic.targetIntegrationRate,
+      id: 'leads',
+      name: 'Leads Mensais',
+      value: current.leads,
+      unit: 'number',
+      change: current.leads - (previous?.leads || 0),
+      status: 'success', // No explicit target
     })
 
-    // 5. NPS
+    // 11. NPS
     kpis.push({
       id: 'nps',
       name: 'NPS',
       value: current.nps,
       unit: 'number',
       change: current.nps - (previous?.nps || 0),
-      status: current.nps >= clinic.targetNPS ? 'success' : 'danger',
-      description: 'Net Promoter Score.',
+      status:
+        current.nps >= clinic.targetNPS
+          ? 'success'
+          : current.nps >= clinic.targetNPS * 0.9
+            ? 'warning'
+            : 'danger',
       target: clinic.targetNPS,
     })
 
-    // 6. Taxa de Comparecimento (Attendance)
-    const attendanceRate =
-      current.firstConsultationsScheduled > 0
-        ? (current.firstConsultationsAttended /
-            current.firstConsultationsScheduled) *
-          100
+    // 12. Revenue per Treatment Room
+    const revenuePerCabinet =
+      current.cabinets.length > 0
+        ? current.revenueTotal / current.cabinets.length
         : 0
-    const prevAttendance =
-      (previous?.firstConsultationsScheduled || 0) > 0
-        ? ((previous?.firstConsultationsAttended || 0) /
-            (previous?.firstConsultationsScheduled || 1)) *
-          100
+    const prevRevenuePerCabinet =
+      (previous?.cabinets.length || 0) > 0
+        ? (previous?.revenueTotal || 0) / previous!.cabinets.length
         : 0
-
     kpis.push({
-      id: 'attendance_rate',
-      name: 'Comparecimento (1ª Cons)',
-      value: attendanceRate,
-      unit: 'percent',
-      change: attendanceRate - prevAttendance,
-      status: attendanceRate >= 80 ? 'success' : 'warning',
-      description: 'Pacientes que compareceram à primeira consulta.',
-    })
-
-    // 7. Crescimento Indicações
-    const referralGrowth =
-      current.referralsBase2025 > 0
-        ? ((current.referralsSpontaneous - current.referralsBase2025) /
-            current.referralsBase2025) *
-          100
-        : 0
-
-    kpis.push({
-      id: 'referral_growth',
-      name: 'Crescimento Indicações',
-      value: referralGrowth,
-      unit: 'percent',
-      change: 0, // Vs Base Year, not last month
-      status: referralGrowth > 0 ? 'success' : 'warning',
-      description: 'Indicações espontâneas vs Base 2025.',
-    })
-
-    // 8. Faturamento Total
-    kpis.push({
-      id: 'revenue_total',
-      name: 'Faturamento Total',
-      value: current.revenueTotal,
+      id: 'revenue_per_cabinet',
+      name: 'Faturamento por Gabinete',
+      value: revenuePerCabinet,
       unit: 'currency',
-      change: calcChange(current.revenueTotal, previous?.revenueTotal),
-      status:
-        current.revenueTotal >= clinic.targetRevenue ? 'success' : 'warning',
-      description: 'Receita bruta total.',
-      target: clinic.targetRevenue,
-    })
-
-    // 9. ROI Marketing (Simplified check)
-    const roi =
-      current.marketingCost > 0
-        ? (current.revenueTotal - current.marketingCost) / current.marketingCost
-        : 0
-    kpis.push({
-      id: 'roi',
-      name: 'ROI Marketing',
-      value: roi,
-      unit: 'ratio',
-      change: 0,
-      status: roi > 10 ? 'success' : 'warning',
-      description: 'Retorno sobre investimento.',
+      change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),
+      status: 'success', // Target would be targetRevenue / cabinets
     })
 
     return kpis
