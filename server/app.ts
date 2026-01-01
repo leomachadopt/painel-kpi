@@ -116,6 +116,18 @@ export function createApp() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
+  // 404 handler for API routes (for debugging)
+  app.use('/api', (req: express.Request, res: express.Response) => {
+    console.error(`[404] Route not found: ${req.method} ${req.url}`)
+    res.status(404).json({
+      error: 'Route not found',
+      method: req.method,
+      url: req.url,
+      path: req.path,
+      originalUrl: req.originalUrl,
+    })
+  })
+
   // Error handling middleware
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Error:', err)

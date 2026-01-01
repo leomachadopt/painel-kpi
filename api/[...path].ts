@@ -14,16 +14,22 @@ function getApp() {
 export default function handler(req: IncomingMessage, res: ServerResponse) {
   const app = getApp()
   
-  // Garantir que req.url tenha o prefixo /api se necessário
-  // Na Vercel, quando acessamos /api/auth, o req.url deve ser /api/auth
-  // Mas vamos garantir que está correto
+  // Na Vercel, quando você tem api/[...path].ts, a requisição /api/daily-entries/...
+  // chega no handler. O req.url deve incluir o path completo com /api
   const originalUrl = req.url || '/'
   
   // Se a URL não começar com /api, adicionamos o prefixo
-  // Isso garante compatibilidade mesmo se a Vercel passar apenas o path sem /api
+  // Na Vercel com [...path], o path pode vir sem /api
+  let finalUrl = originalUrl
   if (!originalUrl.startsWith('/api')) {
-    req.url = `/api${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`
+    finalUrl = `/api${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`
   }
+  
+  // Atualizar req.url para o Express processar corretamente
+  req.url = finalUrl
+  
+  // Log para debug
+  console.log(`[API Handler] ${req.method} ${req.url} (original: ${originalUrl})`)
   
   // Express app processa a requisição diretamente
   // Não retornar nada - deixar Express gerenciar a resposta
