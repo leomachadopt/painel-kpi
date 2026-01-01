@@ -9,6 +9,7 @@ import {
   User,
   Settings,
   FileText,
+  Users,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -42,6 +43,7 @@ export function AppSidebar() {
   const currentClinic = clinics.find((c) => c.id === clinicId)
 
   const isMentor = user?.role === 'MENTORA'
+  const activeClinicId = currentClinic?.id || user?.clinicId
 
   return (
     <Sidebar collapsible="icon">
@@ -165,6 +167,21 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </>
+          )}
+
+          {activeClinicId && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Pacientes"
+                isActive={location.pathname.includes('/pacientes')}
+              >
+                <Link to={`/pacientes/${activeClinicId}`}>
+                  <Users />
+                  <span>Pacientes</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           )}
 
           <SidebarMenuItem>

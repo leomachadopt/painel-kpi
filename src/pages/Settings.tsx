@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,29 +10,109 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
-import { Trash2, Plus, Save } from 'lucide-react'
+import { Trash2, Plus, Save, Edit2, Check, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { configApi, clinicsApi } from '@/services/api'
+import { MarketingSettings } from '@/components/settings/MarketingSettings'
 
 export default function Settings() {
   const { user } = useAuthStore()
   const { clinics, updateClinicConfig } = useDataStore()
-  const navigate = useNavigate()
 
   const [selectedClinicId, setSelectedClinicId] = useState(
-    user?.clinicId || clinics[0]?.id,
+    user?.clinicId || clinics[0]?.id || '',
   )
 
   const clinic = clinics.find((c) => c.id === selectedClinicId)
 
   const [config, setConfig] = useState(clinic?.configuration)
+  const [targets, setTargets] = useState({
+    targetRevenue: clinic?.targetRevenue || 0,
+    targetAlignersRange: clinic?.targetAlignersRange || { min: 0, max: 0 },
+    targetAvgTicket: clinic?.targetAvgTicket || 0,
+    targetAcceptanceRate: clinic?.targetAcceptanceRate || 0,
+    targetOccupancyRate: clinic?.targetOccupancyRate || 0,
+    targetNPS: clinic?.targetNPS || 0,
+    targetIntegrationRate: clinic?.targetIntegrationRate || 0,
+    targetAttendanceRate: clinic?.targetAttendanceRate || 0,
+    targetFollowUpRate: clinic?.targetFollowUpRate || 0,
+    targetWaitTime: clinic?.targetWaitTime || 0,
+    targetComplaints: clinic?.targetComplaints || 0,
+    targetLeadsRange: clinic?.targetLeadsRange || { min: 0, max: 0 },
+    targetRevenuePerCabinet: clinic?.targetRevenuePerCabinet || 0,
+    targetPlansPresented: clinic?.targetPlansPresented || { adults: 0, kids: 0 },
+    targetAgendaDistribution: clinic?.targetAgendaDistribution || {
+      operational: 0,
+      planning: 0,
+      sales: 0,
+      leadership: 0,
+    },
+  })
+  const [saving, setSaving] = useState(false)
+
+  // Sync config state when clinic changes
+  useEffect(() => {
+    if (clinic?.configuration) {
+      setConfig(clinic.configuration)
+    }
+    if (clinic) {
+      setTargets({
+        targetRevenue: clinic.targetRevenue,
+        targetAlignersRange: clinic.targetAlignersRange,
+        targetAvgTicket: clinic.targetAvgTicket,
+        targetAcceptanceRate: clinic.targetAcceptanceRate,
+        targetOccupancyRate: clinic.targetOccupancyRate,
+        targetNPS: clinic.targetNPS,
+        targetIntegrationRate: clinic.targetIntegrationRate,
+        targetAttendanceRate: clinic.targetAttendanceRate,
+        targetFollowUpRate: clinic.targetFollowUpRate,
+        targetWaitTime: clinic.targetWaitTime,
+        targetComplaints: clinic.targetComplaints,
+        targetLeadsRange: clinic.targetLeadsRange,
+        targetRevenuePerCabinet: clinic.targetRevenuePerCabinet,
+        targetPlansPresented: clinic.targetPlansPresented,
+        targetAgendaDistribution: clinic.targetAgendaDistribution,
+      })
+    }
+  }, [clinic])
 
   if (!clinic || !config) return <div className="p-8">Carregando...</div>
 
-  const handleSave = () => {
-    updateClinicConfig(clinic.id, config)
-    toast.success('Configurações guardadas com sucesso!')
+  const handleSaveConfig = async () => {
+    setSaving(true)
+    try {
+      await configApi.update(clinic.id, config)
+      await updateClinicConfig(clinic.id, config)
+      toast.success('Configurações guardadas com sucesso!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao guardar configurações')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveTargets = async () => {
+    setSaving(true)
+    try {
+      await clinicsApi.updateTargets(clinic.id, targets)
+      toast.success('Metas guardadas com sucesso!')
+      // Reload clinic data
+      const updatedClinic = await clinicsApi.getById(clinic.id)
+      await updateClinicConfig(clinic.id, updatedClinic.configuration)
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao guardar metas')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const ListEditor = ({
@@ -47,6 +126,9 @@ export default function Settings() {
   }) => {
     const [newItem, setNewItem] = useState('')
     const [newHours, setNewHours] = useState('8')
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editName, setEditName] = useState('')
+    const [editHours, setEditHours] = useState('')
 
     const add = () => {
       if (!newItem) return
@@ -54,10 +136,38 @@ export default function Settings() {
       if (title === 'Gabinetes') entry.standardHours = parseFloat(newHours)
       onUpdate([...items, entry])
       setNewItem('')
+      setNewHours('8')
     }
 
     const remove = (id: string) => {
       onUpdate(items.filter((i) => i.id !== id))
+    }
+
+    const startEdit = (item: any) => {
+      setEditingId(item.id)
+      setEditName(item.name)
+      setEditHours(item.standardHours?.toString() || '8')
+    }
+
+    const saveEdit = (id: string) => {
+      const updated = items.map((item) => {
+        if (item.id === id) {
+          const updatedItem: any = { ...item, name: editName }
+          if (title === 'Gabinetes') {
+            updatedItem.standardHours = parseFloat(editHours)
+          }
+          return updatedItem
+        }
+        return item
+      })
+      onUpdate(updated)
+      setEditingId(null)
+    }
+
+    const cancelEdit = () => {
+      setEditingId(null)
+      setEditName('')
+      setEditHours('')
     }
 
     return (
@@ -67,6 +177,7 @@ export default function Settings() {
             placeholder={`Novo ${title}`}
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           {title === 'Gabinetes' && (
             <Input
@@ -87,21 +198,72 @@ export default function Settings() {
               key={item.id}
               className="flex items-center justify-between p-2 border rounded bg-background"
             >
-              <div className="flex gap-2">
-                <span>{item.name}</span>
-                {item.standardHours && (
-                  <span className="text-muted-foreground text-sm">
-                    ({item.standardHours}h)
-                  </span>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => remove(item.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              {editingId === item.id ? (
+                <>
+                  <div className="flex gap-2 flex-1">
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit(item.id)
+                        if (e.key === 'Escape') cancelEdit()
+                      }}
+                      autoFocus
+                    />
+                    {title === 'Gabinetes' && (
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={editHours}
+                        onChange={(e) => setEditHours(e.target.value)}
+                      />
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => saveEdit(item.id)}
+                    >
+                      <Check className="h-4 w-4 text-green-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={cancelEdit}
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <span>{item.name}</span>
+                    {item.standardHours && (
+                      <span className="text-muted-foreground text-sm">
+                        ({item.standardHours}h)
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEdit(item)}
+                    >
+                      <Edit2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -117,9 +279,30 @@ export default function Settings() {
           <p className="text-muted-foreground">
             Gerir as listas, campanhas e parâmetros da clínica.
           </p>
+          {user?.role === 'MENTORA' && clinics.length > 0 && (
+            <div className="mt-3 max-w-xs">
+              <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar clínica" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clinics.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
-        <Button onClick={handleSave}>
-          <Save className="mr-2 h-4 w-4" /> Guardar Alterações
+        <Button onClick={handleSaveConfig} disabled={saving}>
+          {saving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          Guardar Alterações
         </Button>
       </div>
 
@@ -129,6 +312,8 @@ export default function Settings() {
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
+          <TabsTrigger value="targets">Metas</TabsTrigger>
+          <TabsTrigger value="marketing">Marketing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sources" className="space-y-6">
@@ -215,6 +400,262 @@ export default function Settings() {
                 title="Médico"
                 items={config.doctors}
                 onUpdate={(items) => setConfig({ ...config, doctors: items })}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="targets" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Metas Mensais</CardTitle>
+              <CardDescription>
+                Defina as metas mensais da clínica
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Faturação Mensal (€)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetRevenue}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetRevenue: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>NPS</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetNPS}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetNPS: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Alinhadores (Min)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetAlignersRange.min}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetAlignersRange: {
+                          ...targets.targetAlignersRange,
+                          min: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Alinhadores (Max)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetAlignersRange.max}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetAlignersRange: {
+                          ...targets.targetAlignersRange,
+                          max: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Ticket Médio (€)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetAvgTicket}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetAvgTicket: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Taxa de Aceitação (%)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetAcceptanceRate}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetAcceptanceRate: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Taxa de Ocupação (%)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetOccupancyRate}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetOccupancyRate: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Faturação por Gabinete (€)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetRevenuePerCabinet}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetRevenuePerCabinet: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Leads (Min)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetLeadsRange.min}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetLeadsRange: {
+                          ...targets.targetLeadsRange,
+                          min: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Leads (Max)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetLeadsRange.max}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetLeadsRange: {
+                          ...targets.targetLeadsRange,
+                          max: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Planos Adultos</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetPlansPresented.adults}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetPlansPresented: {
+                          ...targets.targetPlansPresented,
+                          adults: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Planos Crianças</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetPlansPresented.kids}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetPlansPresented: {
+                          ...targets.targetPlansPresented,
+                          kids: parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tempo de Espera (min)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetWaitTime}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetWaitTime: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Reclamações (max)</Label>
+                  <Input
+                    type="number"
+                    value={targets.targetComplaints}
+                    onChange={(e) =>
+                      setTargets({
+                        ...targets,
+                        targetComplaints: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleSaveTargets} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Guardar Metas
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="marketing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrações e SEO</CardTitle>
+              <CardDescription>
+                Configure Instagram/Facebook, Google Business Profile e keywords (cidade/distrito).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MarketingSettings
+                clinicId={clinic.id}
+                canManage={user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic.id}
               />
             </CardContent>
           </Card>

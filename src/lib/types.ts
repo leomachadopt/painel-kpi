@@ -196,6 +196,93 @@ export interface User {
   avatarUrl?: string
 }
 
+export interface Patient {
+  id: string
+  code: string
+  name: string
+  email?: string
+  phone?: string
+  birthDate?: string
+  notes?: string
+  createdAt: string
+}
+
+// ================================
+// Marketing / Social / SEO
+// ================================
+
+export type MarketingIntegrationProvider = 'META' | 'GBP' | 'RANK_TRACKER'
+export type MarketingIntegrationStatus = 'DISCONNECTED' | 'CONNECTED' | 'ERROR'
+
+export interface ClinicIntegration {
+  id: string
+  clinicId: string
+  provider: MarketingIntegrationProvider
+  status: MarketingIntegrationStatus
+  tokenExpiresAt?: string | null
+  externalAccountId?: string | null
+  externalLocationId?: string | null
+  metadata?: any
+  updatedAt?: string
+}
+
+export type SocialMetricProvider = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE_BUSINESS'
+
+export interface SocialDailyMetric {
+  id: string
+  clinicId: string
+  provider: SocialMetricProvider
+  date: string
+
+  followersTotal?: number | null
+  followersDelta?: number | null
+  likesTotal?: number | null
+  likesDelta?: number | null
+  commentsTotal?: number | null
+  commentsDelta?: number | null
+
+  reviewsTotal?: number | null
+  reviewsNew?: number | null
+  ratingAvg?: number | null
+
+  profileViews?: number | null
+  reach?: number | null
+  impressions?: number | null
+  websiteClicks?: number | null
+  calls?: number | null
+  directions?: number | null
+
+  raw?: any
+}
+
+export interface GbpSearchTerm {
+  term: string
+  impressions: number
+}
+
+export interface ClinicKeyword {
+  id: string
+  clinicId: string
+  keyword: string
+  city: string
+  district?: string | null
+  active: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface KeywordRankingDaily {
+  id: string
+  keywordId: string
+  keyword: string
+  city: string
+  district?: string | null
+  date: string
+  provider: string
+  position?: number | null
+  found: boolean
+}
+
 export const MONTHS = [
   'Janeiro',
   'Fevereiro',

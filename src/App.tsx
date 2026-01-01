@@ -8,6 +8,7 @@ import Dashboard from '@/pages/Dashboard'
 import Inputs from '@/pages/Inputs'
 import Settings from '@/pages/Settings'
 import Reports from '@/pages/Reports'
+import Patients from '@/pages/Patients'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/dashboard/:clinicId" element={<Dashboard />} />
               <Route path="/lancamentos/:clinicId" element={<Inputs />} />
               <Route path="/relatorios/:clinicId" element={<Reports />} />
+              <Route path="/pacientes/:clinicId" element={<Patients />} />
               <Route path="/configuracoes" element={<Settings />} />
             </Route>
 

@@ -26,18 +26,19 @@ const formSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, isAuthenticated, user } = useAuthStore()
+  const { login, isAuthenticated, user, loading } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    // Only redirect on initial auth check, not during page reload
+    if (!loading && isAuthenticated && user) {
       if (user.role === 'MENTORA') {
-        navigate('/clinicas')
+        navigate('/clinicas', { replace: true })
       } else if (user.clinicId) {
-        navigate(`/dashboard/${user.clinicId}`)
+        navigate(`/dashboard/${user.clinicId}`, { replace: true })
       }
     }
-  }, [isAuthenticated, user, navigate])
+  }, [isAuthenticated, user, loading, navigate])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

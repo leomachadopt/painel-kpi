@@ -16,8 +16,16 @@ import {
 } from '@/components/ui/breadcrumb'
 
 export default function Layout() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, loading } = useAuthStore()
   const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Carregando...</div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

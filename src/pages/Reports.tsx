@@ -23,6 +23,7 @@ import { ProspectingTable } from '@/components/reports/ProspectingTable'
 import { CabinetTable } from '@/components/reports/CabinetTable'
 import { ServiceTimeTable } from '@/components/reports/ServiceTimeTable'
 import { SourceTable } from '@/components/reports/SourceTable'
+import { MarketingReport } from '@/components/reports/MarketingReport'
 
 export default function Reports() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -128,13 +129,14 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
           <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
           <TabsTrigger value="sources">Fontes</TabsTrigger>
+          <TabsTrigger value="marketing">Marketing</TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -170,6 +172,13 @@ export default function Reports() {
             <SourceTable
               data={filterByDate(sourceEntries[clinic.id])}
               clinic={clinic}
+            />
+          </TabsContent>
+          <TabsContent value="marketing">
+            <MarketingReport
+              clinicId={clinic.id}
+              startDate={startDate}
+              endDate={endDate}
             />
           </TabsContent>
         </div>

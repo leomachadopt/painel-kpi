@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import {
   Clinic,
   MonthlyData,
@@ -15,11 +15,12 @@ import {
 import { MOCK_CLINICS, MOCK_DATA } from '@/lib/mockData'
 import { generateMockEntries } from '@/lib/mockEntries'
 import { getMonth, getYear, parseISO } from 'date-fns'
+import { clinicsApi } from '@/services/api'
 
 interface DataState {
   clinics: Clinic[]
   getClinic: (id: string) => Clinic | undefined
-  updateClinicConfig: (clinicId: string, config: ClinicConfiguration) => void
+  updateClinicConfig: (clinicId: string, config: ClinicConfiguration) => Promise<void>
 
   getMonthlyData: (
     clinicId: string,
@@ -60,9 +61,27 @@ interface DataState {
 const DataContext = createContext<DataState | null>(null)
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [clinics, setClinics] = useState<Clinic[]>(MOCK_CLINICS)
+  const [clinics, setClinics] = useState<Clinic[]>([])
+  const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] =
     useState<Record<string, MonthlyData[]>>(MOCK_DATA)
+
+  // Load clinics from API on mount
+  useEffect(() => {
+    const loadClinics = async () => {
+      try {
+        const data = await clinicsApi.getAll()
+        setClinics(data)
+      } catch (error) {
+        console.error('Failed to load clinics:', error)
+        // Fallback to mock data
+        setClinics(MOCK_CLINICS)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadClinics()
+  }, [])
 
   // Initialize with mocks
   const initialMocks1 = generateMockEntries('clinic-1')
@@ -107,15 +126,26 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getClinic = (id: string) => clinics.find((c) => c.id === id)
 
-  const updateClinicConfig = (
+  const updateClinicConfig = async (
     clinicId: string,
     config: ClinicConfiguration,
   ) => {
+    // Update local state first for immediate feedback
     setClinics((prev) =>
       prev.map((c) =>
         c.id === clinicId ? { ...c, configuration: config } : c,
       ),
     )
+
+    // Optionally reload from API to ensure sync
+    try {
+      const updatedClinic = await clinicsApi.getById(clinicId)
+      setClinics((prev) =>
+        prev.map((c) => (c.id === clinicId ? updatedClinic : c))
+      )
+    } catch (error) {
+      console.error('Failed to reload clinic after update:', error)
+    }
   }
 
   const getMonthlyData = (clinicId: string, month: number, year: number) => {
