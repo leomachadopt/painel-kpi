@@ -41,6 +41,9 @@ export function KPICard({ kpi }: KPICardProps) {
   }[kpi.status]
 
   const formatValue = (val: number, unit: string) => {
+    if (val === undefined || val === null || isNaN(val)) {
+      return '0'
+    }
     if (unit === 'currency') {
       return new Intl.NumberFormat('pt-PT', {
         style: 'currency',

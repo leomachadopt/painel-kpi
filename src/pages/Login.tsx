@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -28,11 +28,12 @@ export default function Login() {
   const navigate = useNavigate()
   const { login, isAuthenticated, user, loading } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     // Only redirect on initial auth check, not during page reload
     if (!loading && isAuthenticated && user) {
-      if (user.role === 'MENTORA') {
+      if (user.role === 'MENTOR') {
         navigate('/clinicas', { replace: true })
       } else if (user.clinicId) {
         navigate(`/dashboard/${user.clinicId}`, { replace: true })
@@ -56,7 +57,7 @@ export default function Login() {
 
       toast.success(`Bem-vindo(a) de volta!`)
 
-      if (loggedUser.role === 'MENTORA') {
+      if (loggedUser.role === 'MENTOR') {
         navigate('/clinicas')
       } else if (loggedUser.clinicId) {
         navigate(`/dashboard/${loggedUser.clinicId}`)
@@ -130,7 +131,26 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Palavra-passe</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••"
+                          {...field}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -172,12 +192,6 @@ export default function Login() {
               </Button>
             </form>
           </Form>
-
-          <div className="text-center text-xs text-muted-foreground border p-4 rounded-md bg-muted/30">
-            <p className="font-semibold mb-1">Credenciais de Teste:</p>
-            <p>Mentora: mentor@kpipanel.com / mentor123</p>
-            <p>Clínica: clinica@kpipanel.com / clinica123</p>
-          </div>
         </div>
       </div>
     </div>

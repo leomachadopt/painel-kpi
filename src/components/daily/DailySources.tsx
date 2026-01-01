@@ -4,6 +4,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { PatientCodeInput } from '@/components/PatientCodeInput'
 import {
   Select,
   SelectContent,
@@ -27,7 +28,7 @@ import { useEffect } from 'react'
 const schema = z.object({
   date: z.string(),
   patientName: z.string().min(1, 'Nome obrigatório'),
-  code: z.string().min(1, 'Código obrigatório'),
+  code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
   isReferral: z.boolean(),
   sourceId: z.string().min(1, 'Selecione uma fonte'),
   referralName: z.string().optional(),
@@ -81,70 +82,61 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
       }
     }
 
-    addSourceEntry(clinic.id, {
-      id: Math.random().toString(36),
-      ...data,
-    })
-    toast.success('Fonte registada com sucesso!')
-    form.reset({
-      date: data.date,
-      patientName: '',
-      code: '',
-      isReferral: false,
-      sourceId: '',
-      referralName: '',
-      referralCode: '',
-      campaignId: '',
-    })
+    ;(async () => {
+      try {
+        await addSourceEntry(clinic.id, {
+          id: Math.random().toString(36),
+          ...data,
+        })
+        toast.success('Fonte registada com sucesso!')
+        form.reset({
+          date: data.date,
+          patientName: '',
+          code: '',
+          isReferral: false,
+          sourceId: '',
+          referralName: '',
+          referralCode: '',
+          campaignId: '',
+        })
+      } catch (err: any) {
+        toast.error(err?.message || 'Erro ao guardar fonte')
+      }
+    })()
   }
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
+        noValidate
         className="space-y-4 max-w-lg"
       >
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="code"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Código</FormLabel>
-                <FormControl>
-                  <Input placeholder="000" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
         <FormField
           control={form.control}
-          name="patientName"
+          name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Paciente</FormLabel>
+              <FormLabel>Data</FormLabel>
               <FormControl>
-                <Input placeholder="Nome" {...field} />
+                <Input type="date" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <PatientCodeInput
+          clinicId={clinic.id}
+          value={form.watch('code')}
+          onCodeChange={(c) => form.setValue('code', c, { shouldValidate: true })}
+          patientName={form.watch('patientName')}
+          onPatientNameChange={(n) =>
+            form.setValue('patientName', n, { shouldValidate: true })
+          }
+          label="Código"
+          codeError={form.formState.errors.code?.message}
+          patientNameError={form.formState.errors.patientName?.message}
         />
 
         <FormField

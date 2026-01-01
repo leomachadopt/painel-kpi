@@ -1,5 +1,7 @@
 // API Service para comunicação com o backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+// Em produção (Vercel), o ideal é usar o mesmo domínio via "/api".
+// Em dev, você pode definir VITE_API_URL="http://localhost:3001/api".
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 function getAuthToken() {
   return localStorage.getItem('kpi_token')
@@ -37,12 +39,31 @@ async function apiCall<T>(
         throw new Error('Sessão expirada. Faça login novamente.')
       }
       const error = await response.json().catch(() => ({ error: 'Unknown error' }))
-      throw new Error(error.error || `HTTP ${response.status}`)
+      const message = error.error || `HTTP ${response.status}`
+      const err: any = new Error(message)
+      err.status = response.status
+      err.payload = error
+      throw err
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const text = await response.text().catch(() => '')
+      throw new Error(
+        `Resposta inválida da API (esperado JSON). Content-Type="${contentType}". ` +
+          `Verifique proxy /api no dev e se o backend está no ar. ` +
+          (text ? `Primeiros chars: ${JSON.stringify(text.slice(0, 120))}` : '')
+      )
     }
 
     return await response.json()
   } catch (error) {
-    console.error('API call failed:', error)
+    // 4xx são esperados em alguns fluxos (404: não encontrado, 403: sem permissão, 400: validação)
+    const status = (error as any)?.status
+    if (!status || (status >= 500)) {
+      console.error('API call failed:', error)
+    }
+    // Não logar 4xx no console (esperados); apenas relançar para tratamento upstream
     throw error
   }
 }
@@ -61,6 +82,24 @@ export const authApi = {
     apiCall<{ message: string }>('/auth/logout', {
       method: 'POST',
     }),
+
+  updateProfile: (data: { name: string; email: string; avatarUrl?: string }) =>
+    apiCall<{ user: any; message: string }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    apiCall<{ message: string }>('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  uploadAvatar: (data: { image: string }) =>
+    apiCall<{ url: string; message: string; user: any }>('/auth/avatar', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 }
 
 // ================================
@@ -70,6 +109,24 @@ export const clinicsApi = {
   getAll: () => apiCall<any[]>('/clinics'),
 
   getById: (id: string) => apiCall<any>(`/clinics/${id}`),
+
+  create: (data: {
+    name: string;
+    ownerName: string;
+    email: string;
+    password: string;
+    targetRevenue?: number;
+    targetNPS?: number
+  }) =>
+    apiCall<{ id: string; message: string }>('/clinics', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (clinicId: string) =>
+    apiCall<{ message: string }>(`/clinics/${clinicId}`, {
+      method: 'DELETE',
+    }),
 
   updateTargets: (clinicId: string, targets: any) =>
     apiCall<{ message: string }>(`/clinics/${clinicId}/targets`, {
@@ -144,6 +201,11 @@ export const dailyEntriesApi = {
         method: 'POST',
         body: JSON.stringify(entry),
       }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/financial/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
   },
 
   // Consultation
@@ -151,10 +213,18 @@ export const dailyEntriesApi = {
     getAll: (clinicId: string) =>
       apiCall<any[]>(`/daily-entries/consultation/${clinicId}`),
 
+    getByCode: (clinicId: string, code: string) =>
+      apiCall<any>(`/daily-entries/consultation/${clinicId}/code/${code}`),
+
     create: (clinicId: string, entry: any) =>
       apiCall<any>(`/daily-entries/consultation/${clinicId}`, {
         method: 'POST',
         body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/consultation/${clinicId}/${entryId}`, {
+        method: 'DELETE',
       }),
   },
 

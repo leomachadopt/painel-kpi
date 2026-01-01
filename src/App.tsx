@@ -9,6 +9,7 @@ import Inputs from '@/pages/Inputs'
 import Settings from '@/pages/Settings'
 import Reports from '@/pages/Reports'
 import Patients from '@/pages/Patients'
+import Profile from '@/pages/Profile'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/relatorios/:clinicId" element={<Reports />} />
               <Route path="/pacientes/:clinicId" element={<Patients />} />
               <Route path="/configuracoes" element={<Settings />} />
+              <Route path="/perfil" element={<Profile />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

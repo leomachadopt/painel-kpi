@@ -111,7 +111,7 @@ function mustHaveAuth(req: AuthedRequest) {
 
 function canReadClinic(req: AuthedRequest, clinicId: string) {
   if (!req.auth) return false
-  if (req.auth.role === 'MENTORA') return true
+  if (req.auth.role === 'MENTOR') return true
   if (req.auth.role === 'GESTOR_CLINICA') return req.auth.clinicId === clinicId
   return false
 }

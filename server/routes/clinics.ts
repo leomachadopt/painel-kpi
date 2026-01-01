@@ -274,4 +274,156 @@ router.put('/:id/targets', async (req, res) => {
   }
 })
 
+// Create new clinic
+router.post('/', async (req, res) => {
+  try {
+    const {
+      name,
+      ownerName,
+      email,
+      password,
+      targetRevenue = 100000,
+      targetNPS = 80,
+    } = req.body
+
+    if (!name || !ownerName) {
+      return res.status(400).json({ error: 'Name and owner name are required' })
+    }
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' })
+    }
+
+    // Check if email already exists
+    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email])
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Email already in use' })
+    }
+
+    // Generate clinic ID
+    const clinicId = `clinic-${Date.now()}`
+
+    await query(
+      `INSERT INTO clinics (
+        id, name, owner_name, active,
+        target_revenue, target_aligners_min, target_aligners_max,
+        target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+        target_nps, target_integration_rate, target_attendance_rate,
+        target_follow_up_rate, target_wait_time, target_complaints,
+        target_leads_min, target_leads_max, target_revenue_per_cabinet,
+        target_plans_presented_adults, target_plans_presented_kids,
+        target_agenda_operational, target_agenda_planning,
+        target_agenda_sales, target_agenda_leadership,
+        created_at, last_update
+      ) VALUES (
+        $1, $2, $3, true,
+        $4, 11, 15,
+        1500, 0.70, 0.85,
+        $5, 0.90, 0.95,
+        0.80, 15, 5,
+        50, 80, 50000,
+        25, 15,
+        0.40, 0.20, 0.30, 0.10,
+        NOW(), NOW()
+      )`,
+      [clinicId, name, ownerName, targetRevenue, targetNPS]
+    )
+
+    // Insert default categories
+    const defaultCategories = [
+      'Alinhadores',
+      'Odontopediatria',
+      'Dentisteria',
+      'Implantologia',
+      'Outros'
+    ]
+    for (const cat of defaultCategories) {
+      await query(
+        'INSERT INTO clinic_categories (id, clinic_id, name) VALUES ($1, $2, $3)',
+        [`${clinicId}-cat-${cat.toLowerCase()}`, clinicId, cat]
+      )
+    }
+
+    // Insert default cabinets
+    const defaultCabinets = [
+      { name: 'Gabinete 1', hours: 8 },
+      { name: 'Gabinete 2', hours: 8 }
+    ]
+    for (const cab of defaultCabinets) {
+      await query(
+        'INSERT INTO clinic_cabinets (id, clinic_id, name, standard_hours) VALUES ($1, $2, $3, $4)',
+        [`${clinicId}-cab-${cab.name.replace(/\s/g, '-').toLowerCase()}`, clinicId, cab.name, cab.hours]
+      )
+    }
+
+    // Insert default doctors
+    const defaultDoctors = ['Dr. João Silva', 'Dra. Maria Santos']
+    for (const doc of defaultDoctors) {
+      await query(
+        'INSERT INTO clinic_doctors (id, clinic_id, name) VALUES ($1, $2, $3)',
+        [`${clinicId}-doc-${doc.replace(/\s/g, '-').toLowerCase()}`, clinicId, doc]
+      )
+    }
+
+    // Insert default sources
+    const defaultSources = ['Google', 'Facebook', 'Instagram', 'Referência', 'Website', 'Outro']
+    for (const src of defaultSources) {
+      await query(
+        'INSERT INTO clinic_sources (id, clinic_id, name) VALUES ($1, $2, $3)',
+        [`${clinicId}-src-${src.toLowerCase()}`, clinicId, src]
+      )
+    }
+
+    // Insert default campaigns
+    const defaultCampaigns = ['Alinhadores 2024', 'Branqueamento', 'Ortodontia']
+    for (const camp of defaultCampaigns) {
+      await query(
+        'INSERT INTO clinic_campaigns (id, clinic_id, name) VALUES ($1, $2, $3)',
+        [`${clinicId}-camp-${camp.replace(/\s/g, '-').toLowerCase()}`, clinicId, camp]
+      )
+    }
+
+    // Create user for clinic manager
+    const userId = `user-${clinicId}`
+    await query(
+      `INSERT INTO users (id, name, email, password_hash, role, clinic_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
+      [userId, ownerName, email, password, 'GESTOR_CLINICA', clinicId]
+    )
+
+    res.json({
+      id: clinicId,
+      message: 'Clinic and user created successfully',
+      credentials: {
+        email,
+        clinicId
+      }
+    })
+  } catch (error) {
+    console.error('Create clinic error:', error)
+    res.status(500).json({ error: 'Failed to create clinic' })
+  }
+})
+
+// Delete clinic
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // Check if clinic exists
+    const clinic = await query('SELECT id FROM clinics WHERE id = $1', [id])
+    if (clinic.rows.length === 0) {
+      return res.status(404).json({ error: 'Clinic not found' })
+    }
+
+    // Soft delete (set active = false)
+    await query('UPDATE clinics SET active = false, last_update = NOW() WHERE id = $1', [id])
+
+    res.json({ message: 'Clinic deleted successfully' })
+  } catch (error) {
+    console.error('Delete clinic error:', error)
+    res.status(500).json({ error: 'Failed to delete clinic' })
+  }
+})
+
 export default router

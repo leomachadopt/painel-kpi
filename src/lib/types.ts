@@ -1,10 +1,55 @@
-export type Role = 'MENTORA' | 'GESTOR_CLINICA'
+export type Role = 'MENTOR' | 'GESTOR_CLINICA'
 
 export interface AgendaDistribution {
   operational: number
   planning: number
   sales: number
   leadership: number
+}
+
+export interface MonthlyTargets {
+  id: string
+  clinicId: string
+  month: number
+  year: number
+  targetRevenue: number
+  targetAlignersRange: { min: number; max: number }
+  targetAvgTicket: number
+  targetAcceptanceRate: number
+  targetOccupancyRate: number
+  targetNPS: number
+  targetIntegrationRate: number
+  targetAgendaDistribution: AgendaDistribution
+  targetAttendanceRate: number
+  targetFollowUpRate: number
+  targetWaitTime: number
+  targetComplaints: number
+  targetLeadsRange: { min: number; max: number }
+  targetRevenuePerCabinet: number
+  targetPlansPresented: { adults: number; kids: number }
+}
+
+export const DEFAULT_MONTHLY_TARGETS: Omit<MonthlyTargets, 'id' | 'clinicId' | 'month' | 'year'> = {
+  targetRevenue: 50000,
+  targetAlignersRange: { min: 10, max: 15 },
+  targetAvgTicket: 2500,
+  targetAcceptanceRate: 70,
+  targetOccupancyRate: 80,
+  targetNPS: 90,
+  targetIntegrationRate: 85,
+  targetAgendaDistribution: {
+    operational: 60,
+    planning: 15,
+    sales: 15,
+    leadership: 10,
+  },
+  targetAttendanceRate: 90,
+  targetFollowUpRate: 80,
+  targetWaitTime: 10,
+  targetComplaints: 5,
+  targetLeadsRange: { min: 50, max: 80 },
+  targetRevenuePerCabinet: 25000,
+  targetPlansPresented: { adults: 20, kids: 10 },
 }
 
 export interface ClinicConfiguration {
@@ -24,7 +69,7 @@ export interface Clinic {
   lastUpdate?: string
   configuration: ClinicConfiguration
 
-  // Targets (Metas)
+  // Deprecated - mantido para compatibilidade, use MonthlyTargets
   targetRevenue: number
   targetAlignersRange: { min: number; max: number }
   targetAvgTicket: number
@@ -123,8 +168,11 @@ export interface DailyConsultationEntry {
   patientName: string
   code: string
   planCreated: boolean
+  planCreatedAt?: string | null
   planPresented: boolean
+  planPresentedAt?: string | null
   planAccepted: boolean
+  planAcceptedAt?: string | null
   planValue: number
 }
 

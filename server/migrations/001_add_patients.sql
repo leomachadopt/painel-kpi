@@ -15,9 +15,16 @@ CREATE TABLE IF NOT EXISTS patients (
 );
 
 -- Index for fast lookups by code
-CREATE INDEX idx_patients_clinic_code ON patients(clinic_id, code);
-CREATE INDEX idx_patients_name ON patients(clinic_id, name);
+CREATE INDEX IF NOT EXISTS idx_patients_clinic_code ON patients(clinic_id, code);
+CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(clinic_id, name);
 
 -- Trigger for updated_at
-CREATE TRIGGER update_patients_updated_at BEFORE UPDATE ON patients
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_patients_updated_at'
+  ) THEN
+    CREATE TRIGGER update_patients_updated_at BEFORE UPDATE ON patients
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;

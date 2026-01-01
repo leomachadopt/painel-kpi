@@ -4,11 +4,24 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: '::',
-    port: 8080,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  // Dev: proxy /api -> backend (server/index.ts defaults to :3001)
+  // If you set VITE_API_URL="http://localhost:3001/api", we still proxy to the same target.
+  const apiTarget = (env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/api\/?$/, '')
+
+  return {
+    server: {
+      host: '::',
+      port: 8080,
+      proxy: {
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+      },
+    },
   experimental: {
     enableNativePlugin: true
   },
@@ -40,4 +53,5 @@ export default defineConfig(({ mode }) => ({
       }
     ],
   },
-}))
+  }
+})

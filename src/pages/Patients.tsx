@@ -21,9 +21,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Search, UserPlus, Loader2, Mail, Phone, Calendar } from 'lucide-react'
+import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 
 export default function Patients() {
+  const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,10 +70,12 @@ export default function Patients() {
             Gerir e visualizar todos os pacientes cadastrados
           </p>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Novo Paciente
-        </Button>
+        {user?.role === 'GESTOR_CLINICA' && (
+          <Button>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Paciente
+          </Button>
+        )}
       </div>
 
       {/* Search and Stats */}

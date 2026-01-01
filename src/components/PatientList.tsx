@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { Patient } from '@/lib/types'
 import { patientsApi } from '@/services/api'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { Search, Users, Loader2 } from 'lucide-react'
+import { Search, Users, Loader2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -22,6 +24,7 @@ export function PatientList({ clinicId }: PatientListProps) {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   useEffect(() => {
     loadPatients()
@@ -44,6 +47,23 @@ export function PatientList({ clinicId }: PatientListProps) {
     setSearchTerm(value)
     if (value.length >= 2 || value.length === 0) {
       loadPatients(value || undefined)
+    }
+  }
+
+  const handleDelete = async (patient: Patient) => {
+    if (!confirm(`Excluir paciente ${patient.name} (${patient.code})?`)) {
+      return
+    }
+
+    setDeleting(patient.id)
+    try {
+      await patientsApi.delete(clinicId, patient.id)
+      toast.success('Paciente excluído com sucesso!')
+      loadPatients(searchTerm || undefined)
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao excluir paciente')
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -116,6 +136,19 @@ export function PatientList({ clinicId }: PatientListProps) {
                       </div>
                     )}
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(patient)}
+                    disabled={deleting === patient.id}
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                  >
+                    {deleting === patient.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               ))}
             </div>

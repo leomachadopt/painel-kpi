@@ -48,8 +48,8 @@ router.get('/:clinicId/code/:code', async (req, res) => {
   try {
     const { clinicId, code } = req.params
 
-    if (code.length !== 6) {
-      return res.status(400).json({ error: 'Code must be 6 digits' })
+    if (!/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Code must be 1-6 digits' })
     }
 
     const result = await query(
@@ -82,13 +82,18 @@ router.get('/:clinicId/code/:code', async (req, res) => {
 
 // Create patient
 router.post('/:clinicId', async (req, res) => {
+  // Only GESTOR can create patients
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
     const { clinicId } = req.params
     const { code, name, email, phone, birthDate, notes } = req.body
 
     // Validate code
-    if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-      return res.status(400).json({ error: 'Code must be exactly 6 digits' })
+    if (!code || !/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Code must be 1-6 digits' })
     }
 
     if (!name || name.trim().length === 0) {
@@ -173,6 +178,11 @@ router.put('/:clinicId/:patientId', async (req, res) => {
 
 // Delete patient
 router.delete('/:clinicId/:patientId', async (req, res) => {
+  // Only GESTOR can delete patients
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
     const { clinicId, patientId } = req.params
 

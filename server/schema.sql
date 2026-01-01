@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('MENTORA', 'GESTOR_CLINICA')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('MENTOR', 'GESTOR_CLINICA')),
   clinic_id VARCHAR(255),
   avatar_url TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -60,8 +60,18 @@ CREATE TABLE IF NOT EXISTS clinics (
 );
 
 -- Add foreign key for users
-ALTER TABLE users ADD CONSTRAINT fk_user_clinic
-  FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'fk_user_clinic'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT fk_user_clinic
+      FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ================================
 -- CLINIC CONFIGURATION TABLES
@@ -201,10 +211,16 @@ CREATE TABLE IF NOT EXISTS daily_consultation_entries (
   patient_name VARCHAR(255) NOT NULL,
   code VARCHAR(100) NOT NULL,
   plan_created BOOLEAN DEFAULT false,
+  plan_created_at DATE,
   plan_presented BOOLEAN DEFAULT false,
+  plan_presented_at DATE,
   plan_accepted BOOLEAN DEFAULT false,
+  plan_accepted_at DATE,
   plan_value DECIMAL(12, 2) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  -- 1 registo de 1.ª consulta por paciente (por clínica)
+  CONSTRAINT uniq_daily_consultation_clinic_code UNIQUE (clinic_id, code)
 );
 
 -- Daily Prospecting Entries
@@ -265,16 +281,16 @@ CREATE TABLE IF NOT EXISTS daily_source_entries (
 -- ================================
 -- INDEXES FOR PERFORMANCE
 -- ================================
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_clinic_id ON users(clinic_id);
-CREATE INDEX idx_clinics_active ON clinics(active);
-CREATE INDEX idx_monthly_data_clinic_date ON monthly_data(clinic_id, year, month);
-CREATE INDEX idx_daily_financial_clinic_date ON daily_financial_entries(clinic_id, date);
-CREATE INDEX idx_daily_consultation_clinic_date ON daily_consultation_entries(clinic_id, date);
-CREATE INDEX idx_daily_prospecting_clinic_date ON daily_prospecting_entries(clinic_id, date);
-CREATE INDEX idx_daily_cabinet_clinic_date ON daily_cabinet_usage_entries(clinic_id, date);
-CREATE INDEX idx_daily_service_time_clinic_date ON daily_service_time_entries(clinic_id, date);
-CREATE INDEX idx_daily_source_clinic_date ON daily_source_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_clinic_id ON users(clinic_id);
+CREATE INDEX IF NOT EXISTS idx_clinics_active ON clinics(active);
+CREATE INDEX IF NOT EXISTS idx_monthly_data_clinic_date ON monthly_data(clinic_id, year, month);
+CREATE INDEX IF NOT EXISTS idx_daily_financial_clinic_date ON daily_financial_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_consultation_clinic_date ON daily_consultation_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_prospecting_clinic_date ON daily_prospecting_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_cabinet_clinic_date ON daily_cabinet_usage_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_service_time_clinic_date ON daily_service_time_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_source_clinic_date ON daily_source_entries(clinic_id, date);
 
 -- ================================
 -- TRIGGERS FOR updated_at
@@ -287,14 +303,23 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+    CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
 
-CREATE TRIGGER update_clinics_updated_at BEFORE UPDATE ON clinics
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_clinics_updated_at') THEN
+    CREATE TRIGGER update_clinics_updated_at BEFORE UPDATE ON clinics
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
 
-CREATE TRIGGER update_monthly_data_updated_at BEFORE UPDATE ON monthly_data
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_monthly_data_updated_at') THEN
+    CREATE TRIGGER update_monthly_data_updated_at BEFORE UPDATE ON monthly_data
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- ================================
 -- MARKETING / SOCIAL INTEGRATIONS
@@ -321,8 +346,15 @@ CREATE TABLE IF NOT EXISTS clinic_integrations (
 CREATE INDEX IF NOT EXISTS idx_clinic_integrations_clinic_provider
   ON clinic_integrations(clinic_id, provider);
 
-CREATE TRIGGER update_clinic_integrations_updated_at BEFORE UPDATE ON clinic_integrations
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_clinic_integrations_updated_at'
+  ) THEN
+    CREATE TRIGGER update_clinic_integrations_updated_at BEFORE UPDATE ON clinic_integrations
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- Daily snapshots of social/GBP metrics (aggregated)
 CREATE TABLE IF NOT EXISTS social_daily_metrics (
@@ -391,8 +423,15 @@ CREATE TABLE IF NOT EXISTS clinic_keywords (
 CREATE INDEX IF NOT EXISTS idx_clinic_keywords_clinic_active
   ON clinic_keywords(clinic_id, active);
 
-CREATE TRIGGER update_clinic_keywords_updated_at BEFORE UPDATE ON clinic_keywords
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_clinic_keywords_updated_at'
+  ) THEN
+    CREATE TRIGGER update_clinic_keywords_updated_at BEFORE UPDATE ON clinic_keywords
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- Daily rank tracking results per keyword (from 3rd-party provider)
 CREATE TABLE IF NOT EXISTS keyword_rankings_daily (

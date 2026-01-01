@@ -65,7 +65,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 const useAuthStore = () => {
   const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuthStore must be used within an AuthProvider')
+    // Fallback defensivo: em casos de hot-reload/árvore parcial, não derrubar a app inteira.
+    // Em vez disso, trate como "não autenticado" para que o Layout redirecione para /login.
+    return {
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+      login: async () => {
+        throw new Error('AuthProvider ausente: não é possível fazer login neste contexto.')
+      },
+      logout: () => {
+        localStorage.removeItem('kpi_user')
+        localStorage.removeItem('kpi_token')
+      },
+    } as AuthState
   }
   return context
 }

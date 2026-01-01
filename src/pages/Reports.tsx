@@ -46,11 +46,18 @@ export default function Reports() {
       .split('T')[0],
   )
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [, setReloadTrigger] = useState(0)
+
+  const handleDataChange = () => {
+    setReloadTrigger(prev => prev + 1)
+    // Recarregar dados da API (a implementar se necessário)
+    window.location.reload()
+  }
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
   // Role Access Control
-  const isMentor = user?.role === 'MENTORA'
+  const isMentor = user?.role === 'MENTOR'
   const hasAccess =
     isMentor || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinicId)
 
@@ -70,7 +77,12 @@ export default function Reports() {
 
   // Generic Filter Function
   const filterByDate = <T extends { date: string }>(entries: T[] = []) => {
-    return entries.filter((e) => e.date >= startDate && e.date <= endDate)
+    const filtered = entries.filter((e) => {
+      // Normalize dates to YYYY-MM-DD format for comparison
+      const entryDate = e.date.split('T')[0]
+      return entryDate >= startDate && entryDate <= endDate
+    })
+    return filtered
   }
 
   return (
@@ -144,6 +156,7 @@ export default function Reports() {
             <FinancialTable
               data={filterByDate(financialEntries[clinic.id])}
               clinic={clinic}
+              onDelete={handleDataChange}
             />
           </TabsContent>
           <TabsContent value="consultations">

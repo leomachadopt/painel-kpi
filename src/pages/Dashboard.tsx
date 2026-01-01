@@ -36,6 +36,9 @@ import {
   CabinetChart,
   DelaysChart,
   SourcesChart,
+  RevenueEvolutionChart,
+  OwnerAgendaChart,
+  RevenuePerCabinetChart,
 } from '@/components/dashboard/Charts'
 
 export default function Dashboard() {
@@ -45,8 +48,12 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
-  const [selectedMonth, setSelectedMonth] = useState<string>('12')
-  const [selectedYear, setSelectedYear] = useState<string>('2023')
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    (new Date().getMonth() + 1).toString()
+  )
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  )
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
 
   const currentMonth = parseInt(selectedMonth)
@@ -72,6 +79,20 @@ export default function Dashboard() {
   const monthlyData = useMemo(() => {
     if (!clinicId || !hasAccess) return undefined
     return getMonthlyData(clinicId, currentMonth, currentYear)
+  }, [clinicId, currentMonth, currentYear, getMonthlyData, hasAccess])
+
+  // Get last 6 months for evolution chart
+  const last6Months = useMemo(() => {
+    if (!clinicId || !hasAccess) return []
+    const months: any[] = []
+    for (let i = 5; i >= 0; i--) {
+      const targetMonth = currentMonth - i
+      const targetYear = targetMonth <= 0 ? currentYear - 1 : currentYear
+      const adjustedMonth = targetMonth <= 0 ? 12 + targetMonth : targetMonth
+      const data = getMonthlyData(clinicId, adjustedMonth, targetYear)
+      if (data) months.push(data)
+    }
+    return months
   }, [clinicId, currentMonth, currentYear, getMonthlyData, hasAccess])
 
   const summary = useMemo(() => {
@@ -155,6 +176,8 @@ export default function Dashboard() {
               <SelectContent>
                 <SelectItem value="2023">2023</SelectItem>
                 <SelectItem value="2024">2024</SelectItem>
+                <SelectItem value="2025">2025</SelectItem>
+                <SelectItem value="2026">2026</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon">
@@ -183,7 +206,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI Grid - 12 Cards */}
+      {/* KPI Grid - All 15 Cards */}
       <div>
         <div className="mb-4 flex items-center gap-2">
           <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
@@ -193,29 +216,77 @@ export default function Dashboard() {
                 <Info className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Monitorização dos 12 pilares de sucesso da clínica.</p>
+                <p>Monitorização completa dos indicadores de performance da clínica.</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {kpis.map((kpi) => (
-            <KPICard key={kpi.id} kpi={kpi} />
-          ))}
+        
+        {/* Financeiro */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Financeiro</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpis.filter(k => ['revenue_monthly', 'avg_ticket', 'revenue_per_cabinet', 'aligners_started'].includes(k.id)).map((kpi) => (
+              <KPICard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+        </div>
+
+        {/* Comercial */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Comercial & Vendas</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
+              <KPICard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+        </div>
+
+        {/* Operacional */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Operacional</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpis.filter(k => ['occupancy_rate', 'attendance_rate', 'avg_wait_time', 'integration_rate'].includes(k.id)).map((kpi) => (
+              <KPICard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+        </div>
+
+        {/* Experiência & Marketing */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Experiência & Marketing</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {kpis.filter(k => ['nps', 'referrals', 'leads_total'].includes(k.id)).map((kpi) => (
+              <KPICard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Advanced Charts Section */}
       {monthlyData && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Análise Operacional</h2>
+          <h2 className="text-xl font-semibold">Análise Operacional Detalhada</h2>
+          
+          {/* Row 1: Financial Overview */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <RevenueChart data={monthlyData} />
+            {last6Months.length > 0 && <RevenueEvolutionChart monthlyDataList={last6Months} />}
+            {monthlyData.cabinets.length > 0 && <RevenuePerCabinetChart data={monthlyData} />}
             <ConsultationFunnel data={monthlyData} />
+          </div>
+
+          {/* Row 2: Marketing & Sources */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <ProspectingChart data={monthlyData} />
-            <CabinetChart data={monthlyData} />
-            <DelaysChart data={monthlyData} />
             <SourcesChart data={monthlyData} />
+            <CabinetChart data={monthlyData} />
+          </div>
+
+          {/* Row 3: Operations & Owner */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <DelaysChart data={monthlyData} />
+            {monthlyData.ownerAgenda && <OwnerAgendaChart data={monthlyData} />}
           </div>
         </div>
       )}

@@ -42,7 +42,7 @@ export function AppSidebar() {
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
 
-  const isMentor = user?.role === 'MENTORA'
+  const isMentor = user?.role === 'MENTOR'
   const activeClinicId = currentClinic?.id || user?.clinicId
 
   return (
@@ -125,20 +125,24 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Diário"
-                  isActive={location.pathname.includes('/lancamentos')}
-                >
-                  <Link
-                    to={`/lancamentos/${currentClinic?.id || user?.clinicId}`}
+
+              {user?.role === 'GESTOR_CLINICA' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Diário"
+                    isActive={location.pathname.includes('/lancamentos')}
                   >
-                    <FileInput />
-                    <span>Diário</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                    <Link
+                      to={`/lancamentos/${currentClinic?.id || user?.clinicId}`}
+                    >
+                      <FileInput />
+                      <span>Diário</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -154,34 +158,36 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Configurações"
-                  isActive={location.pathname.includes('/configuracoes')}
-                >
-                  <Link to="/configuracoes">
-                    <Settings />
-                    <span>Configurações</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </>
-          )}
+              {activeClinicId && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Pacientes"
+                    isActive={location.pathname.includes('/pacientes')}
+                  >
+                    <Link to={`/pacientes/${activeClinicId}`}>
+                      <Users />
+                      <span>Pacientes</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-          {activeClinicId && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="Pacientes"
-                isActive={location.pathname.includes('/pacientes')}
-              >
-                <Link to={`/pacientes/${activeClinicId}`}>
-                  <Users />
-                  <span>Pacientes</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+              {user?.role === 'GESTOR_CLINICA' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Configurações"
+                    isActive={location.pathname.includes('/configuracoes')}
+                  >
+                    <Link to="/configuracoes">
+                      <Settings />
+                      <span>Configurações</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </>
           )}
 
           <SidebarMenuItem>
@@ -223,9 +229,11 @@ export function AppSidebar() {
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Perfil
+                <DropdownMenuItem asChild>
+                  <Link to="/perfil">
+                    <User className="mr-2 h-4 w-4" />
+                    Perfil
+                  </Link>
                 </DropdownMenuItem>
                 <SidebarSeparator />
                 <DropdownMenuItem

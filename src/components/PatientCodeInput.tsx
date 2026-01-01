@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, UserPlus, Check } from 'lucide-react'
+import { Loader2, Check } from 'lucide-react'
 import { usePatientLookup } from '@/hooks/usePatientLookup'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 interface PatientCodeInputProps {
   clinicId: string
@@ -22,6 +13,9 @@ interface PatientCodeInputProps {
   onPatientNameChange: (name: string) => void
   label?: string
   required?: boolean
+  codeError?: string
+  patientNameError?: string
+  codeHint?: string
 }
 
 export function PatientCodeInput({
@@ -32,15 +26,19 @@ export function PatientCodeInput({
   onPatientNameChange,
   label = 'Código do Paciente',
   required = true,
+  codeError,
+  patientNameError,
+  codeHint = '1 a 6 dígitos',
 }: PatientCodeInputProps) {
   const [code, setCode] = useState(value)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [newPatientData, setNewPatientData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-  })
+  const [patientNotFound, setPatientNotFound] = useState(false)
+  const [canAutoCreate, setCanAutoCreate] = useState(true)
+  const createSeq = useRef(0)
+  const onPatientNameChangeRef = useRef(onPatientNameChange)
 
+  useEffect(() => {
+    onPatientNameChangeRef.current = onPatientNameChange
+  }, [onPatientNameChange])
   const { patient, loading, error, lookupByCode, createPatient, clearPatient } = usePatientLookup()
 
   // Update local state when prop changes
@@ -53,40 +51,28 @@ export function PatientCodeInput({
     setCode(newCode)
     onCodeChange(newCode)
     clearPatient()
-
-    // Auto-lookup when 6 digits are entered
-    if (newCode.length === 6) {
-      lookupByCode(clinicId, newCode).then((foundPatient) => {
-        if (foundPatient) {
-          onPatientNameChange(foundPatient.name)
-        } else {
-          // Patient not found, show create dialog
-          setNewPatientData({ name: '', email: '', phone: '' })
-          setShowCreateDialog(true)
-        }
-      })
-    } else {
-      onPatientNameChange('')
-    }
-  }
-
-  const handleCreatePatient = async () => {
-    if (!newPatientData.name.trim()) {
+    setPatientNotFound(false)
+    
+    if (newCode.length === 0) {
+      onPatientNameChangeRef.current('')
       return
     }
-
-    const created = await createPatient(clinicId, {
-      code,
-      name: newPatientData.name.trim(),
-      email: newPatientData.email || undefined,
-      phone: newPatientData.phone || undefined,
-    })
-
-    if (created) {
-      onPatientNameChange(created.name)
-      setShowCreateDialog(false)
+    
+    // Buscar paciente quando código tiver 1-6 dígitos
+    if (newCode.length >= 1 && newCode.length <= 6) {
+      lookupByCode(clinicId, newCode)
     }
   }
+
+  // Preencher nome automaticamente quando paciente for encontrado
+  useEffect(() => {
+    if (patient) {
+      onPatientNameChangeRef.current(patient.name)
+      setPatientNotFound(false)
+    } else if (code.length > 0 && !loading && error?.status === 404) {
+      setPatientNotFound(true)
+    }
+  }, [patient, code.length, loading, error])
 
   return (
     <div className="space-y-2">
@@ -100,26 +86,38 @@ export function PatientCodeInput({
               id="patient-code"
               type="text"
               inputMode="numeric"
-              pattern="\d{6}"
+              pattern="[0-9]{1,6}"
               maxLength={6}
               value={code}
               onChange={handleCodeChange}
-              placeholder="000000"
+              placeholder="Ex: 1234"
               className="font-mono text-lg"
               required={required}
+              aria-invalid={!!codeError}
             />
             {loading && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             )}
-            {patient && code.length === 6 && !loading && (
+            {patient && code.length > 0 && !loading && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 <Check className="h-4 w-4 text-green-600" />
               </div>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">6 dígitos</p>
+          {codeError ? (
+            <p className="text-xs text-destructive mt-1">{codeError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">{codeHint}</p>
+          )}
+          {patientNotFound && code.length > 0 && !loading && (
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="text-xs text-amber-700">
+                Paciente não encontrado. Preencha o nome para cadastrar automaticamente.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -131,98 +129,33 @@ export function PatientCodeInput({
             type="text"
             value={patientName}
             onChange={(e) => onPatientNameChange(e.target.value)}
+            onBlur={() => {
+              // Auto-criação desabilitada para evitar 403; mantemos o preenchimento livre.
+              const trimmed = (patientName || '').trim()
+              if (!trimmed) return
+              setPatientNotFound(false)
+              setCanAutoCreate(true)
+            }}
             placeholder="Nome completo"
             required={required}
             disabled={patient !== null || loading}
             className={patient ? 'bg-muted' : ''}
+            aria-invalid={!!patientNameError}
           />
           {patient && (
             <p className="text-xs text-green-600 mt-1">✓ Paciente encontrado</p>
           )}
+          {!patient && !loading && patientNameError && (
+            <p className="text-xs text-destructive mt-1">{patientNameError}</p>
+          )}
         </div>
       </div>
 
-      {error && (
+      {error && error?.message && error?.status !== 404 && (
         <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error.message}</AlertDescription>
         </Alert>
       )}
-
-      {/* Create Patient Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Novo Paciente
-            </DialogTitle>
-            <DialogDescription>
-              Paciente com código <strong>{code}</strong> não encontrado. Deseja criar um novo
-              cadastro?
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="new-patient-name">
-                Nome Completo <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="new-patient-name"
-                value={newPatientData.name}
-                onChange={(e) =>
-                  setNewPatientData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Nome completo do paciente"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="new-patient-email">Email (opcional)</Label>
-              <Input
-                id="new-patient-email"
-                type="email"
-                value={newPatientData.email}
-                onChange={(e) =>
-                  setNewPatientData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="email@exemplo.com"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="new-patient-phone">Telefone (opcional)</Label>
-              <Input
-                id="new-patient-phone"
-                type="tel"
-                value={newPatientData.phone}
-                onChange={(e) =>
-                  setNewPatientData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                placeholder="+351 900 000 000"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateDialog(false)
-                setCode('')
-                onCodeChange('')
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleCreatePatient} disabled={!newPatientData.name.trim()}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Criar Paciente
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

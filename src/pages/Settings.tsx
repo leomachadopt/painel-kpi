@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,34 +23,57 @@ import { Trash2, Plus, Save, Edit2, Check, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
+import { MONTHS } from '@/lib/types'
 
 export default function Settings() {
   const { user } = useAuthStore()
-  const { clinics, updateClinicConfig } = useDataStore()
+  const { clinics, updateClinicConfig, getMonthlyTargets, updateMonthlyTargets } = useDataStore()
 
   const [selectedClinicId, setSelectedClinicId] = useState(
     user?.clinicId || clinics[0]?.id || '',
   )
 
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    (new Date().getMonth() + 1).toString()
+  )
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  )
+
   const clinic = clinics.find((c) => c.id === selectedClinicId)
+  
+  // Memoize monthlyTargets to prevent infinite loops
+  const monthlyTargets = useMemo(() => {
+    if (!clinic) return null
+    return getMonthlyTargets(
+      clinic.id,
+      parseInt(selectedMonth),
+      parseInt(selectedYear)
+    )
+  }, [clinic?.id, selectedMonth, selectedYear, getMonthlyTargets])
+
+  // Permission control: Only GESTOR can manage operational configs
+  const canManageConfig = user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id
+  // Both MENTOR and GESTOR can edit targets
+  const canEditTargets = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
 
   const [config, setConfig] = useState(clinic?.configuration)
-  const [targets, setTargets] = useState({
-    targetRevenue: clinic?.targetRevenue || 0,
-    targetAlignersRange: clinic?.targetAlignersRange || { min: 0, max: 0 },
-    targetAvgTicket: clinic?.targetAvgTicket || 0,
-    targetAcceptanceRate: clinic?.targetAcceptanceRate || 0,
-    targetOccupancyRate: clinic?.targetOccupancyRate || 0,
-    targetNPS: clinic?.targetNPS || 0,
-    targetIntegrationRate: clinic?.targetIntegrationRate || 0,
-    targetAttendanceRate: clinic?.targetAttendanceRate || 0,
-    targetFollowUpRate: clinic?.targetFollowUpRate || 0,
-    targetWaitTime: clinic?.targetWaitTime || 0,
-    targetComplaints: clinic?.targetComplaints || 0,
-    targetLeadsRange: clinic?.targetLeadsRange || { min: 0, max: 0 },
-    targetRevenuePerCabinet: clinic?.targetRevenuePerCabinet || 0,
-    targetPlansPresented: clinic?.targetPlansPresented || { adults: 0, kids: 0 },
-    targetAgendaDistribution: clinic?.targetAgendaDistribution || {
+  const [targets, setTargets] = useState(() => monthlyTargets || {
+    targetRevenue: 0,
+    targetAlignersRange: { min: 0, max: 0 },
+    targetAvgTicket: 0,
+    targetAcceptanceRate: 0,
+    targetOccupancyRate: 0,
+    targetNPS: 0,
+    targetIntegrationRate: 0,
+    targetAttendanceRate: 0,
+    targetFollowUpRate: 0,
+    targetWaitTime: 0,
+    targetComplaints: 0,
+    targetLeadsRange: { min: 0, max: 0 },
+    targetRevenuePerCabinet: 0,
+    targetPlansPresented: { adults: 0, kids: 0 },
+    targetAgendaDistribution: {
       operational: 0,
       planning: 0,
       sales: 0,
@@ -64,26 +87,21 @@ export default function Settings() {
     if (clinic?.configuration) {
       setConfig(clinic.configuration)
     }
-    if (clinic) {
-      setTargets({
-        targetRevenue: clinic.targetRevenue,
-        targetAlignersRange: clinic.targetAlignersRange,
-        targetAvgTicket: clinic.targetAvgTicket,
-        targetAcceptanceRate: clinic.targetAcceptanceRate,
-        targetOccupancyRate: clinic.targetOccupancyRate,
-        targetNPS: clinic.targetNPS,
-        targetIntegrationRate: clinic.targetIntegrationRate,
-        targetAttendanceRate: clinic.targetAttendanceRate,
-        targetFollowUpRate: clinic.targetFollowUpRate,
-        targetWaitTime: clinic.targetWaitTime,
-        targetComplaints: clinic.targetComplaints,
-        targetLeadsRange: clinic.targetLeadsRange,
-        targetRevenuePerCabinet: clinic.targetRevenuePerCabinet,
-        targetPlansPresented: clinic.targetPlansPresented,
-        targetAgendaDistribution: clinic.targetAgendaDistribution,
+  }, [clinic])
+
+  // Sync targets when month/year/clinic changes
+  useEffect(() => {
+    if (monthlyTargets) {
+      // Only update if the id changed (different month/year/clinic) to prevent infinite loops
+      setTargets((prev) => {
+        // If prev doesn't have an id or ids are different, update
+        if (!prev.id || prev.id !== monthlyTargets.id) {
+          return monthlyTargets
+        }
+        return prev
       })
     }
-  }, [clinic])
+  }, [monthlyTargets])
 
   if (!clinic || !config) return <div className="p-8">Carregando...</div>
 
@@ -101,13 +119,16 @@ export default function Settings() {
   }
 
   const handleSaveTargets = async () => {
+    if (!clinic) return
     setSaving(true)
     try {
-      await clinicsApi.updateTargets(clinic.id, targets)
-      toast.success('Metas guardadas com sucesso!')
-      // Reload clinic data
-      const updatedClinic = await clinicsApi.getById(clinic.id)
-      await updateClinicConfig(clinic.id, updatedClinic.configuration)
+      await updateMonthlyTargets({
+        id: `${clinic.id}-${selectedYear}-${selectedMonth}`,
+        clinicId: clinic.id,
+        month: parseInt(selectedMonth),
+        year: parseInt(selectedYear),
+        ...targets,
+      })
     } catch (error: any) {
       toast.error(error.message || 'Erro ao guardar metas')
     } finally {
@@ -119,10 +140,12 @@ export default function Settings() {
     title,
     items,
     onUpdate,
+    readOnly = false,
   }: {
     title: string
     items: { id: string; name: string; standardHours?: number }[]
     onUpdate: (items: any[]) => void
+    readOnly?: boolean
   }) => {
     const [newItem, setNewItem] = useState('')
     const [newHours, setNewHours] = useState('8')
@@ -172,26 +195,28 @@ export default function Settings() {
 
     return (
       <div className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder={`Novo ${title}`}
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && add()}
-          />
-          {title === 'Gabinetes' && (
+        {!readOnly && (
+          <div className="flex gap-2">
             <Input
-              type="number"
-              placeholder="Horas"
-              className="w-24"
-              value={newHours}
-              onChange={(e) => setNewHours(e.target.value)}
+              placeholder={`Novo ${title}`}
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && add()}
             />
-          )}
-          <Button onClick={add} size="icon">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+            {title === 'Gabinetes' && (
+              <Input
+                type="number"
+                placeholder="Horas"
+                className="w-24"
+                value={newHours}
+                onChange={(e) => setNewHours(e.target.value)}
+              />
+            )}
+            <Button onClick={add} size="icon">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
           {items.map((item) => (
             <div
@@ -246,22 +271,24 @@ export default function Settings() {
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startEdit(item)}
-                    >
-                      <Edit2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => remove(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => startEdit(item)}
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -279,7 +306,7 @@ export default function Settings() {
           <p className="text-muted-foreground">
             Gerir as listas, campanhas e parâmetros da clínica.
           </p>
-          {user?.role === 'MENTORA' && clinics.length > 0 && (
+          {user?.role === 'MENTOR' && clinics.length > 0 && (
             <div className="mt-3 max-w-xs">
               <Select value={selectedClinicId} onValueChange={setSelectedClinicId}>
                 <SelectTrigger>
@@ -296,14 +323,16 @@ export default function Settings() {
             </div>
           )}
         </div>
-        <Button onClick={handleSaveConfig} disabled={saving}>
-          {saving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Guardar Alterações
-        </Button>
+        {canManageConfig && (
+          <Button onClick={handleSaveConfig} disabled={saving}>
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Guardar Configurações
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="sources">
@@ -329,6 +358,7 @@ export default function Settings() {
                 title="Fonte"
                 items={config.sources}
                 onUpdate={(items) => setConfig({ ...config, sources: items })}
+                readOnly={!canManageConfig}
               />
             </CardContent>
           </Card>
@@ -344,6 +374,7 @@ export default function Settings() {
                 title="Campanha"
                 items={config.campaigns || []}
                 onUpdate={(items) => setConfig({ ...config, campaigns: items })}
+                readOnly={!canManageConfig}
               />
             </CardContent>
           </Card>
@@ -364,6 +395,7 @@ export default function Settings() {
                 onUpdate={(items) =>
                   setConfig({ ...config, categories: items })
                 }
+                readOnly={!canManageConfig}
               />
             </CardContent>
           </Card>
@@ -382,6 +414,7 @@ export default function Settings() {
                 title="Gabinetes"
                 items={config.cabinets}
                 onUpdate={(items) => setConfig({ ...config, cabinets: items })}
+                readOnly={!canManageConfig}
               />
             </CardContent>
           </Card>
@@ -400,6 +433,7 @@ export default function Settings() {
                 title="Médico"
                 items={config.doctors}
                 onUpdate={(items) => setConfig({ ...config, doctors: items })}
+                readOnly={!canManageConfig}
               />
             </CardContent>
           </Card>
@@ -408,12 +442,52 @@ export default function Settings() {
         <TabsContent value="targets" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Metas Mensais</CardTitle>
-              <CardDescription>
-                Defina as metas mensais da clínica
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Metas Mensais</CardTitle>
+                  <CardDescription>
+                    Defina as metas mensais da clínica
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedMonth}
+                    onValueChange={setSelectedMonth}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((month, index) => (
+                        <SelectItem key={index + 1} value={(index + 1).toString()}>
+                          {month}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={selectedYear}
+                    onValueChange={setSelectedYear}
+                  >
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Ano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2024">2024</SelectItem>
+                      <SelectItem value="2025">2025</SelectItem>
+                      <SelectItem value="2026">2026</SelectItem>
+                      <SelectItem value="2027">2027</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {!canEditTargets && (
+                <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                  Apenas o mentor ou gestor da clínica podem editar as metas.
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Faturação Mensal (€)</Label>
@@ -426,6 +500,7 @@ export default function Settings() {
                         targetRevenue: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -440,6 +515,7 @@ export default function Settings() {
                         targetNPS: parseInt(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -457,6 +533,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -474,6 +551,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -488,6 +566,7 @@ export default function Settings() {
                         targetAvgTicket: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -502,6 +581,7 @@ export default function Settings() {
                         targetAcceptanceRate: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -516,6 +596,7 @@ export default function Settings() {
                         targetOccupancyRate: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -530,6 +611,7 @@ export default function Settings() {
                         targetRevenuePerCabinet: parseFloat(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -547,6 +629,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -564,6 +647,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -581,6 +665,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -598,6 +683,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -612,6 +698,7 @@ export default function Settings() {
                         targetWaitTime: parseInt(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
 
@@ -626,20 +713,23 @@ export default function Settings() {
                         targetComplaints: parseInt(e.target.value) || 0,
                       })
                     }
+                    disabled={!canEditTargets}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t">
-                <Button onClick={handleSaveTargets} disabled={saving}>
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Guardar Metas
-                </Button>
-              </div>
+              {canEditTargets && (
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={handleSaveTargets} disabled={saving}>
+                    {saving ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Guardar Metas
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

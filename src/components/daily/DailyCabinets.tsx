@@ -42,18 +42,22 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
     (c) => c.id === form.watch('cabinetId'),
   )
 
-  const onSubmit = (data: z.infer<typeof schema>) => {
-    addCabinetUsageEntry(clinic.id, {
-      id: Math.random().toString(36),
-      hoursAvailable: selectedGab?.standardHours || 0,
-      ...data,
-    })
-    toast.success('Ocupação lançada!')
-    form.reset({
-      date: data.date,
-      cabinetId: '',
-      hoursUsed: 0,
-    })
+  const onSubmit = async (data: z.infer<typeof schema>) => {
+    try {
+      await addCabinetUsageEntry(clinic.id, {
+        id: Math.random().toString(36),
+        hoursAvailable: selectedGab?.standardHours || 0,
+        ...data,
+      })
+      toast.success('Ocupação lançada!')
+      form.reset({
+        date: data.date,
+        cabinetId: '',
+        hoursUsed: 0,
+      })
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao guardar ocupação')
+    }
   }
 
   return (

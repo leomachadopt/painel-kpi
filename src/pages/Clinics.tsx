@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, MapPin, AlertTriangle } from 'lucide-react'
+import { Search, Plus, MapPin, AlertTriangle, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,13 +12,42 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
+import { clinicsApi } from '@/services/api'
+import { toast } from 'sonner'
 
 export default function Clinics() {
   const { clinics, calculateKPIs, calculateAlerts } = useDataStore()
   const { user } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
+  const [showNewClinicDialog, setShowNewClinicDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [clinicToDelete, setClinicToDelete] = useState<string | null>(null)
+  const [newClinicName, setNewClinicName] = useState('')
+  const [newClinicOwner, setNewClinicOwner] = useState('')
+  const [newClinicEmail, setNewClinicEmail] = useState('')
+  const [newClinicPassword, setNewClinicPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   // Constants for current month simulation
@@ -26,7 +55,7 @@ export default function Clinics() {
   const CURRENT_YEAR = 2023
 
   useEffect(() => {
-    if (user && user.role !== 'MENTORA') {
+    if (user && user.role !== 'MENTOR') {
       if (user.clinicId) {
         navigate(`/dashboard/${user.clinicId}`)
       } else {
@@ -39,7 +68,72 @@ export default function Clinics() {
     clinic.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  if (user?.role !== 'MENTORA') {
+  const handleCreateClinic = async () => {
+    if (!newClinicName.trim() || !newClinicOwner.trim()) {
+      toast.error('Nome e responsável são obrigatórios')
+      return
+    }
+
+    if (!newClinicEmail.trim() || !newClinicPassword.trim()) {
+      toast.error('Email e senha são obrigatórios')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newClinicEmail.trim())) {
+      toast.error('Email inválido')
+      return
+    }
+
+    // Validate password length
+    if (newClinicPassword.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await clinicsApi.create({
+        name: newClinicName.trim(),
+        ownerName: newClinicOwner.trim(),
+        email: newClinicEmail.trim(),
+        password: newClinicPassword,
+      })
+      toast.success('Clínica e usuário criados com sucesso!')
+      setShowNewClinicDialog(false)
+      setNewClinicName('')
+      setNewClinicOwner('')
+      setNewClinicEmail('')
+      setNewClinicPassword('')
+      // Reload page to fetch updated clinics list
+      window.location.reload()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar clínica')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteClinic = async () => {
+    if (!clinicToDelete) return
+
+    setLoading(true)
+    try {
+      await clinicsApi.delete(clinicToDelete)
+      toast.success('Clínica excluída com sucesso!')
+      setShowDeleteDialog(false)
+      setClinicToDelete(null)
+      // Reload page to fetch updated clinics list
+      window.location.reload()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir clínica')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (user?.role !== 'MENTOR') {
     return null
   }
 
@@ -54,7 +148,7 @@ export default function Clinics() {
             Painel da Mentora: Visão geral de desempenho e alertas da rede.
           </p>
         </div>
-        <Button onClick={() => navigate('#')} className="w-full sm:w-auto">
+        <Button onClick={() => setShowNewClinicDialog(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Nova Clínica
         </Button>
@@ -108,8 +202,8 @@ export default function Clinics() {
                 className={`absolute top-0 left-0 w-1 h-full ${statusColor}`}
               />
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10 flex-shrink-0">
                     <img
                       src={
                         clinic.logoUrl ||
@@ -119,23 +213,37 @@ export default function Clinics() {
                       className="h-8 w-8 object-contain"
                     />
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">{clinic.name}</CardTitle>
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg truncate">{clinic.name}</CardTitle>
                     <CardDescription className="flex items-center mt-1">
-                      <MapPin className="mr-1 h-3 w-3" />
-                      {clinic.ownerName}
+                      <MapPin className="mr-1 h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{clinic.ownerName}</span>
                     </CardDescription>
                   </div>
                 </div>
-                {alertCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="flex items-center gap-1"
+                <div className="flex items-start gap-2 flex-shrink-0">
+                  {alertCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="flex items-center gap-1"
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      {alertCount}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setClinicToDelete(clinic.id)
+                      setShowDeleteDialog(true)
+                    }}
                   >
-                    <AlertTriangle className="h-3 w-3" />
-                    {alertCount} Alerta(s)
-                  </Badge>
-                )}
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -188,6 +296,92 @@ export default function Clinics() {
           )
         })}
       </div>
+
+      {/* New Clinic Dialog */}
+      <Dialog open={showNewClinicDialog} onOpenChange={setShowNewClinicDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Clínica</DialogTitle>
+            <DialogDescription>
+              Criar uma nova clínica no sistema
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome da Clínica</Label>
+              <Input
+                id="name"
+                placeholder="Ex: Clínica Sorriso"
+                value={newClinicName}
+                onChange={(e) => setNewClinicName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="owner">Responsável</Label>
+              <Input
+                id="owner"
+                placeholder="Ex: Dr. João Silva"
+                value={newClinicOwner}
+                onChange={(e) => setNewClinicOwner(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email de Acesso</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Ex: gestor@clinica.com"
+                value={newClinicEmail}
+                onChange={(e) => setNewClinicEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha de Login</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newClinicPassword}
+                onChange={(e) => setNewClinicPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowNewClinicDialog(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateClinic} disabled={loading}>
+              {loading ? 'Criando...' : 'Criar Clínica'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta clínica? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteClinic}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {loading ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
