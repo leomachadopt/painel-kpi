@@ -24,38 +24,29 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     finalUrl = `/api${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`
   }
   
-  // Criar um novo objeto req com todas as propriedades necessárias para o Express
-  // O Express precisa de propriedades específicas que podem não estar no IncomingMessage
-  const expressReq = Object.create(req) as any
-  
-  // Definir propriedades críticas que o Express usa para roteamento
-  expressReq.url = finalUrl
-  expressReq.originalUrl = finalUrl
-  expressReq.path = finalUrl.split('?')[0] // Remove query string
-  expressReq.baseUrl = ''
-  expressReq.method = req.method || 'GET'
-  
-  // Preservar headers e outras propriedades importantes
-  expressReq.headers = req.headers || {}
-  expressReq.headers.host = req.headers?.host || ''
-  expressReq.headers['x-forwarded-for'] = req.headers?.['x-forwarded-for'] || ''
-  expressReq.headers['x-forwarded-proto'] = req.headers?.['x-forwarded-proto'] || 'https'
+  // Modificar o req original diretamente (mais compatível com Express)
+  // O Express espera que req.url seja modificável
+  const originalUrlProp = req.url
+  req.url = finalUrl
   
   // Log detalhado para debug
-  console.log(`[API Handler] ${req.method} ${finalUrl}`)
-  console.log(`[API Handler] Express will receive path: ${expressReq.path}`)
+  console.log(`[API Handler] ${req.method} ${finalUrl} (original: ${originalUrlProp})`)
   
-  // Processar a requisição com Express
-  // Usar Promise para garantir que o Express termine de processar
+  // Processar a requisição com Express diretamente
+  // O Express vai processar req.url e fazer match com as rotas
   return new Promise<void>((resolve, reject) => {
     // Handler de erro do Express
     const errorHandler = (err: any) => {
       console.error('[API Handler] Express error:', err)
+      // Restaurar URL original em caso de erro
+      req.url = originalUrlProp
       reject(err)
     }
     
     // Handler de finalização
     const finishHandler = () => {
+      // Restaurar URL original após processamento
+      req.url = originalUrlProp
       resolve()
     }
     
@@ -63,8 +54,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.once('close', finishHandler)
     res.once('error', errorHandler)
     
-    // Processar com Express
-    app(expressReq, res)
+    // Processar com Express - passar req e res diretamente
+    app(req as any, res)
   })
 }
 
