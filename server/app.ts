@@ -54,6 +54,12 @@ function buildCorsOriginAllowlist() {
 export function createApp() {
   dotenv.config({ path: envPath, override: true })
 
+  // Log para debug em produção
+  if (process.env.VERCEL) {
+    console.log('🚀 Creating Express app in Vercel environment')
+    console.log('DATABASE_URL configured:', !!process.env.DATABASE_URL)
+  }
+
   // Dev helper: reload .env when it changes (não roda em Vercel/serverless)
   if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     try {
@@ -117,14 +123,18 @@ export function createApp() {
   })
 
   // 404 handler for API routes (for debugging)
+  // IMPORTANTE: Este handler deve ser o último middleware para /api
   app.use('/api', (req: express.Request, res: express.Response) => {
     console.error(`[404] Route not found: ${req.method} ${req.url}`)
+    console.error(`[404] Path: ${req.path}, OriginalUrl: ${req.originalUrl}`)
+    console.error(`[404] BaseUrl: ${req.baseUrl}`)
     res.status(404).json({
       error: 'Route not found',
       method: req.method,
       url: req.url,
       path: req.path,
       originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
     })
   })
 

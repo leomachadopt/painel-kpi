@@ -18,22 +18,20 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
   // O req.url já vem com /api/daily-entries/... (completo)
   const originalUrl = req.url || '/'
   
-  // Se a URL não começar com /api, adicionamos o prefixo
-  // Isso é necessário caso a Vercel passe apenas o path sem /api
+  // Garantir que sempre tenha /api no início (caso a Vercel passe sem /api)
   let finalUrl = originalUrl
   if (!originalUrl.startsWith('/api')) {
     finalUrl = `/api${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`
   }
   
-  // Atualizar req.url para o Express processar
-  // O Express vai processar a URL completa e fazer match com as rotas registradas
+  // Atualizar req.url diretamente (mais simples e direto)
   req.url = finalUrl
   
-  // Log para debug
+  // Log para debug (sempre logar para troubleshooting)
   console.log(`[API Handler] ${req.method} ${finalUrl} (original: ${originalUrl})`)
   
   // Express app processa a requisição diretamente
-  // O Express vai processar a URL e fazer match com as rotas registradas em app.use('/api/...', ...)
+  // O Express vai processar a URL e fazer match com as rotas registradas
   app(req as any, res as any)
 }
 
