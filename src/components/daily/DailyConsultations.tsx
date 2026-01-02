@@ -69,20 +69,24 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       dailyEntriesApi.consultation
         .getByCode(clinic.id, code)
         .then((entry) => {
-          console.log('📅 Received consultation data:', entry)
+          // Convert ISO date strings to yyyy-MM-dd format for date inputs
+          const toDateInput = (isoDate: string | null | undefined) => {
+            if (!isoDate) return ''
+            return isoDate.split('T')[0]
+          }
+
           const formData = {
-            date: entry.date,
+            date: toDateInput(entry.date),
             patientName: entry.patientName,
             code: entry.code,
             planCreated: !!entry.planCreated,
-            planCreatedAt: entry.planCreatedAt || '',
+            planCreatedAt: toDateInput(entry.planCreatedAt),
             planPresented: !!entry.planPresented,
-            planPresentedAt: entry.planPresentedAt || '',
+            planPresentedAt: toDateInput(entry.planPresentedAt),
             planAccepted: !!entry.planAccepted,
-            planAcceptedAt: entry.planAcceptedAt || '',
+            planAcceptedAt: toDateInput(entry.planAcceptedAt),
             planValue: entry.planValue ?? 0,
           }
-          console.log('📝 Resetting form with:', formData)
           form.reset(formData)
         })
         .catch((err: any) => {
