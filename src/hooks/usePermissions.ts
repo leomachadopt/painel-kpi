@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/authStore'
+import useAuthStore from '@/stores/useAuthStore'
 import type { UserPermissions } from '@/lib/types'
 
 /**
@@ -6,7 +6,7 @@ import type { UserPermissions } from '@/lib/types'
  * Returns functions to check view and edit permissions
  */
 export function usePermissions() {
-  const user = useAuthStore((state) => state.user)
+  const { user } = useAuthStore()
 
   // Helper to get all permissions (MENTOR and GESTOR_CLINICA have all permissions)
   const getAllPermissions = (): UserPermissions => {
