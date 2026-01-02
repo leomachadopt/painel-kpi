@@ -130,3 +130,4 @@ CREATE INDEX IF NOT EXISTS idx_keyword_rankings_daily_clinic_date
 
 
 
+

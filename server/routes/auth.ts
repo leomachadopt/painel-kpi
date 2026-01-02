@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { query } from '../db.js'
 import { signAuthToken } from '../auth/token.js'
 import { authMiddleware } from '../auth/middleware.js'
+import { getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
 
@@ -16,7 +17,7 @@ router.post('/login', async (req, res) => {
 
     // In production, use proper password hashing (bcrypt)
     const result = await query(
-      `SELECT id, name, email, role, clinic_id, avatar_url
+      `SELECT id, name, email, role, clinic_id, avatar_url, active
        FROM users
        WHERE email = $1 AND password_hash = $2`,
       [email, password]
@@ -27,6 +28,15 @@ router.post('/login', async (req, res) => {
     }
 
     const user = result.rows[0]
+
+    // Check if user is active
+    if (user.active === false) {
+      return res.status(401).json({ error: 'Account is deactivated' })
+    }
+
+    // Get user permissions
+    const permissions = await getUserPermissions(user.id, user.role, user.clinic_id)
+
     const token = signAuthToken({
       sub: user.id,
       role: user.role,
@@ -40,6 +50,8 @@ router.post('/login', async (req, res) => {
         role: user.role,
         clinicId: user.clinic_id,
         avatarUrl: user.avatar_url,
+        active: user.active,
+        permissions,
       },
       token,
     })

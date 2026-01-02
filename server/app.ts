@@ -15,6 +15,8 @@ import configRoutes from './routes/config.js'
 import marketingRoutes from './routes/marketing.js'
 import adminRoutes from './routes/admin.js'
 import targetsRoutes from './routes/targets.js'
+import collaboratorsRoutes from './routes/collaborators.js'
+import auditLogsRoutes from './routes/auditLogs.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -121,6 +123,8 @@ export function createApp() {
   app.use('/api/marketing', marketingRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/targets', targetsRoutes)
+  app.use('/api/collaborators', collaboratorsRoutes)
+  app.use('/api/audit-logs', auditLogsRoutes)
 
   // Health check
   app.get('/api/health', (_req, res) => {

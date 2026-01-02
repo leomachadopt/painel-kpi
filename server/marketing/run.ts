@@ -69,3 +69,4 @@ export async function runMarketingJobForAllClinics(date: string) {
 
 
 
+

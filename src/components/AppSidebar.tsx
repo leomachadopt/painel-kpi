@@ -10,6 +10,7 @@ import {
   Settings,
   FileText,
   Users,
+  UserCog,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -174,18 +175,33 @@ export function AppSidebar() {
               )}
 
               {user?.role === 'GESTOR_CLINICA' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Configurações"
-                    isActive={location.pathname.includes('/configuracoes')}
-                  >
-                    <Link to="/configuracoes">
-                      <Settings />
-                      <span>Configurações</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Configurações"
+                      isActive={location.pathname.includes('/configuracoes')}
+                    >
+                      <Link to="/configuracoes">
+                        <Settings />
+                        <span>Configurações</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Colaboradores"
+                      isActive={location.pathname.includes('/colaboradores')}
+                    >
+                      <Link to="/colaboradores">
+                        <UserCog />
+                        <span>Colaboradores</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </>
           )}

@@ -1,0 +1,229 @@
+import type { Response, NextFunction } from 'express'
+import type { AuthedRequest } from './auth.js'
+import { query } from '../db.js'
+
+export interface UserPermissions {
+  canViewDashboardOverview: boolean
+  canViewDashboardFinancial: boolean
+  canViewDashboardCommercial: boolean
+  canViewDashboardOperational: boolean
+  canViewDashboardMarketing: boolean
+  canViewReports: boolean
+  canViewTargets: boolean
+  canEditFinancial: boolean
+  canEditConsultations: boolean
+  canEditProspecting: boolean
+  canEditCabinets: boolean
+  canEditServiceTime: boolean
+  canEditSources: boolean
+  canEditPatients: boolean
+  canEditClinicConfig: boolean
+  canEditTargets: boolean
+}
+
+/**
+ * Get user permissions from database
+ * MENTOR and GESTOR_CLINICA have all permissions by default
+ * COLABORADOR permissions are loaded from user_permissions table
+ */
+export async function getUserPermissions(
+  userId: string,
+  role: string,
+  clinicId?: string
+): Promise<UserPermissions> {
+  // MENTOR and GESTOR_CLINICA have all permissions
+  if (role === 'MENTOR' || role === 'GESTOR_CLINICA') {
+    return {
+      canViewDashboardOverview: true,
+      canViewDashboardFinancial: true,
+      canViewDashboardCommercial: true,
+      canViewDashboardOperational: true,
+      canViewDashboardMarketing: true,
+      canViewReports: true,
+      canViewTargets: true,
+      canEditFinancial: true,
+      canEditConsultations: true,
+      canEditProspecting: true,
+      canEditCabinets: true,
+      canEditServiceTime: true,
+      canEditSources: true,
+      canEditPatients: true,
+      canEditClinicConfig: true,
+      canEditTargets: true,
+    }
+  }
+
+  // COLABORADOR - load from database
+  if (!clinicId) {
+    // No clinic, no permissions
+    return createEmptyPermissions()
+  }
+
+  const result = await query(
+    `SELECT
+      can_view_dashboard_overview,
+      can_view_dashboard_financial,
+      can_view_dashboard_commercial,
+      can_view_dashboard_operational,
+      can_view_dashboard_marketing,
+      can_view_reports,
+      can_view_targets,
+      can_edit_financial,
+      can_edit_consultations,
+      can_edit_prospecting,
+      can_edit_cabinets,
+      can_edit_service_time,
+      can_edit_sources,
+      can_edit_patients,
+      can_edit_clinic_config,
+      can_edit_targets
+    FROM user_permissions
+    WHERE user_id = $1 AND clinic_id = $2`,
+    [userId, clinicId]
+  )
+
+  if (result.rows.length === 0) {
+    // No permissions record found
+    return createEmptyPermissions()
+  }
+
+  const perms = result.rows[0]
+  return {
+    canViewDashboardOverview: perms.can_view_dashboard_overview || false,
+    canViewDashboardFinancial: perms.can_view_dashboard_financial || false,
+    canViewDashboardCommercial: perms.can_view_dashboard_commercial || false,
+    canViewDashboardOperational: perms.can_view_dashboard_operational || false,
+    canViewDashboardMarketing: perms.can_view_dashboard_marketing || false,
+    canViewReports: perms.can_view_reports || false,
+    canViewTargets: perms.can_view_targets || false,
+    canEditFinancial: perms.can_edit_financial || false,
+    canEditConsultations: perms.can_edit_consultations || false,
+    canEditProspecting: perms.can_edit_prospecting || false,
+    canEditCabinets: perms.can_edit_cabinets || false,
+    canEditServiceTime: perms.can_edit_service_time || false,
+    canEditSources: perms.can_edit_sources || false,
+    canEditPatients: perms.can_edit_patients || false,
+    canEditClinicConfig: perms.can_edit_clinic_config || false,
+    canEditTargets: perms.can_edit_targets || false,
+  }
+}
+
+function createEmptyPermissions(): UserPermissions {
+  return {
+    canViewDashboardOverview: false,
+    canViewDashboardFinancial: false,
+    canViewDashboardCommercial: false,
+    canViewDashboardOperational: false,
+    canViewDashboardMarketing: false,
+    canViewReports: false,
+    canViewTargets: false,
+    canEditFinancial: false,
+    canEditConsultations: false,
+    canEditProspecting: false,
+    canEditCabinets: false,
+    canEditServiceTime: false,
+    canEditSources: false,
+    canEditPatients: false,
+    canEditClinicConfig: false,
+    canEditTargets: false,
+  }
+}
+
+/**
+ * Middleware to check if user has a specific permission
+ * Usage: requirePermission('canEditFinancial')
+ */
+export function requirePermission(permissionKey: keyof UserPermissions) {
+  return async (req: AuthedRequest, res: Response, next: NextFunction) => {
+    if (!req.auth) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    const { sub: userId, role, clinicId } = req.auth
+
+    // Get user permissions
+    const permissions = await getUserPermissions(userId, role, clinicId)
+
+    // Check if user has the required permission
+    if (!permissions[permissionKey]) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: `You don't have permission to perform this action`,
+      })
+    }
+
+    // Add permissions to request for later use
+    ;(req as any).permissions = permissions
+
+    next()
+  }
+}
+
+/**
+ * Middleware to ensure user is a GESTOR_CLINICA
+ */
+export function requireGestor(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (!req.auth) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  if (req.auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Only clinic managers can perform this action',
+    })
+  }
+
+  next()
+}
+
+/**
+ * Middleware to ensure user is a MENTOR
+ */
+export function requireMentor(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (!req.auth) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  if (req.auth.role !== 'MENTOR') {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Only mentors can perform this action',
+    })
+  }
+
+  next()
+}
+
+/**
+ * Helper to log audit trail
+ */
+export async function logAudit(
+  userId: string,
+  clinicId: string,
+  action: string,
+  resource: string,
+  resourceId?: string,
+  details?: any,
+  ipAddress?: string
+) {
+  try {
+    await query(
+      `INSERT INTO audit_logs (id, user_id, clinic_id, action, resource, resource_id, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        `log-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        userId,
+        clinicId,
+        action,
+        resource,
+        resourceId || null,
+        details ? JSON.stringify(details) : null,
+        ipAddress || null,
+      ]
+    )
+  } catch (error) {
+    console.error('Failed to log audit:', error)
+    // Don't throw - audit logging should not break the main operation
+  }
+}

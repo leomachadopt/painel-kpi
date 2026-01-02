@@ -1,4 +1,4 @@
-export type Role = 'MENTOR' | 'GESTOR_CLINICA'
+export type Role = 'MENTOR' | 'GESTOR_CLINICA' | 'COLABORADOR'
 
 export interface AgendaDistribution {
   operational: number
@@ -235,6 +235,25 @@ export interface Alert {
   severity: 'warning' | 'destructive'
 }
 
+export interface UserPermissions {
+  canViewDashboardOverview: boolean
+  canViewDashboardFinancial: boolean
+  canViewDashboardCommercial: boolean
+  canViewDashboardOperational: boolean
+  canViewDashboardMarketing: boolean
+  canViewReports: boolean
+  canViewTargets: boolean
+  canEditFinancial: boolean
+  canEditConsultations: boolean
+  canEditProspecting: boolean
+  canEditCabinets: boolean
+  canEditServiceTime: boolean
+  canEditSources: boolean
+  canEditPatients: boolean
+  canEditClinicConfig: boolean
+  canEditTargets: boolean
+}
+
 export interface User {
   id: string
   name: string
@@ -242,6 +261,8 @@ export interface User {
   role: Role
   clinicId?: string
   avatarUrl?: string
+  active?: boolean
+  permissions?: UserPermissions
 }
 
 export interface Patient {

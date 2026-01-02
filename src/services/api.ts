@@ -391,6 +391,55 @@ export const targetsApi = {
     }),
 }
 
+// ================================
+// COLLABORATORS API
+// ================================
+export const collaboratorsApi = {
+  list: () => apiCall<any[]>('/collaborators'),
+
+  create: (data: { name: string; email: string; password: string }) =>
+    apiCall<{ collaborator: any; message: string }>('/collaborators', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: { name: string; email: string; active?: boolean }) =>
+    apiCall<{ message: string }>(`/collaborators/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  updatePermissions: (id: string, permissions: any) =>
+    apiCall<{ message: string }>(`/collaborators/${id}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    }),
+
+  delete: (id: string) =>
+    apiCall<{ message: string }>(`/collaborators/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// ================================
+// AUDIT LOGS API
+// ================================
+export const auditLogsApi = {
+  list: (params?: { limit?: number; offset?: number; resource?: string; userId?: string }) => {
+    const query = new URLSearchParams()
+    if (params?.limit) query.set('limit', params.limit.toString())
+    if (params?.offset) query.set('offset', params.offset.toString())
+    if (params?.resource) query.set('resource', params.resource)
+    if (params?.userId) query.set('userId', params.userId)
+
+    const queryString = query.toString()
+    return apiCall<{
+      logs: any[]
+      pagination: { total: number; limit: number; offset: number; hasMore: boolean }
+    }>(`/audit-logs${queryString ? `?${queryString}` : ''}`)
+  },
+}
+
 export default {
   auth: authApi,
   clinics: clinicsApi,
@@ -400,4 +449,6 @@ export default {
   config: configApi,
   marketing: marketingApi,
   targets: targetsApi,
+  collaborators: collaboratorsApi,
+  auditLogs: auditLogsApi,
 }
