@@ -13,6 +13,7 @@ import dailyEntriesRoutes from './routes/dailyEntries.js'
 import patientRoutes from './routes/patients.js'
 import configRoutes from './routes/config.js'
 import marketingRoutes from './routes/marketing.js'
+import adminRoutes from './routes/admin.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -117,6 +118,7 @@ export function createApp() {
   app.use('/api/patients', patientRoutes)
   app.use('/api/config', configRoutes)
   app.use('/api/marketing', marketingRoutes)
+  app.use('/api/admin', adminRoutes)
 
   // Health check
   app.get('/api/health', (_req, res) => {
