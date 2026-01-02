@@ -9,12 +9,17 @@ router.get('/:clinicId/:year/:month', async (req, res) => {
   try {
     const { clinicId, year, month } = req.params
 
+    console.log('🔍 GET targets request:', { clinicId, year, month })
+
     const result = await query(
       `SELECT * FROM monthly_targets WHERE clinic_id = $1 AND year = $2 AND month = $3`,
       [clinicId, parseInt(year), parseInt(month)]
     )
 
+    console.log('📋 Query result:', { rowCount: result.rows.length, rows: result.rows })
+
     if (result.rows.length === 0) {
+      console.log('❌ No targets found for:', { clinicId, year, month })
       return res.status(404).json({ error: 'Targets not found' })
     }
 
