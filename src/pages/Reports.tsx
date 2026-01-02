@@ -5,6 +5,8 @@ import {
   Lock,
   ChevronDown,
   Calendar as CalendarIcon,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +21,7 @@ import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { FinancialTable } from '@/components/reports/FinancialTable'
 import { ConsultationTable } from '@/components/reports/ConsultationTable'
+import { ConsultationKanban } from '@/components/reports/ConsultationKanban'
 import { ProspectingTable } from '@/components/reports/ProspectingTable'
 import { CabinetTable } from '@/components/reports/CabinetTable'
 import { ServiceTimeTable } from '@/components/reports/ServiceTimeTable'
@@ -47,6 +50,7 @@ export default function Reports() {
   )
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [, setReloadTrigger] = useState(0)
+  const [consultationView, setConsultationView] = useState<'table' | 'kanban'>('kanban')
 
   const handleDataChange = () => {
     setReloadTrigger(prev => prev + 1)
@@ -160,9 +164,39 @@ export default function Reports() {
             />
           </TabsContent>
           <TabsContent value="consultations">
-            <ConsultationTable
-              data={filterByDate(consultationEntries[clinic.id])}
-            />
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <div className="inline-flex rounded-md border">
+                  <Button
+                    variant={consultationView === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setConsultationView('kanban')}
+                    className="rounded-r-none"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Kanban
+                  </Button>
+                  <Button
+                    variant={consultationView === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setConsultationView('table')}
+                    className="rounded-l-none"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    Tabela
+                  </Button>
+                </div>
+              </div>
+              {consultationView === 'kanban' ? (
+                <ConsultationKanban
+                  data={filterByDate(consultationEntries[clinic.id])}
+                />
+              ) : (
+                <ConsultationTable
+                  data={filterByDate(consultationEntries[clinic.id])}
+                />
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="prospecting">
             <ProspectingTable
