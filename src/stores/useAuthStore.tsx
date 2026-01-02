@@ -83,4 +83,5 @@ const useAuthStore = () => {
   return context
 }
 
+export const useAuth = useAuthStore
 export default useAuthStore
