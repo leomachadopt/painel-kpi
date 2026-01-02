@@ -145,7 +145,7 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
     }
 
     const row = result.rows[0]
-    return res.json({
+    const response = {
       id: row.id,
       date: row.date,
       patientName: row.patient_name,
@@ -157,7 +157,9 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       planAccepted: row.plan_accepted,
       planAcceptedAt: row.plan_accepted_at,
       planValue: parseFloat(row.plan_value),
-    })
+    }
+    console.log('📅 Consultation data being returned:', JSON.stringify(response, null, 2))
+    return res.json(response)
   } catch (error) {
     console.error('Get consultation by code error:', error)
     res.status(500).json({ error: 'Failed to fetch consultation entry' })

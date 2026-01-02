@@ -69,7 +69,8 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       dailyEntriesApi.consultation
         .getByCode(clinic.id, code)
         .then((entry) => {
-          form.reset({
+          console.log('📅 Received consultation data:', entry)
+          const formData = {
             date: entry.date,
             patientName: entry.patientName,
             code: entry.code,
@@ -80,7 +81,9 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             planAccepted: !!entry.planAccepted,
             planAcceptedAt: entry.planAcceptedAt || '',
             planValue: entry.planValue ?? 0,
-          })
+          }
+          console.log('📝 Resetting form with:', formData)
+          form.reset(formData)
         })
         .catch((err: any) => {
           // Not found: start a fresh record for this patient/code
