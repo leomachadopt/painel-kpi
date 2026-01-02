@@ -60,9 +60,13 @@ router.post('/financial/:clinicId', async (req, res) => {
       value: parseFloat(result.rows[0].value),
       cabinetId: result.rows[0].cabinet_id,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create financial entry error:', error)
-    res.status(500).json({ error: 'Failed to create financial entry' })
+    res.status(500).json({
+      error: 'Failed to create financial entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -234,9 +238,13 @@ router.post('/consultation/:clinicId', async (req, res) => {
       planAcceptedAt: result.rows[0].plan_accepted_at,
       planValue: parseFloat(result.rows[0].plan_value),
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create consultation entry error:', error)
-    res.status(500).json({ error: 'Failed to create consultation entry' })
+    res.status(500).json({
+      error: 'Failed to create consultation entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -324,9 +332,13 @@ router.post('/prospecting/:clinicId', async (req, res) => {
       whatsapp: result.rows[0].whatsapp,
       instagram: result.rows[0].instagram,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create prospecting entry error:', error)
-    res.status(500).json({ error: 'Failed to create prospecting entry' })
+    res.status(500).json({
+      error: 'Failed to create prospecting entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -378,9 +390,13 @@ router.post('/cabinet/:clinicId', async (req, res) => {
       hoursAvailable: result.rows[0].hours_available,
       hoursUsed: result.rows[0].hours_used,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create cabinet entry error:', error)
-    res.status(500).json({ error: 'Failed to create cabinet entry' })
+    res.status(500).json({
+      error: 'Failed to create cabinet entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -439,9 +455,13 @@ router.post('/service-time/:clinicId', async (req, res) => {
       actualStartTime: result.rows[0].actual_start_time,
       delayReason: result.rows[0].delay_reason,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create service time entry error:', error)
-    res.status(500).json({ error: 'Failed to create service time entry' })
+    res.status(500).json({
+      error: 'Failed to create service time entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -502,9 +522,13 @@ router.post('/source/:clinicId', async (req, res) => {
       referralCode: result.rows[0].referral_code,
       campaignId: result.rows[0].campaign_id,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create source entry error:', error)
-    res.status(500).json({ error: 'Failed to create source entry' })
+    res.status(500).json({
+      error: 'Failed to create source entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
