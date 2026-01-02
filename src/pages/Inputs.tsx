@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/card'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { DailyFinancials } from '@/components/daily/DailyFinancials'
 import { DailyConsultations } from '@/components/daily/DailyConsultations'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
@@ -31,8 +32,26 @@ export default function Inputs() {
   const navigate = useNavigate()
   const { getClinic } = useDataStore()
   const { user } = useAuthStore()
+  const { canEdit } = usePermissions()
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
+
+  // Verificar permissões
+  const hasFinancial = canEdit('canEditFinancial')
+  const hasConsultations = canEdit('canEditConsultations')
+  const hasProspecting = canEdit('canEditProspecting')
+  const hasCabinets = canEdit('canEditCabinets')
+  const hasServiceTime = canEdit('canEditServiceTime')
+  const hasSources = canEdit('canEditSources')
+
+  // Determinar primeira aba disponível
+  const firstAvailableTab =
+    hasFinancial ? 'financial' :
+    hasConsultations ? 'consultations' :
+    hasProspecting ? 'prospecting' :
+    hasCabinets ? 'cabinets' :
+    hasServiceTime ? 'serviceTime' :
+    hasSources ? 'sources' : 'financial'
 
   if (
     user?.role === 'GESTOR_CLINICA' &&
@@ -61,136 +80,160 @@ export default function Inputs() {
         </p>
       </div>
 
-      <Tabs defaultValue="financial" className="w-full">
+      <Tabs defaultValue={firstAvailableTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
-          <TabsTrigger
-            value="financial"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <FileText className="h-4 w-4" />
-            Financeiro
-          </TabsTrigger>
-          <TabsTrigger
-            value="consultations"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <UserPlus className="h-4 w-4" />
-            1.ªs Consultas
-          </TabsTrigger>
-          <TabsTrigger
-            value="prospecting"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <Megaphone className="h-4 w-4" />
-            Prospecção
-          </TabsTrigger>
-          <TabsTrigger
-            value="cabinets"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <Armchair className="h-4 w-4" />
-            Gabinetes
-          </TabsTrigger>
-          <TabsTrigger
-            value="serviceTime"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <Clock className="h-4 w-4" />
-            Tempos
-          </TabsTrigger>
-          <TabsTrigger
-            value="sources"
-            className="flex flex-col gap-1 py-2 h-auto"
-          >
-            <MapPin className="h-4 w-4" />
-            Fontes
-          </TabsTrigger>
+          {hasFinancial && (
+            <TabsTrigger
+              value="financial"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <FileText className="h-4 w-4" />
+              Financeiro
+            </TabsTrigger>
+          )}
+          {hasConsultations && (
+            <TabsTrigger
+              value="consultations"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <UserPlus className="h-4 w-4" />
+              1.ªs Consultas
+            </TabsTrigger>
+          )}
+          {hasProspecting && (
+            <TabsTrigger
+              value="prospecting"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <Megaphone className="h-4 w-4" />
+              Prospecção
+            </TabsTrigger>
+          )}
+          {hasCabinets && (
+            <TabsTrigger
+              value="cabinets"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <Armchair className="h-4 w-4" />
+              Gabinetes
+            </TabsTrigger>
+          )}
+          {hasServiceTime && (
+            <TabsTrigger
+              value="serviceTime"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <Clock className="h-4 w-4" />
+              Tempos
+            </TabsTrigger>
+          )}
+          {hasSources && (
+            <TabsTrigger
+              value="sources"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <MapPin className="h-4 w-4" />
+              Fontes
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="financial">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lançamento Financeiro</CardTitle>
-                <CardDescription>
-                  Registe as receitas diárias por categoria e gabinete.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailyFinancials clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasFinancial && (
+            <TabsContent value="financial">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Lançamento Financeiro</CardTitle>
+                  <CardDescription>
+                    Registe as receitas diárias por categoria e gabinete.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyFinancials clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-          <TabsContent value="consultations">
-            <Card>
-              <CardHeader>
-                <CardTitle>1.ªs Consultas</CardTitle>
-                <CardDescription>
-                  Acompanhe o desfecho das primeiras consultas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailyConsultations clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasConsultations && (
+            <TabsContent value="consultations">
+              <Card>
+                <CardHeader>
+                  <CardTitle>1.ªs Consultas</CardTitle>
+                  <CardDescription>
+                    Acompanhe o desfecho das primeiras consultas.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyConsultations clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-          <TabsContent value="prospecting">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dashboard de Prospecção</CardTitle>
-                <CardDescription>
-                  Contadores diários de leads e agendamentos.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailyProspecting clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasProspecting && (
+            <TabsContent value="prospecting">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dashboard de Prospecção</CardTitle>
+                  <CardDescription>
+                    Contadores diários de leads e agendamentos.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyProspecting clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-          <TabsContent value="cabinets">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ocupação de Gabinetes</CardTitle>
-                <CardDescription>
-                  Registe as horas utilizadas em cada gabinete.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailyCabinets clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasCabinets && (
+            <TabsContent value="cabinets">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ocupação de Gabinetes</CardTitle>
+                  <CardDescription>
+                    Registe as horas utilizadas em cada gabinete.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyCabinets clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-          <TabsContent value="serviceTime">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tempo de Atendimento</CardTitle>
-                <CardDescription>
-                  Monitorize a pontualidade e motivos de atraso.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailyServiceTime clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasServiceTime && (
+            <TabsContent value="serviceTime">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tempo de Atendimento</CardTitle>
+                  <CardDescription>
+                    Monitorize a pontualidade e motivos de atraso.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyServiceTime clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
-          <TabsContent value="sources">
-            <Card>
-              <CardHeader>
-                <CardTitle>Origem do Paciente</CardTitle>
-                <CardDescription>
-                  Identifique como o paciente conheceu a clínica.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DailySources clinic={clinic} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {hasSources && (
+            <TabsContent value="sources">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Origem do Paciente</CardTitle>
+                  <CardDescription>
+                    Identifique como o paciente conheceu a clínica.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailySources clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

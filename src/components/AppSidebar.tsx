@@ -33,12 +33,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
+import { usePermissions } from '@/hooks/usePermissions'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
   const { clinics } = useDataStore()
   const location = useLocation()
   const { isMobile } = useSidebar()
+  const { canEditAnyData, canEdit } = usePermissions()
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -127,7 +129,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {user?.role === 'GESTOR_CLINICA' && (
+              {canEditAnyData() && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -159,7 +161,7 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {activeClinicId && (
+              {activeClinicId && canEdit('canEditPatients') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
