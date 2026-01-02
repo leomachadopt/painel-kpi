@@ -17,64 +17,71 @@ router.put('/:clinicId', async (req, res) => {
       return res.status(404).json({ error: 'Clinic not found' })
     }
 
-    // Delete existing configurations
-    console.log('🗑️  Deleting existing configurations...')
-    await query('DELETE FROM clinic_categories WHERE clinic_id = $1', [clinicId])
-    await query('DELETE FROM clinic_cabinets WHERE clinic_id = $1', [clinicId])
-    await query('DELETE FROM clinic_doctors WHERE clinic_id = $1', [clinicId])
-    await query('DELETE FROM clinic_sources WHERE clinic_id = $1', [clinicId])
-    await query('DELETE FROM clinic_campaigns WHERE clinic_id = $1', [clinicId])
+    // Use UPSERT strategy to avoid foreign key violations
+    // This approach updates existing records and inserts new ones without deleting
 
-    // Insert new categories
+    // Upsert categories
     if (categories && categories.length > 0) {
-      console.log('📝 Inserting categories:', categories.length)
+      console.log('📝 Upserting categories:', categories.length)
       for (const category of categories) {
         await query(
-          'INSERT INTO clinic_categories (id, clinic_id, name) VALUES ($1, $2, $3)',
+          `INSERT INTO clinic_categories (id, clinic_id, name)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
           [category.id, clinicId, category.name]
         )
       }
     }
 
-    // Insert new cabinets
+    // Upsert cabinets
     if (cabinets && cabinets.length > 0) {
-      console.log('📝 Inserting cabinets:', cabinets.length)
+      console.log('📝 Upserting cabinets:', cabinets.length)
       for (const cabinet of cabinets) {
         await query(
-          'INSERT INTO clinic_cabinets (id, clinic_id, name, standard_hours) VALUES ($1, $2, $3, $4)',
+          `INSERT INTO clinic_cabinets (id, clinic_id, name, standard_hours)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             standard_hours = EXCLUDED.standard_hours`,
           [cabinet.id, clinicId, cabinet.name, cabinet.standardHours || 8]
         )
       }
     }
 
-    // Insert new doctors
+    // Upsert doctors
     if (doctors && doctors.length > 0) {
-      console.log('📝 Inserting doctors:', doctors.length)
+      console.log('📝 Upserting doctors:', doctors.length)
       for (const doctor of doctors) {
         await query(
-          'INSERT INTO clinic_doctors (id, clinic_id, name) VALUES ($1, $2, $3)',
+          `INSERT INTO clinic_doctors (id, clinic_id, name)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
           [doctor.id, clinicId, doctor.name]
         )
       }
     }
 
-    // Insert new sources
+    // Upsert sources
     if (sources && sources.length > 0) {
-      console.log('📝 Inserting sources:', sources.length)
+      console.log('📝 Upserting sources:', sources.length)
       for (const source of sources) {
         await query(
-          'INSERT INTO clinic_sources (id, clinic_id, name) VALUES ($1, $2, $3)',
+          `INSERT INTO clinic_sources (id, clinic_id, name)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
           [source.id, clinicId, source.name]
         )
       }
     }
 
-    // Insert new campaigns
+    // Upsert campaigns
     if (campaigns && campaigns.length > 0) {
-      console.log('📝 Inserting campaigns:', campaigns.length)
+      console.log('📝 Upserting campaigns:', campaigns.length)
       for (const campaign of campaigns) {
         await query(
-          'INSERT INTO clinic_campaigns (id, clinic_id, name) VALUES ($1, $2, $3)',
+          `INSERT INTO clinic_campaigns (id, clinic_id, name)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
           [campaign.id, clinicId, campaign.name]
         )
       }
