@@ -16,7 +16,7 @@ import {
 } from '@/lib/types'
 import { MOCK_CLINICS, MOCK_DATA } from '@/lib/mockData'
 import { getMonth, getYear, parseISO } from 'date-fns'
-import { clinicsApi, dailyEntriesApi, patientsApi } from '@/services/api'
+import { clinicsApi, dailyEntriesApi, patientsApi, targetsApi } from '@/services/api'
 import { toast } from 'sonner'
 import { useAuth } from './useAuthStore'
 
@@ -408,7 +408,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadMonthlyTargets = async (clinicId: string, month: number, year: number) => {
     try {
-      const targets = await api.targets.get(clinicId, year, month)
+      const targets = await targetsApi.get(clinicId, year, month)
 
       // Update local state
       setMonthlyTargets((prev) => {
@@ -437,7 +437,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const updateMonthlyTargets = async (targets: MonthlyTargets) => {
     try {
       // Save to API
-      await api.targets.update(targets.clinicId, targets.year, targets.month, targets)
+      await targetsApi.update(targets.clinicId, targets.year, targets.month, targets)
 
       // Update local state
       setMonthlyTargets((prev) => {
