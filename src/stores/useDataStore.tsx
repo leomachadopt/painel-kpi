@@ -27,6 +27,7 @@ interface DataState {
 
   // Monthly Targets
   getMonthlyTargets: (clinicId: string, month: number, year: number) => MonthlyTargets
+  loadMonthlyTargets: (clinicId: string, month: number, year: number) => Promise<void>
   updateMonthlyTargets: (targets: MonthlyTargets) => Promise<void>
 
   getMonthlyData: (
@@ -402,6 +403,34 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       targetRevenuePerCabinet: clinic?.targetRevenuePerCabinet || DEFAULT_MONTHLY_TARGETS.targetRevenuePerCabinet,
       targetPlansPresented: clinic?.targetPlansPresented || DEFAULT_MONTHLY_TARGETS.targetPlansPresented,
       targetAgendaDistribution: clinic?.targetAgendaDistribution || DEFAULT_MONTHLY_TARGETS.targetAgendaDistribution,
+    }
+  }
+
+  const loadMonthlyTargets = async (clinicId: string, month: number, year: number) => {
+    try {
+      const targets = await api.targets.get(clinicId, year, month)
+
+      // Update local state
+      setMonthlyTargets((prev) => {
+        const clinicTargets = prev[clinicId] || []
+        const existingIndex = clinicTargets.findIndex(
+          (t) => t.month === month && t.year === year,
+        )
+
+        let newTargets = [...clinicTargets]
+        if (existingIndex >= 0) {
+          newTargets[existingIndex] = targets
+        } else {
+          newTargets.push(targets)
+        }
+
+        return { ...prev, [clinicId]: newTargets }
+      })
+    } catch (error: any) {
+      // If 404, targets don't exist yet - that's ok, will use defaults
+      if (!error.message?.includes('404')) {
+        console.error('Error loading targets:', error)
+      }
     }
   }
 
@@ -1279,6 +1308,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         getClinic,
         updateClinicConfig,
         getMonthlyTargets,
+        loadMonthlyTargets,
         updateMonthlyTargets,
         getMonthlyData,
         addMonthlyData,

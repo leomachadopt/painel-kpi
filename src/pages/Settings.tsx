@@ -27,7 +27,7 @@ import { MONTHS } from '@/lib/types'
 
 export default function Settings() {
   const { user } = useAuthStore()
-  const { clinics, updateClinicConfig, getMonthlyTargets, updateMonthlyTargets } = useDataStore()
+  const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
 
   // Helper to auto-select input content on focus for better UX
   const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -93,6 +93,13 @@ export default function Settings() {
       setConfig(clinic.configuration)
     }
   }, [clinic])
+
+  // Load targets from database when clinic/month/year changes
+  useEffect(() => {
+    if (clinic?.id) {
+      loadMonthlyTargets(clinic.id, parseInt(selectedMonth), parseInt(selectedYear))
+    }
+  }, [clinic?.id, selectedMonth, selectedYear, loadMonthlyTargets])
 
   // Sync targets when month/year/clinic changes
   useEffect(() => {
