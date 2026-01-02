@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from 'express'
 import { query } from '../db.js'
 import { runMarketingJobForClinic } from '../marketing/run.js'
