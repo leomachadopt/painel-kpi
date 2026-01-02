@@ -308,7 +308,12 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             <FormItem>
               <FormLabel>Valor do Plano (€)</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" {...field} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...field}
+                  onFocus={(e) => e.target.select()}
+                />
               </FormControl>
             </FormItem>
           )}

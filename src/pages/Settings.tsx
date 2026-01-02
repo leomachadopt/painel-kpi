@@ -29,6 +29,11 @@ export default function Settings() {
   const { user } = useAuthStore()
   const { clinics, updateClinicConfig, getMonthlyTargets, updateMonthlyTargets } = useDataStore()
 
+  // Helper to auto-select input content on focus for better UX
+  const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
+  }
+
   const [selectedClinicId, setSelectedClinicId] = useState(
     user?.clinicId || clinics[0]?.id || '',
   )
@@ -494,6 +499,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetRevenue}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -509,6 +515,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetNPS}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -524,6 +531,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetAlignersRange.min}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -542,6 +550,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetAlignersRange.max}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -560,6 +569,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetAvgTicket}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -575,6 +585,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetAcceptanceRate}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -590,6 +601,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetOccupancyRate}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -605,6 +617,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetRevenuePerCabinet}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -620,6 +633,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetLeadsRange.min}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -638,6 +652,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetLeadsRange.max}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -656,6 +671,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetPlansPresented.adults}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -674,6 +690,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetPlansPresented.kids}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -692,6 +709,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetWaitTime}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,
@@ -707,6 +725,7 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={targets.targetComplaints}
+                    onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
                         ...targets,

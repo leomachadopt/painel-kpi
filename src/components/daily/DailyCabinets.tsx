@@ -117,7 +117,12 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
             <FormItem>
               <FormLabel>Horas Utilizadas (Ocupadas)</FormLabel>
               <FormControl>
-                <Input type="number" step="0.5" {...field} />
+                <Input
+                  type="number"
+                  step="0.5"
+                  {...field}
+                  onFocus={(e) => e.target.select()}
+                />
               </FormControl>
             </FormItem>
           )}
