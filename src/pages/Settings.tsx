@@ -104,14 +104,7 @@ export default function Settings() {
   // Sync targets when month/year/clinic changes
   useEffect(() => {
     if (monthlyTargets) {
-      // Only update if the id changed (different month/year/clinic) to prevent infinite loops
-      setTargets((prev) => {
-        // If prev doesn't have an id or ids are different, update
-        if (!prev.id || prev.id !== monthlyTargets.id) {
-          return monthlyTargets
-        }
-        return prev
-      })
+      setTargets(monthlyTargets)
     }
   }, [monthlyTargets])
 
