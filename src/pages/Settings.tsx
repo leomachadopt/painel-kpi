@@ -498,7 +498,7 @@ export default function Settings() {
                   <Label>Faturação Mensal (€)</Label>
                   <Input
                     type="number"
-                    value={targets.targetRevenue}
+                    value={targets.targetRevenue || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -506,6 +506,7 @@ export default function Settings() {
                         targetRevenue: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -514,7 +515,7 @@ export default function Settings() {
                   <Label>NPS</Label>
                   <Input
                     type="number"
-                    value={targets.targetNPS}
+                    value={targets.targetNPS || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -522,6 +523,7 @@ export default function Settings() {
                         targetNPS: parseInt(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -530,7 +532,7 @@ export default function Settings() {
                   <Label>Alinhadores (Min)</Label>
                   <Input
                     type="number"
-                    value={targets.targetAlignersRange.min}
+                    value={targets.targetAlignersRange.min || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -541,6 +543,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -549,7 +552,7 @@ export default function Settings() {
                   <Label>Alinhadores (Max)</Label>
                   <Input
                     type="number"
-                    value={targets.targetAlignersRange.max}
+                    value={targets.targetAlignersRange.max || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -560,6 +563,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -568,7 +572,7 @@ export default function Settings() {
                   <Label>Ticket Médio (€)</Label>
                   <Input
                     type="number"
-                    value={targets.targetAvgTicket}
+                    value={targets.targetAvgTicket || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -576,6 +580,7 @@ export default function Settings() {
                         targetAvgTicket: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -584,7 +589,7 @@ export default function Settings() {
                   <Label>Taxa de Aceitação (%)</Label>
                   <Input
                     type="number"
-                    value={targets.targetAcceptanceRate}
+                    value={targets.targetAcceptanceRate || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -592,6 +597,7 @@ export default function Settings() {
                         targetAcceptanceRate: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -600,7 +606,7 @@ export default function Settings() {
                   <Label>Taxa de Ocupação (%)</Label>
                   <Input
                     type="number"
-                    value={targets.targetOccupancyRate}
+                    value={targets.targetOccupancyRate || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -608,6 +614,7 @@ export default function Settings() {
                         targetOccupancyRate: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -616,7 +623,7 @@ export default function Settings() {
                   <Label>Faturação por Gabinete (€)</Label>
                   <Input
                     type="number"
-                    value={targets.targetRevenuePerCabinet}
+                    value={targets.targetRevenuePerCabinet || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -624,6 +631,7 @@ export default function Settings() {
                         targetRevenuePerCabinet: parseFloat(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -632,7 +640,7 @@ export default function Settings() {
                   <Label>Leads (Min)</Label>
                   <Input
                     type="number"
-                    value={targets.targetLeadsRange.min}
+                    value={targets.targetLeadsRange.min || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -643,6 +651,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -651,7 +660,7 @@ export default function Settings() {
                   <Label>Leads (Max)</Label>
                   <Input
                     type="number"
-                    value={targets.targetLeadsRange.max}
+                    value={targets.targetLeadsRange.max || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -662,6 +671,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -670,7 +680,7 @@ export default function Settings() {
                   <Label>Planos Adultos</Label>
                   <Input
                     type="number"
-                    value={targets.targetPlansPresented.adults}
+                    value={targets.targetPlansPresented.adults || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -681,6 +691,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -689,7 +700,7 @@ export default function Settings() {
                   <Label>Planos Crianças</Label>
                   <Input
                     type="number"
-                    value={targets.targetPlansPresented.kids}
+                    value={targets.targetPlansPresented.kids || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -700,6 +711,7 @@ export default function Settings() {
                         },
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -708,7 +720,7 @@ export default function Settings() {
                   <Label>Tempo de Espera (min)</Label>
                   <Input
                     type="number"
-                    value={targets.targetWaitTime}
+                    value={targets.targetWaitTime || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -716,6 +728,7 @@ export default function Settings() {
                         targetWaitTime: parseInt(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
@@ -724,7 +737,7 @@ export default function Settings() {
                   <Label>Reclamações (max)</Label>
                   <Input
                     type="number"
-                    value={targets.targetComplaints}
+                    value={targets.targetComplaints || ''}
                     onFocus={handleNumberFocus}
                     onChange={(e) =>
                       setTargets({
@@ -732,6 +745,7 @@ export default function Settings() {
                         targetComplaints: parseInt(e.target.value) || 0,
                       })
                     }
+                    placeholder="0"
                     disabled={!canEditTargets}
                   />
                 </div>
