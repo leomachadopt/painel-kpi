@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -87,6 +87,9 @@ export default function Settings() {
   })
   const [saving, setSaving] = useState(false)
 
+  // Track the last synced targets to detect when API data arrives
+  const lastSyncedTargetsRef = useRef<any>(null)
+
   // Sync config state when clinic changes
   useEffect(() => {
     if (clinic?.configuration) {
@@ -101,10 +104,17 @@ export default function Settings() {
     }
   }, [clinic?.id, selectedMonth, selectedYear, loadMonthlyTargets])
 
-  // Sync targets when month/year/clinic changes
+  // Sync targets when monthlyTargets changes from the store
+  // This happens after loadMonthlyTargets completes or when switching month/year/clinic
   useEffect(() => {
     if (monthlyTargets) {
-      setTargets(monthlyTargets)
+      // Check if this is actually new data (different from last synced)
+      const isDifferent = JSON.stringify(lastSyncedTargetsRef.current) !== JSON.stringify(monthlyTargets)
+
+      if (isDifferent) {
+        setTargets(monthlyTargets)
+        lastSyncedTargetsRef.current = monthlyTargets
+      }
     }
   }, [monthlyTargets])
 
