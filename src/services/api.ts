@@ -377,6 +377,20 @@ export const marketingApi = {
   },
 }
 
+export const targetsApi = {
+  get: (clinicId: string, year: number, month: number) =>
+    apiCall<any>(`/targets/${clinicId}/${year}/${month}`),
+
+  getAll: (clinicId: string) =>
+    apiCall<any[]>(`/targets/${clinicId}`),
+
+  update: (clinicId: string, year: number, month: number, targets: any) =>
+    apiCall<{ message: string }>(`/targets/${clinicId}/${year}/${month}`, {
+      method: 'PUT',
+      body: JSON.stringify(targets),
+    }),
+}
+
 export default {
   auth: authApi,
   clinics: clinicsApi,
@@ -385,4 +399,5 @@ export default {
   patients: patientsApi,
   config: configApi,
   marketing: marketingApi,
+  targets: targetsApi,
 }

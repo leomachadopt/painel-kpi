@@ -406,25 +406,33 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const updateMonthlyTargets = async (targets: MonthlyTargets) => {
-    // Update local state
-    setMonthlyTargets((prev) => {
-      const clinicTargets = prev[targets.clinicId] || []
-      const existingIndex = clinicTargets.findIndex(
-        (t) => t.month === targets.month && t.year === targets.year,
-      )
-      
-      let newTargets = [...clinicTargets]
-      if (existingIndex >= 0) {
-        newTargets[existingIndex] = targets
-      } else {
-        newTargets.push(targets)
-      }
-      
-      return { ...prev, [targets.clinicId]: newTargets }
-    })
+    try {
+      // Save to API
+      await api.targets.update(targets.clinicId, targets.year, targets.month, targets)
 
-    // TODO: Save to API when backend is ready
-    toast.success('Metas atualizadas com sucesso')
+      // Update local state
+      setMonthlyTargets((prev) => {
+        const clinicTargets = prev[targets.clinicId] || []
+        const existingIndex = clinicTargets.findIndex(
+          (t) => t.month === targets.month && t.year === targets.year,
+        )
+
+        let newTargets = [...clinicTargets]
+        if (existingIndex >= 0) {
+          newTargets[existingIndex] = targets
+        } else {
+          newTargets.push(targets)
+        }
+
+        return { ...prev, [targets.clinicId]: newTargets }
+      })
+
+      toast.success('Metas atualizadas com sucesso')
+    } catch (error: any) {
+      console.error('Error saving targets:', error)
+      toast.error(error.message || 'Erro ao guardar metas')
+      throw error
+    }
   }
 
   const getMonthlyData = (clinicId: string, month: number, year: number) => {
