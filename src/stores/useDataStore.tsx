@@ -18,6 +18,7 @@ import { MOCK_CLINICS, MOCK_DATA } from '@/lib/mockData'
 import { getMonth, getYear, parseISO } from 'date-fns'
 import { clinicsApi, dailyEntriesApi, patientsApi } from '@/services/api'
 import { toast } from 'sonner'
+import { useAuth } from './useAuthStore'
 
 interface DataState {
   clinics: Clinic[]
@@ -72,6 +73,7 @@ interface DataState {
 const DataContext = createContext<DataState | null>(null)
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth()
   const [clinics, setClinics] = useState<Clinic[]>([])
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] =
@@ -101,8 +103,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     Record<string, DailySourceEntry[]>
   >({})
 
-  // Load clinics from API on mount
+  // Load clinics from API on mount (only if authenticated)
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const loadClinics = async () => {
       try {
         const data = await clinicsApi.getAll()
@@ -116,7 +123,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     loadClinics()
-  }, [])
+  }, [isAuthenticated])
 
   const aggregateDailyToMonthly = (
     clinic: Clinic,
@@ -269,7 +276,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Load daily entries once clinics are known (backend source of truth)
+  // Only load if user is authenticated
   useEffect(() => {
+    if (!isAuthenticated) return
     if (dailyEntriesLoaded) return
     if (clinics.length === 0) return
 
@@ -282,7 +291,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         // Keep local mock entries as fallback
       }
     })()
-  }, [clinics, dailyEntriesLoaded])
+  }, [clinics, dailyEntriesLoaded, isAuthenticated])
 
   // Aggregate daily entries into monthly data after loading
   useEffect(() => {
