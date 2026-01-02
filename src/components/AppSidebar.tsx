@@ -11,6 +11,7 @@ import {
   FileText,
   Users,
   UserCog,
+  Star,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -171,6 +172,21 @@ export function AppSidebar() {
                     <Link to={`/pacientes/${activeClinicId}`}>
                       <Users />
                       <span>Pacientes</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && user?.role === 'GESTOR_CLINICA' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="NPS"
+                    isActive={location.pathname.includes('/nps')}
+                  >
+                    <Link to={`/nps/${activeClinicId}`}>
+                      <Star />
+                      <span>NPS</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

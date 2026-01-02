@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
         target_leads_min, target_leads_max, target_revenue_per_cabinet,
         target_plans_presented_adults, target_plans_presented_kids,
         target_agenda_operational, target_agenda_planning,
-        target_agenda_sales, target_agenda_leadership
+        target_agenda_sales, target_agenda_leadership, nps_question
       FROM clinics
       WHERE active = true
       ORDER BY name
@@ -82,6 +82,7 @@ router.get('/', async (req, res) => {
             sales: parseFloat(clinic.target_agenda_sales),
             leadership: parseFloat(clinic.target_agenda_leadership),
           },
+          npsQuestion: clinic.nps_question,
           configuration: {
             categories: categories.rows.map((r) => ({ id: r.id, name: r.name })),
             cabinets: cabinets.rows.map((r) => ({
@@ -423,6 +424,31 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Delete clinic error:', error)
     res.status(500).json({ error: 'Failed to delete clinic' })
+  }
+})
+
+// Update clinic (e.g., nps_question)
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { npsQuestion } = req.body
+
+    // Only GESTOR can update their own clinic
+    if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== id) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    if (npsQuestion !== undefined) {
+      await query(
+        `UPDATE clinics SET nps_question = $1, last_update = NOW() WHERE id = $2`,
+        [npsQuestion, id]
+      )
+    }
+
+    res.json({ message: 'Clinic updated successfully' })
+  } catch (error) {
+    console.error('Update clinic error:', error)
+    res.status(500).json({ error: 'Failed to update clinic' })
   }
 })
 

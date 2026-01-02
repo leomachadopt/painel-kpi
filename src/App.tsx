@@ -11,6 +11,8 @@ import Reports from '@/pages/Reports'
 import Patients from '@/pages/Patients'
 import Profile from '@/pages/Profile'
 import Collaborators from '@/pages/Collaborators'
+import NPSManagement from '@/pages/NPSManagement'
+import NPSSurvey from '@/pages/NPSSurvey'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -28,6 +30,9 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
 
+            {/* Public NPS Survey Route (no authentication) */}
+            <Route path="/survey/:token" element={<NPSSurvey />} />
+
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/clinicas" element={<Clinics />} />
@@ -35,6 +40,7 @@ const App = () => (
               <Route path="/lancamentos/:clinicId" element={<Inputs />} />
               <Route path="/relatorios/:clinicId" element={<Reports />} />
               <Route path="/pacientes/:clinicId" element={<Patients />} />
+              <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/colaboradores" element={<Collaborators />} />
               <Route path="/perfil" element={<Profile />} />

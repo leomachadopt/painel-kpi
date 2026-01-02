@@ -17,6 +17,8 @@ import adminRoutes from './routes/admin.js'
 import targetsRoutes from './routes/targets.js'
 import collaboratorsRoutes from './routes/collaborators.js'
 import auditLogsRoutes from './routes/auditLogs.js'
+import npsRoutes from './routes/nps.js'
+import npsPublicRoutes from './routes/npsPublic.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -125,6 +127,10 @@ export function createApp() {
   app.use('/api/targets', targetsRoutes)
   app.use('/api/collaborators', collaboratorsRoutes)
   app.use('/api/audit-logs', auditLogsRoutes)
+  app.use('/api/nps', npsRoutes)
+
+  // Public routes (no authentication required)
+  app.use('/api/public/nps', npsPublicRoutes)
 
   // Health check
   app.get('/api/health', (_req, res) => {

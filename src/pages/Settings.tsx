@@ -63,6 +63,7 @@ export default function Settings() {
   const canEditTargets = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
 
   const [config, setConfig] = useState(clinic?.configuration)
+  const [npsQuestion, setNpsQuestion] = useState(clinic?.npsQuestion || 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?')
   const [targets, setTargets] = useState(() => monthlyTargets || {
     targetRevenue: 0,
     targetAlignersRange: { min: 0, max: 0 },
@@ -94,6 +95,9 @@ export default function Settings() {
   useEffect(() => {
     if (clinic?.configuration) {
       setConfig(clinic.configuration)
+    }
+    if (clinic?.npsQuestion !== undefined) {
+      setNpsQuestion(clinic.npsQuestion)
     }
   }, [clinic])
 
@@ -128,6 +132,19 @@ export default function Settings() {
       toast.success('Configurações guardadas com sucesso!')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao guardar configurações')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveNPSQuestion = async () => {
+    if (!clinic) return
+    setSaving(true)
+    try {
+      await clinicsApi.update(clinic.id, { npsQuestion })
+      toast.success('Pergunta de NPS atualizada com sucesso!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar pergunta de NPS')
     } finally {
       setSaving(false)
     }
@@ -357,6 +374,7 @@ export default function Settings() {
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
           <TabsTrigger value="targets">Metas</TabsTrigger>
+          <TabsTrigger value="nps">NPS</TabsTrigger>
           <TabsTrigger value="marketing">Marketing</TabsTrigger>
         </TabsList>
 
@@ -772,6 +790,47 @@ export default function Settings() {
                     Guardar Metas
                   </Button>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="nps" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pergunta de NPS</CardTitle>
+              <CardDescription>
+                Personalize a pergunta que os pacientes verão ao avaliar sua clínica.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="npsQuestion">Pergunta personalizada</Label>
+                <Input
+                  id="npsQuestion"
+                  value={npsQuestion}
+                  onChange={(e) => setNpsQuestion(e.target.value)}
+                  placeholder="Gostaríamos de saber o quanto você recomendaria nossa clínica..."
+                  disabled={!canManageConfig}
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {npsQuestion.length}/200 caracteres
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Esta pergunta aparecerá no topo da página de avaliação NPS enviada aos pacientes.
+                </p>
+              </div>
+
+              {canManageConfig && (
+                <Button onClick={handleSaveNPSQuestion} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Guardar Pergunta
+                </Button>
               )}
             </CardContent>
           </Card>

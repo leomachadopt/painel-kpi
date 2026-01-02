@@ -128,6 +128,12 @@ export const clinicsApi = {
       method: 'DELETE',
     }),
 
+  update: (clinicId: string, data: any) =>
+    apiCall<{ message: string }>(`/clinics/${clinicId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   updateTargets: (clinicId: string, targets: any) =>
     apiCall<{ message: string }>(`/clinics/${clinicId}/targets`, {
       method: 'PUT',
