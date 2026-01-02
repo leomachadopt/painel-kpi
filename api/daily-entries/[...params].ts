@@ -5,7 +5,6 @@ let appInstance: ReturnType<typeof createApp> | null = null
 
 function getApp() {
   if (!appInstance) {
-    console.log('[Vercel daily-entries] Creating Express app')
     appInstance = createApp()
   }
   return appInstance
@@ -15,20 +14,25 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     const app = getApp()
     const originalUrl = req.url || '/'
+    let finalUrl = originalUrl
 
-    // Construir a URL completa: /api/daily-entries/...
-    let finalUrl = `/api/daily-entries${originalUrl}`
+    if (!finalUrl.startsWith('/api/daily-entries')) {
+      if (finalUrl.startsWith('/daily-entries')) {
+        finalUrl = `/api${finalUrl}`
+      } else {
+        finalUrl = `/api/daily-entries${finalUrl.startsWith('/') ? '' : '/'}${finalUrl}`
+      }
+    }
+
+    console.log(`[daily-entries] ${req.method} ${originalUrl} -> ${finalUrl}`)
 
     const originalUrlProp = req.url
     req.url = finalUrl
-
-    console.log(`[daily-entries] ${req.method} ${finalUrl}`)
 
     return new Promise<void>((resolve, reject) => {
       const errorHandler = (err: any) => {
         console.error('[daily-entries] Error:', err)
         req.url = originalUrlProp
-
         if (!res.headersSent) {
           res.statusCode = 500
           res.setHeader('Content-Type', 'application/json')
@@ -51,13 +55,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     })
   } catch (error: any) {
     console.error('[daily-entries] Fatal error:', error)
-
     if (!res.headersSent) {
       res.statusCode = 500
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({ error: 'Server error', message: error.message }))
     }
-
     throw error
   }
 }
