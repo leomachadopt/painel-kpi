@@ -26,9 +26,10 @@ const schema = z.object({
   planCreatedAt: z.string().optional(),
   planPresented: z.boolean(),
   planPresentedAt: z.string().optional(),
+  planPresentedValue: z.coerce.number().min(0).optional(),
   planAccepted: z.boolean(),
   planAcceptedAt: z.string().optional(),
-  planValue: z.coerce.number().min(0),
+  planValue: z.coerce.number().min(0).optional(),
 })
 
 export function DailyConsultations({ clinic }: { clinic: Clinic }) {
@@ -46,6 +47,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       planCreatedAt: '',
       planPresented: false,
       planPresentedAt: '',
+      planPresentedValue: 0,
       planAccepted: false,
       planAcceptedAt: '',
       planValue: 0,
@@ -83,6 +85,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             planCreatedAt: toDateInput(entry.planCreatedAt),
             planPresented: !!entry.planPresented,
             planPresentedAt: toDateInput(entry.planPresentedAt),
+            planPresentedValue: entry.planPresentedValue ?? 0,
             planAccepted: !!entry.planAccepted,
             planAcceptedAt: toDateInput(entry.planAcceptedAt),
             planValue: entry.planValue ?? 0,
@@ -98,6 +101,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             form.setValue('planCreatedAt', '')
             form.setValue('planPresented', false)
             form.setValue('planPresentedAt', '')
+            form.setValue('planPresentedValue', 0)
             form.setValue('planAccepted', false)
             form.setValue('planAcceptedAt', '')
             form.setValue('planValue', 0)
@@ -123,9 +127,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planCreatedAt: data.planCreated ? data.planCreatedAt || null : null,
         planPresented: data.planPresented,
         planPresentedAt: data.planPresented ? data.planPresentedAt || null : null,
+        planPresentedValue: data.planPresentedValue ?? 0,
         planAccepted: data.planAccepted,
         planAcceptedAt: data.planAccepted ? data.planAcceptedAt || null : null,
-        planValue: data.planValue,
+        planValue: data.planValue ?? 0,
       })
       toast.success('1.ª consulta guardada!')
       setLoadedCode(null)
@@ -137,6 +142,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planCreatedAt: '',
         planPresented: false,
         planPresentedAt: '',
+        planPresentedValue: 0,
         planAccepted: false,
         planAcceptedAt: '',
         planValue: 0,
@@ -213,20 +219,41 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
                   </FormControl>
                 </FormItem>
                 {form.watch('planCreated') && (
-                  <FormField
-                    control={form.control}
-                    name="planCreatedAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs text-muted-foreground">
-                          Data de criação do plano
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="planCreatedAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Data de criação do plano
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="planPresentedValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Valor previsto do plano (€)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
               </div>
             )}
@@ -281,43 +308,46 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
                   </FormControl>
                 </FormItem>
                 {form.watch('planAccepted') && (
-                  <FormField
-                    control={form.control}
-                    name="planAcceptedAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs text-muted-foreground">
-                          Data de aceite do plano
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="planAcceptedAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Data de aceite do plano
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="planValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Valor final do plano aceite (€)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </>
                 )}
               </div>
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="planValue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor do Plano (€)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  {...field}
-                  onFocus={(e) => e.target.select()}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
 
         <Button type="submit" className="w-full">
           Lançar Consulta

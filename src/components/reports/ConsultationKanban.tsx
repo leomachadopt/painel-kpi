@@ -113,7 +113,7 @@ export function ConsultationKanban({
                     )}
 
                     {/* Plan Value */}
-                    {entry.planValue > 0 && (
+                    {entry.planAccepted && entry.planValue && entry.planValue > 0 ? (
                       <div className="flex items-center gap-1 text-sm font-semibold text-emerald-700 pt-1 border-t">
                         <Euro className="h-3.5 w-3.5" />
                         <span>
@@ -123,7 +123,18 @@ export function ConsultationKanban({
                           }).format(entry.planValue)}
                         </span>
                       </div>
-                    )}
+                    ) : entry.planPresentedValue && entry.planPresentedValue > 0 ? (
+                      <div className="flex items-center gap-1 text-sm font-semibold text-blue-700 pt-1 border-t">
+                        <Euro className="h-3.5 w-3.5" />
+                        <span>
+                          {new Intl.NumberFormat('pt-PT', {
+                            style: 'currency',
+                            currency: 'EUR',
+                          }).format(entry.planPresentedValue)}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-normal">(previsto)</span>
+                      </div>
+                    ) : null}
                   </div>
                 </Card>
               ))

@@ -115,9 +115,10 @@ router.get('/consultation/:clinicId', async (req, res) => {
         planCreatedAt: row.plan_created_at,
         planPresented: row.plan_presented,
         planPresentedAt: row.plan_presented_at,
+        planPresentedValue: row.plan_presented_value ? parseFloat(row.plan_presented_value) : 0,
         planAccepted: row.plan_accepted,
         planAcceptedAt: row.plan_accepted_at,
-        planValue: parseFloat(row.plan_value),
+        planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
       }))
     )
   } catch (error) {
@@ -154,9 +155,10 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       planCreatedAt: row.plan_created_at,
       planPresented: row.plan_presented,
       planPresentedAt: row.plan_presented_at,
+      planPresentedValue: row.plan_presented_value ? parseFloat(row.plan_presented_value) : 0,
       planAccepted: row.plan_accepted,
       planAcceptedAt: row.plan_accepted_at,
-      planValue: parseFloat(row.plan_value),
+      planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
     })
   } catch (error) {
     console.error('Get consultation by code error:', error)
@@ -175,6 +177,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
       planCreatedAt,
       planPresented,
       planPresentedAt,
+      planPresentedValue,
       planAccepted,
       planAcceptedAt,
       planValue,
@@ -190,14 +193,14 @@ router.post('/consultation/:clinicId', async (req, res) => {
       `INSERT INTO daily_consultation_entries
        (id, clinic_id, date, patient_name, code,
         plan_created, plan_created_at,
-        plan_presented, plan_presented_at,
+        plan_presented, plan_presented_at, plan_presented_value,
         plan_accepted, plan_accepted_at,
         plan_value)
        VALUES ($1, $2, $3, $4, $5,
         $6, $7,
-        $8, $9,
-        $10, $11,
-        $12)
+        $8, $9, $10,
+        $11, $12,
+        $13)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
@@ -205,6 +208,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
         plan_created_at = EXCLUDED.plan_created_at,
         plan_presented = EXCLUDED.plan_presented,
         plan_presented_at = EXCLUDED.plan_presented_at,
+        plan_presented_value = EXCLUDED.plan_presented_value,
         plan_accepted = EXCLUDED.plan_accepted,
         plan_accepted_at = EXCLUDED.plan_accepted_at,
         plan_value = EXCLUDED.plan_value
@@ -219,9 +223,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
         planCreatedAt || null,
         planPresented,
         planPresentedAt || null,
+        planPresentedValue || 0,
         planAccepted,
         planAcceptedAt || null,
-        planValue,
+        planValue || 0,
       ]
     )
 
@@ -234,9 +239,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
       planCreatedAt: result.rows[0].plan_created_at,
       planPresented: result.rows[0].plan_presented,
       planPresentedAt: result.rows[0].plan_presented_at,
+      planPresentedValue: result.rows[0].plan_presented_value ? parseFloat(result.rows[0].plan_presented_value) : 0,
       planAccepted: result.rows[0].plan_accepted,
       planAcceptedAt: result.rows[0].plan_accepted_at,
-      planValue: parseFloat(result.rows[0].plan_value),
+      planValue: result.rows[0].plan_value ? parseFloat(result.rows[0].plan_value) : 0,
     })
   } catch (error: any) {
     console.error('Create consultation entry error:', error)

@@ -250,7 +250,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Comercial & Vendas</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
+            {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
               <KPICard key={kpi.id} kpi={kpi} />
             ))}
           </div>

@@ -33,7 +33,8 @@ export function ConsultationTable({
             <TableHead className="text-center">Plano Criado</TableHead>
             <TableHead className="text-center">Apresentado</TableHead>
             <TableHead className="text-center">Aceite</TableHead>
-            <TableHead className="text-right">Valor Plano</TableHead>
+            <TableHead className="text-right">Valor Previsto</TableHead>
+            <TableHead className="text-right">Valor Aceite</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -65,7 +66,15 @@ export function ConsultationTable({
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  {entry.planValue > 0
+                  {entry.planPresentedValue && entry.planPresentedValue > 0
+                    ? new Intl.NumberFormat('pt-PT', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      }).format(entry.planPresentedValue)
+                    : '-'}
+                </TableCell>
+                <TableCell className="text-right">
+                  {entry.planValue && entry.planValue > 0
                     ? new Intl.NumberFormat('pt-PT', {
                         style: 'currency',
                         currency: 'EUR',
@@ -76,7 +85,7 @@ export function ConsultationTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
+              <TableCell colSpan={8} className="h-24 text-center">
                 Nenhuma consulta registada no período.
               </TableCell>
             </TableRow>

@@ -113,7 +113,10 @@ export interface MonthlyData {
   // Clinical/Commercial
   plansPresentedAdults: number
   plansPresentedKids: number
+  plansCreated: number
+  plansCreatedTotalValue: number
   plansAccepted: number
+  plansAcceptedTotalValue: number
   alignersStarted: number
   appointmentsIntegrated: number
   appointmentsTotal: number
@@ -171,9 +174,10 @@ export interface DailyConsultationEntry {
   planCreatedAt?: string | null
   planPresented: boolean
   planPresentedAt?: string | null
+  planPresentedValue?: number
   planAccepted: boolean
   planAcceptedAt?: string | null
-  planValue: number
+  planValue?: number
 }
 
 export interface DailyProspectingEntry {

@@ -157,7 +157,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       cabinets: [],
       plansPresentedAdults: 0,
       plansPresentedKids: 0,
+      plansCreated: 0,
+      plansCreatedTotalValue: 0,
       plansAccepted: 0,
+      plansAcceptedTotalValue: 0,
       alignersStarted: 0,
       appointmentsIntegrated: 0,
       appointmentsTotal: 0,
@@ -249,6 +252,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (entry.stage === 'aligners_started') data.alignersStarted++
       if (entry.stage === 'not_accepted') data.plansNotAccepted++
       if (entry.stage === 'follow_up') data.plansNotAcceptedFollowUp++
+
+      // Track plan values
+      if (entry.planCreated && entry.planPresentedValue && entry.planPresentedValue > 0) {
+        data.plansCreated++
+        data.plansCreatedTotalValue += entry.planPresentedValue
+      }
+      if (entry.planAccepted && entry.planValue && entry.planValue > 0) {
+        data.plansAcceptedTotalValue += entry.planValue
+      }
     })
 
     // Process prospecting entries
@@ -1353,7 +1365,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       target: `${targets.targetAlignersRange.min}-${targets.targetAlignersRange.max}`,
     })
 
-    // ===== COMERCIAL/VENDAS (4 KPIs) =====
+    // ===== COMERCIAL/VENDAS (6 KPIs) =====
     const plansPresentedTotal = current.plansPresentedAdults + current.plansPresentedKids
     const acceptanceRate = plansPresentedTotal > 0
       ? (current.plansAccepted / plansPresentedTotal) * 100
@@ -1388,6 +1400,38 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         ? 'warning'
         : 'danger',
       target: targets.targetPlansPresented.adults + targets.targetPlansPresented.kids,
+    })
+
+    const avgTicketCreated = current.plansCreated > 0
+      ? current.plansCreatedTotalValue / current.plansCreated
+      : 0
+    const prevAvgTicketCreated = previous && previous.plansCreated > 0
+      ? previous.plansCreatedTotalValue / previous.plansCreated
+      : 0
+    kpis.push({
+      id: 'avg_ticket_created',
+      name: 'Ticket Médio - Planos Criados',
+      value: avgTicketCreated,
+      unit: 'currency',
+      change: calcChange(avgTicketCreated, prevAvgTicketCreated),
+      status: getStatus(avgTicketCreated, targets.targetAvgTicket),
+      target: targets.targetAvgTicket,
+    })
+
+    const avgTicketAccepted = current.plansAccepted > 0
+      ? current.plansAcceptedTotalValue / current.plansAccepted
+      : 0
+    const prevAvgTicketAccepted = previous && previous.plansAccepted > 0
+      ? previous.plansAcceptedTotalValue / previous.plansAccepted
+      : 0
+    kpis.push({
+      id: 'avg_ticket_accepted',
+      name: 'Ticket Médio - Planos Aceites',
+      value: avgTicketAccepted,
+      unit: 'currency',
+      change: calcChange(avgTicketAccepted, prevAvgTicketAccepted),
+      status: getStatus(avgTicketAccepted, targets.targetAvgTicket),
+      target: targets.targetAvgTicket,
     })
 
     const conversionRate = current.leads > 0
