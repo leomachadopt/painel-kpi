@@ -25,6 +25,178 @@ import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
 import { MONTHS } from '@/lib/types'
 
+const ListEditor = ({
+  title,
+  items,
+  onUpdate,
+  readOnly = false,
+}: {
+  title: string
+  items: { id: string; name: string; standardHours?: number }[]
+  onUpdate: (items: any[]) => void
+  readOnly?: boolean
+}) => {
+  const [newItem, setNewItem] = useState('')
+  const [newHours, setNewHours] = useState('8')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editHours, setEditHours] = useState('')
+
+  const add = () => {
+    if (!newItem) return
+    const entry: any = { id: Math.random().toString(36), name: newItem }
+    if (title === 'Gabinetes') entry.standardHours = parseFloat(newHours)
+    onUpdate([...items, entry])
+    setNewItem('')
+    setNewHours('8')
+  }
+
+  const remove = (id: string) => {
+    const item = items.find((i) => i.id === id)
+    // Protect hard-coded "Referência" source from deletion
+    if (item?.name === 'Referência' && title === 'Fonte') {
+      toast.error('A fonte "Referência" não pode ser excluída')
+      return
+    }
+    onUpdate(items.filter((i) => i.id !== id))
+  }
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+    setEditHours(item.standardHours?.toString() || '8')
+  }
+
+  const saveEdit = (id: string) => {
+    const updated = items.map((item) => {
+      if (item.id === id) {
+        const updatedItem: any = { ...item, name: editName }
+        if (title === 'Gabinetes') {
+          updatedItem.standardHours = parseFloat(editHours)
+        }
+        return updatedItem
+      }
+      return item
+    })
+    onUpdate(updated)
+    setEditingId(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditName('')
+    setEditHours('')
+  }
+
+  return (
+    <div className="space-y-4">
+      {!readOnly && (
+        <div className="flex gap-2">
+          <Input
+            placeholder={`Novo ${title}`}
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && add()}
+          />
+          {title === 'Gabinetes' && (
+            <Input
+              type="number"
+              placeholder="Horas"
+              className="w-24"
+              value={newHours}
+              onChange={(e) => setNewHours(e.target.value)}
+            />
+          )}
+          <Button onClick={add} size="icon">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between p-2 border rounded bg-background"
+          >
+            {editingId === item.id ? (
+              <>
+                <div className="flex gap-2 flex-1">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit(item.id)
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    autoFocus
+                  />
+                  {title === 'Gabinetes' && (
+                    <Input
+                      type="number"
+                      className="w-24"
+                      value={editHours}
+                      onChange={(e) => setEditHours(e.target.value)}
+                    />
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => saveEdit(item.id)}
+                  >
+                    <Check className="h-4 w-4 text-green-600" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={cancelEdit}
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <span>{item.name}</span>
+                  {item.standardHours && (
+                    <span className="text-muted-foreground text-sm">
+                      ({item.standardHours}h)
+                    </span>
+                  )}
+                </div>
+                {!readOnly && (
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEdit(item)}
+                      disabled={item.name === 'Referência' && title === 'Fonte'}
+                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
+                    >
+                      <Edit2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(item.id)}
+                      disabled={item.name === 'Referência' && title === 'Fonte'}
+                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { user } = useAuthStore()
   const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
@@ -34,9 +206,7 @@ export default function Settings() {
     e.target.select()
   }
 
-  const [selectedClinicId, setSelectedClinicId] = useState(
-    user?.clinicId || clinics[0]?.id || '',
-  )
+  const [selectedClinicId, setSelectedClinicId] = useState<string>('')
 
   const [selectedMonth, setSelectedMonth] = useState<string>(
     (new Date().getMonth() + 1).toString()
@@ -44,6 +214,17 @@ export default function Settings() {
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString()
   )
+
+  // Auto-select clinic when user or clinics become available
+  useEffect(() => {
+    // Only update if not already set and we have data
+    if ((!selectedClinicId || selectedClinicId === '') && clinics.length > 0) {
+      const targetClinicId = user?.clinicId || clinics[0]?.id
+      if (targetClinicId) {
+        setSelectedClinicId(targetClinicId)
+      }
+    }
+  }, [user?.clinicId, clinics.length])
 
   const clinic = clinics.find((c) => c.id === selectedClinicId)
   
@@ -57,13 +238,13 @@ export default function Settings() {
     )
   }, [clinic?.id, selectedMonth, selectedYear, getMonthlyTargets])
 
-  // Permission control: Only GESTOR can manage operational configs
-  const canManageConfig = user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id
+  // Permission control: MENTOR can manage all clinics, GESTOR can only manage their own
+  const canManageConfig = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
   // Both MENTOR and GESTOR can edit targets
   const canEditTargets = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
 
-  const [config, setConfig] = useState(clinic?.configuration)
-  const [npsQuestion, setNpsQuestion] = useState(clinic?.npsQuestion || 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?')
+  const [config, setConfig] = useState<any>(null)
+  const [npsQuestion, setNpsQuestion] = useState('')
   const [targets, setTargets] = useState(() => monthlyTargets || {
     targetRevenue: 0,
     targetAlignersRange: { min: 0, max: 0 },
@@ -93,13 +274,17 @@ export default function Settings() {
 
   // Sync config state when clinic changes
   useEffect(() => {
-    if (clinic?.configuration) {
+    if (!clinic) return
+
+    if (clinic.configuration) {
       setConfig(clinic.configuration)
     }
-    if (clinic?.npsQuestion !== undefined) {
+    if (clinic.npsQuestion !== undefined) {
       setNpsQuestion(clinic.npsQuestion)
+    } else {
+      setNpsQuestion('Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?')
     }
-  }, [clinic])
+  }, [clinic?.id])
 
   // Load targets from database when clinic/month/year changes
   useEffect(() => {
@@ -166,178 +351,6 @@ export default function Settings() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const ListEditor = ({
-    title,
-    items,
-    onUpdate,
-    readOnly = false,
-  }: {
-    title: string
-    items: { id: string; name: string; standardHours?: number }[]
-    onUpdate: (items: any[]) => void
-    readOnly?: boolean
-  }) => {
-    const [newItem, setNewItem] = useState('')
-    const [newHours, setNewHours] = useState('8')
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editName, setEditName] = useState('')
-    const [editHours, setEditHours] = useState('')
-
-    const add = () => {
-      if (!newItem) return
-      const entry: any = { id: Math.random().toString(36), name: newItem }
-      if (title === 'Gabinetes') entry.standardHours = parseFloat(newHours)
-      onUpdate([...items, entry])
-      setNewItem('')
-      setNewHours('8')
-    }
-
-    const remove = (id: string) => {
-      const item = items.find((i) => i.id === id)
-      // Protect hard-coded "Referência" source from deletion
-      if (item?.name === 'Referência' && title === 'Fonte') {
-        toast.error('A fonte "Referência" não pode ser excluída')
-        return
-      }
-      onUpdate(items.filter((i) => i.id !== id))
-    }
-
-    const startEdit = (item: any) => {
-      setEditingId(item.id)
-      setEditName(item.name)
-      setEditHours(item.standardHours?.toString() || '8')
-    }
-
-    const saveEdit = (id: string) => {
-      const updated = items.map((item) => {
-        if (item.id === id) {
-          const updatedItem: any = { ...item, name: editName }
-          if (title === 'Gabinetes') {
-            updatedItem.standardHours = parseFloat(editHours)
-          }
-          return updatedItem
-        }
-        return item
-      })
-      onUpdate(updated)
-      setEditingId(null)
-    }
-
-    const cancelEdit = () => {
-      setEditingId(null)
-      setEditName('')
-      setEditHours('')
-    }
-
-    return (
-      <div className="space-y-4">
-        {!readOnly && (
-          <div className="flex gap-2">
-            <Input
-              placeholder={`Novo ${title}`}
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && add()}
-            />
-            {title === 'Gabinetes' && (
-              <Input
-                type="number"
-                placeholder="Horas"
-                className="w-24"
-                value={newHours}
-                onChange={(e) => setNewHours(e.target.value)}
-              />
-            )}
-            <Button onClick={add} size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-2 border rounded bg-background"
-            >
-              {editingId === item.id ? (
-                <>
-                  <div className="flex gap-2 flex-1">
-                    <Input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveEdit(item.id)
-                        if (e.key === 'Escape') cancelEdit()
-                      }}
-                      autoFocus
-                    />
-                    {title === 'Gabinetes' && (
-                      <Input
-                        type="number"
-                        className="w-24"
-                        value={editHours}
-                        onChange={(e) => setEditHours(e.target.value)}
-                      />
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => saveEdit(item.id)}
-                    >
-                      <Check className="h-4 w-4 text-green-600" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={cancelEdit}
-                    >
-                      <X className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex gap-2">
-                    <span>{item.name}</span>
-                    {item.standardHours && (
-                      <span className="text-muted-foreground text-sm">
-                        ({item.standardHours}h)
-                      </span>
-                    )}
-                  </div>
-                  {!readOnly && (
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => startEdit(item)}
-                        disabled={item.name === 'Referência' && title === 'Fonte'}
-                        title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
-                      >
-                        <Edit2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => remove(item.id)}
-                        disabled={item.name === 'Referência' && title === 'Fonte'}
-                        title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    )
   }
 
   return (
