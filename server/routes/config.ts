@@ -64,6 +64,15 @@ router.put('/:clinicId', async (req, res) => {
     // Upsert sources
     if (sources && sources.length > 0) {
       console.log('📝 Upserting sources:', sources.length)
+
+      // Validate that "Referência" source is always present (hard-coded protection)
+      const hasReferencia = sources.some((s: any) => s.name === 'Referência')
+      if (!hasReferencia) {
+        return res.status(400).json({
+          error: 'A fonte "Referência" é obrigatória e não pode ser removida'
+        })
+      }
+
       for (const source of sources) {
         await query(
           `INSERT INTO clinic_sources (id, clinic_id, name)

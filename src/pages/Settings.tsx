@@ -195,6 +195,12 @@ export default function Settings() {
     }
 
     const remove = (id: string) => {
+      const item = items.find((i) => i.id === id)
+      // Protect hard-coded "Referência" source from deletion
+      if (item?.name === 'Referência' && title === 'Fonte') {
+        toast.error('A fonte "Referência" não pode ser excluída')
+        return
+      }
       onUpdate(items.filter((i) => i.id !== id))
     }
 
@@ -309,6 +315,8 @@ export default function Settings() {
                         variant="ghost"
                         size="icon"
                         onClick={() => startEdit(item)}
+                        disabled={item.name === 'Referência' && title === 'Fonte'}
+                        title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
                       >
                         <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
@@ -316,6 +324,8 @@ export default function Settings() {
                         variant="ghost"
                         size="icon"
                         onClick={() => remove(item.id)}
+                        disabled={item.name === 'Referência' && title === 'Fonte'}
+                        title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

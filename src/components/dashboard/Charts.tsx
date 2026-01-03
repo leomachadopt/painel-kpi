@@ -23,7 +23,7 @@ import {
   ChartConfig,
 } from '@/components/ui/chart'
 import { MonthlyData } from '@/lib/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 // --- Revenue Breakdown Chart ---
 export function RevenueChart({ data }: { data: MonthlyData }) {
@@ -314,12 +314,8 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5) // Top 5
 
-  const chartConfig = {
-    value: {
-      label: 'Pacientes',
-      color: 'hsl(var(--primary))',
-    },
-  } satisfies ChartConfig
+  const total = chartData.reduce((sum, item) => sum + item.value, 0)
+  const hasData = total > 0
 
   return (
     <Card>
@@ -327,24 +323,39 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
         <CardTitle>Top Fontes</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-xs text-muted-foreground mb-4">
-          Registos: {data.entryCounts?.sources || 0}
+        <div className="text-sm font-medium text-muted-foreground mb-4">
+          Total de pacientes: {total}
         </div>
-        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 40 }}>
-            <CartesianGrid horizontal={false} />
-            <YAxis
-              dataKey="name"
-              type="category"
-              tickLine={false}
-              axisLine={false}
-              width={80}
-            />
-            <XAxis dataKey="value" type="number" hide />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill="hsl(var(--chart-3))" radius={4} />
-          </BarChart>
-        </ChartContainer>
+        {hasData ? (
+          <div className="space-y-3">
+            {chartData.map((item, index) => {
+              const percentage = ((item.value / total) * 100).toFixed(1)
+              return (
+                <div key={item.name} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-muted-foreground">
+                      {item.value} ({percentage}%)
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full transition-all rounded-full"
+                      style={{
+                        width: `${percentage}%`,
+                        backgroundColor: `hsl(var(--chart-${(index % 5) + 1}))`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            Nenhum registo de fonte neste período
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -490,6 +501,71 @@ export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
             <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ChartContainer>
+      </CardContent>
+    </Card>
+  )
+}
+
+// --- Top Referrers Chart (Ranking de Pacientes que Mais Indicaram) ---
+export function TopReferrersChart({ sourceEntries }: { sourceEntries: any[] }) {
+  // Count referrals by patient
+  const referralCounts: Record<string, { name: string; code: string; count: number }> = {}
+
+  sourceEntries.forEach((entry) => {
+    if (entry.isReferral && entry.referralName && entry.referralCode) {
+      const key = `${entry.referralCode}-${entry.referralName}`
+      if (!referralCounts[key]) {
+        referralCounts[key] = {
+          name: entry.referralName,
+          code: entry.referralCode,
+          count: 0,
+        }
+      }
+      referralCounts[key].count += 1
+    }
+  })
+
+  // Convert to array and sort
+  const topReferrers = Object.values(referralCounts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10) // Top 10
+
+  const hasData = topReferrers.length > 0
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Top Referenciadores</CardTitle>
+        <CardDescription>Pacientes que mais indicaram novos pacientes</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {hasData ? (
+          <div className="space-y-3">
+            {topReferrers.map((referrer, index) => (
+              <div key={`${referrer.code}-${referrer.name}`} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">{referrer.name}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{referrer.code}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-primary">{referrer.count}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {referrer.count === 1 ? 'indicação' : 'indicações'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            Nenhuma referência neste período
+          </div>
+        )}
       </CardContent>
     </Card>
   )

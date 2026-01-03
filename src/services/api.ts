@@ -236,6 +236,9 @@ export const dailyEntriesApi = {
 
   // Prospecting
   prospecting: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/daily-entries/prospecting/${clinicId}`),
+
     getByDate: (clinicId: string, date: string) =>
       apiCall<any>(`/daily-entries/prospecting/${clinicId}/${date}`),
 
@@ -243,6 +246,11 @@ export const dailyEntriesApi = {
       apiCall<any>(`/daily-entries/prospecting/${clinicId}`, {
         method: 'POST',
         body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/prospecting/${clinicId}/${entryId}`, {
+        method: 'DELETE',
       }),
   },
 
@@ -256,6 +264,11 @@ export const dailyEntriesApi = {
         method: 'POST',
         body: JSON.stringify(entry),
       }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/cabinet/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
   },
 
   // Service Time
@@ -268,6 +281,11 @@ export const dailyEntriesApi = {
         method: 'POST',
         body: JSON.stringify(entry),
       }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/service-time/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
   },
 
   // Source
@@ -279,6 +297,11 @@ export const dailyEntriesApi = {
       apiCall<any>(`/daily-entries/source/${clinicId}`, {
         method: 'POST',
         body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/source/${clinicId}/${entryId}`, {
+        method: 'DELETE',
       }),
   },
 }

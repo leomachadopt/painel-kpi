@@ -275,6 +275,33 @@ router.delete('/consultation/:clinicId/:entryId', async (req, res) => {
 // ================================
 // PROSPECTING ENTRIES
 // ================================
+// Get all prospecting entries for a clinic
+router.get('/prospecting/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const result = await query(
+      `SELECT * FROM daily_prospecting_entries WHERE clinic_id = $1 ORDER BY date DESC`,
+      [clinicId]
+    )
+
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        date: row.date,
+        scheduled: row.scheduled,
+        email: row.email,
+        sms: row.sms,
+        whatsapp: row.whatsapp,
+        instagram: row.instagram,
+      }))
+    )
+  } catch (error) {
+    console.error('Get prospecting entries error:', error)
+    res.status(500).json({ error: 'Failed to fetch prospecting entries' })
+  }
+})
+
+// Get single prospecting entry by date
 router.get('/prospecting/:clinicId/:date', async (req, res) => {
   try {
     const { clinicId, date } = req.params
@@ -342,6 +369,30 @@ router.post('/prospecting/:clinicId', async (req, res) => {
   }
 })
 
+router.delete('/prospecting/:clinicId/:entryId', async (req, res) => {
+  // Only GESTOR can delete entries
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_prospecting_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete prospecting entry error:', error)
+    res.status(500).json({ error: 'Failed to delete prospecting entry' })
+  }
+})
+
 // ================================
 // CABINET USAGE ENTRIES
 // ================================
@@ -397,6 +448,30 @@ router.post('/cabinet/:clinicId', async (req, res) => {
       message: error.message,
       detail: error.detail || error.toString()
     })
+  }
+})
+
+router.delete('/cabinet/:clinicId/:entryId', async (req, res) => {
+  // Only GESTOR can delete entries
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_cabinet_usage_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete cabinet entry error:', error)
+    res.status(500).json({ error: 'Failed to delete cabinet entry' })
   }
 })
 
@@ -465,6 +540,30 @@ router.post('/service-time/:clinicId', async (req, res) => {
   }
 })
 
+router.delete('/service-time/:clinicId/:entryId', async (req, res) => {
+  // Only GESTOR can delete entries
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_service_time_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete service time entry error:', error)
+    res.status(500).json({ error: 'Failed to delete service time entry' })
+  }
+})
+
 // ================================
 // SOURCE ENTRIES
 // ================================
@@ -529,6 +628,30 @@ router.post('/source/:clinicId', async (req, res) => {
       message: error.message,
       detail: error.detail || error.toString()
     })
+  }
+})
+
+router.delete('/source/:clinicId/:entryId', async (req, res) => {
+  // Only GESTOR can delete entries
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_source_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete source entry error:', error)
+    res.status(500).json({ error: 'Failed to delete source entry' })
   }
 })
 

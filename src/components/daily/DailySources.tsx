@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import {
   Select,
@@ -27,13 +26,14 @@ import { useEffect } from 'react'
 
 const schema = z.object({
   date: z.string(),
-  patientName: z.string().min(1, 'Nome obrigatório'),
-  code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
-  isReferral: z.boolean(),
   sourceId: z.string().min(1, 'Selecione uma fonte'),
+  isReferral: z.boolean(),
   referralName: z.string().optional(),
   referralCode: z.string().optional(),
   campaignId: z.string().optional(),
+  // Campos gerados automaticamente (não usados no form)
+  patientName: z.string().optional(),
+  code: z.string().optional(),
 })
 
 export function DailySources({ clinic }: { clinic: Clinic }) {
@@ -42,10 +42,8 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      patientName: '',
-      code: '',
-      isReferral: false,
       sourceId: '',
+      isReferral: false,
       referralName: '',
       referralCode: '',
       campaignId: '',
@@ -57,12 +55,12 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
   const selectedSource = clinic.configuration.sources.find(
     (s) => s.id === watchedSourceId,
   )
-  const isReferralSource = selectedSource?.name === 'Indicação'
+  const isReferralSource = selectedSource?.name === 'Referência'
   const isPaidAds =
     selectedSource?.name === 'Google Ads' || selectedSource?.name === 'Meta Ads'
 
   useEffect(() => {
-    // Auto-check referral if source is "Indicação"
+    // Auto-check referral if source is "Referência"
     if (isReferralSource) {
       form.setValue('isReferral', true)
     }
@@ -73,10 +71,10 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
     if (isReferralSource) {
       if (!data.referralName || !data.referralCode) {
         form.setError('referralName', {
-          message: 'Obrigatório para indicação',
+          message: 'Obrigatório para referência',
         })
         form.setError('referralCode', {
-          message: 'Obrigatório para indicação',
+          message: 'Obrigatório para referência',
         })
         return
       }
@@ -84,17 +82,25 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
 
     ;(async () => {
       try {
-        await addSourceEntry(clinic.id, {
+        // Source tracking: only track referral patient (who indicated), not the new patient
+        const entryData = {
           id: Math.random().toString(36),
-          ...data,
-        })
+          date: data.date,
+          sourceId: data.sourceId,
+          isReferral: data.isReferral || isReferralSource,
+          referralName: data.referralName || null,
+          referralCode: data.referralCode || null,
+          campaignId: data.campaignId || null,
+          patientName: null, // New patient name not needed for source tracking
+          code: null, // New patient code not needed
+        }
+
+        await addSourceEntry(clinic.id, entryData)
         toast.success('Fonte registada com sucesso!')
         form.reset({
           date: data.date,
-          patientName: '',
-          code: '',
-          isReferral: false,
           sourceId: '',
+          isReferral: false,
           referralName: '',
           referralCode: '',
           campaignId: '',
@@ -126,19 +132,6 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
           )}
         />
 
-        <PatientCodeInput
-          clinicId={clinic.id}
-          value={form.watch('code')}
-          onCodeChange={(c) => form.setValue('code', c, { shouldValidate: true })}
-          patientName={form.watch('patientName')}
-          onPatientNameChange={(n) =>
-            form.setValue('patientName', n, { shouldValidate: true })
-          }
-          label="Código"
-          codeError={form.formState.errors.code?.message}
-          patientNameError={form.formState.errors.patientName?.message}
-        />
-
         <FormField
           control={form.control}
           name="sourceId"
@@ -148,7 +141,7 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder="Selecione a fonte" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -198,57 +191,24 @@ export function DailySources({ clinic }: { clinic: Clinic }) {
         {isReferralSource && (
           <div className="space-y-4 rounded-md border p-4 bg-blue-50/50 animate-fade-in">
             <h4 className="text-sm font-semibold text-blue-800">
-              Dados da Indicação
+              Paciente que fez a referência
             </h4>
-            <FormField
-              control={form.control}
-              name="referralName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Indicador</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Quem indicou?" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="referralCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Código do Indicador</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ID" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <PatientCodeInput
+              clinicId={clinic.id}
+              value={form.watch('referralCode') || ''}
+              onCodeChange={(c) =>
+                form.setValue('referralCode', c, { shouldValidate: true })
+              }
+              patientName={form.watch('referralName') || ''}
+              onPatientNameChange={(n) =>
+                form.setValue('referralName', n, { shouldValidate: true })
+              }
+              label="Código do Paciente"
+              codeError={form.formState.errors.referralCode?.message}
+              patientNameError={form.formState.errors.referralName?.message}
             />
           </div>
         )}
-
-        <FormField
-          control={form.control}
-          name="isReferral"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Marcar como Indicação?
-                </FormLabel>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={isReferralSource} // Forced check if source is Referral
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
 
         <Button type="submit" className="w-full">
           Lançar Fonte

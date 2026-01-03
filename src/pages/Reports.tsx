@@ -201,24 +201,29 @@ export default function Reports() {
           <TabsContent value="prospecting">
             <ProspectingTable
               data={filterByDate(prospectingEntries[clinic.id])}
+              clinic={clinic}
+              onDelete={handleDataChange}
             />
           </TabsContent>
           <TabsContent value="cabinets">
             <CabinetTable
               data={filterByDate(cabinetEntries[clinic.id])}
               clinic={clinic}
+              onDelete={handleDataChange}
             />
           </TabsContent>
           <TabsContent value="serviceTime">
             <ServiceTimeTable
               data={filterByDate(serviceTimeEntries[clinic.id])}
               clinic={clinic}
+              onDelete={handleDataChange}
             />
           </TabsContent>
           <TabsContent value="sources">
             <SourceTable
               data={filterByDate(sourceEntries[clinic.id])}
               clinic={clinic}
+              onDelete={handleDataChange}
             />
           </TabsContent>
           <TabsContent value="marketing">

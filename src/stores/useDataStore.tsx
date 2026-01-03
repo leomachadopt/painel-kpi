@@ -45,7 +45,7 @@ interface DataState {
     clinicId: string,
     entry: DailyConsultationEntry,
   ) => Promise<void>
-  saveProspectingEntry: (clinicId: string, entry: DailyProspectingEntry) => void
+  saveProspectingEntry: (clinicId: string, entry: DailyProspectingEntry) => Promise<void>
   addCabinetUsageEntry: (
     clinicId: string,
     entry: DailyCabinetUsageEntry,
@@ -60,6 +60,10 @@ interface DataState {
   // Delete operations
   deleteFinancialEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteConsultationEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteProspectingEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteCabinetEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteServiceTimeEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteSourceEntry: (clinicId: string, entryId: string) => Promise<void>
   deletePatient: (clinicId: string, patientId: string) => Promise<void>
 
   // Entries Access
@@ -133,6 +137,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     cabinets: DailyCabinetUsageEntry[],
     serviceTime: DailyServiceTimeEntry[],
     sources: DailySourceEntry[],
+    prospecting: DailyProspectingEntry[],
   ) => {
     // Group entries by month/year
     const monthlyMap = new Map<string, any>()
@@ -165,6 +170,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       agendaOwner: { consultations: 0, management: 0, operations: 0 },
       sources: {},
       revenueByCategory: {},
+      leadsByChannel: {},
+      sourceDistribution: {},
+      campaignDistribution: {},
+      delayReasons: {},
+      referralsSpontaneous: 0,
       entryCounts: { financial: 0, consultations: 0, prospecting: 0, cabinets: 0, serviceTime: 0, sources: 0 },
     })
 
@@ -230,7 +240,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
       const data = monthlyMap.get(key)
       data.entryCounts.consultations++
-      
+
       if (entry.stage === 'scheduled') data.firstConsultationsScheduled++
       if (entry.stage === 'attended') data.firstConsultationsAttended++
       if (entry.stage === 'plan_presented_adult') data.plansPresentedAdults++
@@ -239,6 +249,65 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (entry.stage === 'aligners_started') data.alignersStarted++
       if (entry.stage === 'not_accepted') data.plansNotAccepted++
       if (entry.stage === 'follow_up') data.plansNotAcceptedFollowUp++
+    })
+
+    // Process prospecting entries
+    prospecting.forEach(entry => {
+      const date = parseISO(entry.date)
+      const month = getMonth(date) + 1
+      const year = getYear(date)
+      const key = `${year}-${month}`
+
+      if (!monthlyMap.has(key)) {
+        monthlyMap.set(key, initMonthData(month, year))
+      }
+
+      const data = monthlyMap.get(key)
+      data.entryCounts.prospecting++
+
+      // Aggregate leads by channel
+      data.leadsByChannel.Email = (data.leadsByChannel.Email || 0) + (entry.email || 0)
+      data.leadsByChannel.SMS = (data.leadsByChannel.SMS || 0) + (entry.sms || 0)
+      data.leadsByChannel.WhatsApp = (data.leadsByChannel.WhatsApp || 0) + (entry.whatsapp || 0)
+      data.leadsByChannel.Instagram = (data.leadsByChannel.Instagram || 0) + (entry.instagram || 0)
+
+      // Total leads
+      data.leads += (entry.email || 0) + (entry.sms || 0) + (entry.whatsapp || 0) + (entry.instagram || 0)
+
+      // Scheduled consultations
+      if (entry.scheduled > 0) {
+        data.firstConsultationsScheduled += entry.scheduled
+      }
+    })
+
+    // Process source entries
+    sources.forEach(entry => {
+      const date = parseISO(entry.date)
+      const month = getMonth(date) + 1
+      const year = getYear(date)
+      const key = `${year}-${month}`
+
+      if (!monthlyMap.has(key)) {
+        monthlyMap.set(key, initMonthData(month, year))
+      }
+
+      const data = monthlyMap.get(key)
+      data.entryCounts.sources++
+
+      // Get source name
+      const sourceName = clinic.configuration.sources.find(s => s.id === entry.sourceId)?.name || 'Desconhecido'
+      data.sourceDistribution[sourceName] = (data.sourceDistribution[sourceName] || 0) + 1
+
+      // Aggregate campaign distribution
+      if (entry.campaignId) {
+        const campaignName = clinic.configuration.campaigns.find(c => c.id === entry.campaignId)?.name || 'Geral'
+        data.campaignDistribution[campaignName] = (data.campaignDistribution[campaignName] || 0) + 1
+      }
+
+      // Count referrals
+      if (entry.isReferral) {
+        data.referralsSpontaneous += 1
+      }
     })
 
     // Save aggregated data
@@ -260,13 +329,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
-    const [financial, consultations, cabinets, serviceTime, sources] =
+    const [financial, consultations, cabinets, serviceTime, sources, prospecting] =
       await Promise.all([
         dailyEntriesApi.financial.getAll(clinicId),
         dailyEntriesApi.consultation.getAll(clinicId),
         dailyEntriesApi.cabinet.getAll(clinicId),
         dailyEntriesApi.serviceTime.getAll(clinicId),
         dailyEntriesApi.source.getAll(clinicId),
+        dailyEntriesApi.prospecting.getAll(clinicId),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
@@ -274,6 +344,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setCabinetEntries((prev) => ({ ...prev, [clinicId]: cabinets }))
     setServiceTimeEntries((prev) => ({ ...prev, [clinicId]: serviceTime }))
     setSourceEntries((prev) => ({ ...prev, [clinicId]: sources }))
+    setProspectingEntries((prev) => ({ ...prev, [clinicId]: prospecting }))
   }
 
   // Load daily entries once clinics are known (backend source of truth)
@@ -305,12 +376,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const cabinets = cabinetEntries[clinic.id] || []
       const serviceTime = serviceTimeEntries[clinic.id] || []
       const sources = sourceEntries[clinic.id] || []
+      const prospecting = prospectingEntries[clinic.id] || []
 
-      if (financial.length > 0 || consultations.length > 0) {
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources)
+      if (financial.length > 0 || consultations.length > 0 || prospecting.length > 0) {
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
       }
     })
-  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries])
+  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries])
 
   const ensurePatientExists = async (
     clinicId: string,
@@ -658,10 +730,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
-  const saveProspectingEntry = (
+  const saveProspectingEntry = async (
     clinicId: string,
     entry: DailyProspectingEntry,
   ) => {
+    // Optimistic update
+    const prevEntries = prospectingEntries[clinicId] || []
     setProspectingEntries((prev) => {
       const clinicEntries = prev[clinicId] || []
       const idx = clinicEntries.findIndex((e) => e.date === entry.date)
@@ -671,20 +745,28 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       return { ...prev, [clinicId]: newEntries }
     })
 
-    const data = ensureMonthlyData(clinicId, entry.date)
-    if (!data) return
+    try {
+      // Save to API
+      await dailyEntriesApi.prospecting.save(clinicId, entry)
 
-    updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
-      d.entryCounts.prospecting += 1
-      d.leads += 1
-      d.firstConsultationsScheduled += entry.scheduled > 0 ? 1 : 0
-      d.leadsByChannel.Email = (d.leadsByChannel.Email || 0) + entry.email
-      d.leadsByChannel.SMS = (d.leadsByChannel.SMS || 0) + entry.sms
-      d.leadsByChannel.WhatsApp =
-        (d.leadsByChannel.WhatsApp || 0) + entry.whatsapp
-      d.leadsByChannel.Instagram =
-        (d.leadsByChannel.Instagram || 0) + entry.instagram
-    })
+      // Re-aggregate monthly data after saving
+      const clinic = getClinic(clinicId)
+      if (clinic) {
+        const financial = financialEntries[clinicId] || []
+        const consultations = consultationEntries[clinicId] || []
+        const cabinets = cabinetEntries[clinicId] || []
+        const serviceTime = serviceTimeEntries[clinicId] || []
+        const sources = sourceEntries[clinicId] || []
+        const prospecting = prospectingEntries[clinicId] || []
+
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
+      }
+    } catch (error: any) {
+      // Rollback on error
+      setProspectingEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))
+      toast.error(error?.message || 'Erro ao guardar dados de prospecção')
+      throw error
+    }
   }
 
   const getProspectingEntry = (clinicId: string, date: string) => {
@@ -914,6 +996,154 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         d.plansNotAccepted = Math.max(0, d.plansNotAccepted - 1)
       }
     })
+  }
+
+  const deleteProspectingEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    // Encontrar a entrada antes de deletar
+    const entry = prospectingEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Remover da lista local (otimista)
+    setProspectingEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.prospecting.delete(clinicId, entryId)
+      toast.success('Entrada de prospecção excluída com sucesso!')
+
+      // Re-aggregate monthly data after deletion
+      const clinic = getClinic(clinicId)
+      if (clinic) {
+        const financial = financialEntries[clinicId] || []
+        const consultations = consultationEntries[clinicId] || []
+        const cabinets = cabinetEntries[clinicId] || []
+        const serviceTime = serviceTimeEntries[clinicId] || []
+        const sources = sourceEntries[clinicId] || []
+        const prospecting = prospectingEntries[clinicId] || []
+
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
+      }
+    } catch (error: any) {
+      // Rollback otimista
+      setProspectingEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir entrada de prospecção.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir entrada de prospecção.')
+      }
+      throw error
+    }
+  }
+
+  const deleteCabinetEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    const entry = cabinetEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    setCabinetEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.cabinet.delete(clinicId, entryId)
+      toast.success('Entrada de gabinete excluída com sucesso!')
+    } catch (error: any) {
+      setCabinetEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir entrada de gabinete.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir entrada de gabinete.')
+      }
+      throw error
+    }
+  }
+
+  const deleteServiceTimeEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    const entry = serviceTimeEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    setServiceTimeEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.serviceTime.delete(clinicId, entryId)
+      toast.success('Entrada de tempo excluída com sucesso!')
+    } catch (error: any) {
+      setServiceTimeEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir entrada de tempo.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir entrada de tempo.')
+      }
+      throw error
+    }
+  }
+
+  const deleteSourceEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    const entry = sourceEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    setSourceEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.source.delete(clinicId, entryId)
+      toast.success('Entrada de fonte excluída com sucesso!')
+    } catch (error: any) {
+      setSourceEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir entrada de fonte.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir entrada de fonte.')
+      }
+      throw error
+    }
   }
 
   const deletePatient = async (clinicId: string, patientId: string) => {
@@ -1323,6 +1553,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         getProspectingEntry,
         deleteFinancialEntry,
         deleteConsultationEntry,
+        deleteProspectingEntry,
+        deleteCabinetEntry,
+        deleteServiceTimeEntry,
+        deleteSourceEntry,
         deletePatient,
         financialEntries,
         consultationEntries,

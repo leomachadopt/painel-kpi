@@ -39,11 +39,12 @@ import {
   RevenueEvolutionChart,
   OwnerAgendaChart,
   RevenuePerCabinetChart,
+  TopReferrersChart,
 } from '@/components/dashboard/Charts'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
-  const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData } =
+  const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData, sourceEntries } =
     useDataStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -94,6 +95,19 @@ export default function Dashboard() {
     }
     return months
   }, [clinicId, currentMonth, currentYear, getMonthlyData, hasAccess])
+
+  // Filter source entries for current month/year
+  const currentMonthSourceEntries = useMemo(() => {
+    if (!clinicId || !hasAccess) return []
+    const entries = sourceEntries[clinicId] || []
+    return entries.filter((entry: any) => {
+      const entryDate = new Date(entry.date)
+      return (
+        entryDate.getMonth() + 1 === currentMonth &&
+        entryDate.getFullYear() === currentYear
+      )
+    })
+  }, [clinicId, sourceEntries, currentMonth, currentYear, hasAccess])
 
   const summary = useMemo(() => {
     if (!clinic || !hasAccess) return null
@@ -280,11 +294,12 @@ export default function Dashboard() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <ProspectingChart data={monthlyData} />
             <SourcesChart data={monthlyData} />
-            <CabinetChart data={monthlyData} />
+            <TopReferrersChart sourceEntries={currentMonthSourceEntries} />
           </div>
 
-          {/* Row 3: Operations & Owner */}
+          {/* Row 3: Cabinets & Operations */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <CabinetChart data={monthlyData} />
             <DelaysChart data={monthlyData} />
             {monthlyData.ownerAgenda && <OwnerAgendaChart data={monthlyData} />}
           </div>

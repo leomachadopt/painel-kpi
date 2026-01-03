@@ -7,17 +7,42 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Trash2 } from 'lucide-react'
 import { DailyServiceTimeEntry, Clinic } from '@/lib/types'
+import useDataStore from '@/stores/useDataStore'
+import { useState } from 'react'
 
 export function ServiceTimeTable({
   data,
   clinic,
+  onDelete,
 }: {
   data: DailyServiceTimeEntry[]
   clinic: Clinic
+  onDelete?: () => void
 }) {
+  const { deleteServiceTimeEntry } = useDataStore()
+  const [deleting, setDeleting] = useState<string | null>(null)
+
   const getDoctorName = (id: string) =>
     clinic.configuration.doctors.find((d) => d.id === id)?.name || id
+
+  const handleDelete = async (entry: DailyServiceTimeEntry) => {
+    if (!confirm(`Excluir registo de ${entry.patientName} em ${entry.date}?`)) {
+      return
+    }
+
+    setDeleting(entry.id)
+    try {
+      await deleteServiceTimeEntry(clinic.id, entry.id)
+      onDelete?.()
+    } catch (error) {
+      // Error toast already shown by deleteServiceTimeEntry
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   return (
     <div className="rounded-md border">
@@ -31,6 +56,7 @@ export function ServiceTimeTable({
             <TableHead>Início Real</TableHead>
             <TableHead>Atraso</TableHead>
             <TableHead className="text-right">Motivo</TableHead>
+            <TableHead className="w-[80px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -69,12 +95,23 @@ export function ServiceTimeTable({
                       </Badge>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(entry)}
+                      disabled={deleting === entry.id}
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               )
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
+              <TableCell colSpan={8} className="h-24 text-center">
                 Nenhum registo de tempo no período.
               </TableCell>
             </TableRow>
