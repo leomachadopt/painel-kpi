@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
-import { Trash2, Plus, Save, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
@@ -88,6 +88,24 @@ const ListEditor = ({
     setEditHours('')
   }
 
+  const moveUp = (index: number) => {
+    if (index === 0) return
+    const newItems = [...items]
+    const temp = newItems[index]
+    newItems[index] = newItems[index - 1]
+    newItems[index - 1] = temp
+    onUpdate(newItems)
+  }
+
+  const moveDown = (index: number) => {
+    if (index === items.length - 1) return
+    const newItems = [...items]
+    const temp = newItems[index]
+    newItems[index] = newItems[index + 1]
+    newItems[index + 1] = temp
+    onUpdate(newItems)
+  }
+
   return (
     <div className="space-y-4">
       {!readOnly && (
@@ -113,7 +131,7 @@ const ListEditor = ({
         </div>
       )}
       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
             key={item.id}
             className="flex items-center justify-between p-2 border rounded bg-background"
@@ -171,9 +189,27 @@ const ListEditor = ({
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => moveUp(index)}
+                      disabled={index === 0 || (item.name === 'Referência' && title === 'Fonte')}
+                      title="Mover para cima"
+                    >
+                      <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => moveDown(index)}
+                      disabled={index === items.length - 1 || (item.name === 'Referência' && title === 'Fonte')}
+                      title="Mover para baixo"
+                    >
+                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => startEdit(item)}
                       disabled={item.name === 'Referência' && title === 'Fonte'}
-                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
+                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : 'Editar'}
                     >
                       <Edit2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -182,7 +218,7 @@ const ListEditor = ({
                       size="icon"
                       onClick={() => remove(item.id)}
                       disabled={item.name === 'Referência' && title === 'Fonte'}
-                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : ''}
+                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : 'Excluir'}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -277,7 +313,12 @@ export default function Settings() {
     if (!clinic) return
 
     if (clinic.configuration) {
-      setConfig(clinic.configuration)
+      // Ensure paymentSources exists
+      const config = {
+        ...clinic.configuration,
+        paymentSources: clinic.configuration.paymentSources || [],
+      }
+      setConfig(config)
     }
     if (clinic.npsQuestion !== undefined) {
       setNpsQuestion(clinic.npsQuestion)
@@ -313,7 +354,11 @@ export default function Settings() {
     setSaving(true)
     try {
       await configApi.update(clinic.id, config)
-      await updateClinicConfig(clinic.id, config)
+      // Recarregar a clínica completa do banco para garantir dados atualizados
+      const updatedClinic = await clinicsApi.getById(clinic.id)
+      await updateClinicConfig(clinic.id, updatedClinic.configuration)
+      // Atualizar o estado local também
+      setConfig(updatedClinic.configuration)
       toast.success('Configurações guardadas com sucesso!')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao guardar configurações')
@@ -394,6 +439,7 @@ export default function Settings() {
         <TabsList>
           <TabsTrigger value="sources">Fontes & Campanhas</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
+          <TabsTrigger value="paymentSources">Fontes de Recebimento</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
           <TabsTrigger value="targets">Metas</TabsTrigger>
@@ -450,6 +496,27 @@ export default function Settings() {
                 items={config.categories}
                 onUpdate={(items) =>
                   setConfig({ ...config, categories: items })
+                }
+                readOnly={!canManageConfig}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="paymentSources">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fontes de Recebimento</CardTitle>
+              <CardDescription>
+                Defina os métodos de pagamento (CGD, Santander, Cartões BPI, Numerário, etc.).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ListEditor
+                title="Fonte de Recebimento"
+                items={config.paymentSources || []}
+                onUpdate={(items) =>
+                  setConfig({ ...config, paymentSources: items })
                 }
                 readOnly={!canManageConfig}
               />

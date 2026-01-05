@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { FinancialTable } from '@/components/reports/FinancialTable'
+import { BillingTable } from '@/components/reports/BillingTable'
 import { ConsultationTable } from '@/components/reports/ConsultationTable'
 import { ConsultationKanban } from '@/components/reports/ConsultationKanban'
 import { ProspectingTable } from '@/components/reports/ProspectingTable'
@@ -148,8 +149,9 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 h-auto">
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
+          <TabsTrigger value="billing">Faturação</TabsTrigger>
           <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
@@ -165,6 +167,12 @@ export default function Reports() {
               data={filterByDate(financialEntries[clinic.id])}
               clinic={clinic}
               onDelete={handleDataChange}
+            />
+          </TabsContent>
+          <TabsContent value="billing">
+            <BillingTable
+              data={filterByDate(financialEntries[clinic.id])}
+              clinic={clinic}
             />
           </TabsContent>
           <TabsContent value="consultations">

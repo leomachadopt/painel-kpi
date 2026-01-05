@@ -1,7 +1,38 @@
 import { Router } from 'express'
 import { query } from '../db.js'
+import { getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
+
+/**
+ * Helper function to check if user can create/edit financial entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
+ */
+async function canEditFinancial(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditFinancial === true
+  }
+
+  return false
+}
 
 // ================================
 // FINANCIAL ENTRIES
@@ -23,6 +54,8 @@ router.get('/financial/:clinicId', async (req, res) => {
         categoryId: row.category_id,
         value: parseFloat(row.value),
         cabinetId: row.cabinet_id,
+        doctorId: row.doctor_id || null,
+        paymentSourceId: row.payment_source_id || null,
       }))
     )
   } catch (error) {
@@ -32,23 +65,26 @@ router.get('/financial/:clinicId', async (req, res) => {
 })
 
 router.post('/financial/:clinicId', async (req, res) => {
-  // Only GESTOR can create entries
-  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+  // Check if user can create financial entries
+  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
+  const { clinicId } = req.params
+  const hasPermission = await canEditFinancial(req, clinicId)
+  
+  if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
   
   try {
-    const { clinicId } = req.params
-    const { id, date, patientName, code, categoryId, value, cabinetId } = req.body
+    const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
     const entryId =
       id || `financial-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
     const result = await query(
       `INSERT INTO daily_financial_entries
-       (id, clinic_id, date, patient_name, code, category_id, value, cabinet_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (id, clinic_id, date, patient_name, code, category_id, value, cabinet_id, doctor_id, payment_source_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [entryId, clinicId, date, patientName, code, categoryId, value, cabinetId]
+      [entryId, clinicId, date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null]
     )
 
     res.status(201).json({
@@ -59,6 +95,8 @@ router.post('/financial/:clinicId', async (req, res) => {
       categoryId: result.rows[0].category_id,
       value: parseFloat(result.rows[0].value),
       cabinetId: result.rows[0].cabinet_id,
+      doctorId: result.rows[0].doctor_id || null,
+      paymentSourceId: result.rows[0].payment_source_id || null,
     })
   } catch (error: any) {
     console.error('Create financial entry error:', error)
@@ -71,8 +109,12 @@ router.post('/financial/:clinicId', async (req, res) => {
 })
 
 router.delete('/financial/:clinicId/:entryId', async (req, res) => {
-  // Only GESTOR can delete entries
-  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+  // Check if user can delete financial entries
+  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
+  const { clinicId } = req.params
+  const hasPermission = await canEditFinancial(req, clinicId)
+  
+  if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
   
@@ -119,6 +161,11 @@ router.get('/consultation/:clinicId', async (req, res) => {
         planAccepted: row.plan_accepted,
         planAcceptedAt: row.plan_accepted_at,
         planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
+        sourceId: row.source_id || null,
+        isReferral: row.is_referral || false,
+        referralName: row.referral_name || null,
+        referralCode: row.referral_code || null,
+        campaignId: row.campaign_id || null,
       }))
     )
   } catch (error) {
@@ -159,6 +206,11 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       planAccepted: row.plan_accepted,
       planAcceptedAt: row.plan_accepted_at,
       planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
+      sourceId: row.source_id || null,
+      isReferral: row.is_referral || false,
+      referralName: row.referral_name || null,
+      referralCode: row.referral_code || null,
+      campaignId: row.campaign_id || null,
     })
   } catch (error) {
     console.error('Get consultation by code error:', error)
@@ -181,6 +233,11 @@ router.post('/consultation/:clinicId', async (req, res) => {
       planAccepted,
       planAcceptedAt,
       planValue,
+      sourceId,
+      isReferral,
+      referralName,
+      referralCode,
+      campaignId,
     } = req.body
 
     if (!code || !/^\d{1,6}$/.test(code)) {
@@ -195,12 +252,14 @@ router.post('/consultation/:clinicId', async (req, res) => {
         plan_created, plan_created_at,
         plan_presented, plan_presented_at, plan_presented_value,
         plan_accepted, plan_accepted_at,
-        plan_value)
+        plan_value,
+        source_id, is_referral, referral_name, referral_code, campaign_id)
        VALUES ($1, $2, $3, $4, $5,
         $6, $7,
         $8, $9, $10,
         $11, $12,
-        $13)
+        $13,
+        $14, $15, $16, $17, $18)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
@@ -211,7 +270,12 @@ router.post('/consultation/:clinicId', async (req, res) => {
         plan_presented_value = EXCLUDED.plan_presented_value,
         plan_accepted = EXCLUDED.plan_accepted,
         plan_accepted_at = EXCLUDED.plan_accepted_at,
-        plan_value = EXCLUDED.plan_value
+        plan_value = EXCLUDED.plan_value,
+        source_id = EXCLUDED.source_id,
+        is_referral = EXCLUDED.is_referral,
+        referral_name = EXCLUDED.referral_name,
+        referral_code = EXCLUDED.referral_code,
+        campaign_id = EXCLUDED.campaign_id
        RETURNING *`,
       [
         entryId,
@@ -227,6 +291,11 @@ router.post('/consultation/:clinicId', async (req, res) => {
         planAccepted,
         planAcceptedAt || null,
         planValue || 0,
+        sourceId || null,
+        isReferral || false,
+        referralName || null,
+        referralCode || null,
+        campaignId || null,
       ]
     )
 
@@ -243,6 +312,11 @@ router.post('/consultation/:clinicId', async (req, res) => {
       planAccepted: result.rows[0].plan_accepted,
       planAcceptedAt: result.rows[0].plan_accepted_at,
       planValue: result.rows[0].plan_value ? parseFloat(result.rows[0].plan_value) : 0,
+      sourceId: result.rows[0].source_id || null,
+      isReferral: result.rows[0].is_referral || false,
+      referralName: result.rows[0].referral_name || null,
+      referralCode: result.rows[0].referral_code || null,
+      campaignId: result.rows[0].campaign_id || null,
     })
   } catch (error: any) {
     console.error('Create consultation entry error:', error)

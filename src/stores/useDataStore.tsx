@@ -278,6 +278,23 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       if (entry.planAccepted && entry.planValue && entry.planValue > 0) {
         data.plansAcceptedTotalValue += entry.planValue
       }
+
+      // Process source fields from consultation (if present)
+      if (entry.sourceId) {
+        const sourceName = clinic.configuration.sources.find(s => s.id === entry.sourceId)?.name || 'Desconhecido'
+        data.sourceDistribution[sourceName] = (data.sourceDistribution[sourceName] || 0) + 1
+
+        // Aggregate campaign distribution
+        if (entry.campaignId) {
+          const campaignName = clinic.configuration.campaigns.find(c => c.id === entry.campaignId)?.name || 'Geral'
+          data.campaignDistribution[campaignName] = (data.campaignDistribution[campaignName] || 0) + 1
+        }
+
+        // Count referrals
+        if (entry.isReferral) {
+          data.referralsSpontaneous += 1
+        }
+      }
     })
 
     // Process prospecting entries

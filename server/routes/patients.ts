@@ -1,7 +1,38 @@
 import { Router } from 'express'
 import { query, getClient } from '../db.js'
+import { getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
+
+/**
+ * Helper function to check if user can edit patients
+ * GESTOR_CLINICA and MENTOR always can, COLABORADOR needs canEditPatients permission
+ */
+async function canEditPatients(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditPatients === true
+  }
+
+  return false
+}
 
 // Get all patients for a clinic
 router.get('/:clinicId', async (req, res) => {
@@ -227,10 +258,123 @@ router.post('/:clinicId', async (req, res) => {
   }
 })
 
-// Update patient
-router.put('/:clinicId/:patientId', async (req, res) => {
+// Get patient history (all records by code)
+router.get('/:clinicId/:patientId/history', async (req, res) => {
   try {
     const { clinicId, patientId } = req.params
+
+    // Get patient code first
+    const patientResult = await query(
+      'SELECT code FROM patients WHERE id = $1 AND clinic_id = $2',
+      [patientId, clinicId]
+    )
+
+    if (patientResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' })
+    }
+
+    const code = patientResult.rows[0].code
+
+    // Fetch all records for this patient code
+    const [financial, consultation, serviceTime, source] = await Promise.all([
+      query(
+        `SELECT id, date, patient_name, code, category_id, value, cabinet_id, doctor_id, payment_source_id, created_at
+         FROM daily_financial_entries
+         WHERE clinic_id = $1 AND code = $2
+         ORDER BY date DESC`,
+        [clinicId, code]
+      ),
+      query(
+        `SELECT id, date, patient_name, code, plan_created, plan_created_at, plan_presented, 
+                plan_presented_at, plan_accepted, plan_accepted_at, plan_value, created_at
+         FROM daily_consultation_entries
+         WHERE clinic_id = $1 AND code = $2
+         ORDER BY date DESC`,
+        [clinicId, code]
+      ),
+      query(
+        `SELECT id, date, patient_name, code, doctor_id, scheduled_time, actual_start_time, delay_reason, created_at
+         FROM daily_service_time_entries
+         WHERE clinic_id = $1 AND code = $2
+         ORDER BY date DESC`,
+        [clinicId, code]
+      ),
+      query(
+        `SELECT id, date, patient_name, code, is_referral, source_id, referral_name, referral_code, campaign_id, created_at
+         FROM daily_source_entries
+         WHERE clinic_id = $1 AND code = $2
+         ORDER BY date DESC`,
+        [clinicId, code]
+      ),
+    ])
+
+    res.json({
+      financial: financial.rows.map(row => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        categoryId: row.category_id,
+        value: parseFloat(row.value),
+        cabinetId: row.cabinet_id,
+        doctorId: row.doctor_id,
+        paymentSourceId: row.payment_source_id,
+        createdAt: row.created_at,
+      })),
+      consultation: consultation.rows.map(row => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        planCreated: row.plan_created,
+        planCreatedAt: row.plan_created_at,
+        planPresented: row.plan_presented,
+        planPresentedAt: row.plan_presented_at,
+        planAccepted: row.plan_accepted,
+        planAcceptedAt: row.plan_accepted_at,
+        planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
+        createdAt: row.created_at,
+      })),
+      serviceTime: serviceTime.rows.map(row => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        doctorId: row.doctor_id,
+        scheduledTime: row.scheduled_time,
+        actualStartTime: row.actual_start_time,
+        delayReason: row.delay_reason,
+        createdAt: row.created_at,
+      })),
+      source: source.rows.map(row => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        isReferral: row.is_referral,
+        sourceId: row.source_id,
+        referralName: row.referral_name,
+        referralCode: row.referral_code,
+        campaignId: row.campaign_id,
+        createdAt: row.created_at,
+      })),
+    })
+  } catch (error) {
+    console.error('Get patient history error:', error)
+    res.status(500).json({ error: 'Failed to fetch patient history' })
+  }
+})
+
+// Update patient
+router.put('/:clinicId/:patientId', async (req, res) => {
+  // Check if user can edit patients
+  const { clinicId } = req.params
+  if (!(await canEditPatients(req, clinicId))) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId: clinicIdParam, patientId } = req.params
     const { name, email, phone, birthDate, notes } = req.body
 
     if (!name || name.trim().length === 0) {
@@ -242,7 +386,7 @@ router.put('/:clinicId/:patientId', async (req, res) => {
        SET name = $1, email = $2, phone = $3, birth_date = $4, notes = $5
        WHERE id = $6 AND clinic_id = $7
        RETURNING id, code, name, email, phone, birth_date, notes, created_at`,
-      [name.trim(), email || null, phone || null, birthDate || null, notes || null, patientId, clinicId]
+      [name.trim(), email || null, phone || null, birthDate || null, notes || null, patientId, clinicIdParam]
     )
 
     if (result.rows.length === 0) {

@@ -43,6 +43,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_cabinets,
         p.can_edit_service_time,
         p.can_edit_sources,
+        p.can_edit_consultation_control,
         p.can_edit_patients,
         p.can_edit_clinic_config,
         p.can_edit_targets

@@ -29,6 +29,12 @@ const DEFAULT_CONFIG = {
     { id: 'camp-2', name: 'Regresso às Aulas' },
     { id: 'camp-3', name: 'Institucional' },
   ],
+  paymentSources: [
+    { id: 'pay-1', name: 'CGD' },
+    { id: 'pay-2', name: 'Santander' },
+    { id: 'pay-3', name: 'Cartões BPI' },
+    { id: 'pay-4', name: 'Numerário' },
+  ],
 }
 
 export const MOCK_CLINICS: Clinic[] = [

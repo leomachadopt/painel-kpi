@@ -65,6 +65,7 @@ export default function Collaborators() {
     canEditCabinets: false,
     canEditServiceTime: false,
     canEditSources: false,
+    canEditConsultationControl: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
@@ -453,6 +454,16 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canEditSources" className="cursor-pointer">
                     Fontes e Campanhas
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditConsultationControl"
+                    checked={permissionsForm.canEditConsultationControl}
+                    onCheckedChange={() => handleTogglePermission('canEditConsultationControl')}
+                  />
+                  <Label htmlFor="canEditConsultationControl" className="cursor-pointer">
+                    Controle de Consultas
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">

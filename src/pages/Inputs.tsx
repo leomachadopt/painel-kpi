@@ -6,7 +6,6 @@ import {
   Megaphone,
   Armchair,
   Clock,
-  MapPin,
   CalendarCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,7 +25,6 @@ import { DailyConsultations } from '@/components/daily/DailyConsultations'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
 import { DailyCabinets } from '@/components/daily/DailyCabinets'
 import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
-import { DailySources } from '@/components/daily/DailySources'
 import { DailyConsultationControl } from '@/components/daily/DailyConsultationControl'
 
 export default function Inputs() {
@@ -44,7 +42,6 @@ export default function Inputs() {
   const hasProspecting = canEdit('canEditProspecting')
   const hasCabinets = canEdit('canEditCabinets')
   const hasServiceTime = canEdit('canEditServiceTime')
-  const hasSources = canEdit('canEditSources')
   const hasConsultationControl = canEdit('canEditConsultationControl')
 
   // Determinar primeira aba disponível
@@ -54,7 +51,6 @@ export default function Inputs() {
     hasProspecting ? 'prospecting' :
     hasCabinets ? 'cabinets' :
     hasServiceTime ? 'serviceTime' :
-    hasSources ? 'sources' :
     hasConsultationControl ? 'consultationControl' : 'financial'
 
   if (
@@ -85,7 +81,7 @@ export default function Inputs() {
       </div>
 
       <Tabs defaultValue={firstAvailableTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 h-auto">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
           {hasFinancial && (
             <TabsTrigger
               value="financial"
@@ -129,15 +125,6 @@ export default function Inputs() {
             >
               <Clock className="h-4 w-4" />
               Tempos
-            </TabsTrigger>
-          )}
-          {hasSources && (
-            <TabsTrigger
-              value="sources"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <MapPin className="h-4 w-4" />
-              Fontes
             </TabsTrigger>
           )}
           {hasConsultationControl && (
@@ -227,22 +214,6 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyServiceTime clinic={clinic} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {hasSources && (
-            <TabsContent value="sources">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Origem do Paciente</CardTitle>
-                  <CardDescription>
-                    Identifique como o paciente conheceu a clínica.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DailySources clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

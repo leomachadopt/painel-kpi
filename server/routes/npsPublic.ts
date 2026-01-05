@@ -52,12 +52,28 @@ router.get('/:token', async (req, res) => {
     }
 
     // Get clinic info
+    const defaultNpsQuestion = 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?'
+
     const clinicResult = await query(
-      `SELECT id, name, logo_url, nps_question FROM clinics WHERE id = $1`,
+      `SELECT id, name, logo_url FROM clinics WHERE id = $1`,
       [survey.clinic_id]
     )
 
     const clinic = clinicResult.rows[0] || {}
+
+    // Try to get nps_question if column exists (optional)
+    let npsQuestion = defaultNpsQuestion
+    try {
+      const npsResult = await query(
+        'SELECT nps_question FROM clinics WHERE id = $1',
+        [survey.clinic_id]
+      )
+      if (npsResult.rows[0]?.nps_question) {
+        npsQuestion = npsResult.rows[0].nps_question
+      }
+    } catch {
+      // Column doesn't exist or query failed - use default
+    }
 
     res.json({
       id: survey.id,
@@ -66,7 +82,7 @@ router.get('/:token', async (req, res) => {
         id: clinic.id,
         name: clinic.name,
         logoUrl: clinic.logo_url,
-        npsQuestion: clinic.nps_question || 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?',
+        npsQuestion,
       },
       surveyMonth: survey.survey_month,
       surveyYear: survey.survey_year,
@@ -74,7 +90,10 @@ router.get('/:token', async (req, res) => {
     })
   } catch (error) {
     console.error('Get public NPS survey error:', error)
-    res.status(500).json({ error: 'Failed to fetch survey' })
+    res.status(500).json({ 
+      error: 'Failed to fetch survey',
+      details: error instanceof Error ? error.message : String(error)
+    })
   }
 })
 

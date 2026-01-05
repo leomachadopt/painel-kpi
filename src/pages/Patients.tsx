@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, UserPlus, Loader2, Mail, Phone, Calendar, Trash2 } from 'lucide-react'
+import { Search, UserPlus, Loader2, Mail, Phone, Calendar, Trash2, Edit, DollarSign, Stethoscope, Clock, MapPin } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -34,6 +34,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function Patients() {
   const { user } = useAuthStore()
@@ -45,6 +57,14 @@ export default function Patients() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [patientHistory, setPatientHistory] = useState<any>(null)
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', birthDate: '', notes: '' })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (clinicId) {
@@ -96,6 +116,67 @@ export default function Patients() {
       setDeleting(false)
     }
   }
+
+  const handleViewDetails = async (patient: Patient) => {
+    if (!clinicId) return
+
+    // Skip if patient is temporary (only exists in daily entries)
+    if (patient.id.startsWith('temp-')) {
+      toast.info('Este paciente não possui cadastro completo. Apenas registros em entradas diárias.')
+      return
+    }
+
+    setSelectedPatient(patient)
+    setShowDetailsDialog(true)
+    setLoadingHistory(true)
+    setPatientHistory(null)
+
+    try {
+      const history = await patientsApi.getHistory(clinicId, patient.id)
+      setPatientHistory(history)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar histórico')
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const handleEditClick = (patient: Patient) => {
+    // Skip if patient is temporary
+    if (patient.id.startsWith('temp-')) {
+      toast.info('Não é possível editar pacientes que não possuem cadastro completo.')
+      return
+    }
+
+    setEditingPatient(patient)
+    setEditForm({
+      name: patient.name || '',
+      email: patient.email || '',
+      phone: patient.phone || '',
+      birthDate: patient.birthDate || '',
+      notes: patient.notes || '',
+    })
+    setShowEditDialog(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!clinicId || !editingPatient) return
+
+    setSaving(true)
+    try {
+      await patientsApi.update(clinicId, editingPatient.id, editForm)
+      toast.success('Paciente atualizado com sucesso')
+      setShowEditDialog(false)
+      setEditingPatient(null)
+      await loadPatients(searchTerm || undefined)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar paciente')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const canEditPatient = user?.role === 'GESTOR_CLINICA' || user?.role === 'MENTOR' || user?.permissions?.canEditPatients
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -212,14 +293,27 @@ export default function Patients() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(patient.createdAt), 'dd/MM/yyyy')}
+                          {patient.createdAt ? format(new Date(patient.createdAt), 'dd/MM/yyyy') : '-'}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewDetails(patient)}
+                          >
                             Ver Detalhes
                           </Button>
+                          {canEditPatient && !patient.id.startsWith('temp-') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditClick(patient)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                           {user?.role === 'GESTOR_CLINICA' && (
                             <Button
                               variant="ghost"
@@ -240,6 +334,337 @@ export default function Patients() {
           )}
         </CardContent>
       </Card>
+
+      {/* Patient Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Histórico do Paciente</DialogTitle>
+            <DialogDescription>
+              {selectedPatient && (
+                <>
+                  <div className="mt-2">
+                    <p className="font-medium">{selectedPatient.name}</p>
+                    <p className="text-xs text-muted-foreground">Código: {selectedPatient.code}</p>
+                  </div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingHistory ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : patientHistory ? (
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="all">Todos</TabsTrigger>
+                  <TabsTrigger value="financial">Financeiro</TabsTrigger>
+                  <TabsTrigger value="consultation">Consultas</TabsTrigger>
+                  <TabsTrigger value="serviceTime">Tempo Serviço</TabsTrigger>
+                  <TabsTrigger value="source">Origem</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="space-y-4 mt-4">
+                  {patientHistory.financial.length === 0 &&
+                  patientHistory.consultation.length === 0 &&
+                  patientHistory.serviceTime.length === 0 &&
+                  patientHistory.source.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhum registro encontrado para este paciente.
+                    </p>
+                  ) : (
+                    <div className="space-y-6">
+                      {patientHistory.financial.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Entradas Financeiras ({patientHistory.financial.length})
+                          </h3>
+                          <div className="space-y-2">
+                            {patientHistory.financial.map((entry: any) => (
+                              <div key={entry.id} className="border rounded p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                                  <span className="font-semibold">€{entry.value.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {patientHistory.consultation.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            <Stethoscope className="h-4 w-4" />
+                            Consultas ({patientHistory.consultation.length})
+                          </h3>
+                          <div className="space-y-2">
+                            {patientHistory.consultation.map((entry: any) => (
+                              <div key={entry.id} className="border rounded p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                                  {entry.planValue > 0 && (
+                                    <span className="font-semibold">Plano: €{entry.planValue.toFixed(2)}</span>
+                                  )}
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  {entry.planCreated && '✓ Plano criado'}
+                                  {entry.planPresented && ' • ✓ Plano apresentado'}
+                                  {entry.planAccepted && ' • ✓ Plano aceito'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {patientHistory.serviceTime.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Tempo de Serviço ({patientHistory.serviceTime.length})
+                          </h3>
+                          <div className="space-y-2">
+                            {patientHistory.serviceTime.map((entry: any) => (
+                              <div key={entry.id} className="border rounded p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                                  <span className="text-muted-foreground">
+                                    {entry.scheduledTime} → {entry.actualStartTime}
+                                  </span>
+                                </div>
+                                {entry.delayReason && (
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    Atraso: {entry.delayReason}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {patientHistory.source.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-2 flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            Origem ({patientHistory.source.length})
+                          </h3>
+                          <div className="space-y-2">
+                            {patientHistory.source.map((entry: any) => (
+                              <div key={entry.id} className="border rounded p-3 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                                  {entry.isReferral && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                      Indicação
+                                    </span>
+                                  )}
+                                </div>
+                                {entry.referralName && (
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    Indicado por: {entry.referralName}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="financial" className="mt-4">
+                  {patientHistory.financial.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhuma entrada financeira encontrada.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {patientHistory.financial.map((entry: any) => (
+                        <div key={entry.id} className="border rounded p-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                            <span className="font-semibold">€{entry.value.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="consultation" className="mt-4">
+                  {patientHistory.consultation.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhuma consulta encontrada.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {patientHistory.consultation.map((entry: any) => (
+                        <div key={entry.id} className="border rounded p-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                            {entry.planValue > 0 && (
+                              <span className="font-semibold">Plano: €{entry.planValue.toFixed(2)}</span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {entry.planCreated && '✓ Plano criado'}
+                            {entry.planPresented && ' • ✓ Plano apresentado'}
+                            {entry.planAccepted && ' • ✓ Plano aceito'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="serviceTime" className="mt-4">
+                  {patientHistory.serviceTime.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhum registro de tempo de serviço encontrado.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {patientHistory.serviceTime.map((entry: any) => (
+                        <div key={entry.id} className="border rounded p-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                            <span className="text-muted-foreground">
+                              {entry.scheduledTime} → {entry.actualStartTime}
+                            </span>
+                          </div>
+                          {entry.delayReason && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Atraso: {entry.delayReason}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="source" className="mt-4">
+                  {patientHistory.source.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhum registro de origem encontrado.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {patientHistory.source.map((entry: any) => (
+                        <div key={entry.id} className="border rounded p-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                            {entry.isReferral && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                Indicação
+                              </span>
+                            )}
+                          </div>
+                          {entry.referralName && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Indicado por: {entry.referralName}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </ScrollArea>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Nenhum histórico disponível.</p>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Patient Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Paciente</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do paciente {editingPatient?.name} (código: {editingPatient?.code})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome *</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Telefone</Label>
+              <Input
+                id="edit-phone"
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                placeholder="+351 900 000 000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-birthDate">Data de Nascimento</Label>
+              <Input
+                id="edit-birthDate"
+                type="date"
+                value={editForm.birthDate}
+                onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Observações</Label>
+              <Textarea
+                id="edit-notes"
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Notas adicionais sobre o paciente..."
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving || !editForm.name.trim()}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Alterações'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

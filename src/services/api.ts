@@ -164,6 +164,9 @@ export const patientsApi = {
   getByCode: (clinicId: string, code: string) =>
     apiCall<any>(`/patients/${clinicId}/code/${code}`),
 
+  getHistory: (clinicId: string, patientId: string) =>
+    apiCall<any>(`/patients/${clinicId}/${patientId}/history`),
+
   create: (clinicId: string, patient: any) =>
     apiCall<any>(`/patients/${clinicId}`, {
       method: 'POST',

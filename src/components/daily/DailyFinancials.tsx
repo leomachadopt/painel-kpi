@@ -30,6 +30,8 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Categoria obrigatória'),
   value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
   cabinetId: z.string().min(1, 'Gabinete obrigatório'),
+  doctorId: z.string().optional(),
+  paymentSourceId: z.string().optional(),
 })
 
 export function DailyFinancials({ clinic }: { clinic: Clinic }) {
@@ -43,6 +45,8 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
       categoryId: '',
       value: 0,
       cabinetId: '',
+      doctorId: '',
+      paymentSourceId: '',
     },
   })
 
@@ -60,6 +64,8 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
         categoryId: '',
         value: 0,
         cabinetId: '',
+        doctorId: '',
+        paymentSourceId: '',
       })
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao guardar receita')
@@ -141,6 +147,57 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
                     {clinic.configuration.cabinets.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="doctorId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Médico</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione (opcional)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clinic.configuration.doctors.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="paymentSourceId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fonte de Recebimento</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione (opcional)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {(clinic.configuration.paymentSources || []).map((ps) => (
+                      <SelectItem key={ps.id} value={ps.id}>
+                        {ps.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

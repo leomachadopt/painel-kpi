@@ -58,6 +58,7 @@ export interface ClinicConfiguration {
   doctors: { id: string; name: string }[]
   sources: { id: string; name: string }[]
   campaigns: { id: string; name: string }[]
+  paymentSources: { id: string; name: string }[]
 }
 
 export interface Clinic {
@@ -172,6 +173,8 @@ export interface DailyFinancialEntry {
   categoryId: string
   value: number
   cabinetId: string
+  doctorId?: string | null
+  paymentSourceId?: string | null
 }
 
 export interface DailyConsultationEntry {
@@ -187,6 +190,12 @@ export interface DailyConsultationEntry {
   planAccepted: boolean
   planAcceptedAt?: string | null
   planValue?: number
+  // Source fields (optional - for tracking patient origin)
+  sourceId?: string | null
+  isReferral?: boolean
+  referralName?: string | null
+  referralCode?: string | null
+  campaignId?: string | null
 }
 
 export interface DailyProspectingEntry {

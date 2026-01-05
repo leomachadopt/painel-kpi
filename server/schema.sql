@@ -112,6 +112,13 @@ CREATE TABLE IF NOT EXISTS clinic_campaigns (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS clinic_payment_sources (
+  id VARCHAR(255) PRIMARY KEY,
+  clinic_id VARCHAR(255) NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ================================
 -- MONTHLY DATA TABLE
 -- ================================
@@ -200,6 +207,8 @@ CREATE TABLE IF NOT EXISTS daily_financial_entries (
   category_id VARCHAR(255) NOT NULL REFERENCES clinic_categories(id) ON DELETE RESTRICT,
   value DECIMAL(12, 2) NOT NULL,
   cabinet_id VARCHAR(255) NOT NULL REFERENCES clinic_cabinets(id) ON DELETE RESTRICT,
+  doctor_id VARCHAR(255) REFERENCES clinic_doctors(id) ON DELETE SET NULL,
+  payment_source_id VARCHAR(255) REFERENCES clinic_payment_sources(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -306,6 +315,9 @@ CREATE INDEX IF NOT EXISTS idx_daily_cabinet_clinic_date ON daily_cabinet_usage_
 CREATE INDEX IF NOT EXISTS idx_daily_service_time_clinic_date ON daily_service_time_entries(clinic_id, date);
 CREATE INDEX IF NOT EXISTS idx_daily_source_clinic_date ON daily_source_entries(clinic_id, date);
 CREATE INDEX IF NOT EXISTS idx_daily_consultation_control_clinic_date ON daily_consultation_control_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_financial_doctor_id ON daily_financial_entries(doctor_id);
+CREATE INDEX IF NOT EXISTS idx_daily_financial_payment_source_id ON daily_financial_entries(payment_source_id);
+CREATE INDEX IF NOT EXISTS idx_clinic_payment_sources_clinic_id ON clinic_payment_sources(clinic_id);
 
 -- ================================
 -- TRIGGERS FOR updated_at

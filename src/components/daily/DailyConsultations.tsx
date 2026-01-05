@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from '@/components/ui/form'
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
@@ -30,6 +38,12 @@ const schema = z.object({
   planAccepted: z.boolean(),
   planAcceptedAt: z.string().optional(),
   planValue: z.coerce.number().min(0).optional(),
+  // Source fields
+  sourceId: z.string().optional(),
+  isReferral: z.boolean(),
+  referralName: z.string().optional(),
+  referralCode: z.string().optional(),
+  campaignId: z.string().optional(),
 })
 
 export function DailyConsultations({ clinic }: { clinic: Clinic }) {
@@ -51,10 +65,29 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       planAccepted: false,
       planAcceptedAt: '',
       planValue: 0,
+      sourceId: '',
+      isReferral: false,
+      referralName: '',
+      referralCode: '',
+      campaignId: '',
     },
   })
 
   const code = form.watch('code')
+  const watchedSourceId = form.watch('sourceId')
+  const selectedSource = clinic.configuration.sources.find(
+    (s) => s.id === watchedSourceId,
+  )
+  const isReferralSource = selectedSource?.name === 'Referência'
+  const isPaidAds =
+    selectedSource?.name === 'Google Ads' || selectedSource?.name === 'Meta Ads'
+
+  useEffect(() => {
+    // Auto-check referral if source is "Referência"
+    if (isReferralSource) {
+      form.setValue('isReferral', true)
+    }
+  }, [isReferralSource, form])
 
   // Revisit / preload consultation entry by patient code (unique record)
   useEffect(() => {
@@ -89,6 +122,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             planAccepted: !!entry.planAccepted,
             planAcceptedAt: toDateInput(entry.planAcceptedAt),
             planValue: entry.planValue ?? 0,
+            sourceId: entry.sourceId || '',
+            isReferral: entry.isReferral || false,
+            referralName: entry.referralName || '',
+            referralCode: entry.referralCode || '',
+            campaignId: entry.campaignId || '',
           }
           form.reset(formData)
         })
@@ -105,6 +143,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             form.setValue('planAccepted', false)
             form.setValue('planAcceptedAt', '')
             form.setValue('planValue', 0)
+            form.setValue('sourceId', '')
+            form.setValue('isReferral', false)
+            form.setValue('referralName', '')
+            form.setValue('referralCode', '')
+            form.setValue('campaignId', '')
             return
           }
           toast.error(err?.message || 'Erro ao carregar 1.ª consulta')
@@ -116,6 +159,19 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
   }, [code, clinic.id, form, loadedCode])
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
+    // Validate conditional fields for referral
+    if (isReferralSource) {
+      if (!data.referralName || !data.referralCode) {
+        form.setError('referralName', {
+          message: 'Obrigatório para referência',
+        })
+        form.setError('referralCode', {
+          message: 'Obrigatório para referência',
+        })
+        return
+      }
+    }
+
     try {
       const id = `consultation-${clinic.id}-${data.code}`
       await addConsultationEntry(clinic.id, {
@@ -131,6 +187,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planAccepted: data.planAccepted,
         planAcceptedAt: data.planAccepted ? data.planAcceptedAt || null : null,
         planValue: data.planValue ?? 0,
+        sourceId: data.sourceId || null,
+        isReferral: data.isReferral || isReferralSource,
+        referralName: data.referralName || null,
+        referralCode: data.referralCode || null,
+        campaignId: data.campaignId || null,
       })
       toast.success('1.ª consulta guardada!')
       setLoadedCode(null)
@@ -146,6 +207,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planAccepted: false,
         planAcceptedAt: '',
         planValue: 0,
+        sourceId: '',
+        isReferral: false,
+        referralName: '',
+        referralCode: '',
+        campaignId: '',
       })
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao guardar 1.ª consulta')
@@ -202,6 +268,85 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             patientNameError={form.formState.errors.patientName?.message}
           />
         </div>
+
+        {/* Source fields */}
+        <FormField
+          control={form.control}
+          name="sourceId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fonte de Chegada</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a fonte (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {clinic.configuration.sources.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Conditional Campaign Field */}
+        {isPaidAds && (
+          <div className="rounded-md border p-4 bg-muted/20 animate-fade-in">
+            <FormField
+              control={form.control}
+              name="campaignId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Campanha (Ads)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a campanha" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clinic.configuration.campaigns.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        {/* Conditional Referral Fields */}
+        {isReferralSource && (
+          <div className="space-y-4 rounded-md border p-4 bg-blue-50/50 animate-fade-in">
+            <h4 className="text-sm font-semibold text-blue-800">
+              Paciente que fez a referência
+            </h4>
+            <PatientCodeInput
+              clinicId={clinic.id}
+              value={form.watch('referralCode') || ''}
+              onCodeChange={(c) =>
+                form.setValue('referralCode', c, { shouldValidate: true })
+              }
+              patientName={form.watch('referralName') || ''}
+              onPatientNameChange={(n) =>
+                form.setValue('referralName', n, { shouldValidate: true })
+              }
+              label="Código do Paciente"
+              codeError={form.formState.errors.referralCode?.message}
+              patientNameError={form.formState.errors.referralName?.message}
+            />
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
           <FormField

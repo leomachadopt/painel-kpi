@@ -6,6 +6,9 @@ const router = Router()
 // Get all clinics
 router.get('/', async (req, res) => {
   try {
+    const defaultNpsQuestion = 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?'
+
+    // Query principal sem nps_question - sempre seguro
     const result = await query(`
       SELECT
         id, name, owner_name, logo_url, active, last_update,
@@ -16,7 +19,7 @@ router.get('/', async (req, res) => {
         target_leads_min, target_leads_max, target_revenue_per_cabinet,
         target_plans_presented_adults, target_plans_presented_kids,
         target_agenda_operational, target_agenda_planning,
-        target_agenda_sales, target_agenda_leadership, nps_question
+        target_agenda_sales, target_agenda_leadership
       FROM clinics
       WHERE active = true
       ORDER BY name
@@ -24,76 +27,132 @@ router.get('/', async (req, res) => {
 
     const clinics = await Promise.all(
       result.rows.map(async (clinic) => {
-        // Get configuration data
-        const categories = await query(
-          'SELECT id, name FROM clinic_categories WHERE clinic_id = $1',
-          [clinic.id]
-        )
-        const cabinets = await query(
-          'SELECT id, name, standard_hours FROM clinic_cabinets WHERE clinic_id = $1',
-          [clinic.id]
-        )
-        const doctors = await query(
-          'SELECT id, name FROM clinic_doctors WHERE clinic_id = $1',
-          [clinic.id]
-        )
-        const sources = await query(
-          'SELECT id, name FROM clinic_sources WHERE clinic_id = $1',
-          [clinic.id]
-        )
-        const campaigns = await query(
-          'SELECT id, name FROM clinic_campaigns WHERE clinic_id = $1',
-          [clinic.id]
-        )
+        try {
+          // Get configuration data
+          const categories = await query(
+            'SELECT id, name FROM clinic_categories WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
+          const cabinets = await query(
+            'SELECT id, name, standard_hours FROM clinic_cabinets WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
+          const doctors = await query(
+            'SELECT id, name FROM clinic_doctors WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
+          const sources = await query(
+            'SELECT id, name FROM clinic_sources WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
+          const campaigns = await query(
+            'SELECT id, name FROM clinic_campaigns WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
+          const paymentSources = await query(
+            'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
 
-        return {
-          id: clinic.id,
-          name: clinic.name,
-          ownerName: clinic.owner_name,
-          logoUrl: clinic.logo_url,
-          active: clinic.active,
-          lastUpdate: clinic.last_update,
-          targetRevenue: parseFloat(clinic.target_revenue),
-          targetAlignersRange: {
-            min: clinic.target_aligners_min,
-            max: clinic.target_aligners_max,
-          },
-          targetAvgTicket: parseFloat(clinic.target_avg_ticket),
-          targetAcceptanceRate: parseFloat(clinic.target_acceptance_rate),
-          targetOccupancyRate: parseFloat(clinic.target_occupancy_rate),
-          targetNPS: clinic.target_nps,
-          targetIntegrationRate: parseFloat(clinic.target_integration_rate),
-          targetAttendanceRate: parseFloat(clinic.target_attendance_rate),
-          targetFollowUpRate: parseFloat(clinic.target_follow_up_rate),
-          targetWaitTime: clinic.target_wait_time,
-          targetComplaints: clinic.target_complaints,
-          targetLeadsRange: {
-            min: clinic.target_leads_min,
-            max: clinic.target_leads_max,
-          },
-          targetRevenuePerCabinet: parseFloat(clinic.target_revenue_per_cabinet),
-          targetPlansPresented: {
-            adults: clinic.target_plans_presented_adults,
-            kids: clinic.target_plans_presented_kids,
-          },
-          targetAgendaDistribution: {
-            operational: parseFloat(clinic.target_agenda_operational),
-            planning: parseFloat(clinic.target_agenda_planning),
-            sales: parseFloat(clinic.target_agenda_sales),
-            leadership: parseFloat(clinic.target_agenda_leadership),
-          },
-          npsQuestion: clinic.nps_question,
-          configuration: {
-            categories: categories.rows.map((r) => ({ id: r.id, name: r.name })),
-            cabinets: cabinets.rows.map((r) => ({
-              id: r.id,
-              name: r.name,
-              standardHours: r.standard_hours,
-            })),
-            doctors: doctors.rows.map((r) => ({ id: r.id, name: r.name })),
-            sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
-            campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
-          },
+          // Try to get nps_question if column exists (optional)
+          let npsQuestion = defaultNpsQuestion
+          try {
+            const npsResult = await query(
+              'SELECT nps_question FROM clinics WHERE id = $1',
+              [clinic.id]
+            )
+            if (npsResult.rows[0]?.nps_question) {
+              npsQuestion = npsResult.rows[0].nps_question
+            }
+          } catch {
+            // Column doesn't exist or query failed - use default
+          }
+
+          return {
+            id: clinic.id,
+            name: clinic.name,
+            ownerName: clinic.owner_name,
+            logoUrl: clinic.logo_url,
+            active: clinic.active,
+            lastUpdate: clinic.last_update,
+            targetRevenue: parseFloat(clinic.target_revenue || '0'),
+            targetAlignersRange: {
+              min: clinic.target_aligners_min || 0,
+              max: clinic.target_aligners_max || 0,
+            },
+            targetAvgTicket: parseFloat(clinic.target_avg_ticket || '0'),
+            targetAcceptanceRate: parseFloat(clinic.target_acceptance_rate || '0'),
+            targetOccupancyRate: parseFloat(clinic.target_occupancy_rate || '0'),
+            targetNPS: clinic.target_nps || 0,
+            targetIntegrationRate: parseFloat(clinic.target_integration_rate || '0'),
+            targetAttendanceRate: parseFloat(clinic.target_attendance_rate || '0'),
+            targetFollowUpRate: parseFloat(clinic.target_follow_up_rate || '0'),
+            targetWaitTime: clinic.target_wait_time || 0,
+            targetComplaints: clinic.target_complaints || 0,
+            targetLeadsRange: {
+              min: clinic.target_leads_min || 0,
+              max: clinic.target_leads_max || 0,
+            },
+            targetRevenuePerCabinet: parseFloat(clinic.target_revenue_per_cabinet || '0'),
+            targetPlansPresented: {
+              adults: clinic.target_plans_presented_adults || 0,
+              kids: clinic.target_plans_presented_kids || 0,
+            },
+            targetAgendaDistribution: {
+              operational: parseFloat(clinic.target_agenda_operational || '0'),
+              planning: parseFloat(clinic.target_agenda_planning || '0'),
+              sales: parseFloat(clinic.target_agenda_sales || '0'),
+              leadership: parseFloat(clinic.target_agenda_leadership || '0'),
+            },
+            npsQuestion,
+            configuration: {
+              categories: categories.rows.map((r) => ({ id: r.id, name: r.name })),
+              cabinets: cabinets.rows.map((r) => ({
+                id: r.id,
+                name: r.name,
+                standardHours: r.standard_hours,
+              })),
+              doctors: doctors.rows.map((r) => ({ id: r.id, name: r.name })),
+              sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
+              campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
+              paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
+            },
+          }
+        } catch (clinicError) {
+          console.error(`Error processing clinic ${clinic.id}:`, clinicError)
+          // Return basic clinic info even if configuration fails
+          return {
+            id: clinic.id,
+            name: clinic.name,
+            ownerName: clinic.owner_name,
+            logoUrl: clinic.logo_url,
+            active: clinic.active,
+            lastUpdate: clinic.last_update,
+            targetRevenue: parseFloat(clinic.target_revenue || '0'),
+            targetAlignersRange: { min: 0, max: 0 },
+            targetAvgTicket: 0,
+            targetAcceptanceRate: 0,
+            targetOccupancyRate: 0,
+            targetNPS: 0,
+            targetIntegrationRate: 0,
+            targetAttendanceRate: 0,
+            targetFollowUpRate: 0,
+            targetWaitTime: 0,
+            targetComplaints: 0,
+            targetLeadsRange: { min: 0, max: 0 },
+            targetRevenuePerCabinet: 0,
+            targetPlansPresented: { adults: 0, kids: 0 },
+            targetAgendaDistribution: { operational: 0, planning: 0, sales: 0, leadership: 0 },
+            npsQuestion: defaultNpsQuestion,
+            configuration: {
+              categories: [],
+              cabinets: [],
+              doctors: [],
+              sources: [],
+              campaigns: [],
+              paymentSources: [],
+            },
+          }
         }
       })
     )
@@ -101,7 +160,11 @@ router.get('/', async (req, res) => {
     res.json(clinics)
   } catch (error) {
     console.error('Get clinics error:', error)
-    res.status(500).json({ error: 'Failed to fetch clinics' })
+    console.error('Error details:', error instanceof Error ? error.stack : String(error))
+    res.status(500).json({ 
+      error: 'Failed to fetch clinics',
+      details: error instanceof Error ? error.message : String(error)
+    })
   }
 })
 
@@ -109,8 +172,22 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
+    const defaultNpsQuestion = 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?'
+
+    // Query principal sem nps_question - sempre seguro
     const result = await query(
-      `SELECT * FROM clinics WHERE id = $1 AND active = true`,
+      `SELECT 
+        id, name, owner_name, logo_url, active, last_update,
+        target_revenue, target_aligners_min, target_aligners_max,
+        target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+        target_nps, target_integration_rate, target_attendance_rate,
+        target_follow_up_rate, target_wait_time, target_complaints,
+        target_leads_min, target_leads_max, target_revenue_per_cabinet,
+        target_plans_presented_adults, target_plans_presented_kids,
+        target_agenda_operational, target_agenda_planning,
+        target_agenda_sales, target_agenda_leadership
+      FROM clinics 
+      WHERE id = $1 AND active = true`,
       [id]
     )
 
@@ -118,28 +195,47 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Clinic not found' })
     }
 
-    // Build clinic object with configuration (same as above)
+    // Build clinic object with configuration
     const clinic = result.rows[0]
+    
     const categories = await query(
       'SELECT id, name FROM clinic_categories WHERE clinic_id = $1',
       [clinic.id]
-    )
+    ).catch(() => ({ rows: [] }))
     const cabinets = await query(
       'SELECT id, name, standard_hours FROM clinic_cabinets WHERE clinic_id = $1',
       [clinic.id]
-    )
+    ).catch(() => ({ rows: [] }))
     const doctors = await query(
       'SELECT id, name FROM clinic_doctors WHERE clinic_id = $1',
       [clinic.id]
-    )
+    ).catch(() => ({ rows: [] }))
     const sources = await query(
       'SELECT id, name FROM clinic_sources WHERE clinic_id = $1',
       [clinic.id]
-    )
+    ).catch(() => ({ rows: [] }))
     const campaigns = await query(
       'SELECT id, name FROM clinic_campaigns WHERE clinic_id = $1',
       [clinic.id]
-    )
+    ).catch(() => ({ rows: [] }))
+    const paymentSources = await query(
+      'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+      [clinic.id]
+    ).catch(() => ({ rows: [] }))
+
+    // Try to get nps_question if column exists (optional)
+    let npsQuestion = defaultNpsQuestion
+    try {
+      const npsResult = await query(
+        'SELECT nps_question FROM clinics WHERE id = $1',
+        [clinic.id]
+      )
+      if (npsResult.rows[0]?.nps_question) {
+        npsQuestion = npsResult.rows[0].nps_question
+      }
+    } catch {
+      // Column doesn't exist or query failed - use default
+    }
 
     res.json({
       id: clinic.id,
@@ -148,35 +244,36 @@ router.get('/:id', async (req, res) => {
       logoUrl: clinic.logo_url,
       active: clinic.active,
       lastUpdate: clinic.last_update,
-      targetRevenue: parseFloat(clinic.target_revenue),
+      targetRevenue: parseFloat(clinic.target_revenue || '0'),
       targetAlignersRange: {
-        min: clinic.target_aligners_min,
-        max: clinic.target_aligners_max,
+        min: clinic.target_aligners_min || 0,
+        max: clinic.target_aligners_max || 0,
       },
-      targetAvgTicket: parseFloat(clinic.target_avg_ticket),
-      targetAcceptanceRate: parseFloat(clinic.target_acceptance_rate),
-      targetOccupancyRate: parseFloat(clinic.target_occupancy_rate),
-      targetNPS: clinic.target_nps,
-      targetIntegrationRate: parseFloat(clinic.target_integration_rate),
-      targetAttendanceRate: parseFloat(clinic.target_attendance_rate),
-      targetFollowUpRate: parseFloat(clinic.target_follow_up_rate),
-      targetWaitTime: clinic.target_wait_time,
-      targetComplaints: clinic.target_complaints,
+      targetAvgTicket: parseFloat(clinic.target_avg_ticket || '0'),
+      targetAcceptanceRate: parseFloat(clinic.target_acceptance_rate || '0'),
+      targetOccupancyRate: parseFloat(clinic.target_occupancy_rate || '0'),
+      targetNPS: clinic.target_nps || 0,
+      targetIntegrationRate: parseFloat(clinic.target_integration_rate || '0'),
+      targetAttendanceRate: parseFloat(clinic.target_attendance_rate || '0'),
+      targetFollowUpRate: parseFloat(clinic.target_follow_up_rate || '0'),
+      targetWaitTime: clinic.target_wait_time || 0,
+      targetComplaints: clinic.target_complaints || 0,
       targetLeadsRange: {
-        min: clinic.target_leads_min,
-        max: clinic.target_leads_max,
+        min: clinic.target_leads_min || 0,
+        max: clinic.target_leads_max || 0,
       },
-      targetRevenuePerCabinet: parseFloat(clinic.target_revenue_per_cabinet),
+      targetRevenuePerCabinet: parseFloat(clinic.target_revenue_per_cabinet || '0'),
       targetPlansPresented: {
-        adults: clinic.target_plans_presented_adults,
-        kids: clinic.target_plans_presented_kids,
+        adults: clinic.target_plans_presented_adults || 0,
+        kids: clinic.target_plans_presented_kids || 0,
       },
       targetAgendaDistribution: {
-        operational: parseFloat(clinic.target_agenda_operational),
-        planning: parseFloat(clinic.target_agenda_planning),
-        sales: parseFloat(clinic.target_agenda_sales),
-        leadership: parseFloat(clinic.target_agenda_leadership),
+        operational: parseFloat(clinic.target_agenda_operational || '0'),
+        planning: parseFloat(clinic.target_agenda_planning || '0'),
+        sales: parseFloat(clinic.target_agenda_sales || '0'),
+        leadership: parseFloat(clinic.target_agenda_leadership || '0'),
       },
+      npsQuestion,
       configuration: {
         categories: categories.rows.map((r) => ({ id: r.id, name: r.name })),
         cabinets: cabinets.rows.map((r) => ({
@@ -187,11 +284,16 @@ router.get('/:id', async (req, res) => {
         doctors: doctors.rows.map((r) => ({ id: r.id, name: r.name })),
         sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
         campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
+        paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
       },
     })
   } catch (error) {
     console.error('Get clinic error:', error)
-    res.status(500).json({ error: 'Failed to fetch clinic' })
+    console.error('Error details:', error instanceof Error ? error.stack : String(error))
+    res.status(500).json({ 
+      error: 'Failed to fetch clinic',
+      details: error instanceof Error ? error.message : String(error)
+    })
   }
 })
 
