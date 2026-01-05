@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { query } from '../db.js'
+import { query, getClient } from '../db.js'
 
 const router = Router()
 
@@ -186,16 +186,73 @@ router.delete('/:clinicId/:patientId', async (req, res) => {
   try {
     const { clinicId, patientId } = req.params
 
-    const result = await query(
-      'DELETE FROM patients WHERE id = $1 AND clinic_id = $2 RETURNING id',
+    // First, get the patient code before deleting
+    const patientResult = await query(
+      'SELECT code FROM patients WHERE id = $1 AND clinic_id = $2',
       [patientId, clinicId]
     )
 
-    if (result.rows.length === 0) {
+    if (patientResult.rows.length === 0) {
       return res.status(404).json({ error: 'Patient not found' })
     }
 
-    res.json({ message: 'Patient deleted successfully' })
+    const patientCode = patientResult.rows[0].code
+
+    // Use a transaction to ensure atomicity
+    const client = await getClient()
+
+    try {
+      await client.query('BEGIN')
+
+      // Delete NPS surveys related to this patient
+      await client.query(
+        'DELETE FROM nps_surveys WHERE patient_id = $1',
+        [patientId]
+      )
+
+      // Delete daily financial entries
+      await client.query(
+        'DELETE FROM daily_financial_entries WHERE clinic_id = $1 AND code = $2',
+        [clinicId, patientCode]
+      )
+
+      // Delete daily consultation entries
+      await client.query(
+        'DELETE FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2',
+        [clinicId, patientCode]
+      )
+
+      // Delete daily service time entries
+      await client.query(
+        'DELETE FROM daily_service_time_entries WHERE clinic_id = $1 AND code = $2',
+        [clinicId, patientCode]
+      )
+
+      // Delete daily source entries (where code matches)
+      await client.query(
+        'DELETE FROM daily_source_entries WHERE clinic_id = $1 AND code = $2',
+        [clinicId, patientCode]
+      )
+
+      // Finally, delete the patient
+      await client.query(
+        'DELETE FROM patients WHERE id = $1 AND clinic_id = $2',
+        [patientId, clinicId]
+      )
+
+      await client.query('COMMIT')
+      client.release()
+
+      res.json({ message: 'Patient and all related records deleted successfully' })
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK')
+      } catch (rollbackError) {
+        console.error('Rollback error:', rollbackError)
+      }
+      client.release()
+      throw error
+    }
   } catch (error) {
     console.error('Delete patient error:', error)
     res.status(500).json({ error: 'Failed to delete patient' })

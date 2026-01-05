@@ -322,6 +322,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
     })
 
+    // If no entries exist, create empty monthly data for current month/year
+    if (monthlyMap.size === 0) {
+      const now = new Date()
+      const currentMonth = now.getMonth() + 1
+      const currentYear = now.getFullYear()
+      const key = `${currentYear}-${currentMonth}`
+      monthlyMap.set(key, initMonthData(currentMonth, currentYear))
+    }
+
     // Save aggregated data
     monthlyMap.forEach((data, key) => {
       setMonthlyData((prev) => {
@@ -390,9 +399,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const sources = sourceEntries[clinic.id] || []
       const prospecting = prospectingEntries[clinic.id] || []
 
-      if (financial.length > 0 || consultations.length > 0 || prospecting.length > 0) {
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
-      }
+      // Always aggregate, even if empty - this ensures monthly data exists (with zeros)
+      aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
     })
   }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries])
 

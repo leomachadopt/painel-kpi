@@ -223,7 +223,4 @@ export const generateMockData = (
   })
 }
 
-export const MOCK_DATA: Record<string, MonthlyData[]> = {
-  'clinic-1': generateMockData('clinic-1', 2023),
-  'clinic-2': generateMockData('clinic-2', 2023),
-}
+export const MOCK_DATA: Record<string, MonthlyData[]> = {}

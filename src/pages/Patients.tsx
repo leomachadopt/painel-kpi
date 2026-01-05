@@ -20,9 +20,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, UserPlus, Loader2, Mail, Phone, Calendar } from 'lucide-react'
+import { Search, UserPlus, Loader2, Mail, Phone, Calendar, Trash2 } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function Patients() {
   const { user } = useAuthStore()
@@ -31,6 +42,9 @@ export default function Patients() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (clinicId) {
@@ -57,6 +71,29 @@ export default function Patients() {
     setSearchTerm(value)
     if (value.length >= 2 || value.length === 0) {
       loadPatients(value || undefined)
+    }
+  }
+
+  const handleDeleteClick = (patient: Patient) => {
+    setPatientToDelete(patient)
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeletePatient = async () => {
+    if (!clinicId || !patientToDelete) return
+
+    setDeleting(true)
+    try {
+      await patientsApi.delete(clinicId, patientToDelete.id)
+      toast.success('Paciente excluído com sucesso')
+      setShowDeleteDialog(false)
+      setPatientToDelete(null)
+      // Recarregar a lista de pacientes
+      await loadPatients(searchTerm || undefined)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir paciente')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -179,9 +216,21 @@ export default function Patients() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          Ver Detalhes
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="sm">
+                            Ver Detalhes
+                          </Button>
+                          {user?.role === 'GESTOR_CLINICA' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(patient)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -191,6 +240,51 @@ export default function Patients() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o paciente <strong>{patientToDelete?.name}</strong> (código: <strong>{patientToDelete?.code}</strong>)?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-6 py-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              Esta ação irá remover <strong>permanentemente</strong>:
+            </p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-sm text-muted-foreground">
+              <li>O paciente do sistema</li>
+              <li>Todos os registros de consultas</li>
+              <li>Todas as entradas financeiras</li>
+              <li>Todos os registros de tempo de serviço</li>
+              <li>Todos os registros de origem (sources)</li>
+              <li>Todas as pesquisas NPS relacionadas</li>
+            </ul>
+            <p className="text-sm text-muted-foreground mt-4">
+              <strong className="text-destructive">Esta ação não pode ser desfeita.</strong>
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePatient}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir Paciente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
