@@ -25,7 +25,7 @@ export function ProspectingTable({
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const handleDelete = async (entry: DailyProspectingEntry) => {
-    const total = entry.email + entry.sms + entry.whatsapp + entry.instagram
+    const total = entry.email + entry.sms + entry.whatsapp + entry.instagram + (entry.phone || 0)
     if (!confirm(`Excluir dados de prospecção de ${entry.date} (${total} leads)?`)) {
       return
     }
@@ -51,6 +51,7 @@ export function ProspectingTable({
             <TableHead className="text-center">SMS</TableHead>
             <TableHead className="text-center">WhatsApp</TableHead>
             <TableHead className="text-center">Instagram</TableHead>
+            <TableHead className="text-center">Ligação telefônica</TableHead>
             <TableHead className="text-right font-bold">Total Leads</TableHead>
             <TableHead className="w-[80px]">Ações</TableHead>
           </TableRow>
@@ -59,7 +60,7 @@ export function ProspectingTable({
           {data.length > 0 ? (
             data.map((entry) => {
               const total =
-                entry.email + entry.sms + entry.whatsapp + entry.instagram
+                entry.email + entry.sms + entry.whatsapp + entry.instagram + (entry.phone || 0)
               return (
                 <TableRow key={entry.id}>
                   <TableCell>{entry.date}</TableCell>
@@ -73,6 +74,9 @@ export function ProspectingTable({
                   </TableCell>
                   <TableCell className="text-center">
                     {entry.instagram}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {entry.phone || 0}
                   </TableCell>
                   <TableCell className="text-right font-bold text-primary">
                     {total}
@@ -93,7 +97,7 @@ export function ProspectingTable({
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="h-24 text-center">
+              <TableCell colSpan={9} className="h-24 text-center">
                 Nenhum registo de prospecção no período.
               </TableCell>
             </TableRow>

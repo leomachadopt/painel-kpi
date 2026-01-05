@@ -211,6 +211,12 @@ export const dailyEntriesApi = {
         body: JSON.stringify(entry),
       }),
 
+    update: (clinicId: string, entryId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/financial/${clinicId}/${entryId}`, {
+        method: 'PUT',
+        body: JSON.stringify(entry),
+      }),
+
     delete: (clinicId: string, entryId: string) =>
       apiCall<{ message: string }>(`/daily-entries/financial/${clinicId}/${entryId}`, {
         method: 'DELETE',
@@ -228,6 +234,12 @@ export const dailyEntriesApi = {
     create: (clinicId: string, entry: any) =>
       apiCall<any>(`/daily-entries/consultation/${clinicId}`, {
         method: 'POST',
+        body: JSON.stringify(entry),
+      }),
+
+    update: (clinicId: string, entryId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/consultation/${clinicId}/${entryId}`, {
+        method: 'PUT',
         body: JSON.stringify(entry),
       }),
 

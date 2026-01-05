@@ -7,11 +7,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Pencil } from 'lucide-react'
 import { DailyFinancialEntry, Clinic } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { EditFinancialDialog } from './EditFinancialDialog'
 
 export function FinancialTable({
   data,
@@ -23,6 +24,8 @@ export function FinancialTable({
   onDelete?: () => void
 }) {
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [editingEntry, setEditingEntry] = useState<DailyFinancialEntry | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const getCategoryName = (id: string) =>
     clinic.configuration.categories.find((c) => c.id === id)?.name || id
@@ -46,59 +49,90 @@ export function FinancialTable({
     }
   }
 
+  const handleEdit = (entry: DailyFinancialEntry) => {
+    setEditingEntry(entry)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditSuccess = () => {
+    onDelete?.() // Recarregar dados
+  }
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Data</TableHead>
-            <TableHead>Paciente</TableHead>
-            <TableHead>Código</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Gabinete</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-            <TableHead className="w-[80px]">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length > 0 ? (
-            data.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell>{entry.date.split('T')[0]}</TableCell>
-                <TableCell>{entry.patientName}</TableCell>
-                <TableCell className="font-mono text-xs">
-                  {entry.code}
-                </TableCell>
-                <TableCell>{getCategoryName(entry.categoryId)}</TableCell>
-                <TableCell>{getCabinetName(entry.cabinetId)}</TableCell>
-                <TableCell className="text-right font-medium">
-                  {new Intl.NumberFormat('pt-PT', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(entry.value)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(entry)}
-                    disabled={deleting === entry.id}
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Paciente</TableHead>
+              <TableHead>Código</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Gabinete</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="w-[120px]">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length > 0 ? (
+              data.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell>{entry.date.split('T')[0]}</TableCell>
+                  <TableCell>{entry.patientName}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {entry.code}
+                  </TableCell>
+                  <TableCell>{getCategoryName(entry.categoryId)}</TableCell>
+                  <TableCell>{getCabinetName(entry.cabinetId)}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {new Intl.NumberFormat('pt-PT', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    }).format(entry.value)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(entry)}
+                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(entry)}
+                        disabled={deleting === entry.id}
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  Nenhum lançamento financeiro no período.
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                Nenhum lançamento financeiro no período.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <EditFinancialDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        entry={editingEntry}
+        clinic={clinic}
+        onSuccess={handleEditSuccess}
+      />
+    </>
   )
 }

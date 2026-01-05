@@ -1,7 +1,18 @@
-import { DailyConsultationEntry } from '@/lib/types'
+import { DailyConsultationEntry, Clinic } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, User, Hash, Euro } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Calendar, User, Hash, Euro, Pencil, Trash2, MoreVertical } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import useDataStore from '@/stores/useDataStore'
+import { EditConsultationDialog } from './EditConsultationDialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface KanbanColumn {
   title: string
@@ -12,9 +23,46 @@ interface KanbanColumn {
 
 export function ConsultationKanban({
   data,
+  clinic,
+  onDelete,
 }: {
   data: DailyConsultationEntry[]
+  clinic?: Clinic
+  onDelete?: () => void
 }) {
+  const { deleteConsultationEntry } = useDataStore()
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [editingEntry, setEditingEntry] = useState<DailyConsultationEntry | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
+  const handleDelete = async (entry: DailyConsultationEntry) => {
+    if (!clinic) return
+    
+    if (!confirm(`Excluir consulta de ${entry.patientName} (código ${entry.code})?`)) {
+      return
+    }
+
+    setDeleting(entry.id)
+    try {
+      await deleteConsultationEntry(clinic.id, entry.id)
+      toast.success('Consulta excluída com sucesso!')
+      onDelete?.()
+    } catch (error: any) {
+      // Erro já é tratado na store
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const handleEdit = (entry: DailyConsultationEntry) => {
+    if (!clinic) return
+    setEditingEntry(entry)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditSuccess = () => {
+    onDelete?.() // Recarregar dados
+  }
   // Organize entries by stage
   const columns: KanbanColumn[] = [
     {
@@ -72,9 +120,47 @@ export function ConsultationKanban({
               column.entries.map((entry) => (
                 <Card
                   key={entry.id}
-                  className={`p-3 border-2 ${column.color} hover:shadow-md transition-shadow cursor-pointer`}
+                  className={`p-3 border-2 ${column.color} hover:shadow-md transition-shadow relative`}
                 >
-                  <div className="flex flex-col gap-2">
+                  {clinic && (
+                    <div className="absolute top-2 right-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-70 hover:opacity-100"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEdit(entry)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(entry)
+                            }}
+                            disabled={deleting === entry.id}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2 pr-6">
                     {/* Patient Name */}
                     <div className="flex items-start gap-2">
                       <User className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -146,6 +232,16 @@ export function ConsultationKanban({
           </div>
         </div>
       ))}
+      
+      {clinic && (
+        <EditConsultationDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          entry={editingEntry}
+          clinic={clinic}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   )
 }

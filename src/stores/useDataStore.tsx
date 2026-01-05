@@ -42,8 +42,14 @@ interface DataState {
 
   // Daily Entries Actions
   addFinancialEntry: (clinicId: string, entry: DailyFinancialEntry) => Promise<void>
+  updateFinancialEntry: (clinicId: string, entryId: string, entry: DailyFinancialEntry) => Promise<void>
   addConsultationEntry: (
     clinicId: string,
+    entry: DailyConsultationEntry,
+  ) => Promise<void>
+  updateConsultationEntry: (
+    clinicId: string,
+    entryId: string,
     entry: DailyConsultationEntry,
   ) => Promise<void>
   saveProspectingEntry: (clinicId: string, entry: DailyProspectingEntry) => Promise<void>
@@ -316,9 +322,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       data.leadsByChannel.SMS = (data.leadsByChannel.SMS || 0) + (entry.sms || 0)
       data.leadsByChannel.WhatsApp = (data.leadsByChannel.WhatsApp || 0) + (entry.whatsapp || 0)
       data.leadsByChannel.Instagram = (data.leadsByChannel.Instagram || 0) + (entry.instagram || 0)
+      data.leadsByChannel['Ligação telefônica'] = (data.leadsByChannel['Ligação telefônica'] || 0) + (entry.phone || 0)
 
       // Total leads
-      data.leads += (entry.email || 0) + (entry.sms || 0) + (entry.whatsapp || 0) + (entry.instagram || 0)
+      data.leads += (entry.email || 0) + (entry.sms || 0) + (entry.whatsapp || 0) + (entry.instagram || 0) + (entry.phone || 0)
 
       // Scheduled consultations
       if (entry.scheduled > 0) {
@@ -815,6 +822,104 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
+  const updateConsultationEntry = async (
+    clinicId: string,
+    entryId: string,
+    updatedEntry: DailyConsultationEntry,
+  ) => {
+    // Encontrar a entrada antiga para reverter os cálculos
+    const oldEntry = consultationEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!oldEntry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Atualizar na lista local (otimista)
+    setConsultationEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).map((e) =>
+        e.id === entryId ? updatedEntry : e
+      ),
+    }))
+
+    try {
+      await ensurePatientExists(clinicId, updatedEntry.code, updatedEntry.patientName)
+      await dailyEntriesApi.consultation.update(clinicId, entryId, {
+        date: updatedEntry.date,
+        patientName: updatedEntry.patientName,
+        code: updatedEntry.code,
+        planCreated: updatedEntry.planCreated,
+        planCreatedAt: updatedEntry.planCreatedAt || null,
+        planPresented: updatedEntry.planPresented,
+        planPresentedAt: updatedEntry.planPresentedAt || null,
+        planPresentedValue: updatedEntry.planPresentedValue ?? 0,
+        planAccepted: updatedEntry.planAccepted,
+        planAcceptedAt: updatedEntry.planAcceptedAt || null,
+        planValue: updatedEntry.planValue ?? 0,
+        sourceId: updatedEntry.sourceId || null,
+        isReferral: updatedEntry.isReferral || false,
+        referralName: updatedEntry.referralName || null,
+        referralCode: updatedEntry.referralCode || null,
+        campaignId: updatedEntry.campaignId || null,
+      })
+    } catch (error: any) {
+      // Rollback otimista
+      setConsultationEntries((prev) => ({
+        ...prev,
+        [clinicId]: (prev[clinicId] || []).map((e) =>
+          e.id === entryId ? oldEntry : e
+        ),
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para editar consulta.')
+      } else {
+        toast.error(error?.message || 'Erro ao editar consulta.')
+      }
+      throw error
+    }
+
+    // Recalcular os dados mensais: remover métricas antigas e adicionar novas
+    const oldData = ensureMonthlyData(clinicId, oldEntry.date)
+    const newData = ensureMonthlyData(clinicId, updatedEntry.date)
+    
+    if (oldData) {
+      updateMonthlyDataState(clinicId, oldData.month, oldData.year, (d) => {
+        // Reverter métricas antigas
+        if (oldEntry.planPresented) {
+          d.plansPresentedAdults = Math.max(0, d.plansPresentedAdults - 1)
+        }
+        if (oldEntry.planAccepted) {
+          d.plansAccepted = Math.max(0, d.plansAccepted - 1)
+          d.revenueAcceptedPlans = Math.max(0, d.revenueAcceptedPlans - (oldEntry.planValue || 0))
+          if ((oldEntry.planValue || 0) > 3000) {
+            d.alignersStarted = Math.max(0, d.alignersStarted - 1)
+          }
+        } else if (oldEntry.planPresented) {
+          d.plansNotAccepted = Math.max(0, d.plansNotAccepted - 1)
+        }
+      })
+    }
+
+    if (newData) {
+      updateMonthlyDataState(clinicId, newData.month, newData.year, (d) => {
+        // Adicionar novas métricas
+        if (updatedEntry.planPresented) {
+          d.plansPresentedAdults += 1
+        }
+        if (updatedEntry.planAccepted) {
+          d.plansAccepted += 1
+          d.revenueAcceptedPlans += updatedEntry.planValue || 0
+          if ((updatedEntry.planValue || 0) > 3000) {
+            d.alignersStarted += 1
+          }
+        } else if (updatedEntry.planPresented) {
+          d.plansNotAccepted += 1
+        }
+      })
+    }
+  }
+
   const saveProspectingEntry = async (
     clinicId: string,
     entry: DailyProspectingEntry,
@@ -1013,6 +1118,106 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           (d.campaignDistribution[campName] || 0) + 1
       }
     })
+  }
+
+  const updateFinancialEntry = async (
+    clinicId: string,
+    entryId: string,
+    updatedEntry: DailyFinancialEntry,
+  ) => {
+    // Encontrar a entrada antiga para reverter os cálculos
+    const oldEntry = financialEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!oldEntry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Atualizar na lista local (otimista)
+    setFinancialEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).map((e) =>
+        e.id === entryId ? updatedEntry : e
+      ),
+    }))
+
+    try {
+      await ensurePatientExists(clinicId, updatedEntry.code, updatedEntry.patientName)
+      await dailyEntriesApi.financial.update(clinicId, entryId, {
+        date: updatedEntry.date,
+        patientName: updatedEntry.patientName,
+        code: updatedEntry.code,
+        categoryId: updatedEntry.categoryId,
+        value: updatedEntry.value,
+        cabinetId: updatedEntry.cabinetId,
+        doctorId: updatedEntry.doctorId || null,
+        paymentSourceId: updatedEntry.paymentSourceId || null,
+      })
+    } catch (error: any) {
+      // Rollback otimista
+      setFinancialEntries((prev) => ({
+        ...prev,
+        [clinicId]: (prev[clinicId] || []).map((e) =>
+          e.id === entryId ? oldEntry : e
+        ),
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para editar lançamento.')
+      } else {
+        toast.error(error?.message || 'Erro ao editar lançamento.')
+      }
+      throw error
+    }
+
+    // Recalcular os dados mensais: remover valor antigo e adicionar novo
+    const oldData = ensureMonthlyData(clinicId, oldEntry.date)
+    const newData = ensureMonthlyData(clinicId, updatedEntry.date)
+    
+    if (oldData) {
+      const clinic = getClinic(clinicId)
+      const oldCatName =
+        clinic?.configuration.categories.find((c) => c.id === oldEntry.categoryId)
+          ?.name || 'Outros'
+
+      updateMonthlyDataState(clinicId, oldData.month, oldData.year, (d) => {
+        d.revenueTotal -= oldEntry.value
+        if (oldCatName.includes('Alinhadores')) d.revenueAligners -= oldEntry.value
+        else if (oldCatName.includes('Odontopediatria'))
+          d.revenuePediatrics -= oldEntry.value
+        else if (oldCatName.includes('Dentisteria'))
+          d.revenueDentistry -= oldEntry.value
+        else d.revenueOthers -= oldEntry.value
+
+        d.revenueByCategory[oldCatName] = Math.max(
+          0,
+          (d.revenueByCategory[oldCatName] || 0) - oldEntry.value
+        )
+        const oldCab = d.cabinets.find((c) => c.id === oldEntry.cabinetId)
+        if (oldCab) oldCab.revenue = Math.max(0, oldCab.revenue - oldEntry.value)
+      })
+    }
+
+    if (newData) {
+      const clinic = getClinic(clinicId)
+      const newCatName =
+        clinic?.configuration.categories.find((c) => c.id === updatedEntry.categoryId)
+          ?.name || 'Outros'
+
+      updateMonthlyDataState(clinicId, newData.month, newData.year, (d) => {
+        d.revenueTotal += updatedEntry.value
+        if (newCatName.includes('Alinhadores')) d.revenueAligners += updatedEntry.value
+        else if (newCatName.includes('Odontopediatria'))
+          d.revenuePediatrics += updatedEntry.value
+        else if (newCatName.includes('Dentisteria'))
+          d.revenueDentistry += updatedEntry.value
+        else d.revenueOthers += updatedEntry.value
+
+        d.revenueByCategory[newCatName] =
+          (d.revenueByCategory[newCatName] || 0) + updatedEntry.value
+        const newCab = d.cabinets.find((c) => c.id === updatedEntry.cabinetId)
+        if (newCab) newCab.revenue += updatedEntry.value
+      })
+    }
   }
 
   const deleteFinancialEntry = async (
@@ -1813,7 +2018,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         calculateKPIs,
         calculateAlerts,
         addFinancialEntry,
+        updateFinancialEntry,
         addConsultationEntry,
+        updateConsultationEntry,
         saveProspectingEntry,
         saveConsultationControlEntry,
         addCabinetUsageEntry,

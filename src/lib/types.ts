@@ -196,6 +196,8 @@ export interface DailyConsultationEntry {
   referralName?: string | null
   referralCode?: string | null
   campaignId?: string | null
+  // Doctor field (optional - for tracking responsible doctor)
+  doctorId?: string | null
 }
 
 export interface DailyProspectingEntry {
@@ -206,6 +208,7 @@ export interface DailyProspectingEntry {
   sms: number
   whatsapp: number
   instagram: number
+  phone: number
 }
 
 export interface DailyCabinetUsageEntry {

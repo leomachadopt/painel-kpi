@@ -202,10 +202,14 @@ export default function Reports() {
               {consultationView === 'kanban' ? (
                 <ConsultationKanban
                   data={filterByDate(consultationEntries[clinic.id])}
+                  clinic={clinic}
+                  onDelete={handleDataChange}
                 />
               ) : (
                 <ConsultationTable
                   data={filterByDate(consultationEntries[clinic.id])}
+                  clinic={clinic}
+                  onDelete={handleDataChange}
                 />
               )}
             </div>

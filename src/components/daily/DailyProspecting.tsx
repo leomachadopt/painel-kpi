@@ -19,6 +19,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
     sms: 0,
     whatsapp: 0,
     instagram: 0,
+    phone: 0,
   })
 
   // Load existing entry when date changes
@@ -33,6 +34,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
           sms: localEntry.sms,
           whatsapp: localEntry.whatsapp,
           instagram: localEntry.instagram,
+          phone: localEntry.phone || 0,
         })
         return
       }
@@ -48,16 +50,17 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             sms: apiEntry.sms || 0,
             whatsapp: apiEntry.whatsapp || 0,
             instagram: apiEntry.instagram || 0,
+            phone: apiEntry.phone || 0,
           })
         } else {
-          setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0 })
+          setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
         }
       } catch (error: any) {
         // 404 is expected if no entry exists for this date
         if (error?.status !== 404) {
           console.error('Error loading prospecting entry:', error)
         }
-        setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0 })
+        setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
       } finally {
         setLoading(false)
       }
@@ -133,6 +136,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             <CounterRow label="SMS" field="sms" />
             <CounterRow label="WhatsApp" field="whatsapp" />
             <CounterRow label="Instagram" field="instagram" />
+            <CounterRow label="Ligação telefônica" field="phone" />
           </div>
 
           <div className="space-y-3">

@@ -44,6 +44,8 @@ const schema = z.object({
   referralName: z.string().optional(),
   referralCode: z.string().optional(),
   campaignId: z.string().optional(),
+  // Doctor field
+  doctorId: z.string().optional(),
 })
 
 export function DailyConsultations({ clinic }: { clinic: Clinic }) {
@@ -70,6 +72,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       referralName: '',
       referralCode: '',
       campaignId: '',
+      doctorId: '',
     },
   })
 
@@ -127,6 +130,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             referralName: entry.referralName || '',
             referralCode: entry.referralCode || '',
             campaignId: entry.campaignId || '',
+            doctorId: entry.doctorId || '',
           }
           form.reset(formData)
         })
@@ -148,6 +152,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             form.setValue('referralName', '')
             form.setValue('referralCode', '')
             form.setValue('campaignId', '')
+            form.setValue('doctorId', '')
             return
           }
           toast.error(err?.message || 'Erro ao carregar 1.ª consulta')
@@ -192,6 +197,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         referralName: data.referralName || null,
         referralCode: data.referralCode || null,
         campaignId: data.campaignId || null,
+        doctorId: data.doctorId || null,
       })
       toast.success('1.ª consulta guardada!')
       setLoadedCode(null)
@@ -212,6 +218,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         referralName: '',
         referralCode: '',
         campaignId: '',
+        doctorId: '',
       })
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao guardar 1.ª consulta')
@@ -286,6 +293,32 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
                   {clinic.configuration.sources.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Doctor field */}
+        <FormField
+          control={form.control}
+          name="doctorId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Médico Responsável</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value || ''}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o médico (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {clinic.configuration.doctors.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

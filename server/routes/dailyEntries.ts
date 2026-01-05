@@ -34,6 +34,36 @@ async function canEditFinancial(req: any, clinicId: string): Promise<boolean> {
   return false
 }
 
+/**
+ * Helper function to check if user can create/edit consultation entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditConsultations permission
+ */
+async function canEditConsultations(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditConsultations === true
+  }
+
+  return false
+}
+
 // ================================
 // FINANCIAL ENTRIES
 // ================================
@@ -108,6 +138,66 @@ router.post('/financial/:clinicId', async (req, res) => {
   }
 })
 
+router.put('/financial/:clinicId/:entryId', async (req, res) => {
+  // Check if user can edit financial entries
+  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
+  const { clinicId } = req.params
+  const hasPermission = await canEditFinancial(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { clinicId, entryId } = req.params
+    const { date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
+
+    // Validate required fields
+    if (!date || !patientName || !code || !categoryId || !value || !cabinetId) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Check if entry exists
+    const checkResult = await query(
+      `SELECT id FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    // Update entry
+    const result = await query(
+      `UPDATE daily_financial_entries
+       SET date = $1, patient_name = $2, code = $3, category_id = $4, value = $5, 
+           cabinet_id = $6, doctor_id = $7, payment_source_id = $8
+       WHERE id = $9 AND clinic_id = $10
+       RETURNING *`,
+      [date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null, entryId, clinicId]
+    )
+
+    res.json({
+      id: result.rows[0].id,
+      date: result.rows[0].date,
+      patientName: result.rows[0].patient_name,
+      code: result.rows[0].code,
+      categoryId: result.rows[0].category_id,
+      value: parseFloat(result.rows[0].value),
+      cabinetId: result.rows[0].cabinet_id,
+      doctorId: result.rows[0].doctor_id || null,
+      paymentSourceId: result.rows[0].payment_source_id || null,
+    })
+  } catch (error: any) {
+    console.error('Update financial entry error:', error)
+    res.status(500).json({
+      error: 'Failed to update financial entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
 router.delete('/financial/:clinicId/:entryId', async (req, res) => {
   // Check if user can delete financial entries
   // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
@@ -166,6 +256,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
         referralName: row.referral_name || null,
         referralCode: row.referral_code || null,
         campaignId: row.campaign_id || null,
+        doctorId: row.doctor_id || null,
       }))
     )
   } catch (error) {
@@ -211,6 +302,7 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       referralName: row.referral_name || null,
       referralCode: row.referral_code || null,
       campaignId: row.campaign_id || null,
+      doctorId: row.doctor_id || null,
     })
   } catch (error) {
     console.error('Get consultation by code error:', error)
@@ -238,6 +330,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
       referralName,
       referralCode,
       campaignId,
+      doctorId,
     } = req.body
 
     if (!code || !/^\d{1,6}$/.test(code)) {
@@ -253,13 +346,13 @@ router.post('/consultation/:clinicId', async (req, res) => {
         plan_presented, plan_presented_at, plan_presented_value,
         plan_accepted, plan_accepted_at,
         plan_value,
-        source_id, is_referral, referral_name, referral_code, campaign_id)
+        source_id, is_referral, referral_name, referral_code, campaign_id, doctor_id)
        VALUES ($1, $2, $3, $4, $5,
         $6, $7,
         $8, $9, $10,
         $11, $12,
         $13,
-        $14, $15, $16, $17, $18)
+        $14, $15, $16, $17, $18, $19)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
@@ -275,7 +368,8 @@ router.post('/consultation/:clinicId', async (req, res) => {
         is_referral = EXCLUDED.is_referral,
         referral_name = EXCLUDED.referral_name,
         referral_code = EXCLUDED.referral_code,
-        campaign_id = EXCLUDED.campaign_id
+        campaign_id = EXCLUDED.campaign_id,
+        doctor_id = EXCLUDED.doctor_id
        RETURNING *`,
       [
         entryId,
@@ -296,6 +390,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
         referralName || null,
         referralCode || null,
         campaignId || null,
+        doctorId || null,
       ]
     )
 
@@ -317,6 +412,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
       referralName: result.rows[0].referral_name || null,
       referralCode: result.rows[0].referral_code || null,
       campaignId: result.rows[0].campaign_id || null,
+      doctorId: result.rows[0].doctor_id || null,
     })
   } catch (error: any) {
     console.error('Create consultation entry error:', error)
@@ -328,9 +424,123 @@ router.post('/consultation/:clinicId', async (req, res) => {
   }
 })
 
+router.put('/consultation/:clinicId/:entryId', async (req, res) => {
+  // Check if user can edit consultation entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditConsultations(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { clinicId, entryId } = req.params
+    const {
+      date,
+      patientName,
+      code,
+      planCreated,
+      planCreatedAt,
+      planPresented,
+      planPresentedAt,
+      planPresentedValue,
+      planAccepted,
+      planAcceptedAt,
+      planValue,
+      sourceId,
+      isReferral,
+      referralName,
+      referralCode,
+      campaignId,
+      doctorId,
+    } = req.body
+
+    // Validate required fields
+    if (!date || !patientName || !code || !/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Missing or invalid required fields' })
+    }
+
+    // Check if entry exists
+    const checkResult = await query(
+      `SELECT id FROM daily_consultation_entries WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    // Update entry
+    const result = await query(
+      `UPDATE daily_consultation_entries
+       SET date = $1, patient_name = $2, code = $3,
+           plan_created = $4, plan_created_at = $5,
+           plan_presented = $6, plan_presented_at = $7, plan_presented_value = $8,
+           plan_accepted = $9, plan_accepted_at = $10,
+           plan_value = $11,
+           source_id = $12, is_referral = $13, referral_name = $14, referral_code = $15, campaign_id = $16,
+           doctor_id = $17
+       WHERE id = $18 AND clinic_id = $19
+       RETURNING *`,
+      [
+        date,
+        patientName,
+        code,
+        planCreated || false,
+        planCreatedAt || null,
+        planPresented || false,
+        planPresentedAt || null,
+        planPresentedValue || 0,
+        planAccepted || false,
+        planAcceptedAt || null,
+        planValue || 0,
+        sourceId || null,
+        isReferral || false,
+        referralName || null,
+        referralCode || null,
+        campaignId || null,
+        doctorId || null,
+        entryId,
+        clinicId,
+      ]
+    )
+
+    res.json({
+      id: result.rows[0].id,
+      date: result.rows[0].date,
+      patientName: result.rows[0].patient_name,
+      code: result.rows[0].code,
+      planCreated: result.rows[0].plan_created,
+      planCreatedAt: result.rows[0].plan_created_at,
+      planPresented: result.rows[0].plan_presented,
+      planPresentedAt: result.rows[0].plan_presented_at,
+      planPresentedValue: result.rows[0].plan_presented_value ? parseFloat(result.rows[0].plan_presented_value) : 0,
+      planAccepted: result.rows[0].plan_accepted,
+      planAcceptedAt: result.rows[0].plan_accepted_at,
+      planValue: result.rows[0].plan_value ? parseFloat(result.rows[0].plan_value) : 0,
+      sourceId: result.rows[0].source_id || null,
+      isReferral: result.rows[0].is_referral || false,
+      referralName: result.rows[0].referral_name || null,
+      referralCode: result.rows[0].referral_code || null,
+      campaignId: result.rows[0].campaign_id || null,
+      doctorId: result.rows[0].doctor_id || null,
+    })
+  } catch (error: any) {
+    console.error('Update consultation entry error:', error)
+    res.status(500).json({
+      error: 'Failed to update consultation entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
 router.delete('/consultation/:clinicId/:entryId', async (req, res) => {
-  // Only GESTOR can delete entries
-  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+  // Check if user can delete consultation entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditConsultations(req, clinicId)
+  
+  if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
   
@@ -373,6 +583,7 @@ router.get('/prospecting/:clinicId', async (req, res) => {
         sms: row.sms,
         whatsapp: row.whatsapp,
         instagram: row.instagram,
+        phone: row.phone || 0,
       }))
     )
   } catch (error) {
@@ -403,6 +614,7 @@ router.get('/prospecting/:clinicId/:date', async (req, res) => {
       sms: row.sms,
       whatsapp: row.whatsapp,
       instagram: row.instagram,
+      phone: row.phone || 0,
     })
   } catch (error) {
     console.error('Get prospecting entry error:', error)
@@ -413,21 +625,22 @@ router.get('/prospecting/:clinicId/:date', async (req, res) => {
 router.post('/prospecting/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
-    const { id, date, scheduled, email, sms, whatsapp, instagram } = req.body
+    const { id, date, scheduled, email, sms, whatsapp, instagram, phone } = req.body
     const entryId = id || `prospecting-${clinicId}-${date}`
 
     const result = await query(
       `INSERT INTO daily_prospecting_entries
-       (id, clinic_id, date, scheduled, email, sms, whatsapp, instagram)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (id, clinic_id, date, scheduled, email, sms, whatsapp, instagram, phone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (clinic_id, date) DO UPDATE SET
          scheduled = EXCLUDED.scheduled,
          email = EXCLUDED.email,
          sms = EXCLUDED.sms,
          whatsapp = EXCLUDED.whatsapp,
-         instagram = EXCLUDED.instagram
+         instagram = EXCLUDED.instagram,
+         phone = EXCLUDED.phone
        RETURNING *`,
-      [entryId, clinicId, date, scheduled, email, sms, whatsapp, instagram]
+      [entryId, clinicId, date, scheduled, email, sms, whatsapp, instagram, phone || 0]
     )
 
     res.status(201).json({
@@ -438,6 +651,7 @@ router.post('/prospecting/:clinicId', async (req, res) => {
       sms: result.rows[0].sms,
       whatsapp: result.rows[0].whatsapp,
       instagram: result.rows[0].instagram,
+      phone: result.rows[0].phone,
     })
   } catch (error: any) {
     console.error('Create prospecting entry error:', error)
