@@ -64,6 +64,156 @@ async function canEditConsultations(req: any, clinicId: string): Promise<boolean
   return false
 }
 
+/**
+ * Helper function to check if user can create/edit prospecting entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditProspecting permission
+ */
+async function canEditProspecting(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditProspecting === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can create/edit cabinet entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditCabinets permission
+ */
+async function canEditCabinets(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditCabinets === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can create/edit service time entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditServiceTime permission
+ */
+async function canEditServiceTime(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditServiceTime === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can create/edit source entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditSources permission
+ */
+async function canEditSources(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditSources === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can create/edit consultation control entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditConsultationControl permission
+ */
+async function canEditConsultationControl(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditConsultationControl === true
+  }
+
+  return false
+}
+
 // ================================
 // FINANCIAL ENTRIES
 // ================================
@@ -623,8 +773,15 @@ router.get('/prospecting/:clinicId/:date', async (req, res) => {
 })
 
 router.post('/prospecting/:clinicId', async (req, res) => {
+  // Check if user can create prospecting entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditProspecting(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
   try {
-    const { clinicId } = req.params
     const { id, date, scheduled, email, sms, whatsapp, instagram, phone } = req.body
     const entryId = id || `prospecting-${clinicId}-${date}`
 
@@ -714,8 +871,15 @@ router.get('/cabinet/:clinicId', async (req, res) => {
 })
 
 router.post('/cabinet/:clinicId', async (req, res) => {
+  // Check if user can create cabinet entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditCabinets(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
   try {
-    const { clinicId } = req.params
     const { id, date, cabinetId, hoursAvailable, hoursUsed } = req.body
     const entryId =
       id || `cabinet-${clinicId}-${date}-${cabinetId}-${Math.random().toString(36).slice(2, 10)}`
@@ -799,8 +963,15 @@ router.get('/service-time/:clinicId', async (req, res) => {
 })
 
 router.post('/service-time/:clinicId', async (req, res) => {
+  // Check if user can create service time entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditServiceTime(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
   try {
-    const { clinicId } = req.params
     const { id, date, patientName, code, doctorId, scheduledTime, actualStartTime, delayReason } =
       req.body
     const entryId =
@@ -889,8 +1060,15 @@ router.get('/source/:clinicId', async (req, res) => {
 })
 
 router.post('/source/:clinicId', async (req, res) => {
+  // Check if user can create source entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditSources(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
   try {
-    const { clinicId } = req.params
     const { id, date, patientName, code, isReferral, sourceId, referralName, referralCode, campaignId } =
       req.body
     const entryId =
@@ -1005,8 +1183,15 @@ router.get('/consultation-control/:clinicId/:date', async (req, res) => {
 })
 
 router.post('/consultation-control/:clinicId', async (req, res) => {
+  // Check if user can create consultation control entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditConsultationControl(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
   try {
-    const { clinicId } = req.params
     const { id, date, noShow, rescheduled, cancelled, oldPatientBooking } = req.body
     const entryId = id || `consultation-control-${clinicId}-${date}`
 

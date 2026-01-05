@@ -83,6 +83,11 @@ export const authApi = {
       method: 'POST',
     }),
 
+  getPermissions: () =>
+    apiCall<{ permissions: any }>('/auth/permissions', {
+      method: 'GET',
+    }),
+
   updateProfile: (data: { name: string; email: string; avatarUrl?: string }) =>
     apiCall<{ user: any; message: string }>('/auth/profile', {
       method: 'PUT',

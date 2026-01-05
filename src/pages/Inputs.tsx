@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Lock,
@@ -31,8 +32,15 @@ export default function Inputs() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const navigate = useNavigate()
   const { getClinic } = useDataStore()
-  const { user } = useAuthStore()
+  const { user, refreshPermissions } = useAuthStore()
   const { canEdit } = usePermissions()
+
+  // Refresh permissions when component mounts if user is a collaborator
+  useEffect(() => {
+    if (user?.role === 'COLABORADOR' && refreshPermissions) {
+      refreshPermissions()
+    }
+  }, [user?.role, refreshPermissions])
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 

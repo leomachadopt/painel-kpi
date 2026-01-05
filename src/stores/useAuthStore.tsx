@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean
   login: (email: string, password: string) => Promise<User>
   logout: () => void
+  refreshPermissions?: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -41,6 +42,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return user
   }
 
+  const refreshPermissions = async () => {
+    try {
+      const { permissions } = await authApi.getPermissions()
+      if (user) {
+        const updatedUser = { ...user, permissions }
+        setUser(updatedUser)
+        localStorage.setItem('kpi_user', JSON.stringify(updatedUser))
+      }
+    } catch (error) {
+      console.error('Failed to refresh permissions:', error)
+    }
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('kpi_user')
@@ -56,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         login,
         logout,
+        refreshPermissions,
       },
     },
     children,
@@ -78,6 +93,7 @@ const useAuthStore = () => {
         localStorage.removeItem('kpi_user')
         localStorage.removeItem('kpi_token')
       },
+      refreshPermissions: async () => {},
     } as AuthState
   }
   return context

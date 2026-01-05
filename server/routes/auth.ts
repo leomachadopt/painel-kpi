@@ -240,4 +240,25 @@ router.post('/avatar', authMiddleware, async (req, res) => {
   }
 })
 
+// Get current user permissions (for refreshing permissions without re-login)
+router.get('/permissions', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.sub
+    const role = req.user?.role
+    const clinicId = req.user?.clinicId
+
+    if (!userId || !role || !clinicId) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    // Get updated permissions
+    const permissions = await getUserPermissions(userId, role, clinicId)
+
+    res.json({ permissions })
+  } catch (error) {
+    console.error('Get permissions error:', error)
+    res.status(500).json({ error: 'Failed to get permissions' })
+  }
+})
+
 export default router

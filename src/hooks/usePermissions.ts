@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import useAuthStore from '@/stores/useAuthStore'
 import type { UserPermissions } from '@/lib/types'
 
@@ -6,7 +7,15 @@ import type { UserPermissions } from '@/lib/types'
  * Returns functions to check view and edit permissions
  */
 export function usePermissions() {
-  const { user } = useAuthStore()
+  const { user, refreshPermissions } = useAuthStore()
+
+  // Refresh permissions when component mounts if user is a collaborator
+  useEffect(() => {
+    if (user?.role === 'COLABORADOR' && refreshPermissions) {
+      refreshPermissions()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount - refreshPermissions is stable
 
   // Helper to get all permissions (MENTOR and GESTOR_CLINICA have all permissions)
   const getAllPermissions = (): UserPermissions => {
@@ -127,6 +136,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditCabinets: false,
     canEditServiceTime: false,
     canEditSources: false,
+    canEditConsultationControl: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
@@ -148,6 +158,7 @@ function createFullPermissions(): UserPermissions {
     canEditCabinets: true,
     canEditServiceTime: true,
     canEditSources: true,
+    canEditConsultationControl: true,
     canEditPatients: true,
     canEditClinicConfig: true,
     canEditTargets: true,
