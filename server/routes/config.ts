@@ -3,14 +3,14 @@ import { query } from '../db.js'
 
 const router = Router()
 
-// Update clinic configuration (categories, cabinets, doctors, sources, campaigns, paymentSources)
+// Update clinic configuration (categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands)
 router.put('/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
-    const { categories, cabinets, doctors, sources, campaigns, paymentSources } = req.body
+    const { categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands } = req.body
 
     console.log('🔧 Updating config for clinic:', clinicId)
-    console.log('📦 Received data:', JSON.stringify({ categories, cabinets, doctors, sources, campaigns, paymentSources }, null, 2))
+    console.log('📦 Received data:', JSON.stringify({ categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands }, null, 2))
 
     const client = await query('SELECT 1 FROM clinics WHERE id = $1', [clinicId])
     if (client.rows.length === 0) {
@@ -196,6 +196,28 @@ router.put('/:clinicId', async (req, res) => {
       } catch (paymentError: any) {
         console.error('❌ Erro ao atualizar payment sources:', paymentError)
         console.warn('⚠️  Continuando sem atualizar payment sources')
+      }
+    }
+
+    // Handle aligner brands
+    if (alignerBrands !== undefined) {
+      console.log('📝 Updating aligner brands:', alignerBrands.length)
+      const alignerBrandIds = alignerBrands.map((ab: any) => ab.id)
+      if (alignerBrandIds.length > 0) {
+        await query(
+          `DELETE FROM clinic_aligner_brands WHERE clinic_id = $1 AND id NOT IN (${alignerBrandIds.map((_, i) => `$${i + 2}`).join(', ')})`,
+          [clinicId, ...alignerBrandIds]
+        )
+      } else {
+        await query('DELETE FROM clinic_aligner_brands WHERE clinic_id = $1', [clinicId])
+      }
+      for (const alignerBrand of alignerBrands) {
+        await query(
+          `INSERT INTO clinic_aligner_brands (id, clinic_id, name)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+          [alignerBrand.id, clinicId, alignerBrand.name]
+        )
       }
     }
 

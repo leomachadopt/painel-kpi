@@ -17,6 +17,7 @@ export interface UserPermissions {
   canEditServiceTime: boolean
   canEditSources: boolean
   canEditConsultationControl: boolean
+  canEditAligners: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean
@@ -49,6 +50,7 @@ export async function getUserPermissions(
       canEditServiceTime: true,
       canEditSources: true,
       canEditConsultationControl: true,
+      canEditAligners: true,
       canEditPatients: true,
       canEditClinicConfig: true,
       canEditTargets: true,
@@ -77,6 +79,7 @@ export async function getUserPermissions(
       can_edit_service_time,
       can_edit_sources,
       can_edit_consultation_control,
+      can_edit_aligners,
       can_edit_patients,
       can_edit_clinic_config,
       can_edit_targets
@@ -106,6 +109,7 @@ export async function getUserPermissions(
     canEditServiceTime: perms.can_edit_service_time || false,
     canEditSources: perms.can_edit_sources || false,
     canEditConsultationControl: perms.can_edit_consultation_control || false,
+    canEditAligners: perms.can_edit_aligners || false,
     canEditPatients: perms.can_edit_patients || false,
     canEditClinicConfig: perms.can_edit_clinic_config || false,
     canEditTargets: perms.can_edit_targets || false,
@@ -128,6 +132,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditServiceTime: false,
     canEditSources: false,
     canEditConsultationControl: false,
+    canEditAligners: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,

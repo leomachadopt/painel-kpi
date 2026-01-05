@@ -214,6 +214,36 @@ async function canEditConsultationControl(req: any, clinicId: string): Promise<b
   return false
 }
 
+/**
+ * Helper function to check if user can create/edit aligner entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditAligners permission
+ */
+async function canEditAligners(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditAligners === true
+  }
+
+  return false
+}
+
 // ================================
 // FINANCIAL ENTRIES
 // ================================
@@ -1247,6 +1277,485 @@ router.delete('/consultation-control/:clinicId/:entryId', async (req, res) => {
   } catch (error) {
     console.error('Delete consultation control entry error:', error)
     res.status(500).json({ error: 'Failed to delete consultation control entry' })
+  }
+})
+
+// ================================
+// ALIGNER ENTRIES
+// ================================
+router.get('/aligner/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const result = await query(
+      `SELECT * FROM daily_aligner_entries WHERE clinic_id = $1 ORDER BY date DESC`,
+      [clinicId]
+    )
+
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        alignerBrandId: row.aligner_brand_id,
+        dataInsertionActive: row.data_insertion_active,
+        dataInsertionActivatedAt: row.data_insertion_activated_at,
+        hasScanner: row.has_scanner,
+        scannerCollectionDate: row.scanner_collection_date,
+        hasPhotos: row.has_photos,
+        photosStatus: row.photos_status,
+        hasOrtho: row.has_ortho,
+        orthoStatus: row.ortho_status,
+        hasTele: row.has_tele,
+        teleStatus: row.tele_status,
+        hasCbct: row.has_cbct,
+        cbctStatus: row.cbct_status,
+        registrationCreated: row.registration_created,
+        registrationCreatedAt: row.registration_created_at,
+        cckCreated: row.cck_created,
+        cckCreatedAt: row.cck_created_at,
+        awaitingPlan: row.awaiting_plan,
+        awaitingPlanAt: row.awaiting_plan_at,
+        awaitingApproval: row.awaiting_approval,
+        awaitingApprovalAt: row.awaiting_approval_at,
+        approved: row.approved,
+        approvedAt: row.approved_at,
+      }))
+    )
+  } catch (error) {
+    console.error('Get aligner entries error:', error)
+    res.status(500).json({ error: 'Failed to fetch aligner entries' })
+  }
+})
+
+// Get aligner entry by patient code (1 registo por paciente)
+router.get('/aligner/:clinicId/code/:code', async (req, res) => {
+  try {
+    const { clinicId, code } = req.params
+
+    if (!/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Code must be 1-6 digits' })
+    }
+
+    const result = await query(
+      `SELECT * FROM daily_aligner_entries WHERE clinic_id = $1 AND code = $2`,
+      [clinicId, code]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Aligner entry not found' })
+    }
+
+    const row = result.rows[0]
+    return res.json({
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      alignerBrandId: row.aligner_brand_id,
+      dataInsertionActive: row.data_insertion_active,
+      dataInsertionActivatedAt: row.data_insertion_activated_at,
+      hasScanner: row.has_scanner,
+      scannerCollectionDate: row.scanner_collection_date,
+      hasPhotos: row.has_photos,
+      photosStatus: row.photos_status,
+      hasOrtho: row.has_ortho,
+      orthoStatus: row.ortho_status,
+      hasTele: row.has_tele,
+      teleStatus: row.tele_status,
+      hasCbct: row.has_cbct,
+      cbctStatus: row.cbct_status,
+      registrationCreated: row.registration_created,
+      registrationCreatedAt: row.registration_created_at,
+      cckCreated: row.cck_created,
+      cckCreatedAt: row.cck_created_at,
+      awaitingPlan: row.awaiting_plan,
+      awaitingPlanAt: row.awaiting_plan_at,
+      awaitingApproval: row.awaiting_approval,
+      awaitingApprovalAt: row.awaiting_approval_at,
+      approved: row.approved,
+      approvedAt: row.approved_at,
+      treatmentPlanCreated: row.treatment_plan_created,
+      treatmentPlanCreatedAt: row.treatment_plan_created_at,
+      observations: row.observations,
+    })
+  } catch (error) {
+    console.error('Get aligner by code error:', error)
+    res.status(500).json({ error: 'Failed to fetch aligner entry' })
+  }
+})
+
+router.post('/aligner/:clinicId', async (req, res) => {
+  // Check if user can create aligner entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditAligners(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId } = req.params
+    const {
+      date,
+      patientName,
+      code,
+      alignerBrandId,
+      dataInsertionActive,
+      dataInsertionActivatedAt,
+      hasScanner,
+      scannerCollectionDate,
+      hasPhotos,
+      photosStatus,
+      hasOrtho,
+      orthoStatus,
+      hasTele,
+      teleStatus,
+      hasCbct,
+      cbctStatus,
+      registrationCreated,
+      registrationCreatedAt,
+      cckCreated,
+      cckCreatedAt,
+      awaitingPlan,
+      awaitingPlanAt,
+      awaitingApproval,
+      awaitingApprovalAt,
+      approved,
+      approvedAt,
+      treatmentPlanCreated,
+      treatmentPlanCreatedAt,
+      observations,
+    } = req.body
+
+    if (!code || !/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Code must be 1-6 digits' })
+    }
+
+    if (!alignerBrandId) {
+      return res.status(400).json({ error: 'Aligner brand is required' })
+    }
+
+    const entryId = `aligner-${clinicId}-${code}`
+
+    const result = await query(
+      `INSERT INTO daily_aligner_entries
+       (id, clinic_id, date, patient_name, code, aligner_brand_id,
+        data_insertion_active, data_insertion_activated_at,
+        has_scanner, scanner_collection_date,
+        has_photos, photos_status,
+        has_ortho, ortho_status,
+        has_tele, tele_status,
+        has_cbct, cbct_status,
+        registration_created, registration_created_at,
+        cck_created, cck_created_at,
+        awaiting_plan, awaiting_plan_at,
+        awaiting_approval, awaiting_approval_at,
+        approved, approved_at,
+        treatment_plan_created, treatment_plan_created_at,
+        observations)
+       VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8,
+        $9, $10,
+        $11, $12,
+        $13, $14,
+        $15, $16,
+        $17, $18,
+        $19, $20,
+        $21, $22,
+        $23, $24,
+        $25, $26,
+        $27, $28,
+        $29, $30,
+        $31)
+       ON CONFLICT (clinic_id, code) DO UPDATE SET
+        date = EXCLUDED.date,
+        patient_name = EXCLUDED.patient_name,
+        aligner_brand_id = EXCLUDED.aligner_brand_id,
+        data_insertion_active = EXCLUDED.data_insertion_active,
+        data_insertion_activated_at = EXCLUDED.data_insertion_activated_at,
+        has_scanner = EXCLUDED.has_scanner,
+        scanner_collection_date = EXCLUDED.scanner_collection_date,
+        has_photos = EXCLUDED.has_photos,
+        photos_status = EXCLUDED.photos_status,
+        has_ortho = EXCLUDED.has_ortho,
+        ortho_status = EXCLUDED.ortho_status,
+        has_tele = EXCLUDED.has_tele,
+        tele_status = EXCLUDED.tele_status,
+        has_cbct = EXCLUDED.has_cbct,
+        cbct_status = EXCLUDED.cbct_status,
+        registration_created = EXCLUDED.registration_created,
+        registration_created_at = EXCLUDED.registration_created_at,
+        cck_created = EXCLUDED.cck_created,
+        cck_created_at = EXCLUDED.cck_created_at,
+        awaiting_plan = EXCLUDED.awaiting_plan,
+        awaiting_plan_at = EXCLUDED.awaiting_plan_at,
+        awaiting_approval = EXCLUDED.awaiting_approval,
+        awaiting_approval_at = EXCLUDED.awaiting_approval_at,
+        approved = EXCLUDED.approved,
+        approved_at = EXCLUDED.approved_at,
+        treatment_plan_created = EXCLUDED.treatment_plan_created,
+        treatment_plan_created_at = EXCLUDED.treatment_plan_created_at,
+        observations = EXCLUDED.observations
+       RETURNING *`,
+      [
+        entryId,
+        clinicId,
+        date,
+        patientName,
+        code,
+        alignerBrandId,
+        dataInsertionActive || false,
+        dataInsertionActivatedAt || null,
+        hasScanner || false,
+        scannerCollectionDate || null,
+        hasPhotos || false,
+        photosStatus || null,
+        hasOrtho || false,
+        orthoStatus || null,
+        hasTele || false,
+        teleStatus || null,
+        hasCbct || false,
+        cbctStatus || null,
+        registrationCreated || false,
+        registrationCreatedAt || null,
+        cckCreated || false,
+        cckCreatedAt || null,
+        awaitingPlan || false,
+        awaitingPlanAt || null,
+        awaitingApproval || false,
+        awaitingApprovalAt || null,
+        approved || false,
+        approvedAt || null,
+        treatmentPlanCreated || false,
+        treatmentPlanCreatedAt || null,
+        observations || null,
+      ]
+    )
+
+    const row = result.rows[0]
+    res.status(201).json({
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      alignerBrandId: row.aligner_brand_id,
+      dataInsertionActive: row.data_insertion_active,
+      dataInsertionActivatedAt: row.data_insertion_activated_at,
+      hasScanner: row.has_scanner,
+      scannerCollectionDate: row.scanner_collection_date,
+      hasPhotos: row.has_photos,
+      photosStatus: row.photos_status,
+      hasOrtho: row.has_ortho,
+      orthoStatus: row.ortho_status,
+      hasTele: row.has_tele,
+      teleStatus: row.tele_status,
+      hasCbct: row.has_cbct,
+      cbctStatus: row.cbct_status,
+      registrationCreated: row.registration_created,
+      registrationCreatedAt: row.registration_created_at,
+      cckCreated: row.cck_created,
+      cckCreatedAt: row.cck_created_at,
+      awaitingPlan: row.awaiting_plan,
+      awaitingPlanAt: row.awaiting_plan_at,
+      awaitingApproval: row.awaiting_approval,
+      awaitingApprovalAt: row.awaiting_approval_at,
+      approved: row.approved,
+      approvedAt: row.approved_at,
+      treatmentPlanCreated: row.treatment_plan_created,
+      treatmentPlanCreatedAt: row.treatment_plan_created_at,
+      observations: row.observations,
+    })
+  } catch (error: any) {
+    console.error('Create aligner entry error:', error)
+    res.status(500).json({
+      error: 'Failed to create aligner entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.put('/aligner/:clinicId/:entryId', async (req, res) => {
+  // Check if user can edit aligner entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditAligners(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { clinicId, entryId } = req.params
+    const {
+      date,
+      patientName,
+      code,
+      alignerBrandId,
+      dataInsertionActive,
+      dataInsertionActivatedAt,
+      hasScanner,
+      scannerCollectionDate,
+      hasPhotos,
+      photosStatus,
+      hasOrtho,
+      orthoStatus,
+      hasTele,
+      teleStatus,
+      hasCbct,
+      cbctStatus,
+      registrationCreated,
+      registrationCreatedAt,
+      cckCreated,
+      cckCreatedAt,
+      awaitingPlan,
+      awaitingPlanAt,
+      awaitingApproval,
+      awaitingApprovalAt,
+      approved,
+      approvedAt,
+      treatmentPlanCreated,
+      treatmentPlanCreatedAt,
+      observations,
+    } = req.body
+
+    // Validate required fields
+    if (!date || !patientName || !code || !/^\d{1,6}$/.test(code)) {
+      return res.status(400).json({ error: 'Missing or invalid required fields' })
+    }
+
+    if (!alignerBrandId) {
+      return res.status(400).json({ error: 'Aligner brand is required' })
+    }
+
+    // Check if entry exists
+    const checkResult = await query(
+      `SELECT id FROM daily_aligner_entries WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    // Update entry
+    const result = await query(
+      `UPDATE daily_aligner_entries
+       SET date = $1, patient_name = $2, code = $3, aligner_brand_id = $4,
+           data_insertion_active = $5, data_insertion_activated_at = $6,
+           has_scanner = $7, scanner_collection_date = $8,
+           has_photos = $9, photos_status = $10,
+           has_ortho = $11, ortho_status = $12,
+           has_tele = $13, tele_status = $14,
+           has_cbct = $15, cbct_status = $16,
+           registration_created = $17, registration_created_at = $18,
+           cck_created = $19, cck_created_at = $20,
+           awaiting_plan = $21, awaiting_plan_at = $22,
+           awaiting_approval = $23, awaiting_approval_at = $24,
+           approved = $25, approved_at = $26,
+           treatment_plan_created = $27, treatment_plan_created_at = $28,
+           observations = $29
+       WHERE id = $30 AND clinic_id = $31
+       RETURNING *`,
+      [
+        date,
+        patientName,
+        code,
+        alignerBrandId,
+        dataInsertionActive || false,
+        dataInsertionActivatedAt || null,
+        hasScanner || false,
+        scannerCollectionDate || null,
+        hasPhotos || false,
+        photosStatus || null,
+        hasOrtho || false,
+        orthoStatus || null,
+        hasTele || false,
+        teleStatus || null,
+        hasCbct || false,
+        cbctStatus || null,
+        registrationCreated || false,
+        registrationCreatedAt || null,
+        cckCreated || false,
+        cckCreatedAt || null,
+        awaitingPlan || false,
+        awaitingPlanAt || null,
+        awaitingApproval || false,
+        awaitingApprovalAt || null,
+        approved || false,
+        approvedAt || null,
+        treatmentPlanCreated || false,
+        treatmentPlanCreatedAt || null,
+        observations || null,
+        entryId,
+        clinicId,
+      ]
+    )
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      alignerBrandId: row.aligner_brand_id,
+      dataInsertionActive: row.data_insertion_active,
+      dataInsertionActivatedAt: row.data_insertion_activated_at,
+      hasScanner: row.has_scanner,
+      scannerCollectionDate: row.scanner_collection_date,
+      hasPhotos: row.has_photos,
+      photosStatus: row.photos_status,
+      hasOrtho: row.has_ortho,
+      orthoStatus: row.ortho_status,
+      hasTele: row.has_tele,
+      teleStatus: row.tele_status,
+      hasCbct: row.has_cbct,
+      cbctStatus: row.cbct_status,
+      registrationCreated: row.registration_created,
+      registrationCreatedAt: row.registration_created_at,
+      cckCreated: row.cck_created,
+      cckCreatedAt: row.cck_created_at,
+      awaitingPlan: row.awaiting_plan,
+      awaitingPlanAt: row.awaiting_plan_at,
+      awaitingApproval: row.awaiting_approval,
+      awaitingApprovalAt: row.awaiting_approval_at,
+      approved: row.approved,
+      approvedAt: row.approved_at,
+    })
+  } catch (error: any) {
+    console.error('Update aligner entry error:', error)
+    res.status(500).json({
+      error: 'Failed to update aligner entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.delete('/aligner/:clinicId/:entryId', async (req, res) => {
+  // Check if user can delete aligner entries
+  const { clinicId } = req.params
+  const hasPermission = await canEditAligners(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_aligner_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete aligner entry error:', error)
+    res.status(500).json({ error: 'Failed to delete aligner entry' })
   }
 })
 

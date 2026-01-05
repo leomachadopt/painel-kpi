@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Lock,
   FileText,
@@ -8,6 +8,7 @@ import {
   Armchair,
   Clock,
   CalendarCheck,
+  Smile,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -27,13 +28,19 @@ import { DailyProspecting } from '@/components/daily/DailyProspecting'
 import { DailyCabinets } from '@/components/daily/DailyCabinets'
 import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
 import { DailyConsultationControl } from '@/components/daily/DailyConsultationControl'
+import { DailyAligners } from '@/components/daily/DailyAligners'
 
 export default function Inputs() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { getClinic } = useDataStore()
   const { user, refreshPermissions } = useAuthStore()
   const { canEdit } = usePermissions()
+
+  // Ler parâmetros da URL
+  const tabParam = searchParams.get('tab')
+  const codeParam = searchParams.get('code')
 
   // Refresh permissions when component mounts if user is a collaborator
   useEffect(() => {
@@ -51,6 +58,7 @@ export default function Inputs() {
   const hasCabinets = canEdit('canEditCabinets')
   const hasServiceTime = canEdit('canEditServiceTime')
   const hasConsultationControl = canEdit('canEditConsultationControl')
+  const hasAligners = canEdit('canEditAligners')
 
   // Determinar primeira aba disponível
   const firstAvailableTab =
@@ -59,7 +67,23 @@ export default function Inputs() {
     hasProspecting ? 'prospecting' :
     hasCabinets ? 'cabinets' :
     hasServiceTime ? 'serviceTime' :
-    hasConsultationControl ? 'consultationControl' : 'financial'
+    hasConsultationControl ? 'consultationControl' :
+    hasAligners ? 'aligners' : 'financial'
+
+  // Determinar aba inicial (priorizar parâmetro da URL)
+  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners']
+  const initialTab = tabParam && validTabs.includes(tabParam)
+    ? tabParam
+    : firstAvailableTab
+
+  const [activeTab, setActiveTab] = useState(initialTab)
+
+  // Atualizar aba quando parâmetro da URL mudar
+  useEffect(() => {
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   if (
     user?.role === 'GESTOR_CLINICA' &&
@@ -88,8 +112,8 @@ export default function Inputs() {
         </p>
       </div>
 
-      <Tabs defaultValue={firstAvailableTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 h-auto">
           {hasFinancial && (
             <TabsTrigger
               value="financial"
@@ -142,6 +166,15 @@ export default function Inputs() {
             >
               <CalendarCheck className="h-4 w-4" />
               Controle
+            </TabsTrigger>
+          )}
+          {hasAligners && (
+            <TabsTrigger
+              value="aligners"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <Smile className="h-4 w-4" />
+              Alinhadores
             </TabsTrigger>
           )}
         </TabsList>
@@ -238,6 +271,22 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyConsultationControl clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasAligners && (
+            <TabsContent value="aligners">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Alinhadores</CardTitle>
+                  <CardDescription>
+                    Acompanhe o processo de tratamento com alinhadores.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyAligners clinic={clinic} initialCode={codeParam || undefined} />
                 </CardContent>
               </Card>
             </TabsContent>

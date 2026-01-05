@@ -19,6 +19,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -38,7 +39,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
-  const { clinics } = useDataStore()
+  const { clinics, calculateAlignersAlerts } = useDataStore()
   const location = useLocation()
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit } = usePermissions()
@@ -48,6 +49,11 @@ export function AppSidebar() {
 
   const isMentor = user?.role === 'MENTOR'
   const activeClinicId = currentClinic?.id || user?.clinicId
+
+  // Calcular número de alertas ativos
+  const alertsCount = activeClinicId
+    ? calculateAlignersAlerts(activeClinicId).length
+    : 0
 
   return (
     <Sidebar collapsible="icon">
@@ -224,14 +230,27 @@ export function AppSidebar() {
             </>
           )}
 
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Alertas">
-              <a href="#">
-                <Bell />
-                <span>Alertas</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {(currentClinic || user?.role === 'GESTOR_CLINICA') && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Alertas"
+                isActive={location.pathname.includes('/alertas')}
+              >
+                <Link
+                  to={`/alertas/${currentClinic?.id || user?.clinicId}`}
+                >
+                  <Bell />
+                  <span>Alertas</span>
+                  {alertsCount > 0 && (
+                    <SidebarMenuBadge className="bg-destructive text-destructive-foreground">
+                      {alertsCount > 99 ? '99+' : alertsCount}
+                    </SidebarMenuBadge>
+                  )}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
 

@@ -59,6 +59,8 @@ export function usePermissions() {
     | 'canEditCabinets'
     | 'canEditServiceTime'
     | 'canEditSources'
+    | 'canEditConsultationControl'
+    | 'canEditAligners'
     | 'canEditPatients'
     | 'canEditClinicConfig'
     | 'canEditTargets'
@@ -104,6 +106,8 @@ export function usePermissions() {
       permissions.canEditCabinets ||
       permissions.canEditServiceTime ||
       permissions.canEditSources ||
+      permissions.canEditConsultationControl ||
+      permissions.canEditAligners ||
       permissions.canEditPatients ||
       permissions.canEditClinicConfig ||
       permissions.canEditTargets
@@ -137,6 +141,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditServiceTime: false,
     canEditSources: false,
     canEditConsultationControl: false,
+    canEditAligners: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
@@ -159,6 +164,7 @@ function createFullPermissions(): UserPermissions {
     canEditServiceTime: true,
     canEditSources: true,
     canEditConsultationControl: true,
+    canEditAligners: true,
     canEditPatients: true,
     canEditClinicConfig: true,
     canEditTargets: true,

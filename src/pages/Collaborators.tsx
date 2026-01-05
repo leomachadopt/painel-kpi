@@ -66,6 +66,7 @@ export default function Collaborators() {
     canEditServiceTime: false,
     canEditSources: false,
     canEditConsultationControl: false,
+    canEditAligners: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
@@ -464,6 +465,16 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canEditConsultationControl" className="cursor-pointer">
                     Controle de Consultas
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditAligners"
+                    checked={permissionsForm.canEditAligners}
+                    onCheckedChange={() => handleTogglePermission('canEditAligners')}
+                  />
+                  <Label htmlFor="canEditAligners" className="cursor-pointer">
+                    Alinhadores
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">

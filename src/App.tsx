@@ -13,6 +13,7 @@ import Profile from '@/pages/Profile'
 import Collaborators from '@/pages/Collaborators'
 import NPSManagement from '@/pages/NPSManagement'
 import NPSSurvey from '@/pages/NPSSurvey'
+import Alerts from '@/pages/Alerts'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/relatorios/:clinicId" element={<Reports />} />
               <Route path="/pacientes/:clinicId" element={<Patients />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
+              <Route path="/alertas/:clinicId" element={<Alerts />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/colaboradores" element={<Collaborators />} />
               <Route path="/perfil" element={<Profile />} />

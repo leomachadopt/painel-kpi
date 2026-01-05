@@ -59,6 +59,7 @@ export interface ClinicConfiguration {
   sources: { id: string; name: string }[]
   campaigns: { id: string; name: string }[]
   paymentSources: { id: string; name: string }[]
+  alignerBrands: { id: string; name: string }[]
 }
 
 export interface Clinic {
@@ -153,6 +154,7 @@ export interface MonthlyData {
     serviceTime: number
     sources: number
     consultationControl: number
+    aligners: number
   }
   
   // Consultation Control Metrics
@@ -251,6 +253,39 @@ export interface DailyConsultationControlEntry {
   oldPatientBooking: number
 }
 
+export interface DailyAlignersEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  alignerBrandId: string
+  dataInsertionActive: boolean
+  dataInsertionActivatedAt?: string | null
+  hasScanner: boolean
+  scannerCollectionDate?: string | null
+  hasPhotos: boolean
+  photosStatus?: 'marked' | 'dispensable' | null
+  hasOrtho: boolean
+  orthoStatus?: 'marked' | 'dispensable' | null
+  hasTele: boolean
+  teleStatus?: 'marked' | 'dispensable' | null
+  hasCbct: boolean
+  cbctStatus?: 'marked' | 'dispensable' | null
+  registrationCreated: boolean
+  registrationCreatedAt?: string | null
+  cckCreated: boolean
+  cckCreatedAt?: string | null
+  awaitingPlan: boolean
+  awaitingPlanAt?: string | null
+  awaitingApproval: boolean
+  awaitingApprovalAt?: string | null
+  approved: boolean
+  approvedAt?: string | null
+  treatmentPlanCreated: boolean
+  treatmentPlanCreatedAt?: string | null
+  observations?: string | null
+}
+
 export interface KPI {
   id: string
   name: string
@@ -267,6 +302,9 @@ export interface Alert {
   rule: string
   message: string
   severity: 'warning' | 'destructive'
+  patientName?: string
+  patientCode?: string
+  entryId?: string
 }
 
 export interface UserPermissions {
@@ -284,6 +322,7 @@ export interface UserPermissions {
   canEditServiceTime: boolean
   canEditSources: boolean
   canEditConsultationControl: boolean
+  canEditAligners: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean

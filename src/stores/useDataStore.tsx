@@ -12,6 +12,7 @@ import {
   DailyServiceTimeEntry,
   DailySourceEntry,
   DailyConsultationControlEntry,
+  DailyAlignersEntry,
   ClinicConfiguration,
   DEFAULT_MONTHLY_TARGETS,
 } from '@/lib/types'
@@ -39,6 +40,7 @@ interface DataState {
   addMonthlyData: (data: MonthlyData) => void
   calculateKPIs: (clinicId: string, month: number, year: number) => KPI[]
   calculateAlerts: (clinicId: string, month: number, year: number) => Alert[]
+  calculateAlignersAlerts: (clinicId: string) => Alert[]
 
   // Daily Entries Actions
   addFinancialEntry: (clinicId: string, entry: DailyFinancialEntry) => Promise<void>
@@ -60,6 +62,8 @@ interface DataState {
   ) => Promise<void>
   addServiceTimeEntry: (clinicId: string, entry: DailyServiceTimeEntry) => Promise<void>
   addSourceEntry: (clinicId: string, entry: DailySourceEntry) => Promise<void>
+  addAlignersEntry: (clinicId: string, entry: DailyAlignersEntry) => Promise<void>
+  updateAlignersEntry: (clinicId: string, entryId: string, entry: DailyAlignersEntry) => Promise<void>
   getProspectingEntry: (
     clinicId: string,
     date: string,
@@ -77,6 +81,7 @@ interface DataState {
   deleteCabinetEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteServiceTimeEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteSourceEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteAlignersEntry: (clinicId: string, entryId: string) => Promise<void>
   deletePatient: (clinicId: string, patientId: string) => Promise<void>
 
   // Entries Access
@@ -84,6 +89,7 @@ interface DataState {
   consultationEntries: Record<string, DailyConsultationEntry[]>
   prospectingEntries: Record<string, DailyProspectingEntry[]>
   consultationControlEntries: Record<string, DailyConsultationControlEntry[]>
+  alignerEntries: Record<string, DailyAlignersEntry[]>
   cabinetEntries: Record<string, DailyCabinetUsageEntry[]>
   serviceTimeEntries: Record<string, DailyServiceTimeEntry[]>
   sourceEntries: Record<string, DailySourceEntry[]>
@@ -124,6 +130,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [consultationControlEntries, setConsultationControlEntries] = useState<
     Record<string, DailyConsultationControlEntry[]>
   >({})
+  const [alignerEntries, setAlignerEntries] = useState<
+    Record<string, DailyAlignersEntry[]>
+  >({})
 
   // Load clinics from API on mount (only if authenticated)
   useEffect(() => {
@@ -156,6 +165,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     sources: DailySourceEntry[],
     prospecting: DailyProspectingEntry[],
     consultationControl: DailyConsultationControlEntry[],
+    aligners: DailyAlignersEntry[],
   ) => {
     // Group entries by month/year
     const monthlyMap = new Map<string, any>()
@@ -200,7 +210,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       sourceDistribution: {},
       campaignDistribution: {},
       delayReasons: { patient: 0, doctor: 0 },
-      entryCounts: { financial: 0, consultations: 0, prospecting: 0, cabinets: 0, serviceTime: 0, sources: 0, consultationControl: 0 },
+      entryCounts: { financial: 0, consultations: 0, prospecting: 0, cabinets: 0, serviceTime: 0, sources: 0, consultationControl: 0, aligners: 0 },
       consultationControl: { noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 },
     })
 
@@ -387,6 +397,26 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       data.consultationControl.oldPatientBooking += entry.oldPatientBooking || 0
     })
 
+    // Process aligner entries
+    aligners.forEach(entry => {
+      const date = parseISO(entry.date)
+      const month = getMonth(date) + 1
+      const year = getYear(date)
+      const key = `${year}-${month}`
+
+      if (!monthlyMap.has(key)) {
+        monthlyMap.set(key, initMonthData(month, year))
+      }
+
+      const data = monthlyMap.get(key)
+      data.entryCounts.aligners++
+
+      // Count aligners started (approved)
+      if (entry.approved) {
+        data.alignersStarted += 1
+      }
+    })
+
     // Always ensure at least current month/year exists (even if empty)
     // This ensures KPIs can be calculated even without daily entries
     const now = new Date()
@@ -416,7 +446,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
-    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl] =
+    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners] =
       await Promise.all([
         dailyEntriesApi.financial.getAll(clinicId),
         dailyEntriesApi.consultation.getAll(clinicId),
@@ -425,6 +455,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         dailyEntriesApi.source.getAll(clinicId),
         dailyEntriesApi.prospecting.getAll(clinicId),
         dailyEntriesApi.consultationControl.getAll(clinicId),
+        dailyEntriesApi.aligner.getAll(clinicId),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
@@ -434,6 +465,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setConsultationControlEntries((prev) => ({ ...prev, [clinicId]: consultationControl }))
     setSourceEntries((prev) => ({ ...prev, [clinicId]: sources }))
     setProspectingEntries((prev) => ({ ...prev, [clinicId]: prospecting }))
+    setAlignerEntries((prev) => ({ ...prev, [clinicId]: aligners }))
   }
 
   // Load daily entries once clinics are known (backend source of truth)
@@ -467,11 +499,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const sources = sourceEntries[clinic.id] || []
       const prospecting = prospectingEntries[clinic.id] || []
       const consultationControl = consultationControlEntries[clinic.id] || []
+      const aligners = alignerEntries[clinic.id] || []
 
       // Always aggregate, even if empty - this ensures monthly data exists (with zeros)
-      aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+      aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners)
     })
-  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries, consultationControlEntries])
+  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries, consultationControlEntries, alignerEntries])
 
   const ensurePatientExists = async (
     clinicId: string,
@@ -1333,6 +1366,185 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
+  const addAlignersEntry = async (
+    clinicId: string,
+    entry: DailyAlignersEntry,
+  ) => {
+    const prevEntries = alignerEntries[clinicId] || []
+    const optimistic = prevEntries.some((e) => e.code === entry.code)
+      ? prevEntries.map((e) => (e.code === entry.code ? entry : e))
+      : [...prevEntries, entry]
+
+    setAlignerEntries((prev) => ({ ...prev, [clinicId]: optimistic }))
+
+    try {
+      await ensurePatientExists(clinicId, entry.code, entry.patientName)
+      const saved = await dailyEntriesApi.aligner.create(clinicId, entry)
+      setAlignerEntries((prev) => {
+        const list = prev[clinicId] || []
+        const next = list.some((e) => e.code === saved.code)
+          ? list.map((e) => (e.code === saved.code ? saved : e))
+          : [...list, saved]
+        return { ...prev, [clinicId]: next }
+      })
+    } catch (error) {
+      // Rollback optimistic update
+      setAlignerEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))
+      throw error
+    }
+
+    const data = ensureMonthlyData(clinicId, entry.date)
+    if (!data) return
+
+    updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+      d.entryCounts.aligners += 1
+      if (entry.approved) {
+        d.alignersStarted += 1
+      }
+    })
+  }
+
+  const updateAlignersEntry = async (
+    clinicId: string,
+    entryId: string,
+    updatedEntry: DailyAlignersEntry,
+  ) => {
+    // Encontrar a entrada antiga para reverter os cálculos
+    const oldEntry = alignerEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!oldEntry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Atualizar na lista local (otimista)
+    setAlignerEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).map((e) =>
+        e.id === entryId ? updatedEntry : e
+      ),
+    }))
+
+    try {
+      await ensurePatientExists(clinicId, updatedEntry.code, updatedEntry.patientName)
+      await dailyEntriesApi.aligner.update(clinicId, entryId, {
+        date: updatedEntry.date,
+        patientName: updatedEntry.patientName,
+        code: updatedEntry.code,
+        alignerBrandId: updatedEntry.alignerBrandId,
+        dataInsertionActive: updatedEntry.dataInsertionActive,
+        dataInsertionActivatedAt: updatedEntry.dataInsertionActivatedAt,
+        hasScanner: updatedEntry.hasScanner,
+        scannerCollectionDate: updatedEntry.scannerCollectionDate,
+        hasPhotos: updatedEntry.hasPhotos,
+        photosStatus: updatedEntry.photosStatus,
+        hasOrtho: updatedEntry.hasOrtho,
+        orthoStatus: updatedEntry.orthoStatus,
+        hasTele: updatedEntry.hasTele,
+        teleStatus: updatedEntry.teleStatus,
+        hasCbct: updatedEntry.hasCbct,
+        cbctStatus: updatedEntry.cbctStatus,
+        registrationCreated: updatedEntry.registrationCreated,
+        registrationCreatedAt: updatedEntry.registrationCreatedAt,
+        cckCreated: updatedEntry.cckCreated,
+        cckCreatedAt: updatedEntry.cckCreatedAt,
+        awaitingPlan: updatedEntry.awaitingPlan,
+        awaitingPlanAt: updatedEntry.awaitingPlanAt,
+        awaitingApproval: updatedEntry.awaitingApproval,
+        awaitingApprovalAt: updatedEntry.awaitingApprovalAt,
+        approved: updatedEntry.approved,
+        approvedAt: updatedEntry.approvedAt,
+        treatmentPlanCreated: updatedEntry.treatmentPlanCreated,
+        treatmentPlanCreatedAt: updatedEntry.treatmentPlanCreatedAt,
+        observations: updatedEntry.observations,
+      })
+      toast.success('Alinhador atualizado com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAlignerEntries((prev) => ({
+        ...prev,
+        [clinicId]: (prev[clinicId] || []).map((e) =>
+          e.id === entryId ? oldEntry : e
+        ),
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para atualizar alinhador.')
+      } else {
+        toast.error(error?.message || 'Erro ao atualizar alinhador.')
+      }
+      throw error
+    }
+
+    // Atualizar cálculos mensais
+    const oldData = ensureMonthlyData(clinicId, oldEntry.date)
+    const newData = ensureMonthlyData(clinicId, updatedEntry.date)
+
+    if (oldData) {
+      updateMonthlyDataState(clinicId, oldData.month, oldData.year, (d) => {
+        d.entryCounts.aligners = Math.max(0, d.entryCounts.aligners - 1)
+        if (oldEntry.approved) {
+          d.alignersStarted = Math.max(0, d.alignersStarted - 1)
+        }
+      })
+    }
+
+    if (newData) {
+      updateMonthlyDataState(clinicId, newData.month, newData.year, (d) => {
+        d.entryCounts.aligners += 1
+        if (updatedEntry.approved) {
+          d.alignersStarted += 1
+        }
+      })
+    }
+  }
+
+  const deleteAlignersEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    // Encontrar a entrada antes de deletar para reverter os cálculos
+    const entry = alignerEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Remover da lista local (otimista)
+    setAlignerEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.aligner.delete(clinicId, entryId)
+      toast.success('Alinhador excluído com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAlignerEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir alinhador.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir alinhador.')
+      }
+      throw error
+    }
+
+    // Reverter os cálculos mensais
+    const data = ensureMonthlyData(clinicId, entry.date)
+    if (!data) return
+
+    updateMonthlyDataState(clinicId, data.month, data.year, (d) => {
+      d.entryCounts.aligners = Math.max(0, d.entryCounts.aligners - 1)
+      if (entry.approved) {
+        d.alignersStarted = Math.max(0, d.alignersStarted - 1)
+      }
+    })
+  }
+
   const deleteProspectingEntry = async (
     clinicId: string,
     entryId: string,
@@ -1644,6 +1856,48 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         message: `${current.complaints} reclamações no mês (meta: ≤${targets.targetComplaints}). Gestão imediata necessária.`,
         severity: 'destructive',
       })
+    }
+
+    return alerts
+  }
+
+  const calculateAlignersAlerts = (clinicId: string): Alert[] => {
+    const entries = alignerEntries[clinicId] || []
+    const alerts: Alert[] = []
+    const today = new Date()
+    const twentyDaysAgo = new Date(today)
+    twentyDaysAgo.setDate(today.getDate() - 20)
+
+    for (const entry of entries) {
+      // Alerta 1: Cadastro Criado ativo mas Criar CCK não está ativo
+      if (entry.registrationCreated && !entry.cckCreated) {
+        alerts.push({
+          id: `aligner-registration-${entry.id}`,
+          rule: 'Cadastro Criado sem CCK',
+          message: `Paciente ${entry.patientName} (código ${entry.code}) está com cadastro criado mas o CCK ainda não foi criado.`,
+          severity: 'warning',
+          patientName: entry.patientName,
+          patientCode: entry.code,
+          entryId: entry.id,
+        })
+      }
+
+      // Alerta 2: Scanner com mais de 20 dias e paciente não aprovado
+      if (entry.hasScanner && entry.scannerCollectionDate) {
+        const scannerDate = new Date(entry.scannerCollectionDate)
+        if (scannerDate < twentyDaysAgo && !entry.approved) {
+          const daysDiff = Math.floor((today.getTime() - scannerDate.getTime()) / (1000 * 60 * 60 * 24))
+          alerts.push({
+            id: `aligner-scanner-${entry.id}`,
+            rule: 'Scanner com Mais de 20 Dias',
+            message: `Paciente ${entry.patientName} (código ${entry.code}) tem scanner coletado há ${daysDiff} dias e ainda não foi aprovado.`,
+            severity: 'destructive',
+            patientName: entry.patientName,
+            patientCode: entry.code,
+            entryId: entry.id,
+          })
+        }
+      }
     }
 
     return alerts
@@ -2017,6 +2271,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addMonthlyData,
         calculateKPIs,
         calculateAlerts,
+        calculateAlignersAlerts,
         addFinancialEntry,
         updateFinancialEntry,
         addConsultationEntry,
@@ -2026,6 +2281,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addCabinetUsageEntry,
         addServiceTimeEntry,
         addSourceEntry,
+        addAlignersEntry,
+        updateAlignersEntry,
         getProspectingEntry,
         getConsultationControlEntry,
         deleteFinancialEntry,
@@ -2035,11 +2292,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteCabinetEntry,
         deleteServiceTimeEntry,
         deleteSourceEntry,
+        deleteAlignersEntry,
         deletePatient,
         financialEntries,
         consultationEntries,
         prospectingEntries,
         consultationControlEntries,
+        alignerEntries,
         cabinetEntries,
         serviceTimeEntries,
         sourceEntries,

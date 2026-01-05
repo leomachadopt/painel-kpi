@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   List,
   CalendarCheck,
+  Smile,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,8 @@ import { CabinetTable } from '@/components/reports/CabinetTable'
 import { ServiceTimeTable } from '@/components/reports/ServiceTimeTable'
 import { SourceTable } from '@/components/reports/SourceTable'
 import { ConsultationControlTable } from '@/components/reports/ConsultationControlTable'
+import { AlignersTable } from '@/components/reports/AlignersTable'
+import { AlignersKanban } from '@/components/reports/AlignersKanban'
 import { MarketingReport } from '@/components/reports/MarketingReport'
 
 export default function Reports() {
@@ -45,6 +48,7 @@ export default function Reports() {
     serviceTimeEntries,
     sourceEntries,
     consultationControlEntries,
+    alignerEntries,
   } = useDataStore()
   const { user } = useAuthStore()
   const { canView, isMentor } = usePermissions()
@@ -57,6 +61,7 @@ export default function Reports() {
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [, setReloadTrigger] = useState(0)
   const [consultationView, setConsultationView] = useState<'table' | 'kanban'>('kanban')
+  const [alignersView, setAlignersView] = useState<'table' | 'kanban'>('kanban')
 
   const handleDataChange = () => {
     setReloadTrigger(prev => prev + 1)
@@ -156,10 +161,11 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10 h-auto">
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
           <TabsTrigger value="billing">Faturação</TabsTrigger>
           <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
+          <TabsTrigger value="aligners">Alinhadores</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
@@ -215,6 +221,45 @@ export default function Reports() {
               ) : (
                 <ConsultationTable
                   data={filterByDate(consultationEntries[clinic.id])}
+                  clinic={clinic}
+                  onDelete={handleDataChange}
+                />
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="aligners">
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <div className="inline-flex rounded-md border">
+                  <Button
+                    variant={alignersView === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAlignersView('kanban')}
+                    className="rounded-r-none"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Kanban
+                  </Button>
+                  <Button
+                    variant={alignersView === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAlignersView('table')}
+                    className="rounded-l-none"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    Tabela
+                  </Button>
+                </div>
+              </div>
+              {alignersView === 'kanban' ? (
+                <AlignersKanban
+                  data={filterByDate(alignerEntries[clinic.id])}
+                  clinic={clinic}
+                  onDelete={handleDataChange}
+                />
+              ) : (
+                <AlignersTable
+                  data={filterByDate(alignerEntries[clinic.id])}
                   clinic={clinic}
                   onDelete={handleDataChange}
                 />

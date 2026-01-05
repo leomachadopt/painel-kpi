@@ -313,10 +313,11 @@ export default function Settings() {
     if (!clinic) return
 
     if (clinic.configuration) {
-      // Ensure paymentSources exists
+      // Ensure paymentSources and alignerBrands exist
       const config = {
         ...clinic.configuration,
         paymentSources: clinic.configuration.paymentSources || [],
+        alignerBrands: clinic.configuration.alignerBrands || [],
       }
       setConfig(config)
     }
@@ -440,6 +441,7 @@ export default function Settings() {
           <TabsTrigger value="sources">Fontes & Campanhas</TabsTrigger>
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="paymentSources">Fontes de Recebimento</TabsTrigger>
+          <TabsTrigger value="alignerBrands">Marcas de Alinhadores</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
           <TabsTrigger value="targets">Metas</TabsTrigger>
@@ -517,6 +519,27 @@ export default function Settings() {
                 items={config.paymentSources || []}
                 onUpdate={(items) =>
                   setConfig({ ...config, paymentSources: items })
+                }
+                readOnly={!canManageConfig}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="alignerBrands">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marcas de Alinhadores</CardTitle>
+              <CardDescription>
+                Defina as marcas de alinhadores disponíveis (Invisalign, ClearCorrect, Spark, etc.).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ListEditor
+                title="Marca de Alinhador"
+                items={config.alignerBrands || []}
+                onUpdate={(items) =>
+                  setConfig({ ...config, alignerBrands: items })
                 }
                 readOnly={!canManageConfig}
               />

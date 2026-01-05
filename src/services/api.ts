@@ -344,6 +344,32 @@ export const dailyEntriesApi = {
         method: 'DELETE',
       }),
   },
+
+  // Aligners
+  aligner: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/daily-entries/aligner/${clinicId}`),
+
+    getByCode: (clinicId: string, code: string) =>
+      apiCall<any>(`/daily-entries/aligner/${clinicId}/code/${code}`),
+
+    create: (clinicId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/aligner/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(entry),
+      }),
+
+    update: (clinicId: string, entryId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/aligner/${clinicId}/${entryId}`, {
+        method: 'PUT',
+        body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/aligner/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================

@@ -53,6 +53,10 @@ router.get('/', async (req, res) => {
             'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
             [clinic.id]
           ).catch(() => ({ rows: [] }))
+          const alignerBrands = await query(
+            'SELECT id, name FROM clinic_aligner_brands WHERE clinic_id = $1',
+            [clinic.id]
+          ).catch(() => ({ rows: [] }))
 
           // Try to get nps_question if column exists (optional)
           let npsQuestion = defaultNpsQuestion
@@ -116,6 +120,7 @@ router.get('/', async (req, res) => {
               sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
               campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
               paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
+              alignerBrands: alignerBrands.rows.map((r) => ({ id: r.id, name: r.name })),
             },
           }
         } catch (clinicError) {
@@ -151,6 +156,7 @@ router.get('/', async (req, res) => {
               sources: [],
               campaigns: [],
               paymentSources: [],
+              alignerBrands: [],
             },
           }
         }
@@ -222,6 +228,10 @@ router.get('/:id', async (req, res) => {
       'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
       [clinic.id]
     ).catch(() => ({ rows: [] }))
+    const alignerBrands = await query(
+      'SELECT id, name FROM clinic_aligner_brands WHERE clinic_id = $1',
+      [clinic.id]
+    ).catch(() => ({ rows: [] }))
 
     // Try to get nps_question if column exists (optional)
     let npsQuestion = defaultNpsQuestion
@@ -285,6 +295,7 @@ router.get('/:id', async (req, res) => {
         sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
         campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
         paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
+        alignerBrands: alignerBrands.rows.map((r) => ({ id: r.id, name: r.name })),
       },
     })
   } catch (error) {
@@ -483,6 +494,15 @@ router.post('/', async (req, res) => {
       await query(
         'INSERT INTO clinic_campaigns (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-camp-${camp.replace(/\s/g, '-').toLowerCase()}`, clinicId, camp]
+      )
+    }
+
+    // Insert default aligner brands
+    const defaultAlignerBrands = ['Invisalign', 'ClearCorrect', 'Spark', 'Outro']
+    for (const brand of defaultAlignerBrands) {
+      await query(
+        'INSERT INTO clinic_aligner_brands (id, clinic_id, name) VALUES ($1, $2, $3)',
+        [`${clinicId}-brand-${brand.replace(/\s/g, '-').toLowerCase()}`, clinicId, brand]
       )
     }
 
