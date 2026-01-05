@@ -20,6 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { FinancialTable } from '@/components/reports/FinancialTable'
 import { BillingTable } from '@/components/reports/BillingTable'
 import { ConsultationTable } from '@/components/reports/ConsultationTable'
@@ -46,6 +47,7 @@ export default function Reports() {
     consultationControlEntries,
   } = useDataStore()
   const { user } = useAuthStore()
+  const { canView, isMentor } = usePermissions()
 
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -65,9 +67,14 @@ export default function Reports() {
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
   // Role Access Control
-  const isMentor = user?.role === 'MENTOR'
-  const hasAccess =
-    isMentor || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinicId)
+  const mentorAccess = isMentor()
+  const gestorAccess = user?.role === 'GESTOR_CLINICA' && user.clinicId === clinicId
+  const colaboradorAccess =
+    user?.role === 'COLABORADOR' &&
+    user.clinicId === clinicId &&
+    canView('canViewReports')
+
+  const hasAccess = mentorAccess || gestorAccess || colaboradorAccess
 
   if (!clinic) return <div className="p-8">Clínica não encontrada.</div>
 
@@ -108,7 +115,7 @@ export default function Reports() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
-          {isMentor && (
+          {mentorAccess && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-[200px] justify-between">
