@@ -76,6 +76,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canEditCabinets: row.can_edit_cabinets || false,
         canEditServiceTime: row.can_edit_service_time || false,
         canEditSources: row.can_edit_sources || false,
+        canEditConsultationControl: row.can_edit_consultation_control || false,
         canEditPatients: row.can_edit_patients || false,
         canEditClinicConfig: row.can_edit_clinic_config || false,
         canEditTargets: row.can_edit_targets || false,
@@ -168,6 +169,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_cabinets,
         p.can_edit_service_time,
         p.can_edit_sources,
+        p.can_edit_consultation_control,
         p.can_edit_patients,
         p.can_edit_clinic_config,
         p.can_edit_targets
@@ -201,6 +203,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canEditCabinets: row.can_edit_cabinets || false,
         canEditServiceTime: row.can_edit_service_time || false,
         canEditSources: row.can_edit_sources || false,
+        canEditConsultationControl: row.can_edit_consultation_control || false,
         canEditPatients: row.can_edit_patients || false,
         canEditClinicConfig: row.can_edit_clinic_config || false,
         canEditTargets: row.can_edit_targets || false,
@@ -330,11 +333,12 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_cabinets,
         can_edit_service_time,
         can_edit_sources,
+        can_edit_consultation_control,
         can_edit_patients,
         can_edit_clinic_config,
         can_edit_targets
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
       )
       ON CONFLICT (user_id, clinic_id)
       DO UPDATE SET
@@ -351,9 +355,10 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_cabinets = $14,
         can_edit_service_time = $15,
         can_edit_sources = $16,
-        can_edit_patients = $17,
-        can_edit_clinic_config = $18,
-        can_edit_targets = $19,
+        can_edit_consultation_control = $17,
+        can_edit_patients = $18,
+        can_edit_clinic_config = $19,
+        can_edit_targets = $20,
         updated_at = NOW()`,
       [
         `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -372,6 +377,7 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         permissions.canEditCabinets || false,
         permissions.canEditServiceTime || false,
         permissions.canEditSources || false,
+        permissions.canEditConsultationControl || false,
         permissions.canEditPatients || false,
         permissions.canEditClinicConfig || false,
         permissions.canEditTargets || false,

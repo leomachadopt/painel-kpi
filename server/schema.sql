@@ -278,6 +278,20 @@ CREATE TABLE IF NOT EXISTS daily_source_entries (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Daily Consultation Control Entries
+CREATE TABLE IF NOT EXISTS daily_consultation_control_entries (
+  id VARCHAR(255) PRIMARY KEY,
+  clinic_id VARCHAR(255) NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  no_show INTEGER NOT NULL DEFAULT 0,
+  rescheduled INTEGER NOT NULL DEFAULT 0,
+  cancelled INTEGER NOT NULL DEFAULT 0,
+  old_patient_booking INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(clinic_id, date)
+);
+
 -- ================================
 -- INDEXES FOR PERFORMANCE
 -- ================================
@@ -291,6 +305,7 @@ CREATE INDEX IF NOT EXISTS idx_daily_prospecting_clinic_date ON daily_prospectin
 CREATE INDEX IF NOT EXISTS idx_daily_cabinet_clinic_date ON daily_cabinet_usage_entries(clinic_id, date);
 CREATE INDEX IF NOT EXISTS idx_daily_service_time_clinic_date ON daily_service_time_entries(clinic_id, date);
 CREATE INDEX IF NOT EXISTS idx_daily_source_clinic_date ON daily_source_entries(clinic_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_consultation_control_clinic_date ON daily_consultation_control_entries(clinic_id, date);
 
 -- ================================
 -- TRIGGERS FOR updated_at

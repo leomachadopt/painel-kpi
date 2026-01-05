@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Calendar as CalendarIcon,
@@ -44,7 +44,7 @@ import {
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
-  const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData, sourceEntries } =
+  const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData, sourceEntries, loadMonthlyTargets } =
     useDataStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -66,6 +66,13 @@ export default function Dashboard() {
     clinicId &&
     user.clinicId !== clinicId
   )
+
+  // Load monthly targets when clinic/month/year changes
+  useEffect(() => {
+    if (clinicId && hasAccess) {
+      loadMonthlyTargets(clinicId, currentMonth, currentYear)
+    }
+  }, [clinicId, currentMonth, currentYear, hasAccess, loadMonthlyTargets])
 
   const kpis = useMemo(() => {
     if (!clinicId || !hasAccess) return []
@@ -261,6 +268,16 @@ export default function Dashboard() {
           <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Operacional</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {kpis.filter(k => ['occupancy_rate', 'attendance_rate', 'avg_wait_time', 'integration_rate'].includes(k.id)).map((kpi) => (
+              <KPICard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+        </div>
+
+        {/* Controle de Consultas */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Controle de Consultas</h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {kpis.filter(k => ['no_show', 'rescheduled', 'cancelled', 'old_patient_booking'].includes(k.id)).map((kpi) => (
               <KPICard key={kpi.id} kpi={kpi} />
             ))}
           </div>

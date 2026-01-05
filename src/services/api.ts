@@ -304,6 +304,26 @@ export const dailyEntriesApi = {
         method: 'DELETE',
       }),
   },
+
+  // Consultation Control
+  consultationControl: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/daily-entries/consultation-control/${clinicId}`),
+
+    getByDate: (clinicId: string, date: string) =>
+      apiCall<any>(`/daily-entries/consultation-control/${clinicId}/${date}`),
+
+    save: (clinicId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/consultation-control/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/consultation-control/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================

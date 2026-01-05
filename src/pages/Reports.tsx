@@ -7,6 +7,7 @@ import {
   Calendar as CalendarIcon,
   LayoutGrid,
   List,
+  CalendarCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,7 @@ import { ProspectingTable } from '@/components/reports/ProspectingTable'
 import { CabinetTable } from '@/components/reports/CabinetTable'
 import { ServiceTimeTable } from '@/components/reports/ServiceTimeTable'
 import { SourceTable } from '@/components/reports/SourceTable'
+import { ConsultationControlTable } from '@/components/reports/ConsultationControlTable'
 import { MarketingReport } from '@/components/reports/MarketingReport'
 
 export default function Reports() {
@@ -40,6 +42,7 @@ export default function Reports() {
     cabinetEntries,
     serviceTimeEntries,
     sourceEntries,
+    consultationControlEntries,
   } = useDataStore()
   const { user } = useAuthStore()
 
@@ -145,13 +148,14 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="financial" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
           <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
           <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
           <TabsTrigger value="sources">Fontes</TabsTrigger>
+          <TabsTrigger value="consultationControl">Controle</TabsTrigger>
           <TabsTrigger value="marketing">Marketing</TabsTrigger>
         </TabsList>
 
@@ -222,6 +226,13 @@ export default function Reports() {
           <TabsContent value="sources">
             <SourceTable
               data={filterByDate(sourceEntries[clinic.id])}
+              clinic={clinic}
+              onDelete={handleDataChange}
+            />
+          </TabsContent>
+          <TabsContent value="consultationControl">
+            <ConsultationControlTable
+              data={filterByDate(consultationControlEntries[clinic.id])}
               clinic={clinic}
               onDelete={handleDataChange}
             />

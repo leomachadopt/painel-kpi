@@ -11,6 +11,7 @@ import {
   DailyCabinetUsageEntry,
   DailyServiceTimeEntry,
   DailySourceEntry,
+  DailyConsultationControlEntry,
   ClinicConfiguration,
   DEFAULT_MONTHLY_TARGETS,
 } from '@/lib/types'
@@ -46,6 +47,7 @@ interface DataState {
     entry: DailyConsultationEntry,
   ) => Promise<void>
   saveProspectingEntry: (clinicId: string, entry: DailyProspectingEntry) => Promise<void>
+  saveConsultationControlEntry: (clinicId: string, entry: DailyConsultationControlEntry) => Promise<void>
   addCabinetUsageEntry: (
     clinicId: string,
     entry: DailyCabinetUsageEntry,
@@ -56,11 +58,16 @@ interface DataState {
     clinicId: string,
     date: string,
   ) => DailyProspectingEntry | undefined
+  getConsultationControlEntry: (
+    clinicId: string,
+    date: string,
+  ) => DailyConsultationControlEntry | undefined
 
   // Delete operations
   deleteFinancialEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteConsultationEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteProspectingEntry: (clinicId: string, entryId: string) => Promise<void>
+  deleteConsultationControlEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteCabinetEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteServiceTimeEntry: (clinicId: string, entryId: string) => Promise<void>
   deleteSourceEntry: (clinicId: string, entryId: string) => Promise<void>
@@ -70,6 +77,7 @@ interface DataState {
   financialEntries: Record<string, DailyFinancialEntry[]>
   consultationEntries: Record<string, DailyConsultationEntry[]>
   prospectingEntries: Record<string, DailyProspectingEntry[]>
+  consultationControlEntries: Record<string, DailyConsultationControlEntry[]>
   cabinetEntries: Record<string, DailyCabinetUsageEntry[]>
   serviceTimeEntries: Record<string, DailyServiceTimeEntry[]>
   sourceEntries: Record<string, DailySourceEntry[]>
@@ -107,6 +115,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const [sourceEntries, setSourceEntries] = useState<
     Record<string, DailySourceEntry[]>
   >({})
+  const [consultationControlEntries, setConsultationControlEntries] = useState<
+    Record<string, DailyConsultationControlEntry[]>
+  >({})
 
   // Load clinics from API on mount (only if authenticated)
   useEffect(() => {
@@ -138,6 +149,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     serviceTime: DailyServiceTimeEntry[],
     sources: DailySourceEntry[],
     prospecting: DailyProspectingEntry[],
+    consultationControl: DailyConsultationControlEntry[],
   ) => {
     // Group entries by month/year
     const monthlyMap = new Map<string, any>()
@@ -170,15 +182,20 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       plansNotAccepted: 0,
       plansNotAcceptedFollowUp: 0,
       avgWaitTime: 0,
-      agendaOwner: { consultations: 0, management: 0, operations: 0 },
-      sources: {},
+      agendaOwner: { operational: 0, planning: 0, sales: 0, leadership: 0 },
+      nps: 0,
+      referralsSpontaneous: 0,
+      referralsBase2025: 0,
+      complaints: 0,
+      expenses: 0,
+      marketingCost: 0,
       revenueByCategory: {},
       leadsByChannel: {},
       sourceDistribution: {},
       campaignDistribution: {},
-      delayReasons: {},
-      referralsSpontaneous: 0,
-      entryCounts: { financial: 0, consultations: 0, prospecting: 0, cabinets: 0, serviceTime: 0, sources: 0 },
+      delayReasons: { patient: 0, doctor: 0 },
+      entryCounts: { financial: 0, consultations: 0, prospecting: 0, cabinets: 0, serviceTime: 0, sources: 0, consultationControl: 0 },
+      consultationControl: { noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 },
     })
 
     // Process financial entries
@@ -322,13 +339,38 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
     })
 
-    // If no entries exist, create empty monthly data for current month/year
-    if (monthlyMap.size === 0) {
-      const now = new Date()
-      const currentMonth = now.getMonth() + 1
-      const currentYear = now.getFullYear()
-      const key = `${currentYear}-${currentMonth}`
-      monthlyMap.set(key, initMonthData(currentMonth, currentYear))
+    // Process consultation control entries
+    consultationControl.forEach(entry => {
+      const date = parseISO(entry.date)
+      const month = getMonth(date) + 1
+      const year = getYear(date)
+      const key = `${year}-${month}`
+
+      if (!monthlyMap.has(key)) {
+        monthlyMap.set(key, initMonthData(month, year))
+      }
+
+      const data = monthlyMap.get(key)
+      data.entryCounts.consultationControl++
+
+      // Aggregate consultation control metrics
+      if (!data.consultationControl) {
+        data.consultationControl = { noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 }
+      }
+      data.consultationControl.noShow += entry.noShow || 0
+      data.consultationControl.rescheduled += entry.rescheduled || 0
+      data.consultationControl.cancelled += entry.cancelled || 0
+      data.consultationControl.oldPatientBooking += entry.oldPatientBooking || 0
+    })
+
+    // Always ensure at least current month/year exists (even if empty)
+    // This ensures KPIs can be calculated even without daily entries
+    const now = new Date()
+    const currentMonth = now.getMonth() + 1
+    const currentYear = now.getFullYear()
+    const currentKey = `${currentYear}-${currentMonth}`
+    if (!monthlyMap.has(currentKey)) {
+      monthlyMap.set(currentKey, initMonthData(currentMonth, currentYear))
     }
 
     // Save aggregated data
@@ -350,7 +392,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
-    const [financial, consultations, cabinets, serviceTime, sources, prospecting] =
+    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl] =
       await Promise.all([
         dailyEntriesApi.financial.getAll(clinicId),
         dailyEntriesApi.consultation.getAll(clinicId),
@@ -358,12 +400,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         dailyEntriesApi.serviceTime.getAll(clinicId),
         dailyEntriesApi.source.getAll(clinicId),
         dailyEntriesApi.prospecting.getAll(clinicId),
+        dailyEntriesApi.consultationControl.getAll(clinicId),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
     setConsultationEntries((prev) => ({ ...prev, [clinicId]: consultations }))
     setCabinetEntries((prev) => ({ ...prev, [clinicId]: cabinets }))
     setServiceTimeEntries((prev) => ({ ...prev, [clinicId]: serviceTime }))
+    setConsultationControlEntries((prev) => ({ ...prev, [clinicId]: consultationControl }))
     setSourceEntries((prev) => ({ ...prev, [clinicId]: sources }))
     setProspectingEntries((prev) => ({ ...prev, [clinicId]: prospecting }))
   }
@@ -398,11 +442,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const serviceTime = serviceTimeEntries[clinic.id] || []
       const sources = sourceEntries[clinic.id] || []
       const prospecting = prospectingEntries[clinic.id] || []
+      const consultationControl = consultationControlEntries[clinic.id] || []
 
       // Always aggregate, even if empty - this ensures monthly data exists (with zeros)
-      aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
+      aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
     })
-  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries])
+  }, [dailyEntriesLoaded, clinics, financialEntries, consultationEntries, cabinetEntries, serviceTimeEntries, sourceEntries, prospectingEntries, consultationControlEntries])
 
   const ensurePatientExists = async (
     clinicId: string,
@@ -557,9 +602,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const getMonthlyData = (clinicId: string, month: number, year: number) => {
-    return monthlyData[clinicId]?.find(
+    const data = monthlyData[clinicId]?.find(
       (d) => d.month === month && d.year === year,
     )
+    
+    // If no data exists, return undefined (will be handled by calculateKPIs)
+    return data
   }
 
   const addMonthlyData = (data: MonthlyData) => {
@@ -778,8 +826,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const serviceTime = serviceTimeEntries[clinicId] || []
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
+        const consultationControl = consultationControlEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
       }
     } catch (error: any) {
       // Rollback on error
@@ -791,6 +840,50 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getProspectingEntry = (clinicId: string, date: string) => {
     return prospectingEntries[clinicId]?.find((e) => e.date === date)
+  }
+
+  const saveConsultationControlEntry = async (
+    clinicId: string,
+    entry: DailyConsultationControlEntry,
+  ) => {
+    // Optimistic update
+    const prevEntries = consultationControlEntries[clinicId] || []
+    setConsultationControlEntries((prev) => {
+      const clinicEntries = prev[clinicId] || []
+      const idx = clinicEntries.findIndex((e) => e.date === entry.date)
+      const newEntries = [...clinicEntries]
+      if (idx >= 0) newEntries[idx] = entry
+      else newEntries.push(entry)
+      return { ...prev, [clinicId]: newEntries }
+    })
+
+    try {
+      // Save to API
+      await dailyEntriesApi.consultationControl.save(clinicId, entry)
+
+      // Re-aggregate monthly data after saving
+      const clinic = getClinic(clinicId)
+      if (clinic) {
+        const financial = financialEntries[clinicId] || []
+        const consultations = consultationEntries[clinicId] || []
+        const cabinets = cabinetEntries[clinicId] || []
+        const serviceTime = serviceTimeEntries[clinicId] || []
+        const sources = sourceEntries[clinicId] || []
+        const prospecting = prospectingEntries[clinicId] || []
+        const consultationControl = consultationControlEntries[clinicId] || []
+
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+      }
+    } catch (error: any) {
+      // Rollback on error
+      setConsultationControlEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))
+      toast.error(error?.message || 'Erro ao guardar dados de controle de consultas')
+      throw error
+    }
+  }
+
+  const getConsultationControlEntry = (clinicId: string, date: string) => {
+    return consultationControlEntries[clinicId]?.find((e) => e.date === date)
   }
 
   const addCabinetUsageEntry = async (
@@ -1048,7 +1141,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting)
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControlEntries[clinicId] || [])
       }
     } catch (error: any) {
       // Rollback otimista
@@ -1062,6 +1155,56 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         toast.error('Sem permissão para excluir entrada de prospecção.')
       } else {
         toast.error(error?.message || 'Erro ao excluir entrada de prospecção.')
+      }
+      throw error
+    }
+  }
+
+  const deleteConsultationControlEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    // Encontrar a entrada antes de deletar
+    const entry = consultationControlEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Remover da lista local (otimista)
+    setConsultationControlEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.consultationControl.delete(clinicId, entryId)
+      toast.success('Entrada de controle de consultas excluída com sucesso!')
+
+      // Re-aggregate monthly data after deletion
+      const clinic = getClinic(clinicId)
+      if (clinic) {
+        const financial = financialEntries[clinicId] || []
+        const consultations = consultationEntries[clinicId] || []
+        const cabinets = cabinetEntries[clinicId] || []
+        const serviceTime = serviceTimeEntries[clinicId] || []
+        const sources = sourceEntries[clinicId] || []
+        const prospecting = prospectingEntries[clinicId] || []
+        const consultationControl = consultationControlEntries[clinicId] || []
+
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+      }
+    } catch (error: any) {
+      // Rollback on error
+      setConsultationControlEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir entrada de controle de consultas.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir entrada de controle de consultas.')
       }
       throw error
     }
@@ -1579,6 +1722,62 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       target: `${targets.targetLeadsRange.min}-${targets.targetLeadsRange.max}`,
     })
 
+    // ===== CONTROLE DE CONSULTAS (4 KPIs) =====
+    const consultationControl = current.consultationControl || { noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 }
+    const prevConsultationControl = previous?.consultationControl || { noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 }
+    
+    kpis.push({
+      id: 'no_show',
+      name: 'Não Comparecimento',
+      value: consultationControl.noShow,
+      unit: 'number',
+      change: calcChange(consultationControl.noShow, prevConsultationControl.noShow),
+      status: consultationControl.noShow <= (prevConsultationControl.noShow || 0)
+        ? 'success'
+        : consultationControl.noShow <= (prevConsultationControl.noShow || 0) * 1.1
+        ? 'warning'
+        : 'danger',
+    })
+
+    kpis.push({
+      id: 'rescheduled',
+      name: 'Remarcações',
+      value: consultationControl.rescheduled,
+      unit: 'number',
+      change: calcChange(consultationControl.rescheduled, prevConsultationControl.rescheduled),
+      status: consultationControl.rescheduled <= (prevConsultationControl.rescheduled || 0)
+        ? 'success'
+        : consultationControl.rescheduled <= (prevConsultationControl.rescheduled || 0) * 1.1
+        ? 'warning'
+        : 'danger',
+    })
+
+    kpis.push({
+      id: 'cancelled',
+      name: 'Cancelamentos',
+      value: consultationControl.cancelled,
+      unit: 'number',
+      change: calcChange(consultationControl.cancelled, prevConsultationControl.cancelled),
+      status: consultationControl.cancelled <= (prevConsultationControl.cancelled || 0)
+        ? 'success'
+        : consultationControl.cancelled <= (prevConsultationControl.cancelled || 0) * 1.1
+        ? 'warning'
+        : 'danger',
+    })
+
+    kpis.push({
+      id: 'old_patient_booking',
+      name: 'Marcações (Paciente Antigo)',
+      value: consultationControl.oldPatientBooking,
+      unit: 'number',
+      change: calcChange(consultationControl.oldPatientBooking, prevConsultationControl.oldPatientBooking),
+      status: consultationControl.oldPatientBooking > (prevConsultationControl.oldPatientBooking || 0)
+        ? 'success'
+        : consultationControl.oldPatientBooking === (prevConsultationControl.oldPatientBooking || 0)
+        ? 'warning'
+        : 'danger',
+    })
+
     return kpis
   }
 
@@ -1599,13 +1798,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addFinancialEntry,
         addConsultationEntry,
         saveProspectingEntry,
+        saveConsultationControlEntry,
         addCabinetUsageEntry,
         addServiceTimeEntry,
         addSourceEntry,
         getProspectingEntry,
+        getConsultationControlEntry,
         deleteFinancialEntry,
         deleteConsultationEntry,
         deleteProspectingEntry,
+        deleteConsultationControlEntry,
         deleteCabinetEntry,
         deleteServiceTimeEntry,
         deleteSourceEntry,
@@ -1613,6 +1815,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         financialEntries,
         consultationEntries,
         prospectingEntries,
+        consultationControlEntries,
         cabinetEntries,
         serviceTimeEntries,
         sourceEntries,

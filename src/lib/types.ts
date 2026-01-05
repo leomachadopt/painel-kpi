@@ -151,6 +151,15 @@ export interface MonthlyData {
     cabinets: number
     serviceTime: number
     sources: number
+    consultationControl: number
+  }
+  
+  // Consultation Control Metrics
+  consultationControl?: {
+    noShow: number
+    rescheduled: number
+    cancelled: number
+    oldPatientBooking: number
   }
 }
 
@@ -221,6 +230,15 @@ export interface DailySourceEntry {
   campaignId?: string
 }
 
+export interface DailyConsultationControlEntry {
+  id: string
+  date: string
+  noShow: number
+  rescheduled: number
+  cancelled: number
+  oldPatientBooking: number
+}
+
 export interface KPI {
   id: string
   name: string
@@ -253,6 +271,7 @@ export interface UserPermissions {
   canEditCabinets: boolean
   canEditServiceTime: boolean
   canEditSources: boolean
+  canEditConsultationControl: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean

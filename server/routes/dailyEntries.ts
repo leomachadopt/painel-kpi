@@ -661,4 +661,120 @@ router.delete('/source/:clinicId/:entryId', async (req, res) => {
   }
 })
 
+// ================================
+// CONSULTATION CONTROL ENTRIES
+// ================================
+router.get('/consultation-control/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const result = await query(
+      `SELECT * FROM daily_consultation_control_entries WHERE clinic_id = $1 ORDER BY date DESC`,
+      [clinicId]
+    )
+
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        date: row.date,
+        noShow: row.no_show,
+        rescheduled: row.rescheduled,
+        cancelled: row.cancelled,
+        oldPatientBooking: row.old_patient_booking,
+      }))
+    )
+  } catch (error) {
+    console.error('Get consultation control entries error:', error)
+    res.status(500).json({ error: 'Failed to fetch consultation control entries' })
+  }
+})
+
+// Get single consultation control entry by date
+router.get('/consultation-control/:clinicId/:date', async (req, res) => {
+  try {
+    const { clinicId, date } = req.params
+    const result = await query(
+      `SELECT * FROM daily_consultation_control_entries WHERE clinic_id = $1 AND date = $2`,
+      [clinicId, date]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation control entry not found' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      date: row.date,
+      noShow: row.no_show,
+      rescheduled: row.rescheduled,
+      cancelled: row.cancelled,
+      oldPatientBooking: row.old_patient_booking,
+    })
+  } catch (error) {
+    console.error('Get consultation control entry error:', error)
+    res.status(500).json({ error: 'Failed to fetch consultation control entry' })
+  }
+})
+
+router.post('/consultation-control/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { id, date, noShow, rescheduled, cancelled, oldPatientBooking } = req.body
+    const entryId = id || `consultation-control-${clinicId}-${date}`
+
+    const result = await query(
+      `INSERT INTO daily_consultation_control_entries
+       (id, clinic_id, date, no_show, rescheduled, cancelled, old_patient_booking)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (clinic_id, date) DO UPDATE SET
+         no_show = EXCLUDED.no_show,
+         rescheduled = EXCLUDED.rescheduled,
+         cancelled = EXCLUDED.cancelled,
+         old_patient_booking = EXCLUDED.old_patient_booking
+       RETURNING *`,
+      [entryId, clinicId, date, noShow || 0, rescheduled || 0, cancelled || 0, oldPatientBooking || 0]
+    )
+
+    res.status(201).json({
+      id: result.rows[0].id,
+      date: result.rows[0].date,
+      noShow: result.rows[0].no_show,
+      rescheduled: result.rows[0].rescheduled,
+      cancelled: result.rows[0].cancelled,
+      oldPatientBooking: result.rows[0].old_patient_booking,
+    })
+  } catch (error: any) {
+    console.error('Create consultation control entry error:', error)
+    res.status(500).json({
+      error: 'Failed to create consultation control entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.delete('/consultation-control/:clinicId/:entryId', async (req, res) => {
+  // Only GESTOR can delete entries
+  if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== req.params.clinicId) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { clinicId, entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_consultation_control_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete consultation control entry error:', error)
+    res.status(500).json({ error: 'Failed to delete consultation control entry' })
+  }
+})
+
 export default router
