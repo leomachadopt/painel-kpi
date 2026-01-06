@@ -1900,7 +1900,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Alerta 2: Aguardando Plano (Empresa) ativo mas Plano Aprovado (Médico (a)) não está ativo
-      if (entry.awaitingPlan && !entry.awaitingApproval) {
+      // Só aparece se a fase anterior (CCK Criado) foi completada
+      if (entry.awaitingPlan && !entry.awaitingApproval && entry.cckCreated) {
         alerts.push({
           id: `aligner-awaiting-plan-${entry.id}`,
           rule: 'Aguardando Aprovação',
@@ -1912,7 +1913,24 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
 
-      // Alerta 3: Scanner com mais de 20 dias e paciente não aprovado
+      // Alerta 3: Data de expiração menor que 30 dias
+      if (entry.expirationDate) {
+        const expirationDate = new Date(entry.expirationDate)
+        const daysUntilExpiration = Math.floor((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        if (daysUntilExpiration > 0 && daysUntilExpiration < 30) {
+          alerts.push({
+            id: `aligner-expiration-${entry.id}`,
+            rule: 'Data de Expiração Próxima',
+            message: `Paciente ${entry.patientName} (código ${entry.code}) tem data de expiração em ${daysUntilExpiration} dias (${expirationDate.toLocaleDateString('pt-PT')}).`,
+            severity: daysUntilExpiration < 7 ? 'destructive' : 'warning',
+            patientName: entry.patientName,
+            patientCode: entry.code,
+            entryId: entry.id,
+          })
+        }
+      }
+
+      // Alerta 4: Scanner com mais de 20 dias e paciente não aprovado
       if (entry.hasScanner && entry.scannerCollectionDate) {
         const scannerDate = new Date(entry.scannerCollectionDate)
         if (scannerDate < twentyDaysAgo && !entry.approved) {
