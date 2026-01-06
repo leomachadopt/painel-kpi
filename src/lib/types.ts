@@ -314,6 +314,16 @@ export interface UserPermissions {
   canViewDashboardOperational: boolean
   canViewDashboardMarketing: boolean
   canViewReports: boolean
+  canViewReportFinancial: boolean
+  canViewReportBilling: boolean
+  canViewReportConsultations: boolean
+  canViewReportAligners: boolean
+  canViewReportProspecting: boolean
+  canViewReportCabinets: boolean
+  canViewReportServiceTime: boolean
+  canViewReportSources: boolean
+  canViewReportConsultationControl: boolean
+  canViewReportMarketing: boolean
   canViewTargets: boolean
   canEditFinancial: boolean
   canEditConsultations: boolean

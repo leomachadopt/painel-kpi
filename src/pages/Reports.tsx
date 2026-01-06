@@ -51,7 +51,7 @@ export default function Reports() {
     alignerEntries,
   } = useDataStore()
   const { user } = useAuthStore()
-  const { canView, isMentor } = usePermissions()
+  const { canView, canViewReport, isMentor } = usePermissions()
 
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -103,6 +103,21 @@ export default function Reports() {
       return entryDate >= startDate && entryDate <= endDate
     })
     return filtered
+  }
+
+  // Determine first available tab based on permissions
+  const getFirstAvailableTab = (): string => {
+    if (canViewReport('canViewReportFinancial')) return 'financial'
+    if (canViewReport('canViewReportBilling')) return 'billing'
+    if (canViewReport('canViewReportConsultations')) return 'consultations'
+    if (canViewReport('canViewReportAligners')) return 'aligners'
+    if (canViewReport('canViewReportProspecting')) return 'prospecting'
+    if (canViewReport('canViewReportCabinets')) return 'cabinets'
+    if (canViewReport('canViewReportServiceTime')) return 'serviceTime'
+    if (canViewReport('canViewReportSources')) return 'sources'
+    if (canViewReport('canViewReportConsultationControl')) return 'consultationControl'
+    if (canViewReport('canViewReportMarketing')) return 'marketing'
+    return 'financial' // fallback
   }
 
   return (
@@ -160,35 +175,60 @@ export default function Reports() {
         </div>
       </div>
 
-      <Tabs defaultValue="financial" className="w-full">
+      <Tabs defaultValue={getFirstAvailableTab()} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10 h-auto">
-          <TabsTrigger value="financial">Financeiro</TabsTrigger>
-          <TabsTrigger value="billing">Faturação</TabsTrigger>
-          <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
-          <TabsTrigger value="aligners">Alinhadores</TabsTrigger>
-          <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
-          <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
-          <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
-          <TabsTrigger value="sources">Fontes</TabsTrigger>
-          <TabsTrigger value="consultationControl">Controle</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing</TabsTrigger>
+          {canViewReport('canViewReportFinancial') && (
+            <TabsTrigger value="financial">Financeiro</TabsTrigger>
+          )}
+          {canViewReport('canViewReportBilling') && (
+            <TabsTrigger value="billing">Faturação</TabsTrigger>
+          )}
+          {canViewReport('canViewReportConsultations') && (
+            <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
+          )}
+          {canViewReport('canViewReportAligners') && (
+            <TabsTrigger value="aligners">Alinhadores</TabsTrigger>
+          )}
+          {canViewReport('canViewReportProspecting') && (
+            <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
+          )}
+          {canViewReport('canViewReportCabinets') && (
+            <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
+          )}
+          {canViewReport('canViewReportServiceTime') && (
+            <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
+          )}
+          {canViewReport('canViewReportSources') && (
+            <TabsTrigger value="sources">Fontes</TabsTrigger>
+          )}
+          {canViewReport('canViewReportConsultationControl') && (
+            <TabsTrigger value="consultationControl">Controle</TabsTrigger>
+          )}
+          {canViewReport('canViewReportMarketing') && (
+            <TabsTrigger value="marketing">Marketing</TabsTrigger>
+          )}
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="financial">
-            <FinancialTable
-              data={filterByDate(financialEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="billing">
-            <BillingTable
-              data={filterByDate(financialEntries[clinic.id])}
-              clinic={clinic}
-            />
-          </TabsContent>
-          <TabsContent value="consultations">
+          {canViewReport('canViewReportFinancial') && (
+            <TabsContent value="financial">
+              <FinancialTable
+                data={filterByDate(financialEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportBilling') && (
+            <TabsContent value="billing">
+              <BillingTable
+                data={filterByDate(financialEntries[clinic.id])}
+                clinic={clinic}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportConsultations') && (
+            <TabsContent value="consultations">
             <div className="flex flex-col gap-4">
               <div className="flex justify-end">
                 <div className="inline-flex rounded-md border">
@@ -227,7 +267,9 @@ export default function Reports() {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="aligners">
+          )}
+          {canViewReport('canViewReportAligners') && (
+            <TabsContent value="aligners">
             <div className="flex flex-col gap-4">
               <div className="flex justify-end">
                 <div className="inline-flex rounded-md border">
@@ -266,48 +308,61 @@ export default function Reports() {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="prospecting">
-            <ProspectingTable
-              data={filterByDate(prospectingEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="cabinets">
-            <CabinetTable
-              data={filterByDate(cabinetEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="serviceTime">
-            <ServiceTimeTable
-              data={filterByDate(serviceTimeEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="sources">
-            <SourceTable
-              data={filterByDate(sourceEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="consultationControl">
-            <ConsultationControlTable
-              data={filterByDate(consultationControlEntries[clinic.id])}
-              clinic={clinic}
-              onDelete={handleDataChange}
-            />
-          </TabsContent>
-          <TabsContent value="marketing">
-            <MarketingReport
-              clinicId={clinic.id}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          </TabsContent>
+          )}
+          {canViewReport('canViewReportProspecting') && (
+            <TabsContent value="prospecting">
+              <ProspectingTable
+                data={filterByDate(prospectingEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportCabinets') && (
+            <TabsContent value="cabinets">
+              <CabinetTable
+                data={filterByDate(cabinetEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportServiceTime') && (
+            <TabsContent value="serviceTime">
+              <ServiceTimeTable
+                data={filterByDate(serviceTimeEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportSources') && (
+            <TabsContent value="sources">
+              <SourceTable
+                data={filterByDate(sourceEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportConsultationControl') && (
+            <TabsContent value="consultationControl">
+              <ConsultationControlTable
+                data={filterByDate(consultationControlEntries[clinic.id])}
+                clinic={clinic}
+                onDelete={handleDataChange}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportMarketing') && (
+            <TabsContent value="marketing">
+              <MarketingReport
+                clinicId={clinic.id}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

@@ -67,7 +67,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
     }
 
     loadEntry()
-  }, [date, clinic.id, getProspectingEntry])
+  }, [date, clinic.id])
 
   const adjust = (key: keyof typeof counters, delta: number) => {
     setCounters((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }))

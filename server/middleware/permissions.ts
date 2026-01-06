@@ -9,6 +9,16 @@ export interface UserPermissions {
   canViewDashboardOperational: boolean
   canViewDashboardMarketing: boolean
   canViewReports: boolean
+  canViewReportFinancial: boolean
+  canViewReportBilling: boolean
+  canViewReportConsultations: boolean
+  canViewReportAligners: boolean
+  canViewReportProspecting: boolean
+  canViewReportCabinets: boolean
+  canViewReportServiceTime: boolean
+  canViewReportSources: boolean
+  canViewReportConsultationControl: boolean
+  canViewReportMarketing: boolean
   canViewTargets: boolean
   canEditFinancial: boolean
   canEditConsultations: boolean
@@ -42,6 +52,16 @@ export async function getUserPermissions(
       canViewDashboardOperational: true,
       canViewDashboardMarketing: true,
       canViewReports: true,
+      canViewReportFinancial: true,
+      canViewReportBilling: true,
+      canViewReportConsultations: true,
+      canViewReportAligners: true,
+      canViewReportProspecting: true,
+      canViewReportCabinets: true,
+      canViewReportServiceTime: true,
+      canViewReportSources: true,
+      canViewReportConsultationControl: true,
+      canViewReportMarketing: true,
       canViewTargets: true,
       canEditFinancial: true,
       canEditConsultations: true,
@@ -71,6 +91,16 @@ export async function getUserPermissions(
       can_view_dashboard_operational,
       can_view_dashboard_marketing,
       can_view_reports,
+      can_view_report_financial,
+      can_view_report_billing,
+      can_view_report_consultations,
+      can_view_report_aligners,
+      can_view_report_prospecting,
+      can_view_report_cabinets,
+      can_view_report_service_time,
+      can_view_report_sources,
+      can_view_report_consultation_control,
+      can_view_report_marketing,
       can_view_targets,
       can_edit_financial,
       can_edit_consultations,
@@ -101,6 +131,16 @@ export async function getUserPermissions(
     canViewDashboardOperational: perms.can_view_dashboard_operational || false,
     canViewDashboardMarketing: perms.can_view_dashboard_marketing || false,
     canViewReports: perms.can_view_reports || false,
+    canViewReportFinancial: perms.can_view_report_financial || false,
+    canViewReportBilling: perms.can_view_report_billing || false,
+    canViewReportConsultations: perms.can_view_report_consultations || false,
+    canViewReportAligners: perms.can_view_report_aligners || false,
+    canViewReportProspecting: perms.can_view_report_prospecting || false,
+    canViewReportCabinets: perms.can_view_report_cabinets || false,
+    canViewReportServiceTime: perms.can_view_report_service_time || false,
+    canViewReportSources: perms.can_view_report_sources || false,
+    canViewReportConsultationControl: perms.can_view_report_consultation_control || false,
+    canViewReportMarketing: perms.can_view_report_marketing || false,
     canViewTargets: perms.can_view_targets || false,
     canEditFinancial: perms.can_edit_financial || false,
     canEditConsultations: perms.can_edit_consultations || false,
@@ -124,6 +164,16 @@ function createEmptyPermissions(): UserPermissions {
     canViewDashboardOperational: false,
     canViewDashboardMarketing: false,
     canViewReports: false,
+    canViewReportFinancial: false,
+    canViewReportBilling: false,
+    canViewReportConsultations: false,
+    canViewReportAligners: false,
+    canViewReportProspecting: false,
+    canViewReportCabinets: false,
+    canViewReportServiceTime: false,
+    canViewReportSources: false,
+    canViewReportConsultationControl: false,
+    canViewReportMarketing: false,
     canViewTargets: false,
     canEditFinancial: false,
     canEditConsultations: false,

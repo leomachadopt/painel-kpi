@@ -50,6 +50,26 @@ export function usePermissions() {
   }
 
   /**
+   * Check if user can view a specific report tab
+   */
+  const canViewReport = (reportTab: keyof Pick<UserPermissions,
+    | 'canViewReportFinancial'
+    | 'canViewReportBilling'
+    | 'canViewReportConsultations'
+    | 'canViewReportAligners'
+    | 'canViewReportProspecting'
+    | 'canViewReportCabinets'
+    | 'canViewReportServiceTime'
+    | 'canViewReportSources'
+    | 'canViewReportConsultationControl'
+    | 'canViewReportMarketing'
+  >): boolean => {
+    if (!user) return false
+    if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
+    return permissions[reportTab]
+  }
+
+  /**
    * Check if user can edit a specific resource
    */
   const canEdit = (resource: keyof Pick<UserPermissions,
@@ -117,6 +137,7 @@ export function usePermissions() {
   return {
     permissions,
     canView,
+    canViewReport,
     canEdit,
     isGestor,
     isMentor,
@@ -133,6 +154,16 @@ function createEmptyPermissions(): UserPermissions {
     canViewDashboardOperational: false,
     canViewDashboardMarketing: false,
     canViewReports: false,
+    canViewReportFinancial: false,
+    canViewReportBilling: false,
+    canViewReportConsultations: false,
+    canViewReportAligners: false,
+    canViewReportProspecting: false,
+    canViewReportCabinets: false,
+    canViewReportServiceTime: false,
+    canViewReportSources: false,
+    canViewReportConsultationControl: false,
+    canViewReportMarketing: false,
     canViewTargets: false,
     canEditFinancial: false,
     canEditConsultations: false,
@@ -156,6 +187,16 @@ function createFullPermissions(): UserPermissions {
     canViewDashboardOperational: true,
     canViewDashboardMarketing: true,
     canViewReports: true,
+    canViewReportFinancial: true,
+    canViewReportBilling: true,
+    canViewReportConsultations: true,
+    canViewReportAligners: true,
+    canViewReportProspecting: true,
+    canViewReportCabinets: true,
+    canViewReportServiceTime: true,
+    canViewReportSources: true,
+    canViewReportConsultationControl: true,
+    canViewReportMarketing: true,
     canViewTargets: true,
     canEditFinancial: true,
     canEditConsultations: true,

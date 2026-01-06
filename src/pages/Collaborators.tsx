@@ -58,6 +58,16 @@ export default function Collaborators() {
     canViewDashboardOperational: false,
     canViewDashboardMarketing: false,
     canViewReports: false,
+    canViewReportFinancial: false,
+    canViewReportBilling: false,
+    canViewReportConsultations: false,
+    canViewReportAligners: false,
+    canViewReportProspecting: false,
+    canViewReportCabinets: false,
+    canViewReportServiceTime: false,
+    canViewReportSources: false,
+    canViewReportConsultationControl: false,
+    canViewReportMarketing: false,
     canViewTargets: false,
     canEditFinancial: false,
     canEditConsultations: false,
@@ -377,7 +387,7 @@ export default function Collaborators() {
                     onCheckedChange={() => handleTogglePermission('canViewReports')}
                   />
                   <Label htmlFor="canViewReports" className="cursor-pointer">
-                    Relatórios
+                    Acesso a Relatórios (Geral)
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -388,6 +398,113 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canViewTargets" className="cursor-pointer">
                     Metas Mensais
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Report Tab Permissions */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">📋 Permissões de Abas de Relatórios</h3>
+              <div className="space-y-2 border rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportFinancial"
+                    checked={permissionsForm.canViewReportFinancial}
+                    onCheckedChange={() => handleTogglePermission('canViewReportFinancial')}
+                  />
+                  <Label htmlFor="canViewReportFinancial" className="cursor-pointer">
+                    Relatório Financeiro
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportBilling"
+                    checked={permissionsForm.canViewReportBilling}
+                    onCheckedChange={() => handleTogglePermission('canViewReportBilling')}
+                  />
+                  <Label htmlFor="canViewReportBilling" className="cursor-pointer">
+                    Relatório de Faturação
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportConsultations"
+                    checked={permissionsForm.canViewReportConsultations}
+                    onCheckedChange={() => handleTogglePermission('canViewReportConsultations')}
+                  />
+                  <Label htmlFor="canViewReportConsultations" className="cursor-pointer">
+                    Relatório de 1.ªs Consultas
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportAligners"
+                    checked={permissionsForm.canViewReportAligners}
+                    onCheckedChange={() => handleTogglePermission('canViewReportAligners')}
+                  />
+                  <Label htmlFor="canViewReportAligners" className="cursor-pointer">
+                    Relatório de Alinhadores
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportProspecting"
+                    checked={permissionsForm.canViewReportProspecting}
+                    onCheckedChange={() => handleTogglePermission('canViewReportProspecting')}
+                  />
+                  <Label htmlFor="canViewReportProspecting" className="cursor-pointer">
+                    Relatório de Prospecção
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportCabinets"
+                    checked={permissionsForm.canViewReportCabinets}
+                    onCheckedChange={() => handleTogglePermission('canViewReportCabinets')}
+                  />
+                  <Label htmlFor="canViewReportCabinets" className="cursor-pointer">
+                    Relatório de Gabinetes
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportServiceTime"
+                    checked={permissionsForm.canViewReportServiceTime}
+                    onCheckedChange={() => handleTogglePermission('canViewReportServiceTime')}
+                  />
+                  <Label htmlFor="canViewReportServiceTime" className="cursor-pointer">
+                    Relatório de Tempos
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportSources"
+                    checked={permissionsForm.canViewReportSources}
+                    onCheckedChange={() => handleTogglePermission('canViewReportSources')}
+                  />
+                  <Label htmlFor="canViewReportSources" className="cursor-pointer">
+                    Relatório de Fontes
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportConsultationControl"
+                    checked={permissionsForm.canViewReportConsultationControl}
+                    onCheckedChange={() => handleTogglePermission('canViewReportConsultationControl')}
+                  />
+                  <Label htmlFor="canViewReportConsultationControl" className="cursor-pointer">
+                    Relatório de Controle
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportMarketing"
+                    checked={permissionsForm.canViewReportMarketing}
+                    onCheckedChange={() => handleTogglePermission('canViewReportMarketing')}
+                  />
+                  <Label htmlFor="canViewReportMarketing" className="cursor-pointer">
+                    Relatório de Marketing
                   </Label>
                 </div>
               </div>
