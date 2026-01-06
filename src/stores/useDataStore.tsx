@@ -1899,12 +1899,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
 
-      // Alerta 2: Aguardando Aprovação (Plano Aprovado) ativo mas Alinhadores entregues não está ativo
-      if (entry.awaitingApproval && !entry.approved) {
+      // Alerta 2: Aguardando Plano (Empresa) ativo mas Plano Aprovado (Médico (a)) não está ativo
+      if (entry.awaitingPlan && !entry.awaitingApproval) {
         alerts.push({
-          id: `aligner-awaiting-approval-${entry.id}`,
+          id: `aligner-awaiting-plan-${entry.id}`,
           rule: 'Aguardando Aprovação',
-          message: `Paciente ${entry.patientName} (código ${entry.code}) está aguardando aprovação mas os alinhadores ainda não foram entregues.`,
+          message: `Paciente ${entry.patientName} (código ${entry.code}) está aguardando plano mas o plano ainda não foi aprovado.`,
           severity: 'warning',
           patientName: entry.patientName,
           patientCode: entry.code,
