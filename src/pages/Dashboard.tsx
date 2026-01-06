@@ -136,6 +136,9 @@ export default function Dashboard() {
   const canViewOperational = canView('canViewDashboardOperational')
   const canViewMarketing = canView('canViewDashboardMarketing')
 
+  // Verificar se tem permissão para ver pelo menos uma seção do dashboard
+  const canViewAnyDashboardSection = canViewOverview || canViewFinancial || canViewCommercial || canViewOperational || canViewMarketing
+
   if (!hasAccess && clinicId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
@@ -159,8 +162,8 @@ export default function Dashboard() {
     return <div className="p-8">Clínica não encontrada.</div>
   }
 
-  // Se for colaborador e não tiver permissão para ver o dashboard, mostrar mensagem
-  if (user?.role === 'COLABORADOR' && !canViewOverview) {
+  // Se for colaborador e não tiver permissão para ver nenhuma seção do dashboard, mostrar mensagem
+  if (user?.role === 'COLABORADOR' && !canViewAnyDashboardSection) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -237,8 +240,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Alerts Section - apenas se tiver permissão para ver overview */}
-      {canViewOverview && alerts.length > 0 && (
+      {/* Alerts Section - apenas se tiver permissão para ver pelo menos uma seção */}
+      {canViewAnyDashboardSection && alerts.length > 0 && (
         <div className="animate-fade-in-down">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -257,7 +260,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI Grid - Filtrar por permissões */}
-      {canViewOverview && (
+      {canViewAnyDashboardSection && (
         <div>
           <div className="mb-4 flex items-center gap-2">
             <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
@@ -335,8 +338,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Advanced Charts Section - apenas se tiver permissão para ver overview */}
-      {canViewOverview && monthlyData && (
+      {/* Advanced Charts Section - apenas se tiver permissão para ver pelo menos uma seção */}
+      {canViewAnyDashboardSection && monthlyData && (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Análise Operacional Detalhada</h2>
           
