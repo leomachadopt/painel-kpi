@@ -43,6 +43,8 @@ export function usePermissions() {
     | 'canViewDashboardMarketing'
     | 'canViewReports'
     | 'canViewTargets'
+    | 'canViewOrders'
+    | 'canViewSuppliers'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -81,6 +83,7 @@ export function usePermissions() {
     | 'canEditSources'
     | 'canEditConsultationControl'
     | 'canEditAligners'
+    | 'canEditOrders'
     | 'canEditPatients'
     | 'canEditClinicConfig'
     | 'canEditTargets'
@@ -128,6 +131,7 @@ export function usePermissions() {
       permissions.canEditSources ||
       permissions.canEditConsultationControl ||
       permissions.canEditAligners ||
+      permissions.canEditOrders ||
       permissions.canEditPatients ||
       permissions.canEditClinicConfig ||
       permissions.canEditTargets
@@ -173,9 +177,12 @@ function createEmptyPermissions(): UserPermissions {
     canEditSources: false,
     canEditConsultationControl: false,
     canEditAligners: false,
+    canEditOrders: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
+    canViewOrders: false,
+    canViewSuppliers: false,
   }
 }
 
@@ -206,8 +213,11 @@ function createFullPermissions(): UserPermissions {
     canEditSources: true,
     canEditConsultationControl: true,
     canEditAligners: true,
+    canEditOrders: true,
     canEditPatients: true,
     canEditClinicConfig: true,
     canEditTargets: true,
+    canViewOrders: true,
+    canViewSuppliers: true,
   }
 }

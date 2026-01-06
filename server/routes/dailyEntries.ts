@@ -1762,6 +1762,62 @@ router.delete('/aligner/:clinicId/:entryId', async (req, res) => {
 })
 
 /**
+ * Helper function to check if user can view orders/suppliers
+ * GESTOR_CLINICA and MENTOR always can, COLABORADOR needs canViewOrders/canViewSuppliers or canEditOrders permission
+ */
+async function canViewOrders(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission (view or edit)
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canViewOrders === true || permissions.canEditOrders === true
+  }
+
+  return false
+}
+
+async function canViewSuppliers(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission (view or edit)
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canViewSuppliers === true || permissions.canEditOrders === true
+  }
+
+  return false
+}
+
+/**
  * Helper function to check if user can create/edit order entries
  * GESTOR_CLINICA always can, COLABORADOR needs canEditOrders permission
  */
@@ -1795,8 +1851,14 @@ async function canEditOrders(req: any, clinicId: string): Promise<boolean> {
 // SUPPLIERS
 // ================================
 router.get('/suppliers/:clinicId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canViewSuppliers(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
-    const { clinicId } = req.params
     const { search } = req.query
     
     let queryStr = `SELECT * FROM suppliers WHERE clinic_id = $1`
@@ -1835,8 +1897,15 @@ router.get('/suppliers/:clinicId', async (req, res) => {
 })
 
 router.get('/suppliers/:clinicId/:supplierId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canViewSuppliers(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
-    const { clinicId, supplierId } = req.params
+    const { supplierId } = req.params
     const result = await query(
       `SELECT * FROM suppliers WHERE id = $1 AND clinic_id = $2`,
       [supplierId, clinicId]
@@ -2108,8 +2177,15 @@ router.get('/orders/:clinicId', async (req, res) => {
 })
 
 router.get('/orders/:clinicId/:orderId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canViewOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
-    const { clinicId, orderId } = req.params
+    const { orderId } = req.params
     const result = await query(
       `SELECT o.*, s.name as supplier_name
        FROM daily_order_entries o
@@ -2555,8 +2631,15 @@ router.get('/order-items/:clinicId', async (req, res) => {
 })
 
 router.get('/order-items/:clinicId/:itemId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canViewOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
   try {
-    const { clinicId, itemId } = req.params
+    const { itemId } = req.params
     const result = await query(
       `SELECT * FROM order_items WHERE id = $1 AND clinic_id = $2`,
       [itemId, clinicId]

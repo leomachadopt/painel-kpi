@@ -20,6 +20,8 @@ export interface UserPermissions {
   canViewReportConsultationControl: boolean
   canViewReportMarketing: boolean
   canViewTargets: boolean
+  canViewOrders: boolean
+  canViewSuppliers: boolean
   canEditFinancial: boolean
   canEditConsultations: boolean
   canEditProspecting: boolean
@@ -64,6 +66,8 @@ export async function getUserPermissions(
       canViewReportConsultationControl: true,
       canViewReportMarketing: true,
       canViewTargets: true,
+      canViewOrders: true,
+      canViewSuppliers: true,
       canEditFinancial: true,
       canEditConsultations: true,
       canEditProspecting: true,
@@ -104,6 +108,8 @@ export async function getUserPermissions(
       can_view_report_consultation_control,
       can_view_report_marketing,
       can_view_targets,
+      can_view_orders,
+      can_view_suppliers,
       can_edit_financial,
       can_edit_consultations,
       can_edit_prospecting,
@@ -145,6 +151,8 @@ export async function getUserPermissions(
     canViewReportConsultationControl: perms.can_view_report_consultation_control || false,
     canViewReportMarketing: perms.can_view_report_marketing || false,
     canViewTargets: perms.can_view_targets || false,
+    canViewOrders: perms.can_view_orders || false,
+    canViewSuppliers: perms.can_view_suppliers || false,
     canEditFinancial: perms.can_edit_financial || false,
     canEditConsultations: perms.can_edit_consultations || false,
     canEditProspecting: perms.can_edit_prospecting || false,
@@ -179,6 +187,8 @@ function createEmptyPermissions(): UserPermissions {
     canViewReportConsultationControl: false,
     canViewReportMarketing: false,
     canViewTargets: false,
+    canViewOrders: false,
+    canViewSuppliers: false,
     canEditFinancial: false,
     canEditConsultations: false,
     canEditProspecting: false,

@@ -40,6 +40,7 @@ export default function Collaborators() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedCollaborator, setSelectedCollaborator] = useState<any | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -47,6 +48,14 @@ export default function Collaborators() {
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
+    password: '',
+  })
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    active: true,
     password: '',
   })
 
@@ -69,6 +78,8 @@ export default function Collaborators() {
     canViewReportConsultationControl: false,
     canViewReportMarketing: false,
     canViewTargets: false,
+    canViewOrders: false,
+    canViewSuppliers: false,
     canEditFinancial: false,
     canEditConsultations: false,
     canEditProspecting: false,
@@ -77,6 +88,7 @@ export default function Collaborators() {
     canEditSources: false,
     canEditConsultationControl: false,
     canEditAligners: false,
+    canEditOrders: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
@@ -122,8 +134,87 @@ export default function Collaborators() {
 
   const handleOpenPermissions = (collaborator: any) => {
     setSelectedCollaborator(collaborator)
-    setPermissionsForm(collaborator.permissions || {})
+    // Garantir que todas as permissões sejam inicializadas, mesclando com o estado padrão
+    setPermissionsForm({
+      canViewDashboardOverview: false,
+      canViewDashboardFinancial: false,
+      canViewDashboardCommercial: false,
+      canViewDashboardOperational: false,
+      canViewDashboardMarketing: false,
+      canViewReports: false,
+      canViewReportFinancial: false,
+      canViewReportBilling: false,
+      canViewReportConsultations: false,
+      canViewReportAligners: false,
+      canViewReportProspecting: false,
+      canViewReportCabinets: false,
+      canViewReportServiceTime: false,
+      canViewReportSources: false,
+      canViewReportConsultationControl: false,
+      canViewReportMarketing: false,
+      canViewTargets: false,
+      canViewOrders: false,
+      canViewSuppliers: false,
+      canEditFinancial: false,
+      canEditConsultations: false,
+      canEditProspecting: false,
+      canEditCabinets: false,
+      canEditServiceTime: false,
+      canEditSources: false,
+      canEditConsultationControl: false,
+      canEditAligners: false,
+      canEditOrders: false,
+      canEditPatients: false,
+      canEditClinicConfig: false,
+      canEditTargets: false,
+      ...(collaborator.permissions || {}),
+    })
     setShowPermissionsModal(true)
+  }
+
+  const handleOpenEdit = (collaborator: any) => {
+    setSelectedCollaborator(collaborator)
+    setEditForm({
+      name: collaborator.name || '',
+      email: collaborator.email || '',
+      active: collaborator.active !== undefined ? collaborator.active : true,
+      password: '',
+    })
+    setShowEditModal(true)
+  }
+
+  const handleUpdateCollaborator = async () => {
+    if (!selectedCollaborator) return
+
+    if (!editForm.name || !editForm.email) {
+      toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      // Enviar senha apenas se foi preenchida
+      const updateData: { name: string; email: string; active: boolean; password?: string } = {
+        name: editForm.name,
+        email: editForm.email,
+        active: editForm.active,
+      }
+      
+      if (editForm.password && editForm.password.trim() !== '') {
+        updateData.password = editForm.password
+      }
+      
+      await collaboratorsApi.update(selectedCollaborator.id, updateData)
+      toast.success('Colaborador atualizado com sucesso')
+      setShowEditModal(false)
+      setSelectedCollaborator(null)
+      setEditForm({ name: '', email: '', active: true, password: '' })
+      loadCollaborators()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar colaborador')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleSavePermissions = async () => {
@@ -234,6 +325,14 @@ export default function Collaborators() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenEdit(collaborator)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -398,6 +497,26 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canViewTargets" className="cursor-pointer">
                     Metas Mensais
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewOrders"
+                    checked={permissionsForm.canViewOrders}
+                    onCheckedChange={() => handleTogglePermission('canViewOrders')}
+                  />
+                  <Label htmlFor="canViewOrders" className="cursor-pointer">
+                    Visualizar Pedidos
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewSuppliers"
+                    checked={permissionsForm.canViewSuppliers}
+                    onCheckedChange={() => handleTogglePermission('canViewSuppliers')}
+                  />
+                  <Label htmlFor="canViewSuppliers" className="cursor-pointer">
+                    Visualizar Fornecedores
                   </Label>
                 </div>
               </div>
@@ -596,6 +715,16 @@ export default function Collaborators() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="canEditOrders"
+                    checked={permissionsForm.canEditOrders}
+                    onCheckedChange={() => handleTogglePermission('canEditOrders')}
+                  />
+                  <Label htmlFor="canEditOrders" className="cursor-pointer">
+                    Editar Pedidos
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
                     id="canEditPatients"
                     checked={permissionsForm.canEditPatients}
                     onCheckedChange={() => handleTogglePermission('canEditPatients')}
@@ -634,6 +763,73 @@ export default function Collaborators() {
             <Button onClick={handleSavePermissions} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar Permissões
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Collaborator Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Colaborador</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do colaborador
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nome</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={editForm.password}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Deixe em branco para manter a senha atual"
+              />
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco se não deseja alterar a senha
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-active"
+                checked={editForm.active}
+                onCheckedChange={(checked) => 
+                  setEditForm({ ...editForm, active: checked === true })
+                }
+              />
+              <Label htmlFor="edit-active" className="cursor-pointer">
+                Colaborador ativo
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateCollaborator} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>

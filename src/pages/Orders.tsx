@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, Package, Calendar } from 'lucide-react'
+import { Search, Loader2, Package, Eye, Edit2, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -31,9 +31,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { ViewOrderDialog } from '@/components/orders/ViewOrderDialog'
+import { EditOrderDialog } from '@/components/orders/EditOrderDialog'
+import { toast } from 'sonner'
+import { usePermissions } from '@/hooks/usePermissions'
 
 export default function Orders() {
   const { clinicId } = useParams<{ clinicId: string }>()
+  const { canView, canEdit } = usePermissions()
+  const canViewOrders = canView('canViewOrders') || canEdit('canEditOrders')
+  const canEditOrders = canEdit('canEditOrders')
   const [orders, setOrders] = useState<DailyOrderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -42,6 +59,10 @@ export default function Orders() {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [viewOrderId, setViewOrderId] = useState<string | null>(null)
+  const [editOrderId, setEditOrderId] = useState<string | null>(null)
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (clinicId) {
@@ -107,8 +128,39 @@ export default function Orders() {
     return { label: 'Novo', variant: 'outline' as const }
   }
 
+  const handleDelete = async () => {
+    if (!deleteOrderId || !clinicId) return
+
+    setDeleting(true)
+    try {
+      await dailyEntriesApi.order.delete(clinicId, deleteOrderId)
+      toast.success('Pedido excluído com sucesso!')
+      setDeleteOrderId(null)
+      loadOrders()
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao excluir pedido')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (!clinicId) {
     return <div className="p-8">Clínica não encontrada</div>
+  }
+
+  if (!canViewOrders) {
+    return (
+      <div className="flex flex-col gap-6 p-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
+            <p className="text-muted-foreground">
+              Você não tem permissão para visualizar pedidos
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -202,6 +254,7 @@ export default function Orders() {
                     <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Última Atualização</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -234,6 +287,38 @@ export default function Orders() {
                             ? format(new Date(order.updatedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })
                             : '-'}
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setViewOrderId(order.id)}
+                              title="Visualizar"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {canEditOrders && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setEditOrderId(order.id)}
+                                  title="Editar"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteOrderId(order.id)}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -243,6 +328,52 @@ export default function Orders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <ViewOrderDialog
+        open={viewOrderId !== null}
+        onOpenChange={(open) => !open && setViewOrderId(null)}
+        orderId={viewOrderId}
+        clinicId={clinicId || ''}
+      />
+
+      <EditOrderDialog
+        open={editOrderId !== null}
+        onOpenChange={(open) => !open && setEditOrderId(null)}
+        orderId={editOrderId}
+        clinicId={clinicId || ''}
+        onSuccess={() => {
+          loadOrders()
+        }}
+      />
+
+      <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

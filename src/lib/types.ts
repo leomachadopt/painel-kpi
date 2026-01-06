@@ -388,6 +388,8 @@ export interface UserPermissions {
   canViewReportConsultationControl: boolean
   canViewReportMarketing: boolean
   canViewTargets: boolean
+  canViewOrders: boolean
+  canViewSuppliers: boolean
   canEditFinancial: boolean
   canEditConsultations: boolean
   canEditProspecting: boolean
@@ -396,6 +398,7 @@ export interface UserPermissions {
   canEditSources: boolean
   canEditConsultationControl: boolean
   canEditAligners: boolean
+  canEditOrders: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean

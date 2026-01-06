@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/table'
 import { Search, Plus, Loader2, Edit, Trash2, Building2 } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -46,6 +47,9 @@ import { Textarea } from '@/components/ui/textarea'
 export default function Suppliers() {
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
+  const { canView, canEdit } = usePermissions()
+  const canViewSuppliers = canView('canViewSuppliers') || canEdit('canEditOrders')
+  const canEditSuppliers = canEdit('canEditOrders')
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -208,6 +212,21 @@ export default function Suppliers() {
     return <div className="p-8">Clínica não encontrada</div>
   }
 
+  if (!canViewSuppliers) {
+    return (
+      <div className="flex flex-col gap-6 p-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Fornecedores</h1>
+            <p className="text-muted-foreground">
+              Você não tem permissão para visualizar fornecedores
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 p-8">
       <div className="flex justify-between items-center">
@@ -217,10 +236,12 @@ export default function Suppliers() {
             Gerir os fornecedores da clínica
           </p>
         </div>
-        <Button onClick={handleCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Fornecedor
-        </Button>
+        {canEditSuppliers && (
+          <Button onClick={handleCreateClick}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Fornecedor
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -279,22 +300,24 @@ export default function Suppliers() {
                       <TableCell>{supplier.phone || '-'}</TableCell>
                       <TableCell>{supplier.email || '-'}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditClick(supplier)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteClick(supplier)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+                        {canEditSuppliers && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditClick(supplier)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteClick(supplier)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

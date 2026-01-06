@@ -47,6 +47,8 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_view_report_consultation_control,
         p.can_view_report_marketing,
         p.can_view_targets,
+        p.can_view_orders,
+        p.can_view_suppliers,
         p.can_edit_financial,
         p.can_edit_consultations,
         p.can_edit_prospecting,
@@ -55,6 +57,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_sources,
         p.can_edit_consultation_control,
         p.can_edit_aligners,
+        p.can_edit_orders,
         p.can_edit_patients,
         p.can_edit_clinic_config,
         p.can_edit_targets
@@ -92,6 +95,8 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewReportConsultationControl: row.can_view_report_consultation_control || false,
         canViewReportMarketing: row.can_view_report_marketing || false,
         canViewTargets: row.can_view_targets || false,
+        canViewOrders: row.can_view_orders || false,
+        canViewSuppliers: row.can_view_suppliers || false,
         canEditFinancial: row.can_edit_financial || false,
         canEditConsultations: row.can_edit_consultations || false,
         canEditProspecting: row.can_edit_prospecting || false,
@@ -197,6 +202,8 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_view_report_consultation_control,
         p.can_view_report_marketing,
         p.can_view_targets,
+        p.can_view_orders,
+        p.can_view_suppliers,
         p.can_edit_financial,
         p.can_edit_consultations,
         p.can_edit_prospecting,
@@ -243,6 +250,8 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewReportConsultationControl: row.can_view_report_consultation_control || false,
         canViewReportMarketing: row.can_view_report_marketing || false,
         canViewTargets: row.can_view_targets || false,
+        canViewOrders: row.can_view_orders || false,
+        canViewSuppliers: row.can_view_suppliers || false,
         canEditFinancial: row.can_edit_financial || false,
         canEditConsultations: row.can_edit_consultations || false,
         canEditProspecting: row.can_edit_prospecting || false,
@@ -282,7 +291,7 @@ router.put('/:id', requireGestor, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: 'Clinic ID is required' })
     }
 
-    const { name, email, active } = req.body
+    const { name, email, active, password } = req.body
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' })
@@ -308,22 +317,35 @@ router.put('/:id', requireGestor, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: 'Email already in use' })
     }
 
-    // Update user
-    await query(
-      `UPDATE users
-       SET name = $1, email = $2, active = $3, updated_at = NOW()
-       WHERE id = $4`,
-      [name, email, active !== undefined ? active : true, collaboratorId]
-    )
+    // Update user (with optional password)
+    if (password) {
+      await query(
+        `UPDATE users
+         SET name = $1, email = $2, active = $3, password_hash = $4, updated_at = NOW()
+         WHERE id = $5`,
+        [name, email, active !== undefined ? active : true, password, collaboratorId]
+      )
+    } else {
+      await query(
+        `UPDATE users
+         SET name = $1, email = $2, active = $3, updated_at = NOW()
+         WHERE id = $4`,
+        [name, email, active !== undefined ? active : true, collaboratorId]
+      )
+    }
 
-    // Log audit
+    // Log audit (não incluir senha no log por segurança)
+    const auditData: any = { name, email, active }
+    if (password) {
+      auditData.passwordChanged = true
+    }
     await logAudit(
       userId,
       clinicId,
       'UPDATE',
       'collaborator',
       collaboratorId,
-      { name, email, active },
+      auditData,
       req.ip
     )
 
@@ -385,6 +407,8 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_view_report_consultation_control,
         can_view_report_marketing,
         can_view_targets,
+        can_view_orders,
+        can_view_suppliers,
         can_edit_financial,
         can_edit_consultations,
         can_edit_prospecting,
@@ -398,7 +422,7 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_clinic_config,
         can_edit_targets
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34
       )
       ON CONFLICT (user_id, clinic_id)
       DO UPDATE SET
@@ -419,18 +443,20 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_view_report_consultation_control = $18,
         can_view_report_marketing = $19,
         can_view_targets = $20,
-        can_edit_financial = $21,
-        can_edit_consultations = $22,
-        can_edit_prospecting = $23,
-        can_edit_cabinets = $24,
-        can_edit_service_time = $25,
-        can_edit_sources = $26,
-        can_edit_consultation_control = $27,
-        can_edit_aligners = $28,
-        can_edit_orders = $29,
-        can_edit_patients = $30,
-        can_edit_clinic_config = $31,
-        can_edit_targets = $32,
+        can_view_orders = $21,
+        can_view_suppliers = $22,
+        can_edit_financial = $23,
+        can_edit_consultations = $24,
+        can_edit_prospecting = $25,
+        can_edit_cabinets = $26,
+        can_edit_service_time = $27,
+        can_edit_sources = $28,
+        can_edit_consultation_control = $29,
+        can_edit_aligners = $30,
+        can_edit_orders = $31,
+        can_edit_patients = $32,
+        can_edit_clinic_config = $33,
+        can_edit_targets = $34,
         updated_at = NOW()`,
       [
         `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -453,6 +479,8 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         permissions.canViewReportConsultationControl || false,
         permissions.canViewReportMarketing || false,
         permissions.canViewTargets || false,
+        permissions.canViewOrders || false,
+        permissions.canViewSuppliers || false,
         permissions.canEditFinancial || false,
         permissions.canEditConsultations || false,
         permissions.canEditProspecting || false,

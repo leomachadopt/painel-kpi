@@ -586,7 +586,7 @@ export const collaboratorsApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: { name: string; email: string; active?: boolean }) =>
+  update: (id: string, data: { name: string; email: string; active?: boolean; password?: string }) =>
     apiCall<{ message: string }>(`/collaborators/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

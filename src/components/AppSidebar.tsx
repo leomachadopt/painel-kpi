@@ -44,7 +44,7 @@ export function AppSidebar() {
   const { clinics, calculateAlignersAlerts } = useDataStore()
   const location = useLocation()
   const { isMobile } = useSidebar()
-  const { canEditAnyData, canEdit } = usePermissions()
+  const { canEditAnyData, canEdit, canView } = usePermissions()
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -185,33 +185,34 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {activeClinicId && canEdit('canEditOrders') && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Pedidos"
-                      isActive={location.pathname.includes('/pedidos')}
-                    >
-                      <Link to={`/pedidos/${activeClinicId}`}>
-                        <Package />
-                        <span>Pedidos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Fornecedores"
-                      isActive={location.pathname.includes('/fornecedores')}
-                    >
-                      <Link to={`/fornecedores/${activeClinicId}`}>
-                        <Truck />
-                        <span>Fornecedores</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
+              {activeClinicId && (canView('canViewOrders') || canEdit('canEditOrders')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Pedidos"
+                    isActive={location.pathname.includes('/pedidos')}
+                  >
+                    <Link to={`/pedidos/${activeClinicId}`}>
+                      <Package />
+                      <span>Pedidos</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && (canView('canViewSuppliers') || canEdit('canEditOrders')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Fornecedores"
+                    isActive={location.pathname.includes('/fornecedores')}
+                  >
+                    <Link to={`/fornecedores/${activeClinicId}`}>
+                      <Truck />
+                      <span>Fornecedores</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               )}
 
               {activeClinicId && user?.role === 'GESTOR_CLINICA' && (

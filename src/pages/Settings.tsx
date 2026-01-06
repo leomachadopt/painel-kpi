@@ -533,6 +533,8 @@ export default function Settings() {
     },
   })
   const [saving, setSaving] = useState(false)
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [loadingItems, setLoadingItems] = useState(false)
 
   // Track the last synced targets to detect when API data arrives
   const lastSyncedTargetsRef = useRef<any>(null)
