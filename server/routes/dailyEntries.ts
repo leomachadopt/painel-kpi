@@ -1468,8 +1468,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
         $23, $24,
         $25, $26,
         $27, $28,
-        $29, $30,
-        $31)
+        $29, $30)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
@@ -1653,7 +1652,7 @@ router.put('/aligner/:clinicId/:entryId', async (req, res) => {
            approved = $25, approved_at = $26,
            expiration_date = $27,
            observations = $28
-       WHERE id = $30 AND clinic_id = $31
+       WHERE id = $29 AND clinic_id = $30
        RETURNING *`,
       [
         date,
