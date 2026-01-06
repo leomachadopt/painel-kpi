@@ -62,8 +62,7 @@ const schema = z.object({
   awaitingApprovalAt: z.string().optional(),
   approved: z.boolean(),
   approvedAt: z.string().optional(),
-  treatmentPlanCreated: z.boolean(),
-  treatmentPlanCreatedAt: z.string().optional(),
+  expirationDate: z.string().optional(),
   observations: z.string().optional(),
 })
 
@@ -114,8 +113,7 @@ export function EditAlignersDialog({
       awaitingApprovalAt: '',
       approved: false,
       approvedAt: '',
-      treatmentPlanCreated: false,
-      treatmentPlanCreatedAt: '',
+      expirationDate: '',
       observations: '',
     },
   })
@@ -154,8 +152,7 @@ export function EditAlignersDialog({
         awaitingApprovalAt: toDateInput(entry.awaitingApprovalAt),
         approved: !!entry.approved,
         approvedAt: toDateInput(entry.approvedAt),
-        treatmentPlanCreated: !!entry.treatmentPlanCreated,
-        treatmentPlanCreatedAt: toDateInput(entry.treatmentPlanCreatedAt),
+        expirationDate: toDateInput(entry.expirationDate),
         observations: entry.observations || '',
       })
     }
@@ -164,8 +161,8 @@ export function EditAlignersDialog({
   const today = new Date().toISOString().split('T')[0]
 
   const toggleWithDate = (
-    boolField: 'registrationCreated' | 'cckCreated' | 'awaitingPlan' | 'awaitingApproval' | 'approved' | 'treatmentPlanCreated',
-    dateField: 'registrationCreatedAt' | 'cckCreatedAt' | 'awaitingPlanAt' | 'awaitingApprovalAt' | 'approvedAt' | 'treatmentPlanCreatedAt',
+    boolField: 'registrationCreated' | 'cckCreated' | 'awaitingPlan' | 'awaitingApproval' | 'approved',
+    dateField: 'registrationCreatedAt' | 'cckCreatedAt' | 'awaitingPlanAt' | 'awaitingApprovalAt' | 'approvedAt',
     next: boolean,
   ) => {
     form.setValue(boolField, next, { shouldValidate: true })
@@ -210,8 +207,7 @@ export function EditAlignersDialog({
         awaitingApprovalAt: data.awaitingApproval ? data.awaitingApprovalAt || null : null,
         approved: data.approved,
         approvedAt: data.approved ? data.approvedAt || null : null,
-        treatmentPlanCreated: data.treatmentPlanCreated,
-        treatmentPlanCreatedAt: data.treatmentPlanCreated ? data.treatmentPlanCreatedAt || null : null,
+        expirationDate: data.expirationDate || null,
         observations: data.observations || null,
       })
       onOpenChange(false)
@@ -295,7 +291,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Inserção de Dados</FormLabel>
+                      <FormLabel>Dados Coletados (Assistente)</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -556,7 +552,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Cadastro Criado</FormLabel>
+                      <FormLabel>Cadastro Criado (Assistente)</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -590,7 +586,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Criar CCK</FormLabel>
+                      <FormLabel>CCK Criado (Médico (a))</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -624,7 +620,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Aguardando Plano</FormLabel>
+                      <FormLabel>Aguardando Plano (Empresa)</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -658,7 +654,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Aguardando Aprovação</FormLabel>
+                      <FormLabel>Plano Aprovado (Médico (a))</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -692,7 +688,7 @@ export function EditAlignersDialog({
                 render={({ field }) => (
                   <div className="space-y-2">
                     <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Aprovado</FormLabel>
+                      <FormLabel>Alinhadores entregues (Assistente)</FormLabel>
                       <FormControl>
                         <Switch
                           checked={field.value}
@@ -722,35 +718,14 @@ export function EditAlignersDialog({
 
               <FormField
                 control={form.control}
-                name="treatmentPlanCreated"
+                name="expirationDate"
                 render={({ field }) => (
-                  <div className="space-y-2">
-                    <FormItem className="flex items-center justify-between space-y-0">
-                      <FormLabel>Plano de Tratamento</FormLabel>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={(v) => toggleWithDate('treatmentPlanCreated', 'treatmentPlanCreatedAt', v)}
-                        />
-                      </FormControl>
-                    </FormItem>
-                    {form.watch('treatmentPlanCreated') && (
-                      <FormField
-                        control={form.control}
-                        name="treatmentPlanCreatedAt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
-                              Data de criação do plano de tratamento
-                            </FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
+                  <FormItem>
+                    <FormLabel>Data de expiração</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                  </FormItem>
                 )}
               />
             </div>

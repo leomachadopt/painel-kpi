@@ -1470,8 +1470,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         awaitingApprovalAt: updatedEntry.awaitingApprovalAt,
         approved: updatedEntry.approved,
         approvedAt: updatedEntry.approvedAt,
-        treatmentPlanCreated: updatedEntry.treatmentPlanCreated,
-        treatmentPlanCreatedAt: updatedEntry.treatmentPlanCreatedAt,
+        expirationDate: updatedEntry.expirationDate,
         observations: updatedEntry.observations,
       })
       toast.success('Alinhador atualizado com sucesso!')
@@ -1887,11 +1886,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     twentyDaysAgo.setDate(today.getDate() - 20)
 
     for (const entry of entries) {
-      // Alerta 1: Cadastro Criado ativo mas Criar CCK não está ativo
+      // Alerta 1: Cadastro Criado (Assistente) ativo mas CCK Criado (Médico (a)) não está ativo
       if (entry.registrationCreated && !entry.cckCreated) {
         alerts.push({
           id: `aligner-registration-${entry.id}`,
-          rule: 'Cadastro Criado sem CCK',
+          rule: 'Cadastro Criado (Assistente) sem CCK',
           message: `Paciente ${entry.patientName} (código ${entry.code}) está com cadastro criado mas o CCK ainda não foi criado.`,
           severity: 'warning',
           patientName: entry.patientName,
@@ -1900,7 +1899,20 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
 
-      // Alerta 2: Scanner com mais de 20 dias e paciente não aprovado
+      // Alerta 2: Aguardando Plano (Empresa) ativo mas Plano Aprovado (Médico (a)) não está ativo
+      if (entry.awaitingPlan && !entry.awaitingApproval) {
+        alerts.push({
+          id: `aligner-awaiting-plan-${entry.id}`,
+          rule: 'Aguardando Plano (Empresa)',
+          message: `Paciente ${entry.patientName} (código ${entry.code}) está aguardando plano mas o plano ainda não foi aprovado.`,
+          severity: 'warning',
+          patientName: entry.patientName,
+          patientCode: entry.code,
+          entryId: entry.id,
+        })
+      }
+
+      // Alerta 3: Scanner com mais de 20 dias e paciente não aprovado
       if (entry.hasScanner && entry.scannerCollectionDate) {
         const scannerDate = new Date(entry.scannerCollectionDate)
         if (scannerDate < twentyDaysAgo && !entry.approved) {

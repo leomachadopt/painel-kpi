@@ -344,8 +344,7 @@ export interface DailyAlignersEntry {
   awaitingApprovalAt?: string | null
   approved: boolean
   approvedAt?: string | null
-  treatmentPlanCreated: boolean
-  treatmentPlanCreatedAt?: string | null
+  expirationDate?: string | null
   observations?: string | null
 }
 

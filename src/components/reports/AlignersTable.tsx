@@ -79,11 +79,11 @@ export function AlignersTable({
               <TableHead>Paciente</TableHead>
               <TableHead>Código</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead className="text-center">Cadastro</TableHead>
-              <TableHead className="text-center">CCK</TableHead>
-              <TableHead className="text-center">Aguardando Plano</TableHead>
-              <TableHead className="text-center">Aguardando Aprovação</TableHead>
-              <TableHead className="text-center">Aprovado</TableHead>
+              <TableHead className="text-center">Cadastro Criado (Assistente)</TableHead>
+              <TableHead className="text-center">CCK Criado (Médico (a))</TableHead>
+              <TableHead className="text-center">Aguardando Plano (Empresa)</TableHead>
+              <TableHead className="text-center">Plano Aprovado (Médico (a))</TableHead>
+              <TableHead className="text-center">Alinhadores entregues (Assistente)</TableHead>
               {clinic && (
                 <TableHead className="w-[120px]">Ações</TableHead>
               )}
@@ -122,7 +122,7 @@ export function AlignersTable({
                   <TableCell className="text-center">
                     <div className="flex justify-center">
                       {entry.approved ? (
-                        <Badge className="bg-emerald-500">Aprovado</Badge>
+                        <Badge className="bg-emerald-500">Alinhadores entregues (Assistente)</Badge>
                       ) : (
                         <Badge variant="outline">Pendente</Badge>
                       )}

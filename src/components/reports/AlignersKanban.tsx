@@ -77,31 +77,31 @@ export function AlignersKanban({
       color: 'bg-slate-100 border-slate-300',
     },
     {
-      title: 'Cadastro Criado',
+      title: 'Cadastro Criado (Assistente)',
       description: 'Aguardando criação do CCK',
       entries: data.filter((e) => e.registrationCreated && !e.cckCreated && !e.awaitingPlan && !e.awaitingApproval && !e.approved),
       color: 'bg-blue-50 border-blue-300',
     },
     {
-      title: 'CCK Criado',
+      title: 'CCK Criado (Médico (a))',
       description: 'Aguardando plano',
       entries: data.filter((e) => e.cckCreated && !e.awaitingPlan && !e.awaitingApproval && !e.approved),
       color: 'bg-cyan-50 border-cyan-300',
     },
     {
-      title: 'Aguardando Plano',
+      title: 'Aguardando Plano (Empresa)',
       description: 'Aguardando criação do plano',
       entries: data.filter((e) => e.awaitingPlan && !e.awaitingApproval && !e.approved),
       color: 'bg-amber-50 border-amber-300',
     },
     {
-      title: 'Aguardando Aprovação',
+      title: 'Plano Aprovado (Médico (a))',
       description: 'Aguardando aprovação',
       entries: data.filter((e) => e.awaitingApproval && !e.approved),
       color: 'bg-orange-50 border-orange-300',
     },
     {
-      title: 'Aprovado',
+      title: 'Alinhadores entregues (Assistente)',
       description: 'Tratamento aprovado',
       entries: data.filter((e) => e.approved),
       color: 'bg-emerald-50 border-emerald-300',
@@ -216,17 +216,17 @@ export function AlignersKanban({
                     )}
                     {entry.awaitingPlanAt && (
                       <div className="text-xs text-muted-foreground">
-                        Aguardando plano: {formatDate(entry.awaitingPlanAt)}
+                        Aguardando Plano (Empresa): {formatDate(entry.awaitingPlanAt)}
                       </div>
                     )}
                     {entry.awaitingApprovalAt && (
                       <div className="text-xs text-muted-foreground">
-                        Aguardando aprovação: {formatDate(entry.awaitingApprovalAt)}
+                        Plano Aprovado (Médico (a)): {formatDate(entry.awaitingApprovalAt)}
                       </div>
                     )}
                     {entry.approvedAt && (
                       <div className="text-xs font-semibold text-emerald-700 pt-1 border-t">
-                        Aprovado: {formatDate(entry.approvedAt)}
+                        Alinhadores entregues (Assistente): {formatDate(entry.approvedAt)}
                       </div>
                     )}
                   </div>

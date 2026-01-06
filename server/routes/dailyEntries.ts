@@ -1322,6 +1322,8 @@ router.get('/aligner/:clinicId', async (req, res) => {
         awaitingApprovalAt: row.awaiting_approval_at,
         approved: row.approved,
         approvedAt: row.approved_at,
+        expirationDate: row.expiration_date,
+        observations: row.observations,
       }))
     )
   } catch (error) {
@@ -1377,8 +1379,7 @@ router.get('/aligner/:clinicId/code/:code', async (req, res) => {
       awaitingApprovalAt: row.awaiting_approval_at,
       approved: row.approved,
       approvedAt: row.approved_at,
-      treatmentPlanCreated: row.treatment_plan_created,
-      treatmentPlanCreatedAt: row.treatment_plan_created_at,
+      expirationDate: row.expiration_date,
       observations: row.observations,
     })
   } catch (error) {
@@ -1425,8 +1426,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
       awaitingApprovalAt,
       approved,
       approvedAt,
-      treatmentPlanCreated,
-      treatmentPlanCreatedAt,
+      expirationDate,
       observations,
     } = req.body
 
@@ -1454,7 +1454,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
         awaiting_plan, awaiting_plan_at,
         awaiting_approval, awaiting_approval_at,
         approved, approved_at,
-        treatment_plan_created, treatment_plan_created_at,
+        expiration_date,
         observations)
        VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8,
@@ -1496,8 +1496,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
         awaiting_approval_at = EXCLUDED.awaiting_approval_at,
         approved = EXCLUDED.approved,
         approved_at = EXCLUDED.approved_at,
-        treatment_plan_created = EXCLUDED.treatment_plan_created,
-        treatment_plan_created_at = EXCLUDED.treatment_plan_created_at,
+        expiration_date = EXCLUDED.expiration_date,
         observations = EXCLUDED.observations
        RETURNING *`,
       [
@@ -1529,8 +1528,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
         awaitingApprovalAt || null,
         approved || false,
         approvedAt || null,
-        treatmentPlanCreated || false,
-        treatmentPlanCreatedAt || null,
+        expirationDate || null,
         observations || null,
       ]
     )
@@ -1564,8 +1562,7 @@ router.post('/aligner/:clinicId', async (req, res) => {
       awaitingApprovalAt: row.awaiting_approval_at,
       approved: row.approved,
       approvedAt: row.approved_at,
-      treatmentPlanCreated: row.treatment_plan_created,
-      treatmentPlanCreatedAt: row.treatment_plan_created_at,
+      expirationDate: row.expiration_date,
       observations: row.observations,
     })
   } catch (error: any) {
@@ -1616,8 +1613,7 @@ router.put('/aligner/:clinicId/:entryId', async (req, res) => {
       awaitingApprovalAt,
       approved,
       approvedAt,
-      treatmentPlanCreated,
-      treatmentPlanCreatedAt,
+      expirationDate,
       observations,
     } = req.body
 
@@ -1655,8 +1651,8 @@ router.put('/aligner/:clinicId/:entryId', async (req, res) => {
            awaiting_plan = $21, awaiting_plan_at = $22,
            awaiting_approval = $23, awaiting_approval_at = $24,
            approved = $25, approved_at = $26,
-           treatment_plan_created = $27, treatment_plan_created_at = $28,
-           observations = $29
+           expiration_date = $27,
+           observations = $28
        WHERE id = $30 AND clinic_id = $31
        RETURNING *`,
       [
@@ -1686,8 +1682,7 @@ router.put('/aligner/:clinicId/:entryId', async (req, res) => {
         awaitingApprovalAt || null,
         approved || false,
         approvedAt || null,
-        treatmentPlanCreated || false,
-        treatmentPlanCreatedAt || null,
+        expirationDate || null,
         observations || null,
         entryId,
         clinicId,

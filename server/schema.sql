@@ -343,8 +343,7 @@ CREATE TABLE IF NOT EXISTS daily_aligner_entries (
   awaiting_approval_at DATE,
   approved BOOLEAN DEFAULT false,
   approved_at DATE,
-  treatment_plan_created BOOLEAN DEFAULT false,
-  treatment_plan_created_at DATE,
+  expiration_date DATE,
   observations TEXT,
   
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
