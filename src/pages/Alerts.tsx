@@ -1,22 +1,27 @@
 import { useParams } from 'react-router-dom'
-import { AlertTriangle, Bell } from 'lucide-react'
+import { AlertTriangle, Bell, Lock } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import useDataStore from '@/stores/useDataStore'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
+import { usePermissions } from '@/hooks/usePermissions'
 
 export default function Alerts() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { calculateAlignersAlerts, alignerEntries, getClinic } = useDataStore()
+  const { canEdit } = usePermissions()
 
   if (!clinicId) {
     return <div className="p-6">Clínica não encontrada</div>
   }
 
   const clinic = getClinic(clinicId)
-  const alerts = calculateAlignersAlerts(clinicId)
+  const allAlerts = calculateAlignersAlerts(clinicId)
+  
+  // Filtrar alertas apenas se tiver permissão para editar alinhadores
+  const alerts = canEdit('canEditAligners') ? allAlerts : []
 
   // Agrupar alertas por tipo
   const alertsByType = alerts.reduce((acc, alert) => {
@@ -26,6 +31,25 @@ export default function Alerts() {
     acc[alert.rule].push(alert)
     return acc
   }, {} as Record<string, typeof alerts>)
+
+  // Se não tiver permissão, mostrar mensagem de acesso negado
+  if (!canEdit('canEditAligners')) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
+          <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+            <Lock className="h-6 w-6 text-destructive" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+            <p className="text-muted-foreground mt-2">
+              Você não tem permissão para visualizar os alertas de alinhadores.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

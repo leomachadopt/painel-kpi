@@ -52,8 +52,8 @@ export function AppSidebar() {
   const isMentor = user?.role === 'MENTOR'
   const activeClinicId = currentClinic?.id || user?.clinicId
 
-  // Calcular número de alertas ativos
-  const alertsCount = activeClinicId
+  // Calcular número de alertas ativos (apenas se tiver permissão para editar alinhadores)
+  const alertsCount = activeClinicId && canEdit('canEditAligners')
     ? calculateAlignersAlerts(activeClinicId).length
     : 0
 
@@ -262,7 +262,7 @@ export function AppSidebar() {
             </>
           )}
 
-          {(currentClinic || user?.role === 'GESTOR_CLINICA') && (
+          {(currentClinic || user?.role === 'GESTOR_CLINICA') && canEdit('canEditAligners') && (
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
