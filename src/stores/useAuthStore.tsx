@@ -85,9 +85,24 @@ const useAuthStore = () => {
     return {
       user: null,
       isAuthenticated: false,
-      loading: false,
-      login: async () => {
-        throw new Error('AuthProvider ausente: não é possível fazer login neste contexto.')
+      loading: true, // Retornar loading: true para evitar tentativas de login durante inicialização
+      login: async (email: string, password: string) => {
+        // Durante hot-reload, o contexto pode não estar disponível imediatamente
+        // Aguardar um pouco e tentar fazer login diretamente via API como fallback
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        try {
+          // Tentar fazer login diretamente via API como fallback
+          const { authApi } = await import('@/services/api')
+          const { user, token } = await authApi.login(email, password)
+          localStorage.setItem('kpi_user', JSON.stringify(user))
+          localStorage.setItem('kpi_token', token)
+          // Retornar o usuário - o componente pode decidir se precisa recarregar
+          return user
+        } catch (apiError: any) {
+          // Se a API falhar, lançar o erro original
+          throw apiError
+        }
       },
       logout: () => {
         localStorage.removeItem('kpi_user')

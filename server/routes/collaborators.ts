@@ -100,6 +100,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canEditSources: row.can_edit_sources || false,
         canEditConsultationControl: row.can_edit_consultation_control || false,
         canEditAligners: row.can_edit_aligners || false,
+        canEditOrders: row.can_edit_orders || false,
         canEditPatients: row.can_edit_patients || false,
         canEditClinicConfig: row.can_edit_clinic_config || false,
         canEditTargets: row.can_edit_targets || false,
@@ -204,6 +205,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_sources,
         p.can_edit_consultation_control,
         p.can_edit_aligners,
+        p.can_edit_orders,
         p.can_edit_patients,
         p.can_edit_clinic_config,
         p.can_edit_targets
@@ -249,6 +251,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canEditSources: row.can_edit_sources || false,
         canEditConsultationControl: row.can_edit_consultation_control || false,
         canEditAligners: row.can_edit_aligners || false,
+        canEditOrders: row.can_edit_orders || false,
         canEditPatients: row.can_edit_patients || false,
         canEditClinicConfig: row.can_edit_clinic_config || false,
         canEditTargets: row.can_edit_targets || false,
@@ -390,11 +393,12 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_sources,
         can_edit_consultation_control,
         can_edit_aligners,
+        can_edit_orders,
         can_edit_patients,
         can_edit_clinic_config,
         can_edit_targets
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32
       )
       ON CONFLICT (user_id, clinic_id)
       DO UPDATE SET
@@ -423,9 +427,10 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_sources = $26,
         can_edit_consultation_control = $27,
         can_edit_aligners = $28,
-        can_edit_patients = $29,
-        can_edit_clinic_config = $30,
-        can_edit_targets = $31,
+        can_edit_orders = $29,
+        can_edit_patients = $30,
+        can_edit_clinic_config = $31,
+        can_edit_targets = $32,
         updated_at = NOW()`,
       [
         `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -456,6 +461,7 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         permissions.canEditSources || false,
         permissions.canEditConsultationControl || false,
         permissions.canEditAligners || false,
+        permissions.canEditOrders || false,
         permissions.canEditPatients || false,
         permissions.canEditClinicConfig || false,
         permissions.canEditTargets || false,

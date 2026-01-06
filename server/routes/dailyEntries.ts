@@ -1761,4 +1761,968 @@ router.delete('/aligner/:clinicId/:entryId', async (req, res) => {
   }
 })
 
+/**
+ * Helper function to check if user can create/edit order entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditOrders permission
+ */
+async function canEditOrders(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditOrders === true
+  }
+
+  return false
+}
+
+// ================================
+// SUPPLIERS
+// ================================
+router.get('/suppliers/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { search } = req.query
+    
+    let queryStr = `SELECT * FROM suppliers WHERE clinic_id = $1`
+    const params: any[] = [clinicId]
+    
+    if (search && typeof search === 'string' && search.trim()) {
+      queryStr += ` AND (name ILIKE $2 OR nif ILIKE $2)`
+      params.push(`%${search.trim()}%`)
+    }
+    
+    queryStr += ` ORDER BY name ASC`
+    
+    const result = await query(queryStr, params)
+    
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        clinicId: row.clinic_id,
+        name: row.name,
+        nif: row.nif || null,
+        address: row.address || null,
+        postalCode: row.postal_code || null,
+        city: row.city || null,
+        phone: row.phone || null,
+        email: row.email || null,
+        website: row.website || null,
+        notes: row.notes || null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }))
+    )
+  } catch (error) {
+    console.error('Get suppliers error:', error)
+    res.status(500).json({ error: 'Failed to fetch suppliers' })
+  }
+})
+
+router.get('/suppliers/:clinicId/:supplierId', async (req, res) => {
+  try {
+    const { clinicId, supplierId } = req.params
+    const result = await query(
+      `SELECT * FROM suppliers WHERE id = $1 AND clinic_id = $2`,
+      [supplierId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Supplier not found' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      nif: row.nif || null,
+      address: row.address || null,
+      postalCode: row.postal_code || null,
+      city: row.city || null,
+      phone: row.phone || null,
+      email: row.email || null,
+      website: row.website || null,
+      notes: row.notes || null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error) {
+    console.error('Get supplier error:', error)
+    res.status(500).json({ error: 'Failed to fetch supplier' })
+  }
+})
+
+router.post('/suppliers/:clinicId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { name, nif, address, postalCode, city, phone, email, website, notes } = req.body
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+    
+    const supplierId = `supplier-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    
+    const result = await query(
+      `INSERT INTO suppliers
+       (id, clinic_id, name, nif, address, postal_code, city, phone, email, website, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING *`,
+      [
+        supplierId,
+        clinicId,
+        name.trim(),
+        nif?.trim() || null,
+        address?.trim() || null,
+        postalCode?.trim() || null,
+        city?.trim() || null,
+        phone?.trim() || null,
+        email?.trim() || null,
+        website?.trim() || null,
+        notes?.trim() || null,
+      ]
+    )
+    
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      nif: row.nif || null,
+      address: row.address || null,
+      postalCode: row.postal_code || null,
+      city: row.city || null,
+      phone: row.phone || null,
+      email: row.email || null,
+      website: row.website || null,
+      notes: row.notes || null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Create supplier error:', error)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Supplier with this name already exists' })
+    }
+    res.status(500).json({ error: 'Failed to create supplier', message: error.message })
+  }
+})
+
+router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { supplierId } = req.params
+    const { name, nif, address, postalCode, city, phone, email, website, notes } = req.body
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+    
+    const result = await query(
+      `UPDATE suppliers
+       SET name = $1, nif = $2, address = $3, postal_code = $4, city = $5, 
+           phone = $6, email = $7, website = $8, notes = $9
+       WHERE id = $10 AND clinic_id = $11
+       RETURNING *`,
+      [
+        name.trim(),
+        nif?.trim() || null,
+        address?.trim() || null,
+        postalCode?.trim() || null,
+        city?.trim() || null,
+        phone?.trim() || null,
+        email?.trim() || null,
+        website?.trim() || null,
+        notes?.trim() || null,
+        supplierId,
+        clinicId,
+      ]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Supplier not found' })
+    }
+    
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      nif: row.nif || null,
+      address: row.address || null,
+      postalCode: row.postal_code || null,
+      city: row.city || null,
+      phone: row.phone || null,
+      email: row.email || null,
+      website: row.website || null,
+      notes: row.notes || null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Update supplier error:', error)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Supplier with this name already exists' })
+    }
+    res.status(500).json({ error: 'Failed to update supplier', message: error.message })
+  }
+})
+
+router.delete('/suppliers/:clinicId/:supplierId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { supplierId } = req.params
+    
+    // Check if supplier has orders
+    const ordersCheck = await query(
+      `SELECT COUNT(*) as count FROM daily_order_entries WHERE supplier_id = $1`,
+      [supplierId]
+    )
+    
+    if (parseInt(ordersCheck.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete supplier with existing orders',
+        message: 'Please delete or reassign orders before deleting this supplier'
+      })
+    }
+    
+    const result = await query(
+      `DELETE FROM suppliers WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [supplierId, clinicId]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Supplier not found' })
+    }
+    
+    res.json({ message: 'Supplier deleted successfully' })
+  } catch (error) {
+    console.error('Delete supplier error:', error)
+    res.status(500).json({ error: 'Failed to delete supplier' })
+  }
+})
+
+// ================================
+// ORDERS
+// ================================
+router.get('/orders/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { startDate, endDate, supplierId } = req.query
+    
+    let queryStr = `
+      SELECT o.*, s.name as supplier_name
+      FROM daily_order_entries o
+      JOIN suppliers s ON o.supplier_id = s.id
+      WHERE o.clinic_id = $1
+    `
+    const params: any[] = [clinicId]
+    let paramIndex = 2
+    
+    if (startDate) {
+      queryStr += ` AND o.date >= $${paramIndex}`
+      params.push(startDate)
+      paramIndex++
+    }
+    
+    if (endDate) {
+      queryStr += ` AND o.date <= $${paramIndex}`
+      params.push(endDate)
+      paramIndex++
+    }
+    
+    if (supplierId) {
+      queryStr += ` AND o.supplier_id = $${paramIndex}`
+      params.push(supplierId)
+      paramIndex++
+    }
+    
+    queryStr += ` ORDER BY o.date DESC, o.created_at DESC`
+    
+    const result = await query(queryStr, params)
+    
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        clinicId: row.clinic_id,
+        date: row.date,
+        supplierId: row.supplier_id,
+        supplierName: row.supplier_name,
+        orderNumber: row.order_number || null,
+        requested: row.requested,
+        requestedAt: row.requested_at || null,
+        confirmed: row.confirmed,
+        confirmedAt: row.confirmed_at || null,
+        inProduction: row.in_production,
+        inProductionAt: row.in_production_at || null,
+        ready: row.ready,
+        readyAt: row.ready_at || null,
+        delivered: row.delivered,
+        deliveredAt: row.delivered_at || null,
+        cancelled: row.cancelled,
+        cancelledAt: row.cancelled_at || null,
+        observations: row.observations || null,
+        total: row.total ? parseFloat(row.total) : 0,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }))
+    )
+  } catch (error) {
+    console.error('Get orders error:', error)
+    res.status(500).json({ error: 'Failed to fetch orders' })
+  }
+})
+
+router.get('/orders/:clinicId/:orderId', async (req, res) => {
+  try {
+    const { clinicId, orderId } = req.params
+    const result = await query(
+      `SELECT o.*, s.name as supplier_name
+       FROM daily_order_entries o
+       JOIN suppliers s ON o.supplier_id = s.id
+       WHERE o.id = $1 AND o.clinic_id = $2`,
+      [orderId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+
+    const row = result.rows[0]
+    
+    // Buscar itens do pedido
+    const itemsResult = await query(
+      `SELECT 
+        oie.id,
+        oie.order_id,
+        oie.item_id,
+        oie.quantity,
+        oie.unit_price,
+        oie.notes,
+        oie.created_at,
+        oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = $1
+       ORDER BY oie.created_at ASC`,
+      [orderId]
+    )
+    
+    const items = itemsResult.rows.map((itemRow) => ({
+      id: itemRow.id,
+      orderId: itemRow.order_id,
+      itemId: itemRow.item_id,
+      itemName: itemRow.item_name,
+      quantity: parseFloat(itemRow.quantity),
+      unitPrice: itemRow.unit_price ? parseFloat(itemRow.unit_price) : null,
+      notes: itemRow.notes || null,
+      createdAt: itemRow.created_at,
+    }))
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName: row.supplier_name,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error) {
+    console.error('Get order error:', error)
+    res.status(500).json({ error: 'Failed to fetch order' })
+  }
+})
+
+router.post('/orders/:clinicId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const {
+      id,
+      date,
+      supplierId,
+      orderNumber,
+      requested,
+      requestedAt,
+      confirmed,
+      confirmedAt,
+      inProduction,
+      inProductionAt,
+      ready,
+      readyAt,
+      delivered,
+      deliveredAt,
+      cancelled,
+      cancelledAt,
+      observations,
+      items, // Array de itens do pedido
+    } = req.body
+    
+    if (!date || !supplierId) {
+      return res.status(400).json({ error: 'Date and supplier are required' })
+    }
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'At least one item is required' })
+    }
+    
+    const orderId = id || `order-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    
+    // Calcular total do pedido
+    const total = items.reduce((sum: number, item: any) => {
+      const quantity = item.quantity || 0
+      const unitPrice = item.unitPrice || 0
+      return sum + (quantity * unitPrice)
+    }, 0)
+    
+    // Inserir pedido
+    const result = await query(
+      `INSERT INTO daily_order_entries
+       (id, clinic_id, date, supplier_id, order_number, total, requested, requested_at,
+        confirmed, confirmed_at, in_production, in_production_at, ready, ready_at,
+        delivered, delivered_at, cancelled, cancelled_at, observations)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+       RETURNING *`,
+      [
+        orderId,
+        clinicId,
+        date,
+        supplierId,
+        orderNumber?.trim() || null,
+        total,
+        requested || false,
+        requested && requestedAt ? requestedAt : null,
+        confirmed || false,
+        confirmed && confirmedAt ? confirmedAt : null,
+        inProduction || false,
+        inProduction && inProductionAt ? inProductionAt : null,
+        ready || false,
+        ready && readyAt ? readyAt : null,
+        delivered || false,
+        delivered && deliveredAt ? deliveredAt : null,
+        cancelled || false,
+        cancelled && cancelledAt ? cancelledAt : null,
+        observations?.trim() || null,
+      ]
+    )
+    
+    const row = result.rows[0]
+    
+    // Inserir itens do pedido
+    const insertedItems = []
+    for (const item of items) {
+      if (!item.itemId || !item.quantity) {
+        continue // Pular itens inválidos
+      }
+      
+      const itemEntryId = `order-item-${orderId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      
+      await query(
+        `INSERT INTO order_item_entries
+         (id, order_id, item_id, quantity, unit_price, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          itemEntryId,
+          orderId,
+          item.itemId,
+          item.quantity,
+          item.unitPrice || null,
+          item.notes?.trim() || null,
+        ]
+      )
+      
+      // Buscar nome do item
+      const itemResult = await query(`SELECT name FROM order_items WHERE id = $1`, [item.itemId])
+      const itemName = itemResult.rows[0]?.name || ''
+      
+      insertedItems.push({
+        id: itemEntryId,
+        orderId,
+        itemId: item.itemId,
+        itemName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice || null,
+        notes: item.notes || null,
+      })
+    }
+    
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [supplierId])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items: insertedItems,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Create order error:', error)
+    res.status(500).json({ error: 'Failed to create order', message: error.message })
+  }
+})
+
+router.put('/orders/:clinicId/:orderId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { orderId } = req.params
+    const {
+      date,
+      supplierId,
+      orderNumber,
+      requested,
+      requestedAt,
+      confirmed,
+      confirmedAt,
+      inProduction,
+      inProductionAt,
+      ready,
+      readyAt,
+      delivered,
+      deliveredAt,
+      cancelled,
+      cancelledAt,
+      observations,
+      items, // Array de itens do pedido
+    } = req.body
+    
+    if (!date || !supplierId) {
+      return res.status(400).json({ error: 'Date and supplier are required' })
+    }
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'At least one item is required' })
+    }
+    
+    // Calcular total do pedido
+    const total = items.reduce((sum: number, item: any) => {
+      const quantity = item.quantity || 0
+      const unitPrice = item.unitPrice || 0
+      return sum + (quantity * unitPrice)
+    }, 0)
+    
+    const result = await query(
+      `UPDATE daily_order_entries
+       SET date = $1, supplier_id = $2, order_number = $3, total = $4, requested = $5, requested_at = $6,
+           confirmed = $7, confirmed_at = $8, in_production = $9, in_production_at = $10,
+           ready = $11, ready_at = $12, delivered = $13, delivered_at = $14,
+           cancelled = $15, cancelled_at = $16, observations = $17
+       WHERE id = $18 AND clinic_id = $19
+       RETURNING *`,
+      [
+        date,
+        supplierId,
+        orderNumber?.trim() || null,
+        total,
+        requested || false,
+        requested && requestedAt ? requestedAt : null,
+        confirmed || false,
+        confirmed && confirmedAt ? confirmedAt : null,
+        inProduction || false,
+        inProduction && inProductionAt ? inProductionAt : null,
+        ready || false,
+        ready && readyAt ? readyAt : null,
+        delivered || false,
+        delivered && deliveredAt ? deliveredAt : null,
+        cancelled || false,
+        cancelled && cancelledAt ? cancelledAt : null,
+        observations?.trim() || null,
+        orderId,
+        clinicId,
+      ]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    // Deletar itens antigos e inserir novos
+    await query(`DELETE FROM order_item_entries WHERE order_id = $1`, [orderId])
+    
+    const insertedItems = []
+    for (const item of items) {
+      if (!item.itemId || !item.quantity) {
+        continue // Pular itens inválidos
+      }
+      
+      const itemEntryId = `order-item-${orderId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      
+      await query(
+        `INSERT INTO order_item_entries
+         (id, order_id, item_id, quantity, unit_price, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          itemEntryId,
+          orderId,
+          item.itemId,
+          item.quantity,
+          item.unitPrice || null,
+          item.notes?.trim() || null,
+        ]
+      )
+      
+      // Buscar nome do item
+      const itemResult = await query(`SELECT name FROM order_items WHERE id = $1`, [item.itemId])
+      const itemName = itemResult.rows[0]?.name || ''
+      
+      insertedItems.push({
+        id: itemEntryId,
+        orderId,
+        itemId: item.itemId,
+        itemName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice || null,
+        notes: item.notes || null,
+      })
+    }
+    
+    const row = result.rows[0]
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [supplierId])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items: insertedItems,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Update order error:', error)
+    res.status(500).json({ error: 'Failed to update order', message: error.message })
+  }
+})
+
+router.delete('/orders/:clinicId/:orderId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { orderId } = req.params
+    const result = await query(
+      `DELETE FROM daily_order_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [orderId, clinicId]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    res.json({ message: 'Order deleted successfully' })
+  } catch (error) {
+    console.error('Delete order error:', error)
+    res.status(500).json({ error: 'Failed to delete order' })
+  }
+})
+
+// ================================
+// ORDER ITEMS
+// ================================
+router.get('/order-items/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { search } = req.query
+    
+    let queryStr = `SELECT * FROM order_items WHERE clinic_id = $1`
+    const params: any[] = [clinicId]
+    
+    if (search && typeof search === 'string' && search.trim()) {
+      queryStr += ` AND (name ILIKE $2 OR description ILIKE $2)`
+      params.push(`%${search.trim()}%`)
+    }
+    
+    queryStr += ` ORDER BY name ASC`
+    
+    const result = await query(queryStr, params)
+    
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        clinicId: row.clinic_id,
+        name: row.name,
+        description: row.description || null,
+        unit: row.unit || 'unidade',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }))
+    )
+  } catch (error) {
+    console.error('Get order items error:', error)
+    res.status(500).json({ error: 'Failed to fetch order items' })
+  }
+})
+
+router.get('/order-items/:clinicId/:itemId', async (req, res) => {
+  try {
+    const { clinicId, itemId } = req.params
+    const result = await query(
+      `SELECT * FROM order_items WHERE id = $1 AND clinic_id = $2`,
+      [itemId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order item not found' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description || null,
+      unit: row.unit || 'unidade',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error) {
+    console.error('Get order item error:', error)
+    res.status(500).json({ error: 'Failed to fetch order item' })
+  }
+})
+
+router.post('/order-items/:clinicId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { name, description, unit } = req.body
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+    
+    const itemId = `item-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    
+    const result = await query(
+      `INSERT INTO order_items
+       (id, clinic_id, name, description, unit)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [
+        itemId,
+        clinicId,
+        name.trim(),
+        description?.trim() || null,
+        unit?.trim() || 'unidade',
+      ]
+    )
+    
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description || null,
+      unit: row.unit || 'unidade',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Create order item error:', error)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Item with this name already exists' })
+    }
+    res.status(500).json({ error: 'Failed to create order item', message: error.message })
+  }
+})
+
+router.put('/order-items/:clinicId/:itemId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { itemId } = req.params
+    const { name, description, unit } = req.body
+    
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+    
+    const result = await query(
+      `UPDATE order_items
+       SET name = $1, description = $2, unit = $3
+       WHERE id = $4 AND clinic_id = $5
+       RETURNING *`,
+      [
+        name.trim(),
+        description?.trim() || null,
+        unit?.trim() || 'unidade',
+        itemId,
+        clinicId,
+      ]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order item not found' })
+    }
+    
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description || null,
+      unit: row.unit || 'unidade',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Update order item error:', error)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Item with this name already exists' })
+    }
+    res.status(500).json({ error: 'Failed to update order item', message: error.message })
+  }
+})
+
+router.delete('/order-items/:clinicId/:itemId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { itemId } = req.params
+    
+    // Check if item has entries
+    const entriesCheck = await query(
+      `SELECT COUNT(*) as count FROM order_item_entries WHERE item_id = $1`,
+      [itemId]
+    )
+    
+    if (parseInt(entriesCheck.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete item with existing order entries',
+        message: 'Please delete or reassign order entries before deleting this item'
+      })
+    }
+    
+    const result = await query(
+      `DELETE FROM order_items WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [itemId, clinicId]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order item not found' })
+    }
+    
+    res.json({ message: 'Order item deleted successfully' })
+  } catch (error) {
+    console.error('Delete order item error:', error)
+    res.status(500).json({ error: 'Failed to delete order item' })
+  }
+})
+
 export default router

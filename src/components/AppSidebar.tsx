@@ -12,6 +12,8 @@ import {
   Users,
   UserCog,
   Star,
+  Package,
+  Truck,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -181,6 +183,35 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+              )}
+
+              {activeClinicId && canEdit('canEditOrders') && (
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Pedidos"
+                      isActive={location.pathname.includes('/pedidos')}
+                    >
+                      <Link to={`/pedidos/${activeClinicId}`}>
+                        <Package />
+                        <span>Pedidos</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Fornecedores"
+                      isActive={location.pathname.includes('/fornecedores')}
+                    >
+                      <Link to={`/fornecedores/${activeClinicId}`}>
+                        <Truck />
+                        <span>Fornecedores</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
 
               {activeClinicId && user?.role === 'GESTOR_CLINICA' && (

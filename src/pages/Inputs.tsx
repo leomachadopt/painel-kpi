@@ -9,6 +9,7 @@ import {
   Clock,
   CalendarCheck,
   Smile,
+  Package,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -29,6 +30,7 @@ import { DailyCabinets } from '@/components/daily/DailyCabinets'
 import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
 import { DailyConsultationControl } from '@/components/daily/DailyConsultationControl'
 import { DailyAligners } from '@/components/daily/DailyAligners'
+import { DailyOrders } from '@/components/daily/DailyOrders'
 
 export default function Inputs() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -59,6 +61,7 @@ export default function Inputs() {
   const hasServiceTime = canEdit('canEditServiceTime')
   const hasConsultationControl = canEdit('canEditConsultationControl')
   const hasAligners = canEdit('canEditAligners')
+  const hasOrders = canEdit('canEditOrders')
 
   // Determinar primeira aba disponível
   const firstAvailableTab =
@@ -68,10 +71,11 @@ export default function Inputs() {
     hasCabinets ? 'cabinets' :
     hasServiceTime ? 'serviceTime' :
     hasConsultationControl ? 'consultationControl' :
-    hasAligners ? 'aligners' : 'financial'
+    hasAligners ? 'aligners' :
+    hasOrders ? 'orders' : 'financial'
 
   // Determinar aba inicial (priorizar parâmetro da URL)
-  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners']
+  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders']
   const initialTab = tabParam && validTabs.includes(tabParam)
     ? tabParam
     : firstAvailableTab
@@ -113,7 +117,7 @@ export default function Inputs() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 h-auto">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 h-auto">
           {hasFinancial && (
             <TabsTrigger
               value="financial"
@@ -175,6 +179,15 @@ export default function Inputs() {
             >
               <Smile className="h-4 w-4" />
               Alinhadores
+            </TabsTrigger>
+          )}
+          {hasOrders && (
+            <TabsTrigger
+              value="orders"
+              className="flex flex-col gap-1 py-2 h-auto"
+            >
+              <Package className="h-4 w-4" />
+              Pedidos
             </TabsTrigger>
           )}
         </TabsList>
@@ -287,6 +300,22 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyAligners clinic={clinic} initialCode={codeParam || undefined} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasOrders && (
+            <TabsContent value="orders">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pedidos</CardTitle>
+                  <CardDescription>
+                    Registre e acompanhe os pedidos aos fornecedores.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyOrders clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

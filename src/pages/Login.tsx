@@ -29,6 +29,22 @@ export default function Login() {
   const { login, isAuthenticated, user, loading } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [contextReady, setContextReady] = useState(false)
+
+  // Verificar se o contexto está disponível (para evitar problemas de hot-reload)
+  useEffect(() => {
+    // Se loading for true por muito tempo, pode ser que o contexto não esteja disponível
+    if (loading) {
+      const timer = setTimeout(() => {
+        // Se após 2 segundos ainda estiver loading, considerar que o contexto está pronto
+        // (pode ser apenas uma verificação inicial do localStorage)
+        setContextReady(true)
+      }, 2000)
+      return () => clearTimeout(timer)
+    } else {
+      setContextReady(true)
+    }
+  }, [loading])
 
   useEffect(() => {
     // Only redirect on initial auth check, not during page reload
@@ -51,9 +67,25 @@ export default function Login() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Verificar se o contexto está pronto antes de tentar fazer login
+    if (!contextReady && loading) {
+      toast.error('Aguarde a inicialização do sistema...')
+      return
+    }
+
     setIsLoading(true)
     try {
       const loggedUser = await login(values.email, values.password)
+
+      // Se o contexto não estava disponível, o login foi feito via API diretamente
+      // Neste caso, precisamos recarregar a página para que o Provider pegue o estado
+      if (!contextReady || loading) {
+        toast.success(`Bem-vindo(a) de volta! A recarregar...`)
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
+        return
+      }
 
       toast.success(`Bem-vindo(a) de volta!`)
 
@@ -62,9 +94,19 @@ export default function Login() {
       } else if (loggedUser.clinicId) {
         navigate(`/dashboard/${loggedUser.clinicId}`)
       }
-    } catch (error) {
-      toast.error('Erro ao realizar login. Verifique as suas credenciais.')
-      console.error(error)
+    } catch (error: any) {
+      // Tratar erro específico do AuthProvider ausente
+      if (error?.message?.includes('AuthProvider ausente')) {
+        toast.error('Erro de inicialização. Recarregando a página...')
+        console.error('AuthProvider não disponível:', error)
+        // Recarregar após um delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } else {
+        toast.error(error?.message || 'Erro ao realizar login. Verifique as suas credenciais.')
+        console.error(error)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -186,9 +228,9 @@ export default function Login() {
                 </a>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !contextReady}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
+                {!contextReady ? 'A inicializar...' : 'Entrar'}
               </Button>
             </form>
           </Form>

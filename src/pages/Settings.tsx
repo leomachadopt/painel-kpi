@@ -24,6 +24,8 @@ import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
 import { MONTHS } from '@/lib/types'
+import { dailyEntriesApi } from '@/services/api'
+import { OrderItem } from '@/lib/types'
 
 const ListEditor = ({
   title,
@@ -233,6 +235,233 @@ const ListEditor = ({
   )
 }
 
+// Componente específico para gerenciar Order Items via API
+const OrderItemsEditor = ({
+  clinicId,
+  items,
+  onUpdate,
+  readOnly = false,
+}: {
+  clinicId: string
+  items: OrderItem[]
+  onUpdate: (items: OrderItem[]) => void
+  readOnly?: boolean
+}) => {
+  const [newItem, setNewItem] = useState('')
+  const [newUnit, setNewUnit] = useState('unidade')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editUnit, setEditUnit] = useState('unidade')
+  const [editDescription, setEditDescription] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const add = async () => {
+    if (!newItem.trim() || !clinicId) return
+
+    setSaving(true)
+    try {
+      const newOrderItem = await dailyEntriesApi.orderItem.create(clinicId, {
+        name: newItem.trim(),
+        unit: newUnit.trim() || 'unidade',
+      })
+      onUpdate([...items, newOrderItem])
+      setNewItem('')
+      setNewUnit('unidade')
+      toast.success('Item criado com sucesso!')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar item')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const remove = async (id: string) => {
+    if (!clinicId) return
+
+    setDeleting(id)
+    try {
+      await dailyEntriesApi.orderItem.delete(clinicId, id)
+      onUpdate(items.filter((i) => i.id !== id))
+      toast.success('Item excluído com sucesso!')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir item')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const startEdit = (item: OrderItem) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+    setEditUnit(item.unit || 'unidade')
+    setEditDescription(item.description || '')
+  }
+
+  const saveEdit = async (id: string) => {
+    if (!clinicId) return
+
+    setSaving(true)
+    try {
+      const updated = await dailyEntriesApi.orderItem.update(clinicId, id, {
+        name: editName.trim(),
+        unit: editUnit.trim() || 'unidade',
+        description: editDescription.trim() || null,
+      })
+      onUpdate(items.map((item) => (item.id === id ? updated : item)))
+      setEditingId(null)
+      setEditName('')
+      setEditUnit('unidade')
+      setEditDescription('')
+      toast.success('Item atualizado com sucesso!')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar item')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditName('')
+    setEditUnit('unidade')
+    setEditDescription('')
+  }
+
+  return (
+    <div className="space-y-4">
+      {!readOnly && (
+        <div className="flex gap-2">
+          <Input
+            placeholder="Nome do item"
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && add()}
+            className="flex-1"
+          />
+          <Input
+            placeholder="Unidade (ex: unidade, caixa, kg)"
+            value={newUnit}
+            onChange={(e) => setNewUnit(e.target.value)}
+            className="w-40"
+          />
+          <Button onClick={add} size="icon" disabled={saving || !newItem.trim()}>
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center p-4">
+            Nenhum item cadastrado. Adicione um novo item acima.
+          </p>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between p-3 border rounded bg-background"
+            >
+              {editingId === item.id ? (
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Nome do item"
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit(item.id)
+                        if (e.key === 'Escape') cancelEdit()
+                      }}
+                      autoFocus
+                    />
+                    <Input
+                      value={editUnit}
+                      onChange={(e) => setEditUnit(e.target.value)}
+                      placeholder="Unidade"
+                      className="w-32"
+                    />
+                  </div>
+                  <Input
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Descrição (opcional)"
+                  />
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => saveEdit(item.id)}
+                      disabled={saving}
+                    >
+                      <Check className="h-4 w-4 text-green-600 mr-1" />
+                      Guardar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={cancelEdit}
+                      disabled={saving}
+                    >
+                      <X className="h-4 w-4 text-muted-foreground mr-1" />
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{item.name}</span>
+                    {item.unit && (
+                      <span className="text-sm text-muted-foreground">
+                        Unidade: {item.unit}
+                      </span>
+                    )}
+                    {item.description && (
+                      <span className="text-xs text-muted-foreground mt-1">
+                        {item.description}
+                      </span>
+                    )}
+                  </div>
+                  {!readOnly && (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => startEdit(item)}
+                        title="Editar"
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(item.id)}
+                        disabled={deleting === item.id}
+                        title="Excluir"
+                      >
+                        {deleting === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                        ) : (
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { user } = useAuthStore()
   const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
@@ -327,6 +556,33 @@ export default function Settings() {
       setNpsQuestion('Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?')
     }
   }, [clinic?.id])
+
+  // Load order items when clinic changes
+  useEffect(() => {
+    if (clinic?.id) {
+      loadOrderItems()
+    }
+  }, [clinic?.id])
+
+  const loadOrderItems = async () => {
+    if (!clinic?.id) return
+    setLoadingItems(true)
+    try {
+      const data = await dailyEntriesApi.orderItem.getAll(clinic.id)
+      setOrderItems(data)
+    } catch (error) {
+      console.error('Failed to load order items:', error)
+    } finally {
+      setLoadingItems(false)
+    }
+  }
+
+  const handleSaveOrderItems = async () => {
+    if (!clinic?.id) return
+    // Os itens são salvos individualmente via API quando editados
+    // Esta função pode ser usada para validação ou outras ações
+    await loadOrderItems()
+  }
 
   // Load targets from database when clinic/month/year changes
   useEffect(() => {
@@ -442,6 +698,7 @@ export default function Settings() {
           <TabsTrigger value="categories">Categorias</TabsTrigger>
           <TabsTrigger value="paymentSources">Fontes de Recebimento</TabsTrigger>
           <TabsTrigger value="alignerBrands">Marcas de Alinhadores</TabsTrigger>
+          <TabsTrigger value="orderItems">Itens</TabsTrigger>
           <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
           <TabsTrigger value="targets">Metas</TabsTrigger>
@@ -543,6 +800,31 @@ export default function Settings() {
                 }
                 readOnly={!canManageConfig}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="orderItems">
+          <Card>
+            <CardHeader>
+              <CardTitle>Itens de Pedido</CardTitle>
+              <CardDescription>
+                Gerir os itens que podem ser solicitados nos pedidos aos fornecedores.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingItems ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <OrderItemsEditor
+                  clinicId={clinic.id}
+                  items={orderItems}
+                  onUpdate={setOrderItems}
+                  readOnly={!canManageConfig}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

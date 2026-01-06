@@ -98,7 +98,20 @@ interface DataState {
 const DataContext = createContext<DataState | null>(null)
 
 export const DataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth()
+  // Tratamento defensivo: se o contexto não estiver disponível, tratar como não autenticado
+  let isAuthenticated = false
+  let authLoading = false
+  try {
+    const auth = useAuth()
+    isAuthenticated = auth.isAuthenticated
+    authLoading = auth.loading
+  } catch (error) {
+    // Se o contexto não estiver disponível (hot-reload), tratar como não autenticado
+    console.warn('AuthProvider não disponível ainda, tratando como não autenticado')
+    isAuthenticated = false
+    authLoading = true
+  }
+  
   const [clinics, setClinics] = useState<Clinic[]>([])
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] =
@@ -136,6 +149,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Load clinics from API on mount (only if authenticated)
   useEffect(() => {
+    // Aguardar o auth terminar de carregar antes de verificar autenticação
+    if (authLoading) {
+      return
+    }
+    
     if (!isAuthenticated) {
       setLoading(false)
       return
@@ -154,7 +172,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     loadClinics()
-  }, [isAuthenticated])
+  }, [isAuthenticated, authLoading])
 
   const aggregateDailyToMonthly = (
     clinic: Clinic,

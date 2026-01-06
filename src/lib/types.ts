@@ -253,6 +253,69 @@ export interface DailyConsultationControlEntry {
   oldPatientBooking: number
 }
 
+export interface Supplier {
+  id: string
+  clinicId: string
+  name: string
+  nif?: string | null
+  address?: string | null
+  postalCode?: string | null
+  city?: string | null
+  phone?: string | null
+  email?: string | null
+  website?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OrderItem {
+  id: string
+  clinicId: string
+  name: string
+  description?: string | null
+  unit?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OrderItemEntry {
+  id: string
+  orderId: string
+  itemId: string
+  itemName?: string
+  quantity: number
+  unitPrice?: number | null
+  notes?: string | null
+  createdAt: string
+}
+
+export interface DailyOrderEntry {
+  id: string
+  clinicId: string
+  date: string
+  supplierId: string
+  supplierName?: string
+  orderNumber?: string | null
+  requested: boolean
+  requestedAt?: string | null
+  confirmed: boolean
+  confirmedAt?: string | null
+  inProduction: boolean
+  inProductionAt?: string | null
+  ready: boolean
+  readyAt?: string | null
+  delivered: boolean
+  deliveredAt?: string | null
+  cancelled: boolean
+  cancelledAt?: string | null
+  observations?: string | null
+  total?: number
+  items?: OrderItemEntry[]
+  createdAt: string
+  updatedAt: string
+}
+
 export interface DailyAlignersEntry {
   id: string
   date: string

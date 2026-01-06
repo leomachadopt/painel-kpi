@@ -370,6 +370,94 @@ export const dailyEntriesApi = {
         method: 'DELETE',
       }),
   },
+
+  // Suppliers
+  supplier: {
+    getAll: (clinicId: string, search?: string) => {
+      const params = search ? `?search=${encodeURIComponent(search)}` : ''
+      return apiCall<any[]>(`/daily-entries/suppliers/${clinicId}${params}`)
+    },
+
+    getById: (clinicId: string, supplierId: string) =>
+      apiCall<any>(`/daily-entries/suppliers/${clinicId}/${supplierId}`),
+
+    create: (clinicId: string, supplier: any) =>
+      apiCall<any>(`/daily-entries/suppliers/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(supplier),
+      }),
+
+    update: (clinicId: string, supplierId: string, supplier: any) =>
+      apiCall<any>(`/daily-entries/suppliers/${clinicId}/${supplierId}`, {
+        method: 'PUT',
+        body: JSON.stringify(supplier),
+      }),
+
+    delete: (clinicId: string, supplierId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/suppliers/${clinicId}/${supplierId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  // Orders
+  order: {
+    getAll: (clinicId: string, params?: { startDate?: string; endDate?: string; supplierId?: string }) => {
+      const queryParams = new URLSearchParams()
+      if (params?.startDate) queryParams.set('startDate', params.startDate)
+      if (params?.endDate) queryParams.set('endDate', params.endDate)
+      if (params?.supplierId) queryParams.set('supplierId', params.supplierId)
+      const queryString = queryParams.toString()
+      return apiCall<any[]>(`/daily-entries/orders/${clinicId}${queryString ? `?${queryString}` : ''}`)
+    },
+
+    getById: (clinicId: string, orderId: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}`),
+
+    create: (clinicId: string, order: any) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(order),
+      }),
+
+    update: (clinicId: string, orderId: string, order: any) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify(order),
+      }),
+
+    delete: (clinicId: string, orderId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/orders/${clinicId}/${orderId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  // Order Items
+  orderItem: {
+    getAll: (clinicId: string, search?: string) => {
+      const params = search ? `?search=${encodeURIComponent(search)}` : ''
+      return apiCall<any[]>(`/daily-entries/order-items/${clinicId}${params}`)
+    },
+
+    getById: (clinicId: string, itemId: string) =>
+      apiCall<any>(`/daily-entries/order-items/${clinicId}/${itemId}`),
+
+    create: (clinicId: string, item: any) =>
+      apiCall<any>(`/daily-entries/order-items/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(item),
+      }),
+
+    update: (clinicId: string, itemId: string, item: any) =>
+      apiCall<any>(`/daily-entries/order-items/${clinicId}/${itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify(item),
+      }),
+
+    delete: (clinicId: string, itemId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/order-items/${clinicId}/${itemId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================
