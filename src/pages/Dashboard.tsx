@@ -19,6 +19,7 @@ import {
 import { KPICard } from '@/components/KPICard'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { MONTHS } from '@/lib/types'
 import {
   Tooltip,
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const { calculateKPIs, calculateAlerts, getClinic, getMonthlyData, sourceEntries, loadMonthlyTargets } =
     useDataStore()
   const { user } = useAuthStore()
+  const { canView } = usePermissions()
   const navigate = useNavigate()
 
   const [selectedMonth, setSelectedMonth] = useState<string>(
@@ -127,6 +129,13 @@ export default function Dashboard() {
     )
   }, [clinic, currentMonth, currentYear, kpis, alerts, hasAccess])
 
+  // Verificar permissões do dashboard
+  const canViewOverview = canView('canViewDashboardOverview')
+  const canViewFinancial = canView('canViewDashboardFinancial')
+  const canViewCommercial = canView('canViewDashboardCommercial')
+  const canViewOperational = canView('canViewDashboardOperational')
+  const canViewMarketing = canView('canViewDashboardMarketing')
+
   if (!hasAccess && clinicId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
@@ -148,6 +157,26 @@ export default function Dashboard() {
 
   if (!clinic) {
     return <div className="p-8">Clínica não encontrada.</div>
+  }
+
+  // Se for colaborador e não tiver permissão para ver o dashboard, mostrar mensagem
+  if (user?.role === 'COLABORADOR' && !canViewOverview) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
+        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+          <Lock className="h-6 w-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+          <p className="text-muted-foreground mt-2">
+            Você não tem permissão para visualizar o dashboard.
+          </p>
+        </div>
+        <Button onClick={() => navigate(`/relatorios/${user?.clinicId}`)}>
+          Ver Relatórios
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -208,8 +237,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Alerts Section */}
-      {alerts.length > 0 && (
+      {/* Alerts Section - apenas se tiver permissão para ver overview */}
+      {canViewOverview && alerts.length > 0 && (
         <div className="animate-fade-in-down">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -227,75 +256,87 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI Grid - All 15 Cards */}
-      <div>
-        <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Monitorização completa dos indicadores de performance da clínica.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        
-        {/* Financeiro */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Financeiro</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.filter(k => ['revenue_monthly', 'avg_ticket', 'revenue_per_cabinet', 'aligners_started'].includes(k.id)).map((kpi) => (
-              <KPICard key={kpi.id} kpi={kpi} />
-            ))}
+      {/* KPI Grid - Filtrar por permissões */}
+      {canViewOverview && (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Monitorização completa dos indicadores de performance da clínica.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        </div>
+          
+          {/* Financeiro - apenas se tiver permissão */}
+          {canViewFinancial && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Financeiro</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {kpis.filter(k => ['revenue_monthly', 'avg_ticket', 'revenue_per_cabinet', 'aligners_started'].includes(k.id)).map((kpi) => (
+                  <KPICard key={kpi.id} kpi={kpi} />
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Comercial */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Comercial & Vendas</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
-              <KPICard key={kpi.id} kpi={kpi} />
-            ))}
-          </div>
-        </div>
+          {/* Comercial - apenas se tiver permissão */}
+          {canViewCommercial && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Comercial & Vendas</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
+                  <KPICard key={kpi.id} kpi={kpi} />
+                ))}
+              </div>
+            </div>
+          )}
 
-        {/* Operacional */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Operacional</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.filter(k => ['occupancy_rate', 'attendance_rate', 'avg_wait_time', 'integration_rate'].includes(k.id)).map((kpi) => (
-              <KPICard key={kpi.id} kpi={kpi} />
-            ))}
-          </div>
-        </div>
+          {/* Operacional - apenas se tiver permissão */}
+          {canViewOperational && (
+            <>
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Operacional</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {kpis.filter(k => ['occupancy_rate', 'attendance_rate', 'avg_wait_time', 'integration_rate'].includes(k.id)).map((kpi) => (
+                    <KPICard key={kpi.id} kpi={kpi} />
+                  ))}
+                </div>
+              </div>
 
-        {/* Controle de Consultas */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Controle de Consultas</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpis.filter(k => ['no_show', 'rescheduled', 'cancelled', 'old_patient_booking'].includes(k.id)).map((kpi) => (
-              <KPICard key={kpi.id} kpi={kpi} />
-            ))}
-          </div>
-        </div>
+              {/* Controle de Consultas - parte do operacional */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Controle de Consultas</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {kpis.filter(k => ['no_show', 'rescheduled', 'cancelled', 'old_patient_booking'].includes(k.id)).map((kpi) => (
+                    <KPICard key={kpi.id} kpi={kpi} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
-        {/* Experiência & Marketing */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Experiência & Marketing</h3>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {kpis.filter(k => ['nps', 'referrals', 'leads_total'].includes(k.id)).map((kpi) => (
-              <KPICard key={kpi.id} kpi={kpi} />
-            ))}
-          </div>
+          {/* Experiência & Marketing - apenas se tiver permissão */}
+          {canViewMarketing && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">Experiência & Marketing</h3>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {kpis.filter(k => ['nps', 'referrals', 'leads_total'].includes(k.id)).map((kpi) => (
+                  <KPICard key={kpi.id} kpi={kpi} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Advanced Charts Section */}
-      {monthlyData && (
+      {/* Advanced Charts Section - apenas se tiver permissão para ver overview */}
+      {canViewOverview && monthlyData && (
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Análise Operacional Detalhada</h2>
           
