@@ -344,26 +344,36 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold">Análise Operacional Detalhada</h2>
           
           {/* Row 1: Financial Overview */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <RevenueChart data={monthlyData} />
-            {last6Months.length > 0 && <RevenueEvolutionChart monthlyDataList={last6Months} />}
-            {monthlyData.cabinets.length > 0 && <RevenuePerCabinetChart data={monthlyData} />}
-            <ConsultationFunnel data={monthlyData} />
-          </div>
+          {(canViewFinancial || canViewCommercial) && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {canViewFinancial && <RevenueChart data={monthlyData} />}
+              {canViewFinancial && last6Months.length > 0 && (
+                <RevenueEvolutionChart monthlyDataList={last6Months} />
+              )}
+              {canViewFinancial && monthlyData.cabinets.length > 0 && (
+                <RevenuePerCabinetChart data={monthlyData} />
+              )}
+              {canViewCommercial && <ConsultationFunnel data={monthlyData} />}
+            </div>
+          )}
 
           {/* Row 2: Marketing & Sources */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <ProspectingChart data={monthlyData} />
-            <SourcesChart data={monthlyData} />
-            <TopReferrersChart sourceEntries={currentMonthSourceEntries} />
-          </div>
+          {canViewMarketing && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <ProspectingChart data={monthlyData} />
+              <SourcesChart data={monthlyData} />
+              <TopReferrersChart sourceEntries={currentMonthSourceEntries} />
+            </div>
+          )}
 
           {/* Row 3: Cabinets & Operations */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <CabinetChart data={monthlyData} />
-            <DelaysChart data={monthlyData} />
-            {monthlyData.ownerAgenda && <OwnerAgendaChart data={monthlyData} />}
-          </div>
+          {canViewOperational && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <CabinetChart data={monthlyData} />
+              <DelaysChart data={monthlyData} />
+              {monthlyData.ownerAgenda && <OwnerAgendaChart data={monthlyData} />}
+            </div>
+          )}
         </div>
       )}
 
