@@ -7,21 +7,26 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Trash2, Pencil } from 'lucide-react'
+import { Trash2, Pencil, Download } from 'lucide-react'
 import { DailyFinancialEntry, Clinic } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { EditFinancialDialog } from './EditFinancialDialog'
+import { exportFinancialToExcel } from '@/lib/excelExport'
 
 export function FinancialTable({
   data,
   clinic,
   onDelete,
+  startDate,
+  endDate,
 }: {
   data: DailyFinancialEntry[]
   clinic: Clinic
   onDelete?: () => void
+  startDate?: string
+  endDate?: string
 }) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<DailyFinancialEntry | null>(null)
@@ -58,8 +63,36 @@ export function FinancialTable({
     onDelete?.() // Recarregar dados
   }
 
+  const handleExport = () => {
+    if (!startDate || !endDate) {
+      toast.error('Período não definido para exportação')
+      return
+    }
+    try {
+      exportFinancialToExcel(data, {
+        clinic,
+        startDate,
+        endDate,
+        reportType: 'financial',
+      })
+      toast.success('Relatório exportado com sucesso!')
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao exportar relatório')
+    }
+  }
+
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={data.length === 0 || !startDate || !endDate}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exportar para Excel
+        </Button>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>

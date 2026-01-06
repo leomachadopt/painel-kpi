@@ -7,7 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Download } from 'lucide-react'
 import { DailyFinancialEntry, Clinic } from '@/lib/types'
+import { exportFinancialToExcel } from '@/lib/excelExport'
+import { toast } from 'sonner'
 
 interface BillingRow {
   doctorId: string | null
@@ -21,9 +25,13 @@ interface BillingRow {
 export function BillingTable({
   data,
   clinic,
+  startDate,
+  endDate,
 }: {
   data: DailyFinancialEntry[]
   clinic: Clinic
+  startDate?: string
+  endDate?: string
 }) {
   const getDoctorName = (id: string | null | undefined) => {
     if (!id) return 'Não especificado'
@@ -102,6 +110,24 @@ export function BillingTable({
     }).format(value)
   }
 
+  const handleExport = () => {
+    if (!startDate || !endDate) {
+      toast.error('Período não definido para exportação')
+      return
+    }
+    try {
+      exportFinancialToExcel(data, {
+        clinic,
+        startDate,
+        endDate,
+        reportType: 'billing',
+      })
+      toast.success('Relatório exportado com sucesso!')
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao exportar relatório')
+    }
+  }
+
   if (rows.length === 0) {
     return (
       <div className="rounded-md border p-8 text-center text-muted-foreground">
@@ -111,7 +137,18 @@ export function BillingTable({
   }
 
   return (
-    <div className="rounded-md border">
+    <>
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={rows.length === 0 || !startDate || !endDate}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exportar para Excel
+        </Button>
+      </div>
+      <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -134,11 +171,11 @@ export function BillingTable({
             return (
               <React.Fragment key={doctorId}>
                 {doctorRows.map((row, idx) => (
-                  <TableRow key={`${row.doctorId}-${row.code}-${idx}`}>
+                  <TableRow key={`${row.doctorId}-${row.code}-${idx}`} className="h-10">
                     {idx === 0 && (
                       <TableCell
                         rowSpan={doctorRows.length + 1}
-                        className="font-medium align-top"
+                        className="font-medium align-middle"
                       >
                         {doctorName}
                       </TableCell>
@@ -158,11 +195,12 @@ export function BillingTable({
                   </TableRow>
                 ))}
                 {/* Total row for doctor */}
-                <TableRow className="bg-muted/50 font-semibold border-t border-muted-foreground/20">
+                <TableRow className="bg-muted/50 font-semibold border-t border-muted-foreground/20 h-10">
                   {/* Médico column is already occupied by rowSpan, so we skip it */}
-                  <TableCell colSpan={2} className="text-right">
+                  <TableCell className="text-right">
                     Total {doctorName}:
                   </TableCell>
+                  <TableCell className="text-right"></TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(totals.total)}
                   </TableCell>
@@ -178,10 +216,12 @@ export function BillingTable({
             )
           })}
           {/* Grand total row */}
-          <TableRow className="bg-primary/10 font-bold border-t-2 border-primary/20">
-            <TableCell colSpan={3} className="text-right text-base">
+          <TableRow className="bg-primary/10 font-bold border-t-2 border-primary/20 h-12">
+            <TableCell className="text-right text-base"></TableCell>
+            <TableCell className="text-right text-base">
               Total Geral:
             </TableCell>
+            <TableCell className="text-right text-base"></TableCell>
             <TableCell className="text-right text-base">
               {formatCurrency(grandTotal)}
             </TableCell>
@@ -196,6 +236,7 @@ export function BillingTable({
         </TableBody>
       </Table>
     </div>
+    </>
   )
 }
 

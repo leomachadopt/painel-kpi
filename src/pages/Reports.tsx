@@ -288,6 +288,8 @@ export default function Reports() {
                 data={filterByDate(financialEntries[clinic.id])}
                 clinic={clinic}
                 onDelete={handleDataChange}
+                startDate={startDate}
+                endDate={endDate}
               />
             </TabsContent>
           )}
@@ -296,6 +298,8 @@ export default function Reports() {
               <BillingTable
                 data={filterByDate(financialEntries[clinic.id])}
                 clinic={clinic}
+                startDate={startDate}
+                endDate={endDate}
               />
             </TabsContent>
           )}
