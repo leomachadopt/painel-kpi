@@ -47,13 +47,12 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
             oldPatientBooking: apiEntry.oldPatientBooking || 0,
           })
         } else {
+          // null ou undefined significa que não existe entrada para esta data
           setCounters({ noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 })
         }
       } catch (error: any) {
-        // 404 is expected if no entry exists for this date
-        if (error?.status !== 404) {
-          console.error('Error loading consultation control entry:', error)
-        }
+        // Agora só vai entrar aqui em erros reais (não 404)
+        console.error('Error loading consultation control entry:', error)
         setCounters({ noShow: 0, rescheduled: 0, cancelled: 0, oldPatientBooking: 0 })
       } finally {
         setLoading(false)
@@ -61,7 +60,7 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
     }
 
     loadEntry()
-  }, [date, clinic.id, getConsultationControlEntry])
+  }, [date, clinic.id])
 
   const adjust = (key: keyof typeof counters, delta: number) => {
     setCounters((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }))

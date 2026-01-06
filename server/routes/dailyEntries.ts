@@ -782,7 +782,8 @@ router.get('/prospecting/:clinicId/:date', async (req, res) => {
     )
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Prospecting entry not found' })
+      // Retorna 200 com null em vez de 404 para buscas opcionais (evita erro no console)
+      return res.json(null)
     }
 
     const row = result.rows[0]
@@ -1194,7 +1195,8 @@ router.get('/consultation-control/:clinicId/:date', async (req, res) => {
     )
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Consultation control entry not found' })
+      // Retorna 200 com null em vez de 404 para buscas opcionais (evita erro no console)
+      return res.json(null)
     }
 
     const row = result.rows[0]

@@ -53,13 +53,12 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             phone: apiEntry.phone || 0,
           })
         } else {
+          // null ou undefined significa que não existe entrada para esta data
           setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
         }
       } catch (error: any) {
-        // 404 is expected if no entry exists for this date
-        if (error?.status !== 404) {
-          console.error('Error loading prospecting entry:', error)
-        }
+        // Agora só vai entrar aqui em erros reais (não 404)
+        console.error('Error loading prospecting entry:', error)
         setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
       } finally {
         setLoading(false)
