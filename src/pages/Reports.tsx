@@ -63,6 +63,41 @@ export default function Reports() {
   const [consultationView, setConsultationView] = useState<'table' | 'kanban'>('kanban')
   const [alignersView, setAlignersView] = useState<'table' | 'kanban'>('kanban')
 
+  // Funções para definir períodos rápidos
+  const setPeriodToday = () => {
+    const today = new Date().toISOString().split('T')[0]
+    setStartDate(today)
+    setEndDate(today)
+  }
+
+  const setPeriodYesterday = () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    setStartDate(yesterdayStr)
+    setEndDate(yesterdayStr)
+  }
+
+  const setPeriodLastWeek = () => {
+    const today = new Date()
+    const lastWeekStart = new Date(today)
+    lastWeekStart.setDate(today.getDate() - 7)
+    const lastWeekEnd = new Date(today)
+    lastWeekEnd.setDate(today.getDate() - 1)
+    
+    setStartDate(lastWeekStart.toISOString().split('T')[0])
+    setEndDate(lastWeekEnd.toISOString().split('T')[0])
+  }
+
+  const setPeriodLastMonth = () => {
+    const today = new Date()
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+    
+    setStartDate(lastMonthStart.toISOString().split('T')[0])
+    setEndDate(lastMonthEnd.toISOString().split('T')[0])
+  }
+
   const handleDataChange = () => {
     setReloadTrigger(prev => prev + 1)
     // Recarregar dados da API (a implementar se necessário)
@@ -156,21 +191,58 @@ export default function Reports() {
             </DropdownMenu>
           )}
 
-          <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
-            <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-            />
-            <span className="text-muted-foreground">-</span>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-            />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
+              <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+              />
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodToday}
+                className="text-xs"
+              >
+                Hoje
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodYesterday}
+                className="text-xs"
+              >
+                Ontem
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodLastWeek}
+                className="text-xs"
+              >
+                Semana Passada
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodLastMonth}
+                className="text-xs"
+              >
+                Mês Passado
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -83,6 +83,18 @@ export function BillingTable({
     doctorTotals.set(doctorId, { total, bySource })
   })
 
+  // Calculate grand total
+  const grandTotal = Array.from(doctorTotals.values()).reduce(
+    (sum, doctorTotal) => sum + doctorTotal.total,
+    0
+  )
+  const grandTotalBySource: Record<string, number> = {}
+  doctorTotals.forEach((doctorTotal) => {
+    Object.entries(doctorTotal.bySource).forEach(([source, value]) => {
+      grandTotalBySource[source] = (grandTotalBySource[source] || 0) + value
+    })
+  })
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
@@ -146,8 +158,9 @@ export function BillingTable({
                   </TableRow>
                 ))}
                 {/* Total row for doctor */}
-                <TableRow className="bg-muted/50 font-medium">
-                  <TableCell colSpan={3} className="text-right">
+                <TableRow className="bg-muted/50 font-semibold border-t border-muted-foreground/20">
+                  {/* Médico column is already occupied by rowSpan, so we skip it */}
+                  <TableCell colSpan={2} className="text-right">
                     Total {doctorName}:
                   </TableCell>
                   <TableCell className="text-right">
@@ -164,6 +177,22 @@ export function BillingTable({
               </React.Fragment>
             )
           })}
+          {/* Grand total row */}
+          <TableRow className="bg-primary/10 font-bold border-t-2 border-primary/20">
+            <TableCell colSpan={3} className="text-right text-base">
+              Total Geral:
+            </TableCell>
+            <TableCell className="text-right text-base">
+              {formatCurrency(grandTotal)}
+            </TableCell>
+            {paymentSourceNames.map((source) => (
+              <TableCell key={source} className="text-right text-base">
+                {grandTotalBySource[source]
+                  ? formatCurrency(grandTotalBySource[source])
+                  : '-'}
+              </TableCell>
+            ))}
+          </TableRow>
         </TableBody>
       </Table>
     </div>
