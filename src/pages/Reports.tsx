@@ -34,6 +34,7 @@ import { ConsultationControlTable } from '@/components/reports/ConsultationContr
 import { AlignersTable } from '@/components/reports/AlignersTable'
 import { AlignersKanban } from '@/components/reports/AlignersKanban'
 import { MarketingReport } from '@/components/reports/MarketingReport'
+import { DailyAlignersEntry } from '@/lib/types'
 
 export default function Reports() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -138,6 +139,13 @@ export default function Reports() {
       return entryDate >= startDate && entryDate <= endDate
     })
     return filtered
+  }
+
+  // Filter function for aligners - show all entries regardless of creation date
+  // since aligners are unique records per patient that track status over time
+  const filterAligners = (entries: DailyAlignersEntry[] = []) => {
+    // Return all entries - aligners should always be visible regardless of creation date
+    return entries
   }
 
   // Determine first available tab based on permissions
@@ -371,13 +379,13 @@ export default function Reports() {
               </div>
               {alignersView === 'kanban' ? (
                 <AlignersKanban
-                  data={filterByDate(alignerEntries[clinic.id])}
+                  data={filterAligners(alignerEntries[clinic.id])}
                   clinic={clinic}
                   onDelete={handleDataChange}
                 />
               ) : (
                 <AlignersTable
-                  data={filterByDate(alignerEntries[clinic.id])}
+                  data={filterAligners(alignerEntries[clinic.id])}
                   clinic={clinic}
                   onDelete={handleDataChange}
                 />
