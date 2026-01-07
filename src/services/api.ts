@@ -702,6 +702,60 @@ export const auditLogsApi = {
   },
 }
 
+// ================================
+// TICKETS API
+// ================================
+export const ticketsApi = {
+  list: (clinicId: string, filters?: { status?: string; assignedTo?: string }) => {
+    const params = new URLSearchParams()
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.assignedTo) params.append('assignedTo', filters.assignedTo)
+    
+    return apiCall<{ tickets: any[] }>(`/tickets/${clinicId}?${params.toString()}`)
+  },
+
+  getCount: (clinicId: string) =>
+    apiCall<{ count: number }>(`/tickets/${clinicId}/count`),
+
+  getById: (ticketId: string) =>
+    apiCall<{ ticket: any }>(`/tickets/ticket/${ticketId}`),
+
+  create: (clinicId: string, data: {
+    title: string
+    description?: string
+    assignedTo?: string
+  }) =>
+    apiCall<{ ticket: any }>(`/tickets/${clinicId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (ticketId: string, data: {
+    title?: string
+    description?: string
+    status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+    assignedTo?: string
+  }) =>
+    apiCall<{ ticket: any }>(`/tickets/${ticketId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (ticketId: string) =>
+    apiCall<{ message: string }>(`/tickets/${ticketId}`, {
+      method: 'DELETE',
+    }),
+
+  getComments: (ticketId: string) =>
+    apiCall<{ comments: any[] }>(`/tickets/${ticketId}/comments`),
+
+  addComment: (ticketId: string, comment: string) =>
+    apiCall<{ comment: any }>(`/tickets/${ticketId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ comment }),
+    }),
+}
+
 export default {
   auth: authApi,
   clinics: clinicsApi,
@@ -713,4 +767,5 @@ export default {
   targets: targetsApi,
   collaborators: collaboratorsApi,
   auditLogs: auditLogsApi,
+  tickets: ticketsApi,
 }

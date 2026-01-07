@@ -16,6 +16,8 @@ import NPSSurvey from '@/pages/NPSSurvey'
 import Alerts from '@/pages/Alerts'
 import Suppliers from '@/pages/Suppliers'
 import Orders from '@/pages/Orders'
+import Tickets from '@/pages/Tickets'
+import TicketDetail from '@/pages/TicketDetail'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -47,6 +49,8 @@ const App = () => (
               <Route path="/fornecedores/:clinicId" element={<Suppliers />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/alertas/:clinicId" element={<Alerts />} />
+              <Route path="/tickets/:clinicId" element={<Tickets />} />
+              <Route path="/tickets/:clinicId/:ticketId" element={<TicketDetail />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/colaboradores" element={<Collaborators />} />
               <Route path="/perfil" element={<Profile />} />

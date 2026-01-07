@@ -19,6 +19,7 @@ import collaboratorsRoutes from './routes/collaborators.js'
 import auditLogsRoutes from './routes/auditLogs.js'
 import npsRoutes from './routes/nps.js'
 import npsPublicRoutes from './routes/npsPublic.js'
+import ticketsRoutes from './routes/tickets.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -128,6 +129,7 @@ export function createApp() {
   app.use('/api/collaborators', collaboratorsRoutes)
   app.use('/api/audit-logs', auditLogsRoutes)
   app.use('/api/nps', npsRoutes)
+  app.use('/api/tickets', ticketsRoutes)
 
   // Public routes (no authentication required)
   app.use('/api/public/nps', npsPublicRoutes)

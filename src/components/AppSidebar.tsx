@@ -15,6 +15,7 @@ import {
   Star,
   Package,
   Truck,
+  Ticket,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -39,7 +40,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { dailyEntriesApi } from '@/services/api'
+import { dailyEntriesApi, ticketsApi } from '@/services/api'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
@@ -50,6 +51,7 @@ export function AppSidebar() {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
   const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
   const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
+  const [ticketsCount, setTicketsCount] = useState(0)
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -137,6 +139,31 @@ export function AppSidebar() {
       return () => clearInterval(interval)
     }
   }, [isGestor, activeClinicId, user])
+
+  // Buscar contagem de tickets pendentes
+  useEffect(() => {
+    const loadTicketsCount = async () => {
+      if (activeClinicId) {
+        try {
+          const result = await ticketsApi.getCount(activeClinicId)
+          const count = result.count || 0
+          setTicketsCount(count)
+        } catch (error) {
+          console.error('Error loading tickets count:', error)
+          setTicketsCount(0)
+        }
+      } else {
+        setTicketsCount(0)
+      }
+    }
+
+    if (user && activeClinicId) {
+      loadTicketsCount()
+      // Recarregar a cada 30 segundos
+      const interval = setInterval(loadTicketsCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [activeClinicId, user])
 
   return (
     <Sidebar collapsible="icon">
@@ -377,6 +404,26 @@ export function AppSidebar() {
                   {alertsCount > 0 && (
                     <SidebarMenuBadge className="bg-destructive text-destructive-foreground">
                       {alertsCount > 99 ? '99+' : alertsCount}
+                    </SidebarMenuBadge>
+                  )}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
+          {(currentClinic || user?.role === 'GESTOR_CLINICA') && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip="Tickets"
+                isActive={location.pathname.includes('/tickets')}
+              >
+                <Link to={`/tickets/${currentClinic?.id || user?.clinicId}`}>
+                  <Ticket />
+                  <span>Tickets</span>
+                  {ticketsCount > 0 && (
+                    <SidebarMenuBadge className="bg-orange-500 text-white">
+                      {ticketsCount > 99 ? '99+' : ticketsCount}
                     </SidebarMenuBadge>
                   )}
                 </Link>

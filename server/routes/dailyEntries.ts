@@ -2243,20 +2243,28 @@ router.get('/orders/:clinicId', async (req, res) => {
 // Rota para contar pedidos pendentes de aprovação (apenas gestoras)
 // IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
 router.get('/orders/:clinicId/pending-count', async (req, res) => {
-  const { clinicId } = req.params
-  
-  // Verificar se é gestora (usar req.user ou req.auth, dependendo do que estiver disponível)
-  const auth = req.auth || req.user
-  if (!auth || auth.role !== 'GESTOR_CLINICA') {
-    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos pendentes' })
-  }
-  
-  // Verificar se a clínica corresponde
-  if (auth.clinicId !== clinicId) {
-    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
-  }
-  
   try {
+    const { clinicId } = req.params
+    
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+    
+    // Verificar se é gestora (usar req.user ou req.auth, dependendo do que estiver disponível)
+    const auth = req.auth || req.user
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User not authenticated' })
+    }
+    
+    if (auth.role !== 'GESTOR_CLINICA' && auth.role !== 'MENTOR') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos pendentes' })
+    }
+    
+    // Verificar se a clínica corresponde
+    if (auth.clinicId && auth.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+    }
+    
     const result = await query(
       `SELECT COUNT(*) as count 
        FROM daily_order_entries 
@@ -2264,7 +2272,7 @@ router.get('/orders/:clinicId/pending-count', async (req, res) => {
       [clinicId]
     )
     
-    res.json({ count: parseInt(result.rows[0].count, 10) })
+    res.json({ count: parseInt(result.rows[0]?.count || '0', 10) })
   } catch (error: any) {
     console.error('Get pending orders count error:', error)
     console.error('Error details:', {
@@ -2285,20 +2293,28 @@ router.get('/orders/:clinicId/pending-count', async (req, res) => {
 // Rota para contar pedidos aguardando pagamento (apenas gestoras)
 // IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
 router.get('/orders/:clinicId/payment-pending-count', async (req, res) => {
-  const { clinicId } = req.params
-  
-  // Verificar se é gestora
-  const auth = req.auth || req.user
-  if (!auth || auth.role !== 'GESTOR_CLINICA') {
-    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos aguardando pagamento' })
-  }
-  
-  // Verificar se a clínica corresponde
-  if (auth.clinicId !== clinicId) {
-    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
-  }
-  
   try {
+    const { clinicId } = req.params
+    
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+    
+    // Verificar se é gestora
+    const auth = req.auth || req.user
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User not authenticated' })
+    }
+    
+    if (auth.role !== 'GESTOR_CLINICA' && auth.role !== 'MENTOR') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos aguardando pagamento' })
+    }
+    
+    // Verificar se a clínica corresponde
+    if (auth.clinicId && auth.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+    }
+    
     const result = await query(
       `SELECT COUNT(*) as count 
        FROM daily_order_entries 
@@ -2310,7 +2326,7 @@ router.get('/orders/:clinicId/payment-pending-count', async (req, res) => {
       [clinicId]
     )
     
-    res.json({ count: parseInt(result.rows[0].count, 10) })
+    res.json({ count: parseInt(result.rows[0]?.count || '0', 10) })
   } catch (error: any) {
     console.error('Get payment pending orders count error:', error)
     console.error('Error details:', {
@@ -2331,20 +2347,28 @@ router.get('/orders/:clinicId/payment-pending-count', async (req, res) => {
 // Rota para contar pedidos com fatura pendente (apenas gestoras)
 // IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
 router.get('/orders/:clinicId/invoice-pending-count', async (req, res) => {
-  const { clinicId } = req.params
-  
-  // Verificar se é gestora
-  const auth = req.auth || req.user
-  if (!auth || auth.role !== 'GESTOR_CLINICA') {
-    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos com fatura pendente' })
-  }
-  
-  // Verificar se a clínica corresponde
-  if (auth.clinicId !== clinicId) {
-    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
-  }
-  
   try {
+    const { clinicId } = req.params
+    
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+    
+    // Verificar se é gestora
+    const auth = req.auth || req.user
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User not authenticated' })
+    }
+    
+    if (auth.role !== 'GESTOR_CLINICA' && auth.role !== 'MENTOR') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos com fatura pendente' })
+    }
+    
+    // Verificar se a clínica corresponde
+    if (auth.clinicId && auth.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+    }
+    
     const result = await query(
       `SELECT COUNT(*) as count 
        FROM daily_order_entries 
@@ -2354,7 +2378,7 @@ router.get('/orders/:clinicId/invoice-pending-count', async (req, res) => {
       [clinicId]
     )
     
-    res.json({ count: parseInt(result.rows[0].count, 10) })
+    res.json({ count: parseInt(result.rows[0]?.count || '0', 10) })
   } catch (error: any) {
     console.error('Get invoice pending orders count error:', error)
     console.error('Error details:', {
