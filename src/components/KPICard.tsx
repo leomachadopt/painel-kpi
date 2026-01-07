@@ -66,37 +66,47 @@ export function KPICard({ kpi }: KPICardProps) {
   return (
     <Card
       className={cn(
-        'overflow-hidden border-t-4 shadow-sm hover:shadow-md transition-shadow relative',
+        'overflow-hidden border-t-4 transition-all duration-300 relative group bg-white hover:scale-[1.02]',
         {
           'border-t-emerald-500': kpi.status === 'success',
           'border-t-amber-400': kpi.status === 'warning',
           'border-t-rose-500': kpi.status === 'danger',
         },
       )}
+      style={{
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02)'
+      }}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent group-hover:from-primary/5 group-hover:via-transparent group-hover:to-primary/5 transition-all duration-300 pointer-events-none rounded-xl" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
         <CardTitle className="text-sm font-medium text-muted-foreground truncate pr-6">
           {kpi.name}
         </CardTitle>
-        <StatusIcon className={cn('h-5 w-5', statusColorClass)} />
+        <StatusIcon className={cn('h-5 w-5 transition-transform group-hover:scale-110', statusColorClass)} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         <div
-          className={cn('text-2xl font-bold tracking-tight', statusColorText)}
+          className={cn('text-2xl font-bold tracking-tight mb-2', statusColorText)}
         >
           {formatValue(kpi.value, kpi.unit)}
         </div>
-        <div className="flex flex-col gap-1 mt-1">
+        <div className="flex flex-col gap-1.5 mt-1">
           <p className="flex items-center text-xs text-muted-foreground">
             {isPositive ? (
-              <ArrowUp className="mr-1 h-3 w-3 text-emerald-500" />
+              <ArrowUp className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
             ) : isNegative ? (
-              <ArrowDown className="mr-1 h-3 w-3 text-rose-500" />
+              <ArrowDown className="mr-1.5 h-3.5 w-3.5 text-rose-500" />
             ) : (
-              <Minus className="mr-1 h-3 w-3" />
+              <Minus className="mr-1.5 h-3.5 w-3.5" />
             )}
             <span
-              className={cn('font-medium', {
+              className={cn('font-semibold', {
                 'text-emerald-600': isPositive && kpi.status !== 'danger',
                 'text-rose-600': isNegative && kpi.status !== 'success',
               })}
@@ -106,8 +116,8 @@ export function KPICard({ kpi }: KPICardProps) {
             <span className="ml-1">vs mês anterior</span>
           </p>
           {kpi.target !== undefined && (
-            <p className="flex items-center text-xs text-muted-foreground mt-1">
-              <Target className="mr-1 h-3 w-3 opacity-50" />
+            <p className="flex items-center text-xs text-muted-foreground mt-0.5">
+              <Target className="mr-1.5 h-3 w-3 opacity-60" />
               Meta:{' '}
               <span className="font-medium ml-1">
                 {typeof kpi.target === 'number'

@@ -166,20 +166,31 @@ export function AppSidebar() {
   }, [activeClinicId, user])
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
+    <Sidebar 
+      collapsible="icon" 
+      className="border-r border-border/50"
+      style={{
+        boxShadow: '2px 0 8px 0 rgba(0, 0, 0, 0.04)',
+      }}
+    >
+      <SidebarHeader className="border-b border-border/50 bg-white/50 backdrop-blur-sm">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="hover:bg-accent/50 transition-all">
               <Link
                 to={isMentor ? '/clinicas' : `/dashboard/${user?.clinicId}`}
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div 
+                  className="flex aspect-square size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
+                  style={{
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
                   <Building2 className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Painel KPI</span>
-                  <span className="truncate text-xs">Consultoria Clínica</span>
+                  <span className="truncate text-xs text-muted-foreground">Consultoria Clínica</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -190,21 +201,27 @@ export function AppSidebar() {
       <SidebarContent>
         {isMentor && (
           <div className="px-3 py-2">
-            <h2 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground group-data-[collapsible=icon]:hidden">
+            <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
               Contexto
             </h2>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex w-full items-center justify-between rounded-md border p-2 text-sm hover:bg-accent group-data-[collapsible=icon]:hidden">
-                  <span className="truncate">
+                <button className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-white/50 backdrop-blur-sm p-2.5 text-sm transition-all hover:bg-accent/50 group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-medium">
                     {currentClinic ? currentClinic.name : 'Selecionar Clínica'}
                   </span>
                   <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuContent 
+                className="w-56 rounded-xl border-border/50" 
+                align="start"
+                style={{
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+                }}
+              >
                 {clinics.map((clinic) => (
-                  <DropdownMenuItem key={clinic.id} asChild>
+                  <DropdownMenuItem key={clinic.id} asChild className="rounded-lg">
                     <Link to={`/dashboard/${clinic.id}`}>{clinic.name}</Link>
                   </DropdownMenuItem>
                 ))}
@@ -433,35 +450,38 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/50 bg-white/50 backdrop-blur-sm">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all hover:bg-accent/50"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-8 w-8 rounded-xl ring-2 ring-primary/10">
                     <AvatarImage src={user?.avatarUrl} alt={user?.name} />
-                    <AvatarFallback className="rounded-lg">
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
                       {user?.name?.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{user?.name}</span>
-                    <span className="truncate text-xs">{user?.email}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                   </div>
-                  <ChevronDown className="ml-auto size-4" />
+                  <ChevronDown className="ml-auto size-4 opacity-50" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl border-border/50"
                 side={isMobile ? 'bottom' : 'right'}
                 align="end"
                 sideOffset={4}
+                style={{
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+                }}
               >
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="rounded-lg">
                   <Link to="/perfil">
                     <User className="mr-2 h-4 w-4" />
                     Perfil
@@ -470,7 +490,7 @@ export function AppSidebar() {
                 <SidebarSeparator />
                 <DropdownMenuItem
                   onClick={logout}
-                  className="text-destructive focus:text-destructive"
+                  className="text-destructive focus:text-destructive rounded-lg"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair

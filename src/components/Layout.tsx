@@ -38,13 +38,21 @@ export default function Layout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
+        <header 
+          className="flex h-16 shrink-0 items-center gap-2 border-b border-border/50 px-4"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.03)',
+          }}
+        >
+          <SidebarTrigger className="-ml-1 transition-all hover:bg-accent/50" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage className="capitalize">
+                <BreadcrumbPage className="capitalize font-medium">
                   {pathSegments[0] || 'Início'}
                 </BreadcrumbPage>
               </BreadcrumbItem>
@@ -61,7 +69,7 @@ export default function Layout() {
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <main className="flex-1 overflow-auto bg-slate-50/50">
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-white via-white to-slate-50/30">
           <Outlet />
         </main>
       </SidebarInset>
