@@ -2173,6 +2173,35 @@ router.get('/orders/:clinicId', async (req, res) => {
   }
 })
 
+// Rota para contar pedidos pendentes de aprovação (apenas gestoras)
+// IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
+router.get('/orders/:clinicId/pending-count', async (req, res) => {
+  const { clinicId } = req.params
+  
+  // Verificar se é gestora (usar req.user ou req.auth, dependendo do que estiver disponível)
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos pendentes' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    const result = await query(
+      `SELECT COUNT(*) as count FROM daily_order_entries WHERE clinic_id = $1 AND approved = false`,
+      [clinicId]
+    )
+    
+    res.json({ count: parseInt(result.rows[0].count, 10) })
+  } catch (error: any) {
+    console.error('Get pending orders count error:', error)
+    res.status(500).json({ error: 'Failed to get pending orders count', message: error.message })
+  }
+})
+
 router.get('/orders/:clinicId/:orderId', async (req, res) => {
   const { clinicId } = req.params
   const hasPermission = await canViewOrders(req, clinicId)
@@ -2598,13 +2627,14 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
 router.post('/orders/:clinicId/:orderId/approve', async (req, res) => {
   const { clinicId, orderId } = req.params
   
-  // Verificar se é gestora
-  if (!req.auth || req.auth.role !== 'GESTOR_CLINICA') {
+  // Verificar se é gestora (usar req.user ou req.auth, dependendo do que estiver disponível)
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
     return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem aprovar pedidos' })
   }
   
   // Verificar se a clínica corresponde
-  if (req.auth.clinicId !== clinicId) {
+  if (auth.clinicId !== clinicId) {
     return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
   }
   
@@ -2624,12 +2654,13 @@ router.post('/orders/:clinicId/:orderId/approve', async (req, res) => {
     }
     
     // Aprovar pedido
+    const auth = req.auth || req.user
     const result = await query(
       `UPDATE daily_order_entries
        SET approved = true, approved_at = CURRENT_TIMESTAMP, approved_by = $1
        WHERE id = $2 AND clinic_id = $3
        RETURNING *`,
-      [req.auth.userId, orderId, clinicId]
+      [auth.sub, orderId, clinicId]
     )
     
     const row = result.rows[0]
@@ -2696,33 +2727,6 @@ router.post('/orders/:clinicId/:orderId/approve', async (req, res) => {
   } catch (error: any) {
     console.error('Approve order error:', error)
     res.status(500).json({ error: 'Failed to approve order', message: error.message })
-  }
-})
-
-// Rota para contar pedidos pendentes de aprovação (apenas gestoras)
-router.get('/orders/:clinicId/pending-count', async (req, res) => {
-  const { clinicId } = req.params
-  
-  // Verificar se é gestora
-  if (!req.auth || req.auth.role !== 'GESTOR_CLINICA') {
-    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos pendentes' })
-  }
-  
-  // Verificar se a clínica corresponde
-  if (req.auth.clinicId !== clinicId) {
-    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
-  }
-  
-  try {
-    const result = await query(
-      `SELECT COUNT(*) as count FROM daily_order_entries WHERE clinic_id = $1 AND approved = false`,
-      [clinicId]
-    )
-    
-    res.json({ count: parseInt(result.rows[0].count, 10) })
-  } catch (error: any) {
-    console.error('Get pending orders count error:', error)
-    res.status(500).json({ error: 'Failed to get pending orders count', message: error.message })
   }
 })
 

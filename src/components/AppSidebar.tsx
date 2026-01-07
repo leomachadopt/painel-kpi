@@ -53,6 +53,7 @@ export function AppSidebar() {
   const currentClinic = clinics.find((c) => c.id === clinicId)
 
   const isMentor = user?.role === 'MENTOR'
+  const isGestor = user?.role === 'GESTOR_CLINICA'
   const activeClinicId = currentClinic?.id || user?.clinicId
 
   // Calcular número de alertas ativos (apenas se tiver permissão para editar alinhadores)
@@ -63,23 +64,28 @@ export function AppSidebar() {
   // Buscar contagem de pedidos pendentes (apenas para gestoras)
   useEffect(() => {
     const loadPendingOrdersCount = async () => {
-      if (user?.role === 'GESTOR_CLINICA' && activeClinicId) {
+      if (isGestor && activeClinicId) {
         try {
           const result = await dailyEntriesApi.order.getPendingCount(activeClinicId)
-          setPendingOrdersCount(result.count)
+          const count = result.count || 0
+          setPendingOrdersCount(count)
+          console.log('Pending orders count:', count, 'for clinic:', activeClinicId)
         } catch (error) {
           console.error('Error loading pending orders count:', error)
+          setPendingOrdersCount(0)
         }
       } else {
         setPendingOrdersCount(0)
       }
     }
 
-    loadPendingOrdersCount()
-    // Recarregar a cada 30 segundos
-    const interval = setInterval(loadPendingOrdersCount, 30000)
-    return () => clearInterval(interval)
-  }, [user?.role, activeClinicId])
+    if (user && activeClinicId) {
+      loadPendingOrdersCount()
+      // Recarregar a cada 30 segundos
+      const interval = setInterval(loadPendingOrdersCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isGestor, activeClinicId, user])
 
   return (
     <Sidebar collapsible="icon">
@@ -219,7 +225,7 @@ export function AppSidebar() {
                     <Link to={`/pedidos/${activeClinicId}`}>
                       <Package />
                       <span>Pedidos</span>
-                      {user?.role === 'GESTOR_CLINICA' && pendingOrdersCount > 0 && (
+                      {isGestor && pendingOrdersCount > 0 && (
                         <SidebarMenuBadge className="bg-orange-500 text-white">
                           {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
                         </SidebarMenuBadge>
