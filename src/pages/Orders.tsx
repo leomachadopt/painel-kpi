@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, Package, Eye, Edit2, Trash2 } from 'lucide-react'
+import { Search, Loader2, Package, Eye, Edit2, Trash2, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -45,12 +45,15 @@ import { ViewOrderDialog } from '@/components/orders/ViewOrderDialog'
 import { EditOrderDialog } from '@/components/orders/EditOrderDialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
+import useAuthStore from '@/stores/useAuthStore'
 
 export default function Orders() {
   const { clinicId } = useParams<{ clinicId: string }>()
+  const { user } = useAuthStore()
   const { canView, canEdit } = usePermissions()
   const canViewOrders = canView('canViewOrders') || canEdit('canEditOrders')
   const canEditOrders = canEdit('canEditOrders')
+  const isGestor = user?.role === 'GESTOR_CLINICA'
   const [orders, setOrders] = useState<DailyOrderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -63,6 +66,7 @@ export default function Orders() {
   const [editOrderId, setEditOrderId] = useState<string | null>(null)
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [approvingOrderId, setApprovingOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (clinicId) {
@@ -141,6 +145,21 @@ export default function Orders() {
       toast.error(err?.message || 'Erro ao excluir pedido')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleApprove = async (orderId: string) => {
+    if (!clinicId) return
+
+    setApprovingOrderId(orderId)
+    try {
+      await dailyEntriesApi.order.approve(clinicId, orderId)
+      toast.success('Pedido aprovado com sucesso!')
+      loadOrders()
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao aprovar pedido')
+    } finally {
+      setApprovingOrderId(null)
     }
   }
 
@@ -316,6 +335,22 @@ export default function Orders() {
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </>
+                            )}
+                            {isGestor && !order.approved && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleApprove(order.id)}
+                                title="Autorizar Pedido"
+                                disabled={approvingOrderId === order.id}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                {approvingOrderId === order.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="h-4 w-4" />
+                                )}
+                              </Button>
                             )}
                           </div>
                         </TableCell>

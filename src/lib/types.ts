@@ -312,6 +312,9 @@ export interface DailyOrderEntry {
   observations?: string | null
   total?: number
   items?: OrderItemEntry[]
+  approved: boolean
+  approvedAt?: string | null
+  approvedBy?: string | null
   createdAt: string
   updatedAt: string
 }

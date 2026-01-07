@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   Building2,
@@ -38,6 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
+import { dailyEntriesApi } from '@/services/api'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
@@ -45,6 +47,7 @@ export function AppSidebar() {
   const location = useLocation()
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit, canView } = usePermissions()
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -56,6 +59,27 @@ export function AppSidebar() {
   const alertsCount = activeClinicId && canEdit('canEditAligners')
     ? calculateAlignersAlerts(activeClinicId).length
     : 0
+
+  // Buscar contagem de pedidos pendentes (apenas para gestoras)
+  useEffect(() => {
+    const loadPendingOrdersCount = async () => {
+      if (user?.role === 'GESTOR_CLINICA' && activeClinicId) {
+        try {
+          const result = await dailyEntriesApi.order.getPendingCount(activeClinicId)
+          setPendingOrdersCount(result.count)
+        } catch (error) {
+          console.error('Error loading pending orders count:', error)
+        }
+      } else {
+        setPendingOrdersCount(0)
+      }
+    }
+
+    loadPendingOrdersCount()
+    // Recarregar a cada 30 segundos
+    const interval = setInterval(loadPendingOrdersCount, 30000)
+    return () => clearInterval(interval)
+  }, [user?.role, activeClinicId])
 
   return (
     <Sidebar collapsible="icon">
@@ -195,6 +219,11 @@ export function AppSidebar() {
                     <Link to={`/pedidos/${activeClinicId}`}>
                       <Package />
                       <span>Pedidos</span>
+                      {user?.role === 'GESTOR_CLINICA' && pendingOrdersCount > 0 && (
+                        <SidebarMenuBadge className="bg-orange-500 text-white">
+                          {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                        </SidebarMenuBadge>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

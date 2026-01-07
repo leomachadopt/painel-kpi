@@ -425,6 +425,14 @@ export const dailyEntriesApi = {
         body: JSON.stringify(order),
       }),
 
+    approve: (clinicId: string, orderId: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}/approve`, {
+        method: 'POST',
+      }),
+
+    getPendingCount: (clinicId: string) =>
+      apiCall<{ count: number }>(`/daily-entries/orders/${clinicId}/pending-count`),
+
     delete: (clinicId: string, orderId: string) =>
       apiCall<{ message: string }>(`/daily-entries/orders/${clinicId}/${orderId}`, {
         method: 'DELETE',

@@ -2160,6 +2160,9 @@ router.get('/orders/:clinicId', async (req, res) => {
         cancelledAt: row.cancelled_at || null,
         observations: row.observations || null,
         total: row.total ? parseFloat(row.total) : 0,
+        approved: row.approved || false,
+        approvedAt: row.approved_at || null,
+        approvedBy: row.approved_by || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }))
@@ -2245,6 +2248,9 @@ router.get('/orders/:clinicId/:orderId', async (req, res) => {
       observations: row.observations || null,
       total: row.total ? parseFloat(row.total) : 0,
       items,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2301,13 +2307,13 @@ router.post('/orders/:clinicId', async (req, res) => {
       return sum + (quantity * unitPrice)
     }, 0)
     
-    // Inserir pedido
+    // Inserir pedido (sempre começa como não aprovado)
     const result = await query(
       `INSERT INTO daily_order_entries
        (id, clinic_id, date, supplier_id, order_number, total, requested, requested_at,
         confirmed, confirmed_at, in_production, in_production_at, ready, ready_at,
-        delivered, delivered_at, cancelled, cancelled_at, observations)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        delivered, delivered_at, cancelled, cancelled_at, observations, approved)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
        RETURNING *`,
       [
         orderId,
@@ -2329,6 +2335,7 @@ router.post('/orders/:clinicId', async (req, res) => {
         cancelled || false,
         cancelled && cancelledAt ? cancelledAt : null,
         observations?.trim() || null,
+        false, // approved sempre começa como false
       ]
     )
     
@@ -2397,6 +2404,9 @@ router.post('/orders/:clinicId', async (req, res) => {
       observations: row.observations || null,
       total: row.total ? parseFloat(row.total) : 0,
       items: insertedItems,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2442,6 +2452,26 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
     
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'At least one item is required' })
+    }
+    
+    // Verificar se o pedido existe e se está aprovado antes de permitir edição de fases
+    const existingOrder = await query(
+      `SELECT approved FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (existingOrder.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    const isApproved = existingOrder.rows[0].approved
+    
+    // Se não está aprovado, não permite editar as fases (mas permite editar outros campos)
+    if (!isApproved && (requested || confirmed || inProduction || ready || delivered || cancelled)) {
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Pedido precisa ser aprovado pela gestora antes de editar as fases' 
+      })
     }
     
     // Calcular total do pedido
@@ -2552,12 +2582,147 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
       observations: row.observations || null,
       total: row.total ? parseFloat(row.total) : 0,
       items: insertedItems,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
   } catch (error: any) {
     console.error('Update order error:', error)
     res.status(500).json({ error: 'Failed to update order', message: error.message })
+  }
+})
+
+// Rota para aprovar pedido (apenas gestoras)
+router.post('/orders/:clinicId/:orderId/approve', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  
+  // Verificar se é gestora
+  if (!req.auth || req.auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem aprovar pedidos' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (req.auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    // Verificar se o pedido existe e não está aprovado
+    const orderResult = await query(
+      `SELECT id, approved FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    if (orderResult.rows[0].approved) {
+      return res.status(400).json({ error: 'Order already approved' })
+    }
+    
+    // Aprovar pedido
+    const result = await query(
+      `UPDATE daily_order_entries
+       SET approved = true, approved_at = CURRENT_TIMESTAMP, approved_by = $1
+       WHERE id = $2 AND clinic_id = $3
+       RETURNING *`,
+      [req.auth.userId, orderId, clinicId]
+    )
+    
+    const row = result.rows[0]
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [row.supplier_id])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    // Buscar itens do pedido
+    const itemsResult = await query(
+      `SELECT 
+        oie.id,
+        oie.order_id,
+        oie.item_id,
+        oie.quantity,
+        oie.unit_price,
+        oie.notes,
+        oie.created_at,
+        oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = $1
+       ORDER BY oie.created_at ASC`,
+      [orderId]
+    )
+    
+    const items = itemsResult.rows.map((itemRow) => ({
+      id: itemRow.id,
+      orderId: itemRow.order_id,
+      itemId: itemRow.item_id,
+      itemName: itemRow.item_name,
+      quantity: parseFloat(itemRow.quantity),
+      unitPrice: itemRow.unit_price ? parseFloat(itemRow.unit_price) : null,
+      notes: itemRow.notes || null,
+      createdAt: itemRow.created_at,
+    }))
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items,
+      approved: row.approved,
+      approvedAt: row.approved_at,
+      approvedBy: row.approved_by,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Approve order error:', error)
+    res.status(500).json({ error: 'Failed to approve order', message: error.message })
+  }
+})
+
+// Rota para contar pedidos pendentes de aprovação (apenas gestoras)
+router.get('/orders/:clinicId/pending-count', async (req, res) => {
+  const { clinicId } = req.params
+  
+  // Verificar se é gestora
+  if (!req.auth || req.auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos pendentes' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (req.auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    const result = await query(
+      `SELECT COUNT(*) as count FROM daily_order_entries WHERE clinic_id = $1 AND approved = false`,
+      [clinicId]
+    )
+    
+    res.json({ count: parseInt(result.rows[0].count, 10) })
+  } catch (error: any) {
+    console.error('Get pending orders count error:', error)
+    res.status(500).json({ error: 'Failed to get pending orders count', message: error.message })
   }
 })
 

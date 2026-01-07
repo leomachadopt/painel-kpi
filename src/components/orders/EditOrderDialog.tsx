@@ -141,6 +141,12 @@ export function EditOrderDialog({
   const onSubmit = async (data: z.infer<typeof schema>) => {
     if (!order || !orderId || !clinicId) return
 
+    // Verificar se o pedido está aprovado antes de permitir edição de fases
+    if (!order.approved && (data.requested || data.confirmed || data.inProduction || data.ready || data.delivered || data.cancelled)) {
+      toast.error('Pedido precisa ser aprovado pela gestora antes de editar as fases')
+      return
+    }
+
     setSaving(true)
     try {
       // Preparar itens para atualização (manter os itens existentes)
@@ -231,8 +237,16 @@ export function EditOrderDialog({
 
               {/* Fases do Pedido */}
               <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
-                <h3 className="text-sm font-semibold">Fases do Pedido</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Fases do Pedido</h3>
+                  {!order.approved && (
+                    <span className="text-xs text-muted-foreground italic">
+                      (Aguardando aprovação da gestora)
+                    </span>
+                  )}
+                </div>
                 
+                <div className={!order.approved ? 'opacity-50 pointer-events-none' : ''}>
                 <FormField
                   control={form.control}
                   name="requested"
@@ -244,6 +258,7 @@ export function EditOrderDialog({
                           <Switch
                             checked={field.value}
                             onCheckedChange={(v) => toggleWithDate('requested', 'requestedAt', v)}
+                            disabled={!order.approved}
                           />
                         </FormControl>
                       </FormItem>
@@ -436,6 +451,7 @@ export function EditOrderDialog({
                     </div>
                   )}
                 />
+                </div>
               </div>
 
               <FormField

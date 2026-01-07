@@ -119,18 +119,19 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           unitPrice: item.unitPrice || null,
           notes: item.notes || null,
         })),
-        requested: data.requested,
-        requestedAt: data.requested ? data.requestedAt || null : null,
-        confirmed: data.confirmed,
-        confirmedAt: data.confirmed ? data.confirmedAt || null : null,
-        inProduction: data.inProduction,
-        inProductionAt: data.inProduction ? data.inProductionAt || null : null,
-        ready: data.ready,
-        readyAt: data.ready ? data.readyAt || null : null,
-        delivered: data.delivered,
-        deliveredAt: data.delivered ? data.deliveredAt || null : null,
-        cancelled: data.cancelled,
-        cancelledAt: data.cancelled ? data.cancelledAt || null : null,
+        // Fases sempre começam como false - só podem ser preenchidas após aprovação
+        requested: false,
+        requestedAt: null,
+        confirmed: false,
+        confirmedAt: null,
+        inProduction: false,
+        inProductionAt: null,
+        ready: false,
+        readyAt: null,
+        delivered: false,
+        deliveredAt: null,
+        cancelled: false,
+        cancelledAt: null,
         observations: data.observations || null,
       })
       
@@ -399,10 +400,16 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           )}
         </div>
 
-        {/* Fases do Pedido */}
+        {/* Fases do Pedido - Desabilitadas até aprovação */}
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
-          <h3 className="text-sm font-semibold">Fases do Pedido</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Fases do Pedido</h3>
+            <span className="text-xs text-muted-foreground italic">
+              (Será liberado após aprovação pela gestora)
+            </span>
+          </div>
           
+          <div className="space-y-4 opacity-50 pointer-events-none">
           <FormField
             control={form.control}
             name="requested"
@@ -414,6 +421,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     <Switch
                       checked={field.value}
                       onCheckedChange={(v) => toggleWithDate('requested', 'requestedAt', v)}
+                      disabled
                     />
                   </FormControl>
                 </FormItem>
@@ -606,6 +614,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
               </div>
             )}
           />
+          </div>
         </div>
 
         <FormField
