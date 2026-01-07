@@ -244,6 +244,36 @@ async function canEditAligners(req: any, clinicId: string): Promise<boolean> {
   return false
 }
 
+/**
+ * Helper function to check if user can create/edit advance invoice entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditAdvanceInvoice permission
+ */
+async function canEditAdvanceInvoice(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditAdvanceInvoice === true
+  }
+
+  return false
+}
+
 // ================================
 // FINANCIAL ENTRIES
 // ================================
@@ -3882,6 +3912,200 @@ router.delete('/order-items/:clinicId/:itemId', async (req, res) => {
   } catch (error) {
     console.error('Delete order item error:', error)
     res.status(500).json({ error: 'Failed to delete order item' })
+  }
+})
+
+// ================================
+// ADVANCE INVOICE ENTRIES
+// ================================
+router.get('/advance-invoice/:clinicId', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const result = await query(
+      `SELECT * FROM daily_advance_invoice_entries WHERE clinic_id = $1 ORDER BY date DESC`,
+      [clinicId]
+    )
+
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        date: row.date,
+        patientName: row.patient_name,
+        code: row.code,
+        doctorId: row.doctor_id || null,
+        billedToThirdParty: row.billed_to_third_party || false,
+        thirdPartyCode: row.third_party_code || null,
+        thirdPartyName: row.third_party_name || null,
+        value: parseFloat(row.value),
+      }))
+    )
+  } catch (error) {
+    console.error('Get advance invoice entries error:', error)
+    res.status(500).json({ error: 'Failed to fetch advance invoice entries' })
+  }
+})
+
+router.post('/advance-invoice/:clinicId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditAdvanceInvoice(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { id, date, patientName, code, doctorId, billedToThirdParty, thirdPartyCode, thirdPartyName, value } = req.body
+    
+    // Validate required fields
+    if (!date || !patientName || !code || value === undefined) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+    
+    // Validate: if billedToThirdParty is true, thirdPartyName is required
+    if (billedToThirdParty && !thirdPartyName) {
+      return res.status(400).json({ error: 'Nome do terceiro é obrigatório quando faturado para terceiros' })
+    }
+    
+    const entryId =
+      id || `advance-invoice-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+    const result = await query(
+      `INSERT INTO daily_advance_invoice_entries
+       (id, clinic_id, date, patient_name, code, doctor_id, billed_to_third_party, third_party_code, third_party_name, value)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        entryId,
+        clinicId,
+        date,
+        patientName,
+        code,
+        doctorId || null,
+        billedToThirdParty || false,
+        thirdPartyCode || null,
+        thirdPartyName || null,
+        value,
+      ]
+    )
+
+    res.status(201).json({
+      id: result.rows[0].id,
+      date: result.rows[0].date,
+      patientName: result.rows[0].patient_name,
+      code: result.rows[0].code,
+      doctorId: result.rows[0].doctor_id || null,
+      billedToThirdParty: result.rows[0].billed_to_third_party || false,
+      thirdPartyCode: result.rows[0].third_party_code || null,
+      thirdPartyName: result.rows[0].third_party_name || null,
+      value: parseFloat(result.rows[0].value),
+    })
+  } catch (error: any) {
+    console.error('Create advance invoice entry error:', error)
+    res.status(500).json({
+      error: 'Failed to create advance invoice entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.put('/advance-invoice/:clinicId/:entryId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditAdvanceInvoice(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { entryId } = req.params
+    const { date, patientName, code, doctorId, billedToThirdParty, thirdPartyCode, thirdPartyName, value } = req.body
+
+    // Validate required fields
+    if (!date || !patientName || !code || value === undefined) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+    
+    // Validate: if billedToThirdParty is true, thirdPartyName is required
+    if (billedToThirdParty && !thirdPartyName) {
+      return res.status(400).json({ error: 'Nome do terceiro é obrigatório quando faturado para terceiros' })
+    }
+
+    // Check if entry exists
+    const checkResult = await query(
+      `SELECT id FROM daily_advance_invoice_entries WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    // Update entry
+    const result = await query(
+      `UPDATE daily_advance_invoice_entries
+       SET date = $1, patient_name = $2, code = $3, doctor_id = $4, 
+           billed_to_third_party = $5, third_party_code = $6, third_party_name = $7, value = $8
+       WHERE id = $9 AND clinic_id = $10
+       RETURNING *`,
+      [
+        date,
+        patientName,
+        code,
+        doctorId || null,
+        billedToThirdParty || false,
+        thirdPartyCode || null,
+        thirdPartyName || null,
+        value,
+        entryId,
+        clinicId,
+      ]
+    )
+
+    res.json({
+      id: result.rows[0].id,
+      date: result.rows[0].date,
+      patientName: result.rows[0].patient_name,
+      code: result.rows[0].code,
+      doctorId: result.rows[0].doctor_id || null,
+      billedToThirdParty: result.rows[0].billed_to_third_party || false,
+      thirdPartyCode: result.rows[0].third_party_code || null,
+      thirdPartyName: result.rows[0].third_party_name || null,
+      value: parseFloat(result.rows[0].value),
+    })
+  } catch (error: any) {
+    console.error('Update advance invoice entry error:', error)
+    res.status(500).json({
+      error: 'Failed to update advance invoice entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.delete('/advance-invoice/:clinicId/:entryId', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditAdvanceInvoice(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const { entryId } = req.params
+    const result = await query(
+      `DELETE FROM daily_advance_invoice_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete advance invoice entry error:', error)
+    res.status(500).json({ error: 'Failed to delete advance invoice entry' })
   }
 })
 

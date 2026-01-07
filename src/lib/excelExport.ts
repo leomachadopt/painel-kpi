@@ -1,6 +1,22 @@
 // Import xlsx-js-style que estende xlsx com suporte a estilos
-import * as XLSX from 'xlsx-js-style'
-import type { DailyFinancialEntry, Clinic } from '@/lib/types'
+import * as XLSXStatic from 'xlsx-js-style'
+import type { DailyFinancialEntry, DailyAdvanceInvoiceEntry, Clinic } from '@/lib/types'
+
+// Garantir que XLSX está disponível
+let XLSX: typeof XLSXStatic = XLSXStatic
+
+// Função helper para garantir que XLSX está carregado
+function getXLSX() {
+  if (!XLSX || !XLSX.utils || !XLSX.utils.book_new) {
+    // Tentar usar a importação estática primeiro
+    if (XLSXStatic && XLSXStatic.utils && XLSXStatic.utils.book_new) {
+      XLSX = XLSXStatic
+      return XLSX
+    }
+    throw new Error('Biblioteca XLSX não está disponível. Por favor, recarregue a página.')
+  }
+  return XLSX
+}
 
 interface ExportOptions {
   clinic: Clinic
@@ -548,4 +564,226 @@ export function exportFinancialToExcel(
     const fileName = `Relatorio_Faturacao_${clinic.name.replace(/\s+/g, '_')}_${startDate}_${endDate}.xlsx`
     XLSX.writeFile(wb, fileName)
   }
+}
+
+interface AdvanceInvoiceExportOptions {
+  clinic: Clinic
+  startDate: string
+  endDate: string
+}
+
+export function exportAdvanceInvoiceToExcel(
+  data: DailyAdvanceInvoiceEntry[],
+  options: AdvanceInvoiceExportOptions
+) {
+  const { clinic, startDate, endDate } = options
+
+  // Garantir que XLSX está disponível
+  const XLSXLib = getXLSX()
+
+  // Formatar datas para exibição
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('pt-PT')
+  }
+
+  const getDoctorName = (id: string | null | undefined) => {
+    if (!id) return 'Não especificado'
+    return clinic.configuration.doctors.find((d) => d.id === id)?.name || 'Desconhecido'
+  }
+
+  // Agrupar por médico
+  const rowsByDoctor = new Map<string, DailyAdvanceInvoiceEntry[]>()
+  data.forEach((entry) => {
+    const doctorKey = entry.doctorId || 'no-doctor'
+    if (!rowsByDoctor.has(doctorKey)) {
+      rowsByDoctor.set(doctorKey, [])
+    }
+    rowsByDoctor.get(doctorKey)!.push(entry)
+  })
+
+  // Calcular totais
+  const doctorTotals = new Map<string, number>()
+  rowsByDoctor.forEach((doctorRows, doctorId) => {
+    const total = doctorRows.reduce((sum, row) => sum + row.value, 0)
+    doctorTotals.set(doctorId, total)
+  })
+
+  const grandTotal = Array.from(doctorTotals.values()).reduce(
+    (sum, doctorTotal) => sum + doctorTotal,
+    0
+  )
+
+  // Preparar dados da planilha
+  const worksheetData = [
+    // Cabeçalho
+    ['Relatório de Fatura de Adiantamento', '', '', '', ''],
+    [`Clínica: ${clinic.name}`, '', '', '', ''],
+    [`Período: ${formatDate(startDate)} a ${formatDate(endDate)}`, '', '', '', ''],
+    ['', '', '', '', ''],
+    // Cabeçalhos da tabela
+    ['Médico', 'Código Paciente', 'Código Terceiros', 'Nome', 'Valor'],
+  ]
+
+  let currentRow = 4 // Começa após os cabeçalhos
+  const headerRow = 4
+  const totalRowNumbers: number[] = []
+
+  // Adicionar dados agrupados por médico
+  rowsByDoctor.forEach((doctorRows, doctorId) => {
+    const doctorName = getDoctorName(doctorId === 'no-doctor' ? null : doctorId)
+    const total = doctorTotals.get(doctorId)!
+
+    doctorRows.forEach((row) => {
+      const name = row.billedToThirdParty && row.thirdPartyName
+        ? row.thirdPartyName
+        : row.patientName
+      const thirdPartyCode = row.billedToThirdParty ? (row.thirdPartyCode || '') : ''
+
+      worksheetData.push([
+        doctorName,
+        row.code,
+        thirdPartyCode,
+        name,
+        row.value,
+      ])
+      currentRow++
+    })
+
+    // Linha de total do médico
+    worksheetData.push([
+      '',
+      `Total ${doctorName}:`,
+      '',
+      '',
+      total,
+    ])
+    totalRowNumbers.push(currentRow)
+    currentRow++
+
+    // Linha vazia
+    worksheetData.push(['', '', '', '', ''])
+    currentRow++
+  })
+
+  // Linha de total geral
+  worksheetData.push([
+    '',
+    'Total Geral:',
+    '',
+    '',
+    grandTotal,
+  ])
+  totalRowNumbers.push(currentRow)
+
+  // Criar workbook e worksheet
+  const wb = XLSXLib.utils.book_new()
+  const ws = XLSXLib.utils.aoa_to_sheet(worksheetData)
+
+  const totalCols = 5
+
+  // Aplicar estilos
+  // Título (linha 1)
+  applyStyle(ws, 'A1', getTitleStyle())
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }]
+
+  // Informações da clínica e período (linhas 2 e 3)
+  applyStyle(ws, 'A2', getInfoStyle())
+  applyStyle(ws, 'A3', getInfoStyle())
+
+  // Cabeçalhos da tabela (linha 5)
+  for (let col = 0; col < totalCols; col++) {
+    const colLetter = colToLetter(col)
+    applyStyle(ws, `${colLetter}${headerRow + 1}`, getHeaderStyle())
+  }
+
+  // Aplicar estilos aos dados
+  let dataRowIndex = 0
+  rowsByDoctor.forEach((doctorRows) => {
+    doctorRows.forEach(() => {
+      const row = headerRow + 2 + dataRowIndex
+      const isAlternate = dataRowIndex % 2 === 1
+
+      // Coluna Médico (A)
+      applyStyle(ws, `A${row}`, getDataStyle(isAlternate))
+      // Coluna Código Paciente (B)
+      applyStyle(ws, `B${row}`, getDataStyle(isAlternate))
+      // Coluna Código Terceiros (C)
+      applyStyle(ws, `C${row}`, getDataStyle(isAlternate))
+      // Coluna Nome (D)
+      applyStyle(ws, `D${row}`, getDataStyle(isAlternate))
+      // Coluna Valor (E)
+      applyStyle(ws, `E${row}`, getNumberStyle(isAlternate))
+
+      dataRowIndex++
+    })
+
+    // Linha de total do médico
+    const totalRowNum = headerRow + 2 + dataRowIndex
+    for (let col = 0; col < totalCols; col++) {
+      const colLetter = colToLetter(col)
+      ensureCell(ws, `${colLetter}${totalRowNum}`)
+      
+      if (col === 4) {
+        // Coluna de valor
+        applyStyle(ws, `${colLetter}${totalRowNum}`, {
+          ...getDoctorTotalStyle(),
+          numFmt: '#,##0.00" €"'
+        })
+      } else {
+        applyStyle(ws, `${colLetter}${totalRowNum}`, getDoctorTotalStyle())
+      }
+    }
+
+    dataRowIndex += 2 // Pula linha de total e linha vazia
+  })
+
+  // Linha de total geral
+  const grandTotalRowNum = headerRow + 2 + dataRowIndex
+  for (let col = 0; col < totalCols; col++) {
+    const colLetter = colToLetter(col)
+    ensureCell(ws, `${colLetter}${grandTotalRowNum}`)
+    
+    if (col === 4) {
+      // Coluna de valor
+      applyStyle(ws, `${colLetter}${grandTotalRowNum}`, {
+        ...getGrandTotalStyle(),
+        numFmt: '#,##0.00" €"'
+      })
+    } else {
+      applyStyle(ws, `${colLetter}${grandTotalRowNum}`, getGrandTotalStyle())
+    }
+  }
+
+  // Ajustar larguras das colunas
+  const colWidths = [
+    { wch: 20 }, // Médico
+    { wch: 15 }, // Código Paciente
+    { wch: 15 }, // Código Terceiros
+    { wch: 30 }, // Nome
+    { wch: 15 }, // Valor
+  ]
+  ws['!cols'] = colWidths
+
+  // Definir altura uniforme para todas as linhas de dados
+  const defaultRowHeight = 20
+  const totalRows = worksheetData.length
+  ws['!rows'] = []
+  for (let r = 0; r < totalRows; r++) {
+    if (r === 0) {
+      ws['!rows'][r] = { hpt: 30 }
+    } else if (r === headerRow) {
+      ws['!rows'][r] = { hpt: 25 }
+    } else if (totalRowNumbers.includes(r)) {
+      ws['!rows'][r] = { hpt: 22 }
+    } else {
+      ws['!rows'][r] = { hpt: defaultRowHeight }
+    }
+  }
+
+  XLSXLib.utils.book_append_sheet(wb, ws, 'Fatura de Adiantamento')
+
+  // Gerar nome do arquivo
+  const fileName = `Relatorio_Fatura_Adiantamento_${clinic.name.replace(/\s+/g, '_')}_${startDate}_${endDate}.xlsx`
+  XLSXLib.writeFile(wb, fileName)
 }

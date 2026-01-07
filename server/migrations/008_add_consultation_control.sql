@@ -21,3 +21,4 @@ CREATE TABLE IF NOT EXISTS daily_consultation_control_entries (
 CREATE INDEX IF NOT EXISTS idx_daily_consultation_control_clinic_date 
   ON daily_consultation_control_entries(clinic_id, date);
 
+

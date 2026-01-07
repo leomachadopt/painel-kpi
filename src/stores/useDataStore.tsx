@@ -13,6 +13,7 @@ import {
   DailySourceEntry,
   DailyConsultationControlEntry,
   DailyAlignersEntry,
+  DailyAdvanceInvoiceEntry,
   ClinicConfiguration,
   DEFAULT_MONTHLY_TARGETS,
 } from '@/lib/types'
@@ -64,6 +65,9 @@ interface DataState {
   addSourceEntry: (clinicId: string, entry: DailySourceEntry) => Promise<void>
   addAlignersEntry: (clinicId: string, entry: DailyAlignersEntry) => Promise<void>
   updateAlignersEntry: (clinicId: string, entryId: string, entry: DailyAlignersEntry) => Promise<void>
+  addAdvanceInvoiceEntry: (clinicId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
+  updateAdvanceInvoiceEntry: (clinicId: string, entryId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
+  deleteAdvanceInvoiceEntry: (clinicId: string, entryId: string) => Promise<void>
   getProspectingEntry: (
     clinicId: string,
     date: string,
@@ -90,6 +94,7 @@ interface DataState {
   prospectingEntries: Record<string, DailyProspectingEntry[]>
   consultationControlEntries: Record<string, DailyConsultationControlEntry[]>
   alignerEntries: Record<string, DailyAlignersEntry[]>
+  advanceInvoiceEntries: Record<string, DailyAdvanceInvoiceEntry[]>
   cabinetEntries: Record<string, DailyCabinetUsageEntry[]>
   serviceTimeEntries: Record<string, DailyServiceTimeEntry[]>
   sourceEntries: Record<string, DailySourceEntry[]>
@@ -145,6 +150,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   >({})
   const [alignerEntries, setAlignerEntries] = useState<
     Record<string, DailyAlignersEntry[]>
+  >({})
+  const [advanceInvoiceEntries, setAdvanceInvoiceEntries] = useState<
+    Record<string, DailyAdvanceInvoiceEntry[]>
   >({})
 
   // Load clinics from API on mount (only if authenticated)
@@ -464,7 +472,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
-    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners] =
+    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice] =
       await Promise.all([
         dailyEntriesApi.financial.getAll(clinicId),
         dailyEntriesApi.consultation.getAll(clinicId),
@@ -474,6 +482,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         dailyEntriesApi.prospecting.getAll(clinicId),
         dailyEntriesApi.consultationControl.getAll(clinicId),
         dailyEntriesApi.aligner.getAll(clinicId),
+        dailyEntriesApi.advanceInvoice.getAll(clinicId),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
@@ -484,6 +493,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setSourceEntries((prev) => ({ ...prev, [clinicId]: sources }))
     setProspectingEntries((prev) => ({ ...prev, [clinicId]: prospecting }))
     setAlignerEntries((prev) => ({ ...prev, [clinicId]: aligners }))
+    setAdvanceInvoiceEntries((prev) => ({ ...prev, [clinicId]: advanceInvoice }))
   }
 
   // Load daily entries once clinics are known (backend source of truth)
@@ -1000,8 +1010,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
         const consultationControl = consultationControlEntries[clinicId] || []
+        const aligners = alignerEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners)
       }
     } catch (error: any) {
       // Rollback on error
@@ -1044,8 +1055,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
         const consultationControl = consultationControlEntries[clinicId] || []
+        const aligners = alignerEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners)
       }
     } catch (error: any) {
       // Rollback on error
@@ -1562,6 +1574,129 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
+  const addAdvanceInvoiceEntry = async (
+    clinicId: string,
+    entry: DailyAdvanceInvoiceEntry,
+  ) => {
+    // Optimistic update
+    const prevEntries = advanceInvoiceEntries[clinicId] || []
+    setAdvanceInvoiceEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
+    try {
+      await ensurePatientExists(clinicId, entry.code, entry.patientName)
+      const saved = await dailyEntriesApi.advanceInvoice.create(clinicId, entry)
+      setAdvanceInvoiceEntries((prev) => {
+        const list = prev[clinicId] || []
+        const next = list.some((e) => e.id === saved.id)
+          ? list.map((e) => (e.id === saved.id ? saved : e))
+          : [...list, saved]
+        return { ...prev, [clinicId]: next }
+      })
+      toast.success('Fatura de adiantamento guardada com sucesso!')
+    } catch (error: any) {
+      // Rollback optimistic update
+      setAdvanceInvoiceEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para lançar fatura de adiantamento.')
+      } else {
+        toast.error(error?.message || 'Erro ao guardar fatura de adiantamento.')
+      }
+      throw error
+    }
+  }
+
+  const updateAdvanceInvoiceEntry = async (
+    clinicId: string,
+    entryId: string,
+    updatedEntry: DailyAdvanceInvoiceEntry,
+  ) => {
+    // Encontrar a entrada antiga
+    const oldEntry = advanceInvoiceEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!oldEntry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Atualizar na lista local (otimista)
+    setAdvanceInvoiceEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).map((e) =>
+        e.id === entryId ? updatedEntry : e
+      ),
+    }))
+
+    try {
+      await ensurePatientExists(clinicId, updatedEntry.code, updatedEntry.patientName)
+      await dailyEntriesApi.advanceInvoice.update(clinicId, entryId, {
+        date: updatedEntry.date,
+        patientName: updatedEntry.patientName,
+        code: updatedEntry.code,
+        doctorId: updatedEntry.doctorId || null,
+        billedToThirdParty: updatedEntry.billedToThirdParty || false,
+        thirdPartyCode: updatedEntry.thirdPartyCode || null,
+        thirdPartyName: updatedEntry.thirdPartyName || null,
+        value: updatedEntry.value,
+      })
+      toast.success('Fatura de adiantamento atualizada com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAdvanceInvoiceEntries((prev) => ({
+        ...prev,
+        [clinicId]: (prev[clinicId] || []).map((e) =>
+          e.id === entryId ? oldEntry : e
+        ),
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para editar fatura de adiantamento.')
+      } else {
+        toast.error(error?.message || 'Erro ao atualizar fatura de adiantamento.')
+      }
+      throw error
+    }
+  }
+
+  const deleteAdvanceInvoiceEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    // Encontrar a entrada antes de deletar
+    const entry = advanceInvoiceEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Remover da lista local (otimista)
+    setAdvanceInvoiceEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.advanceInvoice.delete(clinicId, entryId)
+      toast.success('Fatura de adiantamento excluída com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAdvanceInvoiceEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir fatura de adiantamento.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir fatura de adiantamento.')
+      }
+      throw error
+    }
+  }
+
   const deleteProspectingEntry = async (
     clinicId: string,
     entryId: string,
@@ -1591,8 +1726,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const serviceTime = serviceTimeEntries[clinicId] || []
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
+        const aligners = alignerEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControlEntries[clinicId] || [])
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControlEntries[clinicId] || [], aligners)
       }
     } catch (error: any) {
       // Rollback otimista
@@ -1641,8 +1777,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         const sources = sourceEntries[clinicId] || []
         const prospecting = prospectingEntries[clinicId] || []
         const consultationControl = consultationControlEntries[clinicId] || []
+        const aligners = alignerEntries[clinicId] || []
 
-        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl)
+        aggregateDailyToMonthly(clinic, financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners)
       }
     } catch (error: any) {
       // Rollback on error
@@ -2331,6 +2468,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         addSourceEntry,
         addAlignersEntry,
         updateAlignersEntry,
+        addAdvanceInvoiceEntry,
+        updateAdvanceInvoiceEntry,
         getProspectingEntry,
         getConsultationControlEntry,
         deleteFinancialEntry,
@@ -2341,12 +2480,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteServiceTimeEntry,
         deleteSourceEntry,
         deleteAlignersEntry,
+        deleteAdvanceInvoiceEntry,
         deletePatient,
         financialEntries,
         consultationEntries,
         prospectingEntries,
         consultationControlEntries,
         alignerEntries,
+        advanceInvoiceEntries,
         cabinetEntries,
         serviceTimeEntries,
         sourceEntries,

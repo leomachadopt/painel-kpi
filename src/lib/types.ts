@@ -253,6 +253,18 @@ export interface DailyConsultationControlEntry {
   oldPatientBooking: number
 }
 
+export interface DailyAdvanceInvoiceEntry {
+  id: string
+  date: string
+  patientName: string
+  code: string
+  doctorId?: string | null
+  billedToThirdParty: boolean
+  thirdPartyCode?: string | null
+  thirdPartyName?: string | null
+  value: number
+}
+
 export interface Supplier {
   id: string
   clinicId: string
@@ -417,6 +429,7 @@ export interface UserPermissions {
   canViewReportSources: boolean
   canViewReportConsultationControl: boolean
   canViewReportMarketing: boolean
+  canViewReportAdvanceInvoice: boolean
   canViewTargets: boolean
   canViewOrders: boolean
   canViewSuppliers: boolean
@@ -429,6 +442,7 @@ export interface UserPermissions {
   canEditConsultationControl: boolean
   canEditAligners: boolean
   canEditOrders: boolean
+  canEditAdvanceInvoice: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean

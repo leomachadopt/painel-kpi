@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Smile,
   Package,
+  Receipt,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -25,6 +26,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DailyFinancials } from '@/components/daily/DailyFinancials'
 import { DailyConsultations } from '@/components/daily/DailyConsultations'
+import { DailyAdvanceInvoice } from '@/components/daily/DailyAdvanceInvoice'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
 import { DailyCabinets } from '@/components/daily/DailyCabinets'
 import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
@@ -56,6 +58,7 @@ export default function Inputs() {
   // Verificar permissões
   const hasFinancial = canEdit('canEditFinancial')
   const hasConsultations = canEdit('canEditConsultations')
+  const hasAdvanceInvoice = canEdit('canEditAdvanceInvoice')
   const hasProspecting = canEdit('canEditProspecting')
   const hasCabinets = canEdit('canEditCabinets')
   const hasServiceTime = canEdit('canEditServiceTime')
@@ -67,6 +70,7 @@ export default function Inputs() {
   const firstAvailableTab =
     hasFinancial ? 'financial' :
     hasConsultations ? 'consultations' :
+    hasAdvanceInvoice ? 'advanceInvoice' :
     hasProspecting ? 'prospecting' :
     hasCabinets ? 'cabinets' :
     hasServiceTime ? 'serviceTime' :
@@ -75,7 +79,7 @@ export default function Inputs() {
     hasOrders ? 'orders' : 'financial'
 
   // Determinar aba inicial (priorizar parâmetro da URL)
-  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders']
+  const validTabs = ['financial', 'consultations', 'advanceInvoice', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders']
   const initialTab = tabParam && validTabs.includes(tabParam)
     ? tabParam
     : firstAvailableTab
@@ -117,80 +121,91 @@ export default function Inputs() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 h-auto">
-          {hasFinancial && (
-            <TabsTrigger
-              value="financial"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <FileText className="h-4 w-4" />
-              Financeiro
-            </TabsTrigger>
-          )}
-          {hasConsultations && (
-            <TabsTrigger
-              value="consultations"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <UserPlus className="h-4 w-4" />
-              1.ªs Consultas
-            </TabsTrigger>
-          )}
-          {hasProspecting && (
-            <TabsTrigger
-              value="prospecting"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <Megaphone className="h-4 w-4" />
-              Prospecção
-            </TabsTrigger>
-          )}
-          {hasCabinets && (
-            <TabsTrigger
-              value="cabinets"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <Armchair className="h-4 w-4" />
-              Gabinetes
-            </TabsTrigger>
-          )}
-          {hasServiceTime && (
-            <TabsTrigger
-              value="serviceTime"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <Clock className="h-4 w-4" />
-              Tempos
-            </TabsTrigger>
-          )}
-          {hasConsultationControl && (
-            <TabsTrigger
-              value="consultationControl"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <CalendarCheck className="h-4 w-4" />
-              Controle
-            </TabsTrigger>
-          )}
-          {hasAligners && (
-            <TabsTrigger
-              value="aligners"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <Smile className="h-4 w-4" />
-              Alinhadores
-            </TabsTrigger>
-          )}
-          {hasOrders && (
-            <TabsTrigger
-              value="orders"
-              className="flex flex-col gap-1 py-2 h-auto"
-            >
-              <Package className="h-4 w-4" />
-              Pedidos
-            </TabsTrigger>
-          )}
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="inline-flex w-full min-w-max flex-wrap gap-1 h-auto p-1">
+            {hasFinancial && (
+              <TabsTrigger
+                value="financial"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="whitespace-nowrap">Financeiro</span>
+              </TabsTrigger>
+            )}
+            {hasConsultations && (
+              <TabsTrigger
+                value="consultations"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span className="whitespace-nowrap">1.ªs Consultas</span>
+              </TabsTrigger>
+            )}
+            {hasAdvanceInvoice && (
+              <TabsTrigger
+                value="advanceInvoice"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Receipt className="h-4 w-4" />
+                <span className="whitespace-nowrap text-[10px] sm:text-xs">Fatura de Adiantamento</span>
+              </TabsTrigger>
+            )}
+            {hasProspecting && (
+              <TabsTrigger
+                value="prospecting"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Megaphone className="h-4 w-4" />
+                <span className="whitespace-nowrap">Prospecção</span>
+              </TabsTrigger>
+            )}
+            {hasCabinets && (
+              <TabsTrigger
+                value="cabinets"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Armchair className="h-4 w-4" />
+                <span className="whitespace-nowrap">Gabinetes</span>
+              </TabsTrigger>
+            )}
+            {hasServiceTime && (
+              <TabsTrigger
+                value="serviceTime"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="whitespace-nowrap">Tempos</span>
+              </TabsTrigger>
+            )}
+            {hasConsultationControl && (
+              <TabsTrigger
+                value="consultationControl"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <CalendarCheck className="h-4 w-4" />
+                <span className="whitespace-nowrap">Controle</span>
+              </TabsTrigger>
+            )}
+            {hasAligners && (
+              <TabsTrigger
+                value="aligners"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Smile className="h-4 w-4" />
+                <span className="whitespace-nowrap">Alinhadores</span>
+              </TabsTrigger>
+            )}
+            {hasOrders && (
+              <TabsTrigger
+                value="orders"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Package className="h-4 w-4" />
+                <span className="whitespace-nowrap">Pedidos</span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
         <div className="mt-6">
           {hasFinancial && (
@@ -220,6 +235,22 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyConsultations clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasAdvanceInvoice && (
+            <TabsContent value="advanceInvoice">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fatura de Adiantamento</CardTitle>
+                  <CardDescription>
+                    Registe as faturas de adiantamento por paciente e médico.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyAdvanceInvoice clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -24,6 +24,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { FinancialTable } from '@/components/reports/FinancialTable'
 import { BillingTable } from '@/components/reports/BillingTable'
+import { AdvanceInvoiceTable } from '@/components/reports/AdvanceInvoiceTable'
 import { ConsultationTable } from '@/components/reports/ConsultationTable'
 import { ConsultationKanban } from '@/components/reports/ConsultationKanban'
 import { ProspectingTable } from '@/components/reports/ProspectingTable'
@@ -44,6 +45,7 @@ export default function Reports() {
     getClinic,
     financialEntries,
     consultationEntries,
+    advanceInvoiceEntries,
     prospectingEntries,
     cabinetEntries,
     serviceTimeEntries,
@@ -152,6 +154,7 @@ export default function Reports() {
   const getFirstAvailableTab = (): string => {
     if (canViewReport('canViewReportFinancial')) return 'financial'
     if (canViewReport('canViewReportBilling')) return 'billing'
+    if (canViewReport('canViewReportAdvanceInvoice')) return 'advanceInvoice'
     if (canViewReport('canViewReportConsultations')) return 'consultations'
     if (canViewReport('canViewReportAligners')) return 'aligners'
     if (canViewReport('canViewReportProspecting')) return 'prospecting'
@@ -256,38 +259,65 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue={getFirstAvailableTab()} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-10 h-auto">
-          {canViewReport('canViewReportFinancial') && (
-            <TabsTrigger value="financial">Financeiro</TabsTrigger>
-          )}
-          {canViewReport('canViewReportBilling') && (
-            <TabsTrigger value="billing">Faturação</TabsTrigger>
-          )}
-          {canViewReport('canViewReportConsultations') && (
-            <TabsTrigger value="consultations">1.ªs Consultas</TabsTrigger>
-          )}
-          {canViewReport('canViewReportAligners') && (
-            <TabsTrigger value="aligners">Alinhadores</TabsTrigger>
-          )}
-          {canViewReport('canViewReportProspecting') && (
-            <TabsTrigger value="prospecting">Prospecção</TabsTrigger>
-          )}
-          {canViewReport('canViewReportCabinets') && (
-            <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
-          )}
-          {canViewReport('canViewReportServiceTime') && (
-            <TabsTrigger value="serviceTime">Tempos</TabsTrigger>
-          )}
-          {canViewReport('canViewReportSources') && (
-            <TabsTrigger value="sources">Fontes</TabsTrigger>
-          )}
-          {canViewReport('canViewReportConsultationControl') && (
-            <TabsTrigger value="consultationControl">Controle</TabsTrigger>
-          )}
-          {canViewReport('canViewReportMarketing') && (
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          )}
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="inline-flex w-full min-w-max flex-wrap gap-1 h-auto p-1">
+            {canViewReport('canViewReportFinancial') && (
+              <TabsTrigger value="financial" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Financeiro
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportBilling') && (
+              <TabsTrigger value="billing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Faturação
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportAdvanceInvoice') && (
+              <TabsTrigger value="advanceInvoice" className="text-[10px] sm:text-xs whitespace-nowrap min-w-[100px]">
+                Fatura de Adiantamento
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportConsultations') && (
+              <TabsTrigger value="consultations" className="text-xs sm:text-sm whitespace-nowrap min-w-[100px]">
+                1.ªs Consultas
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportAligners') && (
+              <TabsTrigger value="aligners" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Alinhadores
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportProspecting') && (
+              <TabsTrigger value="prospecting" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Prospecção
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportCabinets') && (
+              <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Gabinetes
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportServiceTime') && (
+              <TabsTrigger value="serviceTime" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Tempos
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportSources') && (
+              <TabsTrigger value="sources" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Fontes
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportConsultationControl') && (
+              <TabsTrigger value="consultationControl" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Controle
+              </TabsTrigger>
+            )}
+            {canViewReport('canViewReportMarketing') && (
+              <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                Marketing
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
         <div className="mt-6">
           {canViewReport('canViewReportFinancial') && (
@@ -306,6 +336,17 @@ export default function Reports() {
               <BillingTable
                 data={filterByDate(financialEntries[clinic.id])}
                 clinic={clinic}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            </TabsContent>
+          )}
+          {canViewReport('canViewReportAdvanceInvoice') && (
+            <TabsContent value="advanceInvoice">
+              <AdvanceInvoiceTable
+                data={filterByDate(advanceInvoiceEntries[clinic.id] || [])}
+                clinic={clinic}
+                onDelete={handleDataChange}
                 startDate={startDate}
                 endDate={endDate}
               />

@@ -19,6 +19,7 @@ export interface UserPermissions {
   canViewReportSources: boolean
   canViewReportConsultationControl: boolean
   canViewReportMarketing: boolean
+  canViewReportAdvanceInvoice: boolean
   canViewTargets: boolean
   canViewOrders: boolean
   canViewSuppliers: boolean
@@ -65,6 +66,7 @@ export async function getUserPermissions(
       canViewReportSources: true,
       canViewReportConsultationControl: true,
       canViewReportMarketing: true,
+      canViewReportAdvanceInvoice: true,
       canViewTargets: true,
       canViewOrders: true,
       canViewSuppliers: true,
@@ -77,6 +79,7 @@ export async function getUserPermissions(
       canEditConsultationControl: true,
       canEditAligners: true,
       canEditOrders: true,
+      canEditAdvanceInvoice: true,
       canEditPatients: true,
       canEditClinicConfig: true,
       canEditTargets: true,
@@ -107,6 +110,7 @@ export async function getUserPermissions(
       can_view_report_sources,
       can_view_report_consultation_control,
       can_view_report_marketing,
+      can_view_report_advance_invoice,
       can_view_targets,
       can_view_orders,
       can_view_suppliers,
@@ -119,6 +123,7 @@ export async function getUserPermissions(
       can_edit_consultation_control,
       can_edit_aligners,
       can_edit_orders,
+      can_edit_advance_invoice,
       can_edit_patients,
       can_edit_clinic_config,
       can_edit_targets
@@ -150,6 +155,7 @@ export async function getUserPermissions(
     canViewReportSources: perms.can_view_report_sources || false,
     canViewReportConsultationControl: perms.can_view_report_consultation_control || false,
     canViewReportMarketing: perms.can_view_report_marketing || false,
+    canViewReportAdvanceInvoice: perms.can_view_report_advance_invoice || false,
     canViewTargets: perms.can_view_targets || false,
     canViewOrders: perms.can_view_orders || false,
     canViewSuppliers: perms.can_view_suppliers || false,
@@ -162,6 +168,7 @@ export async function getUserPermissions(
     canEditConsultationControl: perms.can_edit_consultation_control || false,
     canEditAligners: perms.can_edit_aligners || false,
     canEditOrders: perms.can_edit_orders || false,
+    canEditAdvanceInvoice: perms.can_edit_advance_invoice || false,
     canEditPatients: perms.can_edit_patients || false,
     canEditClinicConfig: perms.can_edit_clinic_config || false,
     canEditTargets: perms.can_edit_targets || false,
@@ -186,6 +193,7 @@ function createEmptyPermissions(): UserPermissions {
     canViewReportSources: false,
     canViewReportConsultationControl: false,
     canViewReportMarketing: false,
+    canViewReportAdvanceInvoice: false,
     canViewTargets: false,
     canViewOrders: false,
     canViewSuppliers: false,
@@ -198,6 +206,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditConsultationControl: false,
     canEditAligners: false,
     canEditOrders: false,
+    canEditAdvanceInvoice: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,

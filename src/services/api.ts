@@ -514,6 +514,29 @@ export const dailyEntriesApi = {
         method: 'DELETE',
       }),
   },
+
+  // Advance Invoice
+  advanceInvoice: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/daily-entries/advance-invoice/${clinicId}`),
+
+    create: (clinicId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/advance-invoice/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(entry),
+      }),
+
+    update: (clinicId: string, entryId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/advance-invoice/${clinicId}/${entryId}`, {
+        method: 'PUT',
+        body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/advance-invoice/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================

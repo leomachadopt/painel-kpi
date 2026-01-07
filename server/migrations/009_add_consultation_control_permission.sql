@@ -5,3 +5,4 @@ ALTER TABLE user_permissions
 
 COMMENT ON COLUMN user_permissions.can_edit_consultation_control IS 'Permission to create/edit/delete consultation control entries';
 
+

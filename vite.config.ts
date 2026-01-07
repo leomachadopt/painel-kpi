@@ -22,36 +22,40 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-  experimental: {
-    enableNativePlugin: true
-  },
-  build: {
-    minify: mode !== 'development',
-    sourcemap: mode === 'development',
-    rolldownOptions: {
-      onwarn(warning, warn) {
-        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
-          return
-        }
-        warn(warning)
+    experimental: {
+      enableNativePlugin: true
+    },
+    build: {
+      minify: mode !== 'development',
+      sourcemap: mode === 'development',
+      rolldownOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
+            return
+          }
+          warn(warning)
+        },
       },
     },
-  },
-  plugins: [react()],
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(mode ?? process.env.NODE_ENV ?? 'production'),
-  },
-  resolve: {
-    alias: [
-      {
-        find: '@',
-        replacement: path.resolve(__dirname, './src'),
-      },
-      {
-        find: /zod\/v4\/core/,
-        replacement: path.resolve(__dirname, 'node_modules', 'zod', 'v4', 'core'),
-      }
-    ],
-  },
+    plugins: [react()],
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(mode ?? process.env.NODE_ENV ?? 'production'),
+      'global': 'globalThis',
+    },
+    resolve: {
+      alias: [
+        {
+          find: '@',
+          replacement: path.resolve(__dirname, './src'),
+        },
+        {
+          find: /zod\/v4\/core/,
+          replacement: path.resolve(__dirname, 'node_modules', 'zod', 'v4', 'core'),
+        }
+      ],
+    },
+    optimizeDeps: {
+      include: ['xlsx-js-style'],
+    },
   }
 })
