@@ -48,6 +48,8 @@ export function AppSidebar() {
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit, canView } = usePermissions()
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
+  const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
+  const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -69,7 +71,6 @@ export function AppSidebar() {
           const result = await dailyEntriesApi.order.getPendingCount(activeClinicId)
           const count = result.count || 0
           setPendingOrdersCount(count)
-          console.log('Pending orders count:', count, 'for clinic:', activeClinicId)
         } catch (error) {
           console.error('Error loading pending orders count:', error)
           setPendingOrdersCount(0)
@@ -83,6 +84,56 @@ export function AppSidebar() {
       loadPendingOrdersCount()
       // Recarregar a cada 30 segundos
       const interval = setInterval(loadPendingOrdersCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isGestor, activeClinicId, user])
+
+  // Buscar contagem de pedidos aguardando pagamento (apenas para gestoras)
+  useEffect(() => {
+    const loadPaymentPendingOrdersCount = async () => {
+      if (isGestor && activeClinicId) {
+        try {
+          const result = await dailyEntriesApi.order.getPaymentPendingCount(activeClinicId)
+          const count = result.count || 0
+          setPaymentPendingOrdersCount(count)
+        } catch (error) {
+          console.error('Error loading payment pending orders count:', error)
+          setPaymentPendingOrdersCount(0)
+        }
+      } else {
+        setPaymentPendingOrdersCount(0)
+      }
+    }
+
+    if (user && activeClinicId) {
+      loadPaymentPendingOrdersCount()
+      // Recarregar a cada 30 segundos
+      const interval = setInterval(loadPaymentPendingOrdersCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isGestor, activeClinicId, user])
+
+  // Buscar contagem de pedidos com fatura pendente (apenas para gestoras)
+  useEffect(() => {
+    const loadInvoicePendingOrdersCount = async () => {
+      if (isGestor && activeClinicId) {
+        try {
+          const result = await dailyEntriesApi.order.getInvoicePendingCount(activeClinicId)
+          const count = result.count || 0
+          setInvoicePendingOrdersCount(count)
+        } catch (error) {
+          console.error('Error loading invoice pending orders count:', error)
+          setInvoicePendingOrdersCount(0)
+        }
+      } else {
+        setInvoicePendingOrdersCount(0)
+      }
+    }
+
+    if (user && activeClinicId) {
+      loadInvoicePendingOrdersCount()
+      // Recarregar a cada 30 segundos
+      const interval = setInterval(loadInvoicePendingOrdersCount, 30000)
       return () => clearInterval(interval)
     }
   }, [isGestor, activeClinicId, user])
@@ -225,10 +276,24 @@ export function AppSidebar() {
                     <Link to={`/pedidos/${activeClinicId}`}>
                       <Package />
                       <span>Pedidos</span>
-                      {isGestor && pendingOrdersCount > 0 && (
-                        <SidebarMenuBadge className="bg-orange-500 text-white">
-                          {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
-                        </SidebarMenuBadge>
+                      {isGestor && (pendingOrdersCount > 0 || paymentPendingOrdersCount > 0 || invoicePendingOrdersCount > 0) && (
+                        <div className="absolute right-1 flex gap-1">
+                          {pendingOrdersCount > 0 && (
+                            <SidebarMenuBadge className="bg-orange-500 text-white relative">
+                              {pendingOrdersCount > 99 ? '99+' : pendingOrdersCount}
+                            </SidebarMenuBadge>
+                          )}
+                          {paymentPendingOrdersCount > 0 && (
+                            <SidebarMenuBadge className="bg-blue-500 text-white relative">
+                              {paymentPendingOrdersCount > 99 ? '99+' : paymentPendingOrdersCount}
+                            </SidebarMenuBadge>
+                          )}
+                          {invoicePendingOrdersCount > 0 && (
+                            <SidebarMenuBadge className="bg-purple-500 text-white relative">
+                              {invoicePendingOrdersCount > 99 ? '99+' : invoicePendingOrdersCount}
+                            </SidebarMenuBadge>
+                          )}
+                        </div>
                       )}
                     </Link>
                   </SidebarMenuButton>

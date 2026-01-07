@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, Package, Eye, Edit2, Trash2, CheckCircle2 } from 'lucide-react'
+import { Search, Loader2, Package, Eye, Edit2, Trash2, CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -43,6 +43,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ViewOrderDialog } from '@/components/orders/ViewOrderDialog'
 import { EditOrderDialog } from '@/components/orders/EditOrderDialog'
+import { RejectOrderDialog } from '@/components/orders/RejectOrderDialog'
+import { CheckOrderDialog } from '@/components/orders/CheckOrderDialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
 import useAuthStore from '@/stores/useAuthStore'
@@ -67,6 +69,8 @@ export default function Orders() {
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [approvingOrderId, setApprovingOrderId] = useState<string | null>(null)
+  const [rejectOrderId, setRejectOrderId] = useState<string | null>(null)
+  const [checkOrderId, setCheckOrderId] = useState<string | null>(null)
 
   useEffect(() => {
     if (clinicId) {
@@ -336,21 +340,37 @@ export default function Orders() {
                                 </Button>
                               </>
                             )}
-                            {isGestor && !order.approved && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleApprove(order.id)}
-                                title="Autorizar Pedido"
-                                disabled={approvingOrderId === order.id}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              >
-                                {approvingOrderId === order.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="h-4 w-4" />
-                                )}
-                              </Button>
+                            {isGestor && !order.approved && !order.rejected && (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleApprove(order.id)}
+                                  disabled={approvingOrderId === order.id}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  {approvingOrderId === order.id ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Autorizando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                                      Autorizar Pedido
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => setRejectOrderId(order.id)}
+                                  className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Recusar Pedido
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -376,6 +396,26 @@ export default function Orders() {
         open={editOrderId !== null}
         onOpenChange={(open) => !open && setEditOrderId(null)}
         orderId={editOrderId}
+        clinicId={clinicId || ''}
+        onSuccess={() => {
+          loadOrders()
+        }}
+      />
+
+      <RejectOrderDialog
+        open={rejectOrderId !== null}
+        onOpenChange={(open) => !open && setRejectOrderId(null)}
+        orderId={rejectOrderId}
+        clinicId={clinicId || ''}
+        onSuccess={() => {
+          loadOrders()
+        }}
+      />
+
+      <CheckOrderDialog
+        open={checkOrderId !== null}
+        onOpenChange={(open) => !open && setCheckOrderId(null)}
+        orderId={checkOrderId}
         clinicId={clinicId || ''}
         onSuccess={() => {
           loadOrders()

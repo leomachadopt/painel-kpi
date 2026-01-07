@@ -164,12 +164,19 @@ router.get('/', async (req, res) => {
     )
 
     res.json(clinics)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get clinics error:', error)
-    console.error('Error details:', error instanceof Error ? error.stack : String(error))
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
     res.status(500).json({ 
       error: 'Failed to fetch clinics',
-      details: error instanceof Error ? error.message : String(error)
+      message: error.message,
+      detail: error.detail || error.toString()
     })
   }
 })

@@ -1884,9 +1884,20 @@ router.get('/suppliers/:clinicId', async (req, res) => {
         updatedAt: row.updated_at,
       }))
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get suppliers error:', error)
-    res.status(500).json({ error: 'Failed to fetch suppliers' })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
+    res.status(500).json({ 
+      error: 'Failed to fetch suppliers',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -2163,13 +2174,39 @@ router.get('/orders/:clinicId', async (req, res) => {
         approved: row.approved || false,
         approvedAt: row.approved_at || null,
         approvedBy: row.approved_by || null,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      invoicePending: row.invoice_pending || false,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
       }))
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get orders error:', error)
-    res.status(500).json({ error: 'Failed to fetch orders' })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
+    res.status(500).json({ 
+      error: 'Failed to fetch orders',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -2191,14 +2228,117 @@ router.get('/orders/:clinicId/pending-count', async (req, res) => {
   
   try {
     const result = await query(
-      `SELECT COUNT(*) as count FROM daily_order_entries WHERE clinic_id = $1 AND approved = false`,
+      `SELECT COUNT(*) as count 
+       FROM daily_order_entries 
+       WHERE clinic_id = $1 AND approved = false AND rejected = false`,
       [clinicId]
     )
     
     res.json({ count: parseInt(result.rows[0].count, 10) })
   } catch (error: any) {
     console.error('Get pending orders count error:', error)
-    res.status(500).json({ error: 'Failed to get pending orders count', message: error.message })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
+    res.status(500).json({ 
+      error: 'Failed to get pending orders count', 
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+// Rota para contar pedidos aguardando pagamento (apenas gestoras)
+// IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
+router.get('/orders/:clinicId/payment-pending-count', async (req, res) => {
+  const { clinicId } = req.params
+  
+  // Verificar se é gestora
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos aguardando pagamento' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    const result = await query(
+      `SELECT COUNT(*) as count 
+       FROM daily_order_entries 
+       WHERE clinic_id = $1 
+         AND requires_prepayment = true 
+         AND payment_confirmed = false 
+         AND approved = true
+         AND rejected = false`,
+      [clinicId]
+    )
+    
+    res.json({ count: parseInt(result.rows[0].count, 10) })
+  } catch (error: any) {
+    console.error('Get payment pending orders count error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
+    res.status(500).json({ 
+      error: 'Failed to get payment pending orders count', 
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+// Rota para contar pedidos com fatura pendente (apenas gestoras)
+// IMPORTANTE: Esta rota deve vir ANTES de /orders/:clinicId/:orderId para evitar conflito
+router.get('/orders/:clinicId/invoice-pending-count', async (req, res) => {
+  const { clinicId } = req.params
+  
+  // Verificar se é gestora
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem ver pedidos com fatura pendente' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    const result = await query(
+      `SELECT COUNT(*) as count 
+       FROM daily_order_entries 
+       WHERE clinic_id = $1 
+         AND invoice_pending = true
+         AND rejected = false`,
+      [clinicId]
+    )
+    
+    res.json({ count: parseInt(result.rows[0].count, 10) })
+  } catch (error: any) {
+    console.error('Get invoice pending orders count error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack
+    })
+    res.status(500).json({ 
+      error: 'Failed to get invoice pending orders count', 
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
@@ -2255,7 +2395,29 @@ router.get('/orders/:clinicId/:orderId', async (req, res) => {
       createdAt: itemRow.created_at,
     }))
     
-    res.json({
+    // Buscar documentos do pedido
+    const docsResult = await query(
+      `SELECT id, order_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by, uploaded_at
+       FROM order_documents
+       WHERE order_id = $1
+       ORDER BY uploaded_at DESC`,
+      [orderId]
+    )
+    
+    const documents = docsResult.rows.map((docRow) => ({
+      id: docRow.id,
+      orderId: docRow.order_id,
+      filename: docRow.filename,
+      originalFilename: docRow.original_filename,
+      filePath: docRow.file_path,
+      fileSize: docRow.file_size,
+      mimeType: docRow.mime_type,
+      uploadedBy: docRow.uploaded_by,
+      uploadedAt: docRow.uploaded_at,
+    }))
+    
+    // Adicionar documentos à resposta
+    const response = {
       id: row.id,
       clinicId: row.clinic_id,
       date: row.date,
@@ -2280,9 +2442,27 @@ router.get('/orders/:clinicId/:orderId', async (req, res) => {
       approved: row.approved || false,
       approvedAt: row.approved_at || null,
       approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      invoicePending: row.invoice_pending || false,
+      documents,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    })
+    }
+    
+    res.json(response)
   } catch (error) {
     console.error('Get order error:', error)
     res.status(500).json({ error: 'Failed to fetch order' })
@@ -2317,6 +2497,8 @@ router.post('/orders/:clinicId', async (req, res) => {
       cancelledAt,
       observations,
       items, // Array de itens do pedido
+      requiresPrepayment, // Novo campo
+      invoicePending, // Novo campo
     } = req.body
     
     if (!date || !supplierId) {
@@ -2341,8 +2523,8 @@ router.post('/orders/:clinicId', async (req, res) => {
       `INSERT INTO daily_order_entries
        (id, clinic_id, date, supplier_id, order_number, total, requested, requested_at,
         confirmed, confirmed_at, in_production, in_production_at, ready, ready_at,
-        delivered, delivered_at, cancelled, cancelled_at, observations, approved)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        delivered, delivered_at, cancelled, cancelled_at, observations, approved, requires_prepayment, invoice_pending)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
        RETURNING *`,
       [
         orderId,
@@ -2365,6 +2547,8 @@ router.post('/orders/:clinicId', async (req, res) => {
         cancelled && cancelledAt ? cancelledAt : null,
         observations?.trim() || null,
         false, // approved sempre começa como false
+        requiresPrepayment || false, // requires_prepayment
+        invoicePending || false, // invoice_pending - usar valor do body
       ]
     )
     
@@ -2436,6 +2620,21 @@ router.post('/orders/:clinicId', async (req, res) => {
       approved: row.approved || false,
       approvedAt: row.approved_at || null,
       approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      invoicePending: row.invoice_pending || false,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2473,6 +2672,7 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
       cancelledAt,
       observations,
       items, // Array de itens do pedido
+      invoicePending, // Novo campo
     } = req.body
     
     if (!date || !supplierId) {
@@ -2483,9 +2683,9 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
       return res.status(400).json({ error: 'At least one item is required' })
     }
     
-    // Verificar se o pedido existe e se está aprovado antes de permitir edição de fases
+    // Verificar se o pedido existe e obter informações de aprovação e pagamento
     const existingOrder = await query(
-      `SELECT approved FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      `SELECT approved, requires_prepayment, payment_confirmed FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
       [orderId, clinicId]
     )
     
@@ -2494,12 +2694,22 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
     }
     
     const isApproved = existingOrder.rows[0].approved
+    const requiresPrepayment = existingOrder.rows[0].requires_prepayment
+    const paymentConfirmed = existingOrder.rows[0].payment_confirmed
     
     // Se não está aprovado, não permite editar as fases (mas permite editar outros campos)
     if (!isApproved && (requested || confirmed || inProduction || ready || delivered || cancelled)) {
       return res.status(403).json({ 
         error: 'Forbidden', 
         message: 'Pedido precisa ser aprovado pela gestora antes de editar as fases' 
+      })
+    }
+    
+    // Se requer pagamento prévio e não foi confirmado, não permite ativar fases
+    if (requiresPrepayment && !paymentConfirmed && (requested || confirmed || inProduction || ready || delivered)) {
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: 'Pagamento precisa ser confirmado pelo gestor antes de ativar as fases do pedido' 
       })
     }
     
@@ -2515,8 +2725,8 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
        SET date = $1, supplier_id = $2, order_number = $3, total = $4, requested = $5, requested_at = $6,
            confirmed = $7, confirmed_at = $8, in_production = $9, in_production_at = $10,
            ready = $11, ready_at = $12, delivered = $13, delivered_at = $14,
-           cancelled = $15, cancelled_at = $16, observations = $17
-       WHERE id = $18 AND clinic_id = $19
+           cancelled = $15, cancelled_at = $16, observations = $17, invoice_pending = $18
+       WHERE id = $19 AND clinic_id = $20
        RETURNING *`,
       [
         date,
@@ -2536,6 +2746,7 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
         cancelled || false,
         cancelled && cancelledAt ? cancelledAt : null,
         observations?.trim() || null,
+        invoicePending !== undefined ? invoicePending : false,
         orderId,
         clinicId,
       ]
@@ -2614,6 +2825,22 @@ router.put('/orders/:clinicId/:orderId', async (req, res) => {
       approved: row.approved || false,
       approvedAt: row.approved_at || null,
       approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      invoicePending: row.invoice_pending || false,
+      documents: [],
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2721,12 +2948,699 @@ router.post('/orders/:clinicId/:orderId/approve', async (req, res) => {
       approved: row.approved,
       approvedAt: row.approved_at,
       approvedBy: row.approved_by,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
   } catch (error: any) {
     console.error('Approve order error:', error)
     res.status(500).json({ error: 'Failed to approve order', message: error.message })
+  }
+})
+
+// Rota para recusar pedido (apenas gestoras)
+router.post('/orders/:clinicId/:orderId/reject', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  const { rejectionReason } = req.body
+  
+  // Verificar se é gestora (usar req.user ou req.auth, dependendo do que estiver disponível)
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem recusar pedidos' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    // Verificar se o pedido existe e não está aprovado/recusado
+    const orderResult = await query(
+      `SELECT id, approved, rejected FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    if (orderResult.rows[0].approved) {
+      return res.status(400).json({ error: 'Cannot reject an approved order' })
+    }
+    
+    if (orderResult.rows[0].rejected) {
+      return res.status(400).json({ error: 'Order already rejected' })
+    }
+    
+    // Recusar pedido
+    const result = await query(
+      `UPDATE daily_order_entries
+       SET rejected = true, rejected_at = CURRENT_TIMESTAMP, rejected_by = $1, rejection_reason = $2
+       WHERE id = $3 AND clinic_id = $4
+       RETURNING *`,
+      [auth.sub, rejectionReason?.trim() || null, orderId, clinicId]
+    )
+    
+    const row = result.rows[0]
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [row.supplier_id])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    // Buscar itens do pedido
+    const itemsResult = await query(
+      `SELECT 
+        oie.id,
+        oie.order_id,
+        oie.item_id,
+        oie.quantity,
+        oie.unit_price,
+        oie.notes,
+        oie.created_at,
+        oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = $1
+       ORDER BY oie.created_at ASC`,
+      [orderId]
+    )
+    
+    const items = itemsResult.rows.map((itemRow) => ({
+      id: itemRow.id,
+      orderId: itemRow.order_id,
+      itemId: itemRow.item_id,
+      itemName: itemRow.item_name,
+      quantity: parseFloat(itemRow.quantity),
+      unitPrice: itemRow.unit_price ? parseFloat(itemRow.unit_price) : null,
+      notes: itemRow.notes || null,
+      createdAt: itemRow.created_at,
+    }))
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Reject order error:', error)
+    res.status(500).json({ error: 'Failed to reject order', message: error.message })
+  }
+})
+
+// Rota para confirmar pagamento (apenas gestoras)
+router.post('/orders/:clinicId/:orderId/confirm-payment', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  
+  // Verificar se é gestora
+  const auth = req.auth || req.user
+  if (!auth || auth.role !== 'GESTOR_CLINICA') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Apenas gestoras podem confirmar pagamento' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    // Verificar se o pedido existe
+    const orderResult = await query(
+      `SELECT id, requires_prepayment, payment_confirmed FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    const order = orderResult.rows[0]
+    
+    if (!order.requires_prepayment) {
+      return res.status(400).json({ error: 'Order does not require prepayment' })
+    }
+    
+    if (order.payment_confirmed) {
+      return res.status(400).json({ error: 'Payment already confirmed' })
+    }
+    
+    // Confirmar pagamento
+    const result = await query(
+      `UPDATE daily_order_entries
+       SET payment_confirmed = true, payment_confirmed_at = CURRENT_TIMESTAMP, payment_confirmed_by = $1
+       WHERE id = $2 AND clinic_id = $3
+       RETURNING *`,
+      [auth.sub, orderId, clinicId]
+    )
+    
+    const row = result.rows[0]
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [row.supplier_id])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    // Buscar itens do pedido
+    const itemsResult = await query(
+      `SELECT 
+        oie.id,
+        oie.order_id,
+        oie.item_id,
+        oie.quantity,
+        oie.unit_price,
+        oie.notes,
+        oie.created_at,
+        oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = $1
+       ORDER BY oie.created_at ASC`,
+      [orderId]
+    )
+    
+    const items = itemsResult.rows.map((itemRow) => ({
+      id: itemRow.id,
+      orderId: itemRow.order_id,
+      itemId: itemRow.item_id,
+      itemName: itemRow.item_name,
+      quantity: parseFloat(itemRow.quantity),
+      unitPrice: itemRow.unit_price ? parseFloat(itemRow.unit_price) : null,
+      notes: itemRow.notes || null,
+      createdAt: itemRow.created_at,
+    }))
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      invoicePending: row.invoice_pending || false,
+      documents: [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Confirm payment error:', error)
+    res.status(500).json({ error: 'Failed to confirm payment', message: error.message })
+  }
+})
+
+// Rota para conferir pedido (com validação de senha)
+router.post('/orders/:clinicId/:orderId/check', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  const { password, conform, nonConformReason } = req.body
+  
+  // Verificar autenticação
+  const auth = req.auth || req.user
+  if (!auth) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  
+  // Verificar se a clínica corresponde
+  if (auth.clinicId !== clinicId) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Clínica não corresponde' })
+  }
+  
+  try {
+    // Verificar senha do usuário
+    const userResult = await query(
+      `SELECT id, password_hash FROM users WHERE id = $1`,
+      [auth.sub]
+    )
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+    
+    // Validar senha (em produção, usar bcrypt.compare)
+    // Por enquanto, comparando diretamente (NÃO SEGURO - deve ser ajustado)
+    if (userResult.rows[0].password_hash !== password) {
+      return res.status(401).json({ error: 'Invalid password' })
+    }
+    
+    // Verificar se o pedido existe e está entregue
+    const orderResult = await query(
+      `SELECT id, delivered FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    if (!orderResult.rows[0].delivered) {
+      return res.status(400).json({ error: 'Order must be delivered before checking' })
+    }
+    
+    // Validar conformidade
+    if (conform === null || conform === undefined) {
+      return res.status(400).json({ error: 'Conform status is required' })
+    }
+    
+    // Se não conforme, motivo é obrigatório
+    if (conform === false && (!nonConformReason || !nonConformReason.trim())) {
+      return res.status(400).json({ error: 'Non-conform reason is required when order is not conform' })
+    }
+    
+    // Conferir pedido
+    const result = await query(
+      `UPDATE daily_order_entries
+       SET checked = true, 
+           checked_at = CURRENT_TIMESTAMP, 
+           checked_by = $1,
+           checked_by_password_verified = true,
+           conform = $2,
+           non_conform_reason = $3
+       WHERE id = $4 AND clinic_id = $5
+       RETURNING *`,
+      [auth.sub, conform, conform === false ? (nonConformReason?.trim() || null) : null, orderId, clinicId]
+    )
+    
+    const row = result.rows[0]
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [row.supplier_id])
+    const supplierName = supplierResult.rows[0]?.name || ''
+    
+    // Buscar itens do pedido
+    const itemsResult = await query(
+      `SELECT 
+        oie.id,
+        oie.order_id,
+        oie.item_id,
+        oie.quantity,
+        oie.unit_price,
+        oie.notes,
+        oie.created_at,
+        oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = $1
+       ORDER BY oie.created_at ASC`,
+      [orderId]
+    )
+    
+    const items = itemsResult.rows.map((itemRow) => ({
+      id: itemRow.id,
+      orderId: itemRow.order_id,
+      itemId: itemRow.item_id,
+      itemName: itemRow.item_name,
+      quantity: parseFloat(itemRow.quantity),
+      unitPrice: itemRow.unit_price ? parseFloat(itemRow.unit_price) : null,
+      notes: itemRow.notes || null,
+      createdAt: itemRow.created_at,
+    }))
+    
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      date: row.date,
+      supplierId: row.supplier_id,
+      supplierName,
+      orderNumber: row.order_number || null,
+      requested: row.requested,
+      requestedAt: row.requested_at || null,
+      confirmed: row.confirmed,
+      confirmedAt: row.confirmed_at || null,
+      inProduction: row.in_production,
+      inProductionAt: row.in_production_at || null,
+      ready: row.ready,
+      readyAt: row.ready_at || null,
+      delivered: row.delivered,
+      deliveredAt: row.delivered_at || null,
+      cancelled: row.cancelled,
+      cancelledAt: row.cancelled_at || null,
+      observations: row.observations || null,
+      total: row.total ? parseFloat(row.total) : 0,
+      items,
+      approved: row.approved || false,
+      approvedAt: row.approved_at || null,
+      approvedBy: row.approved_by || null,
+      rejected: row.rejected || false,
+      rejectedAt: row.rejected_at || null,
+      rejectedBy: row.rejected_by || null,
+      rejectionReason: row.rejection_reason || null,
+      requiresPrepayment: row.requires_prepayment || false,
+      paymentConfirmed: row.payment_confirmed || false,
+      paymentConfirmedAt: row.payment_confirmed_at || null,
+      paymentConfirmedBy: row.payment_confirmed_by || null,
+      checked: row.checked || false,
+      checkedAt: row.checked_at || null,
+      conform: row.conform !== null ? row.conform : null,
+      nonConformReason: row.non_conform_reason || null,
+      checkedBy: row.checked_by || null,
+      checkedByPasswordVerified: row.checked_by_password_verified || false,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Check order error:', error)
+    res.status(500).json({ error: 'Failed to check order', message: error.message })
+  }
+})
+
+// ================================
+// ORDER DOCUMENTS (PROTECTED)
+// ================================
+
+// Upload documento para pedido
+router.post('/orders/:clinicId/:orderId/documents', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    const auth = req.auth || req.user
+    if (!auth || !auth.sub) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    // Verificar se o pedido existe e pertence à clínica
+    const orderResult = await query(
+      `SELECT id FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    const { file, filename, mimeType } = req.body
+    
+    if (!file || !filename) {
+      return res.status(400).json({ error: 'File and filename are required' })
+    }
+    
+    // Validar formato base64
+    if (!file.startsWith('data:')) {
+      return res.status(400).json({ error: 'Invalid file format' })
+    }
+    
+    // Extrair dados base64
+    const matches = file.match(/^data:([^;]+);base64,(.+)$/)
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid file format' })
+    }
+    
+    const [, detectedMimeType, base64Data] = matches
+    const buffer = Buffer.from(base64Data, 'base64')
+    
+    // Validar tamanho (max 10MB)
+    if (buffer.length > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: 'File must be less than 10MB' })
+    }
+    
+    // Gerar nome único do arquivo
+    const documentId = `doc-${orderId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    const fileExtension = filename.split('.').pop() || 'bin'
+    const storedFilename = `${documentId}.${fileExtension}`
+    
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    
+    // Criar diretório se não existir
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'orders')
+    await fs.mkdir(uploadsDir, { recursive: true })
+    
+    // Salvar arquivo
+    const filePath = path.join(uploadsDir, storedFilename)
+    await fs.writeFile(filePath, buffer)
+    
+    // Salvar metadados no banco
+    const result = await query(
+      `INSERT INTO order_documents 
+       (id, order_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        documentId,
+        orderId,
+        storedFilename,
+        filename,
+        filePath,
+        buffer.length,
+        mimeType || detectedMimeType || 'application/octet-stream',
+        auth.sub,
+      ]
+    )
+    
+    const doc = result.rows[0]
+    
+    res.json({
+      id: doc.id,
+      orderId: doc.order_id,
+      filename: doc.filename,
+      originalFilename: doc.original_filename,
+      filePath: doc.file_path,
+      fileSize: doc.file_size,
+      mimeType: doc.mime_type,
+      uploadedBy: doc.uploaded_by,
+      uploadedAt: doc.uploaded_at,
+    })
+  } catch (error: any) {
+    console.error('Upload document error:', error)
+    res.status(500).json({ error: 'Failed to upload document', message: error.message })
+  }
+})
+
+// Listar documentos de um pedido
+router.get('/orders/:clinicId/:orderId/documents', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  const hasPermission = await canViewOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    // Verificar se o pedido existe e pertence à clínica
+    const orderResult = await query(
+      `SELECT id FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    const result = await query(
+      `SELECT id, order_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by, uploaded_at
+       FROM order_documents
+       WHERE order_id = $1
+       ORDER BY uploaded_at DESC`,
+      [orderId]
+    )
+    
+    res.json(result.rows.map((row) => ({
+      id: row.id,
+      orderId: row.order_id,
+      filename: row.filename,
+      originalFilename: row.original_filename,
+      filePath: row.file_path,
+      fileSize: row.file_size,
+      mimeType: row.mime_type,
+      uploadedBy: row.uploaded_by,
+      uploadedAt: row.uploaded_at,
+    })))
+  } catch (error: any) {
+    console.error('Get documents error:', error)
+    res.status(500).json({ error: 'Failed to get documents', message: error.message })
+  }
+})
+
+// Download/Visualizar documento (PROTEGIDO)
+router.get('/orders/:clinicId/:orderId/documents/:documentId/download', async (req, res) => {
+  const { clinicId, orderId, documentId } = req.params
+  const hasPermission = await canViewOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    // Verificar se o pedido existe e pertence à clínica
+    const orderResult = await query(
+      `SELECT id FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    // Buscar documento
+    const docResult = await query(
+      `SELECT id, order_id, filename, original_filename, file_path, mime_type
+       FROM order_documents
+       WHERE id = $1 AND order_id = $2`,
+      [documentId, orderId]
+    )
+    
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+    
+    const doc = docResult.rows[0]
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    
+    // Verificar se arquivo existe
+    try {
+      await fs.access(doc.file_path)
+    } catch {
+      return res.status(404).json({ error: 'File not found on server' })
+    }
+    
+    // Ler arquivo
+    const fileBuffer = await fs.readFile(doc.file_path)
+    
+    // Determinar Content-Type
+    const contentType = doc.mime_type || 'application/octet-stream'
+    
+    // Headers para download ou visualização
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`)
+    res.setHeader('Content-Length', fileBuffer.length)
+    
+    // Enviar arquivo
+    res.send(fileBuffer)
+  } catch (error: any) {
+    console.error('Download document error:', error)
+    res.status(500).json({ error: 'Failed to download document', message: error.message })
+  }
+})
+
+// Deletar documento
+router.delete('/orders/:clinicId/:orderId/documents/:documentId', async (req, res) => {
+  const { clinicId, orderId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+  
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+  
+  try {
+    // Verificar se o pedido existe e pertence à clínica
+    const orderResult = await query(
+      `SELECT id FROM daily_order_entries WHERE id = $1 AND clinic_id = $2`,
+      [orderId, clinicId]
+    )
+    
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' })
+    }
+    
+    // Buscar documento
+    const docResult = await query(
+      `SELECT id, file_path FROM order_documents WHERE id = $1 AND order_id = $2`,
+      [req.params.documentId, orderId]
+    )
+    
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+    
+    const doc = docResult.rows[0]
+    const fs = await import('fs/promises')
+    
+    // Deletar arquivo do sistema de arquivos
+    try {
+      await fs.unlink(doc.file_path)
+    } catch (error: any) {
+      console.warn('Failed to delete file from filesystem:', error.message)
+      // Continuar mesmo se o arquivo não existir
+    }
+    
+    // Deletar registro do banco
+    await query(
+      `DELETE FROM order_documents WHERE id = $1`,
+      [req.params.documentId]
+    )
+    
+    res.json({ message: 'Document deleted successfully' })
+  } catch (error: any) {
+    console.error('Delete document error:', error)
+    res.status(500).json({ error: 'Failed to delete document', message: error.message })
   }
 })
 

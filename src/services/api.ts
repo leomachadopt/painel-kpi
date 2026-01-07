@@ -430,8 +430,56 @@ export const dailyEntriesApi = {
         method: 'POST',
       }),
 
+    reject: (clinicId: string, orderId: string, rejectionReason: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ rejectionReason }),
+      }),
+
+    confirmPayment: (clinicId: string, orderId: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}/confirm-payment`, {
+        method: 'POST',
+      }),
+
+    check: (clinicId: string, orderId: string, password: string, conform: boolean, nonConformReason?: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}/check`, {
+        method: 'POST',
+        body: JSON.stringify({ password, conform, nonConformReason }),
+      }),
+
     getPendingCount: (clinicId: string) =>
       apiCall<{ count: number }>(`/daily-entries/orders/${clinicId}/pending-count`),
+
+    getPaymentPendingCount: (clinicId: string) =>
+      apiCall<{ count: number }>(`/daily-entries/orders/${clinicId}/payment-pending-count`),
+
+    getInvoicePendingCount: (clinicId: string) =>
+      apiCall<{ count: number }>(`/daily-entries/orders/${clinicId}/invoice-pending-count`),
+
+    uploadDocument: (clinicId: string, orderId: string, file: string, filename: string, mimeType?: string) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/${orderId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify({ file, filename, mimeType }),
+      }),
+
+    getDocuments: (clinicId: string, orderId: string) =>
+      apiCall<any[]>(`/daily-entries/orders/${clinicId}/${orderId}/documents`),
+
+    downloadDocument: (clinicId: string, orderId: string, documentId: string) =>
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/daily-entries/orders/${clinicId}/${orderId}/documents/${documentId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to download document')
+        return res.blob()
+      }),
+
+    deleteDocument: (clinicId: string, orderId: string, documentId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/orders/${clinicId}/${orderId}/documents/${documentId}`, {
+        method: 'DELETE',
+      }),
 
     delete: (clinicId: string, orderId: string) =>
       apiCall<{ message: string }>(`/daily-entries/orders/${clinicId}/${orderId}`, {

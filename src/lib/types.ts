@@ -315,8 +315,36 @@ export interface DailyOrderEntry {
   approved: boolean
   approvedAt?: string | null
   approvedBy?: string | null
+  rejected: boolean
+  rejectedAt?: string | null
+  rejectedBy?: string | null
+  rejectionReason?: string | null
+  requiresPrepayment: boolean
+  paymentConfirmed: boolean
+  paymentConfirmedAt?: string | null
+  paymentConfirmedBy?: string | null
+  checked: boolean
+  checkedAt?: string | null
+  conform?: boolean | null
+  nonConformReason?: string | null
+  checkedBy?: string | null
+  checkedByPasswordVerified: boolean
+  invoicePending: boolean
+  documents?: OrderDocument[]
   createdAt: string
   updatedAt: string
+}
+
+export interface OrderDocument {
+  id: string
+  orderId: string
+  filename: string
+  originalFilename: string
+  filePath: string
+  fileSize: number
+  mimeType?: string | null
+  uploadedBy?: string | null
+  uploadedAt: string
 }
 
 export interface DailyAlignersEntry {

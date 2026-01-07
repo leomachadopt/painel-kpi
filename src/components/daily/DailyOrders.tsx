@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -47,6 +47,8 @@ const schema = z.object({
   cancelled: z.boolean(),
   cancelledAt: z.string().optional(),
   observations: z.string().optional(),
+  requiresPrepayment: z.boolean(),
+  invoicePending: z.boolean(),
 })
 
 export function DailyOrders({ clinic }: { clinic: Clinic }) {
@@ -81,6 +83,8 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
       cancelled: false,
       cancelledAt: '',
       observations: '',
+      requiresPrepayment: false,
+      invoicePending: false,
     },
   })
 
@@ -90,16 +94,25 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
   })
 
   const supplierId = form.watch('supplierId')
-  const items = form.watch('items')
+  // Usar useWatch em vez de form.watch para atualização em tempo real
+  const items = useWatch({
+    control: form.control,
+    name: 'items',
+    defaultValue: form.getValues('items') || []
+  })
   const today = new Date().toISOString().split('T')[0]
 
-  // Calcular total do pedido
+  // Calcular total do pedido - agora atualiza em tempo real
   const total = useMemo(() => {
     if (!items || items.length === 0) return 0
     
     return items.reduce((sum, item) => {
-      const quantity = item.quantity || 0
-      const unitPrice = item.unitPrice || 0
+      const quantity = typeof item.quantity === 'number' 
+        ? item.quantity 
+        : (item.quantity ? parseFloat(String(item.quantity)) : 0)
+      const unitPrice = typeof item.unitPrice === 'number' 
+        ? item.unitPrice 
+        : (item.unitPrice ? parseFloat(String(item.unitPrice)) : 0)
       return sum + (quantity * unitPrice)
     }, 0)
   }, [items])
@@ -133,6 +146,8 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         cancelled: false,
         cancelledAt: null,
         observations: data.observations || null,
+        requiresPrepayment: data.requiresPrepayment || false,
+        invoicePending: data.invoicePending || false,
       })
       
       toast.success('Pedido guardado!')
@@ -161,6 +176,8 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         cancelled: false,
         cancelledAt: '',
         observations: '',
+        requiresPrepayment: false,
+        invoicePending: false,
       })
       setSupplierName('')
       setItemNames({})
@@ -616,6 +633,54 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           />
           </div>
         </div>
+
+        {/* Pagamento Prévio */}
+        <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
+          <h3 className="text-sm font-semibold">Pagamento Prévio</h3>
+          
+          <FormField
+            control={form.control}
+            name="requiresPrepayment"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between space-y-0">
+                <div className="space-y-0.5">
+                  <FormLabel>Pagamento Prévio Necessário</FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    Marque se este pedido requer pagamento antes de prosseguir com as fases
+                  </p>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Fatura Pendente */}
+        <FormField
+          control={form.control}
+          name="invoicePending"
+          render={({ field }) => (
+            <FormItem className="flex items-center justify-between space-y-0 p-4 border rounded-md bg-muted/20">
+              <div className="space-y-0.5">
+                <FormLabel>Fatura Pendente</FormLabel>
+                <p className="text-xs text-muted-foreground">
+                  Marque se a fatura deste pedido está pendente
+                </p>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
