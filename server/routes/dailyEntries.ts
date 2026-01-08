@@ -4296,11 +4296,11 @@ router.get('/accounts-payable/:clinicId/counts', requirePermission('canViewAccou
       [clinicId, todayStr]
     )
 
-    // Contas com vencimento na próxima semana (incluindo hoje)
+    // Contas com vencimento na próxima semana (excluindo hoje)
     const weekResult = await query(
       `SELECT COUNT(*) as count 
        FROM accounts_payable 
-       WHERE clinic_id = $1 AND paid = false AND due_date >= $2 AND due_date <= $3`,
+       WHERE clinic_id = $1 AND paid = false AND due_date > $2 AND due_date <= $3`,
       [clinicId, todayStr, nextWeekStr]
     )
 
@@ -4312,6 +4312,55 @@ router.get('/accounts-payable/:clinicId/counts', requirePermission('canViewAccou
   } catch (error) {
     console.error('Get accounts payable counts error:', error)
     res.status(500).json({ error: 'Failed to fetch accounts payable counts' })
+  }
+})
+
+router.get('/accounts-payable/:clinicId/categories', requirePermission('canViewAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const role = (req as any).auth?.role || (req as any).user?.role
+    const { search } = req.query
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' })
+    }
+
+    // Verificar se usuário tem acesso à clínica
+    if (role === 'COLABORADOR') {
+      const userClinic = await query(
+        'SELECT clinic_id FROM users WHERE id = $1',
+        [userId]
+      )
+      if (userClinic.rows[0]?.clinic_id !== clinicId) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+    }
+
+    // Buscar categorias únicas (não nulas e não vazias)
+    let queryStr = `
+      SELECT DISTINCT category 
+      FROM accounts_payable 
+      WHERE clinic_id = $1 AND category IS NOT NULL AND category != ''
+    `
+    const params: any[] = [clinicId]
+
+    // Se houver busca, filtrar por categoria
+    if (search && typeof search === 'string' && search.trim()) {
+      queryStr += ` AND LOWER(category) LIKE LOWER($2)`
+      params.push(`%${search.trim()}%`)
+    }
+
+    queryStr += ` ORDER BY category ASC`
+
+    const result = await query(queryStr, params)
+
+    const categories = result.rows.map((row) => row.category).filter(Boolean)
+
+    res.json(categories)
+  } catch (error) {
+    console.error('Get accounts payable categories error:', error)
+    res.status(500).json({ error: 'Failed to fetch accounts payable categories' })
   }
 })
 

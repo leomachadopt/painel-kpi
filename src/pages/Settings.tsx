@@ -764,6 +764,21 @@ export default function Settings() {
               />
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Categoria de Contas</CardTitle>
+              <CardDescription>
+                Gerencie as categorias utilizadas em contas a pagar. As categorias são criadas automaticamente ao serem utilizadas e podem ser editadas ou excluídas aqui.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* TODO: Implementar gestão de categorias de contas a pagar */}
+              <p className="text-sm text-muted-foreground">
+                A gestão de categorias de contas a pagar será implementada em breve. 
+                Por enquanto, as categorias são criadas automaticamente ao serem utilizadas.
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="paymentSources">

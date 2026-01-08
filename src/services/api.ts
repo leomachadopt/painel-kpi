@@ -563,6 +563,11 @@ export const dailyEntriesApi = {
         `/daily-entries/accounts-payable/${clinicId}/counts`
       ),
 
+    getCategories: (clinicId: string, search?: string) =>
+      apiCall<string[]>(
+        `/daily-entries/accounts-payable/${clinicId}/categories${search ? `?search=${encodeURIComponent(search)}` : ''}`
+      ),
+
     create: (clinicId: string, entry: any) =>
       apiCall<any>(`/daily-entries/accounts-payable/${clinicId}`, {
         method: 'POST',

@@ -8,12 +8,7 @@ import OpenAI from 'openai'
 import { v4 as uuidv4 } from 'uuid'
 import pool from '../db.js'
 import { authRequired } from '../middleware/auth.js'
-import { createRequire } from 'module'
-
-// Import pdf-parse using require
-const require = createRequire(import.meta.url)
-const { PDFParse } = require('pdf-parse')
-const pdfParse = PDFParse
+// pdf-to-img importado dinamicamente apenas quando necessário para evitar erros em ambiente serverless
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -151,13 +146,70 @@ async function processPDFDocument(documentId: string, filePath: string, provider
   try {
     console.log('🔄 Iniciando processamento do PDF:', { documentId, providerId, providerName })
 
-    // Extract text from PDF
-    console.log('📄 Extraindo texto do PDF...')
-    const dataBuffer = fs.readFileSync(filePath)
-    const parser = new pdfParse({ verbosity: 0 })
-    const pdfData = await parser.parse(dataBuffer)
-    const extractedText = pdfData.text
-    console.log(`✅ Texto extraído: ${extractedText.length} caracteres`)
+    // Verificar se estamos em ambiente serverless (Vercel)
+    const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME
+    
+    if (isServerless) {
+      console.warn('⚠️ Ambiente serverless detectado. PDF processing pode não funcionar corretamente.')
+      await client.query(
+        `UPDATE insurance_provider_documents 
+         SET processing_status = 'FAILED',
+             processed_at = CURRENT_TIMESTAMP,
+             extracted_data = $1
+         WHERE id = $2`,
+        [JSON.stringify({ error: 'Processamento de PDF não disponível em ambiente serverless. Use um ambiente com suporte completo a Node.js.' }), documentId]
+      )
+      return
+    }
+
+    // Convert PDF pages to images
+    console.log('📄 Convertendo PDF em imagens...')
+    
+    // Import dinâmico apenas quando necessário
+    let pdfModule
+    try {
+      pdfModule = await import('pdf-to-img')
+    } catch (importError: any) {
+      console.error('❌ Erro ao importar pdf-to-img:', importError.message)
+      await client.query(
+        `UPDATE insurance_provider_documents 
+         SET processing_status = 'FAILED',
+             processed_at = CURRENT_TIMESTAMP,
+             extracted_data = $1
+         WHERE id = $2`,
+        [JSON.stringify({ error: `Erro ao carregar módulo de PDF: ${importError.message}` }), documentId]
+      )
+      return
+    }
+
+    const { pdf } = pdfModule
+    
+    let imagePages: string[] = []
+    try {
+      const document = await pdf(filePath, { scale: 2 })
+
+      let pageNum = 0
+      for await (const page of document) {
+        pageNum++
+        // Convert to base64
+        const base64Image = page.toString('base64')
+        imagePages.push(base64Image)
+        console.log(`  ✓ Página ${pageNum} convertida`)
+      }
+
+      console.log(`✅ ${imagePages.length} páginas convertidas em imagens`)
+    } catch (pdfError: any) {
+      console.error('❌ Erro ao processar PDF:', pdfError)
+      await client.query(
+        `UPDATE insurance_provider_documents 
+         SET processing_status = 'FAILED',
+             processed_at = CURRENT_TIMESTAMP,
+             extracted_data = $1
+         WHERE id = $2`,
+        [JSON.stringify({ error: `Erro ao processar PDF: ${pdfError.message}` }), documentId]
+      )
+      return
+    }
 
     // Get procedure base for comparison
     console.log('📋 Carregando tabela base de procedimentos...')
@@ -170,10 +222,10 @@ async function processPDFDocument(documentId: string, filePath: string, provider
     const procedureBase = procedureBaseResult.rows
     console.log(`✅ ${procedureBase.length} procedimentos carregados da tabela base`)
 
-    // Prepare prompt for OpenAI
-    const prompt = `Você é um assistente especializado em extrair dados de tabelas de procedimentos médicos de operadoras de saúde.
+    // Prepare prompt for OpenAI with Vision
+    const systemPrompt = `Você é um especialista em extrair dados de tabelas de procedimentos odontológicos de operadoras de saúde.
 
-Analise o seguinte documento PDF da operadora "${providerName}" e extraia TODOS os procedimentos odontológicos encontrados.
+Analise as imagens do documento da operadora "${providerName}" e extraia TODOS os procedimentos odontológicos encontrados.
 
 Para cada procedimento, identifique:
 1. Código TUSS (código do procedimento)
@@ -181,16 +233,14 @@ Para cada procedimento, identifique:
 3. Valor em Reais (se disponível)
 4. Se é periciável (procedimentos que geralmente requerem perícia/auditoria: próteses, implantes, ortodontia, cirurgias complexas)
 
+TABELA BASE DE REFERÊNCIA (para fazer match):
+${procedureBase.map(p => `${p.code} - ${p.description} (Periciável: ${p.is_periciable ? 'Sim' : 'Não'}, Adultos: ${p.adults_only ? 'Apenas adultos' : 'Todas idades'})`).join('\n')}
+
 IMPORTANTE:
 - Retorne APENAS um JSON válido, sem texto adicional
 - Se não encontrar valor, use null
 - Se não tiver certeza se é periciável, use false
-
-TABELA BASE DE REFERÊNCIA (para comparação):
-${procedureBase.map(p => `${p.code} - ${p.description} (Periciável: ${p.is_periciable ? 'Sim' : 'Não'}, Adultos: ${p.adults_only ? 'Apenas adultos' : 'Todas idades'})`).join('\n')}
-
-TEXTO DO PDF:
-${extractedText}
+- Tente fazer match com a tabela base pelo código TUSS
 
 Retorne um JSON no seguinte formato:
 {
@@ -200,35 +250,60 @@ Retorne um JSON no seguinte formato:
       "description": "descrição do procedimento",
       "value": 123.45,
       "isPericiable": true/false,
-      "matchedProcedureBaseId": "id do procedimento da tabela base (se houver match por código ou descrição similar)",
-      "confidence": 0.95 (0-1, quão confiante você está no match)
+      "matchedProcedureBaseId": "id do procedimento da tabela base (se houver match por código)",
+      "confidence": 0.95
     }
   ]
 }`
 
-    // Call OpenAI API
-    console.log('🤖 Chamando OpenAI GPT-4o para extrair dados...')
+    // Build messages with images
+    const messages: any[] = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Analise todas as páginas deste documento e extraia os procedimentos odontológicos:'
+          },
+          ...imagePages.map((base64Image) => ({
+            type: 'image_url',
+            image_url: {
+              url: `data:image/png;base64,${base64Image}`,
+              detail: 'high'
+            }
+          }))
+        ]
+      }
+    ]
+
+    // Call OpenAI API with Vision
+    console.log('🤖 Chamando OpenAI GPT-4o Vision para extrair dados das imagens...')
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'Você é um especialista em extrair dados estruturados de documentos médicos. Retorne apenas JSON válido.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+      messages: messages,
       temperature: 0.1,
+      max_tokens: 4096,
       response_format: { type: 'json_object' }
     })
 
     const responseText = completion.choices[0].message.content
     console.log('✅ Resposta recebida da OpenAI')
+    console.log('📝 Resposta completa:', responseText?.substring(0, 500))
 
     const extractedData = JSON.parse(responseText)
     console.log(`📊 Procedimentos extraídos: ${extractedData.procedures?.length || 0}`)
+
+    if (extractedData.procedures?.length === 0) {
+      console.log('⚠️ AVISO: Nenhum procedimento foi extraído!')
+      console.log('💡 Possíveis causas:')
+      console.log('  - O PDF não contém tabelas de procedimentos odontológicos')
+      console.log('  - O formato da tabela não foi reconhecido pela IA')
+      console.log('  - As imagens estão muito escuras/borradas')
+    }
 
     // Update document with extracted data
     await client.query(

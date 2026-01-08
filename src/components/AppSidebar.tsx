@@ -441,7 +441,7 @@ export function AppSidebar() {
                               {accountsPayableCounts.today > 99 ? '99+' : accountsPayableCounts.today}
                             </SidebarMenuBadge>
                           )}
-                          {accountsPayableCounts.week > 0 && accountsPayableCounts.today === 0 && (
+                          {accountsPayableCounts.week > 0 && (
                             <SidebarMenuBadge className="bg-yellow-500 text-white relative">
                               {accountsPayableCounts.week > 99 ? '99+' : accountsPayableCounts.week}
                             </SidebarMenuBadge>

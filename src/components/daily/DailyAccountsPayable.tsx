@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { SupplierInput } from '@/components/SupplierInput'
+import { CategoryInput } from '@/components/CategoryInput'
 import {
   Form,
   FormControl,
@@ -227,9 +228,17 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Categoria (opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Aluguer, Fornecedores, etc." {...field} />
+                <CategoryInput
+                  clinicId={clinic.id}
+                  value={field.value || ''}
+                  onValueChange={(value) => {
+                    field.onChange(value)
+                  }}
+                  label="Categoria (opcional)"
+                  required={false}
+                  error={form.formState.errors.category?.message}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
