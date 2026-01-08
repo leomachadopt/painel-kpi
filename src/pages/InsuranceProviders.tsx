@@ -35,7 +35,8 @@ import {
 import { usePermissions } from '@/hooks/usePermissions'
 import { InsuranceProviderForm } from '@/components/advances/InsuranceProviderForm'
 import { ProcedureMappingReview } from '@/components/advances/ProcedureMappingReview'
-import { FileText } from 'lucide-react'
+import { UploadPDFDialog } from '@/components/advances/UploadPDFDialog'
+import { FileText, Upload } from 'lucide-react'
 
 export default function InsuranceProviders() {
   const { user } = useAuthStore()
@@ -53,6 +54,8 @@ export default function InsuranceProviders() {
   const [showMappingReview, setShowMappingReview] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<{ documentId: string; providerId: string } | null>(null)
   const [providerDocuments, setProviderDocuments] = useState<Record<string, any[]>>({})
+  const [showUploadPDF, setShowUploadPDF] = useState(false)
+  const [uploadPDFProvider, setUploadPDFProvider] = useState<InsuranceProvider | null>(null)
 
   const canManageProviders = canEdit('canManageInsuranceProviders')
 
@@ -124,6 +127,16 @@ export default function InsuranceProviders() {
     setShowProviderForm(false)
     setEditingProvider(null)
     loadProviders()
+  }
+
+  const handleUploadPDF = (provider: InsuranceProvider) => {
+    setUploadPDFProvider(provider)
+    setShowUploadPDF(true)
+  }
+
+  const handleUploadPDFClose = () => {
+    setShowUploadPDF(false)
+    setUploadPDFProvider(null)
   }
 
   const handleViewDocuments = async (provider: InsuranceProvider) => {
@@ -238,15 +251,26 @@ export default function InsuranceProviders() {
                       <TableCell>{provider.contactEmail || '-'}</TableCell>
                       <TableCell>{provider.contactPhone || '-'}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDocuments(provider)}
-                          title="Ver procedimentos extraídos"
-                        >
-                          <FileText className="h-4 w-4 mr-1" />
-                          Ver Procedimentos
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUploadPDF(provider)}
+                            title="Enviar novo PDF para extrair procedimentos"
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Enviar PDF
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDocuments(provider)}
+                            title="Ver procedimentos extraídos"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Ver Procedimentos
+                          </Button>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-2">
@@ -317,6 +341,17 @@ export default function InsuranceProviders() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload PDF Dialog */}
+      {showUploadPDF && uploadPDFProvider && clinicId && (
+        <UploadPDFDialog
+          providerId={uploadPDFProvider.id}
+          providerName={uploadPDFProvider.name}
+          clinicId={clinicId}
+          open={showUploadPDF}
+          onClose={handleUploadPDFClose}
+        />
+      )}
 
       {/* Procedure Mapping Review Dialog */}
       {showMappingReview && selectedDocument && clinicId && (

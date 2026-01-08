@@ -93,7 +93,24 @@ export function InsuranceProviderForm({ clinicId, provider, onClose }: Insurance
         notes: null,
       }
 
-      const newProvider = await advancesApi.insuranceProviders.create(clinicId, providerData)
+      let newProvider
+      try {
+        newProvider = await advancesApi.insuranceProviders.create(clinicId, providerData)
+      } catch (createErr: any) {
+        // Check if provider already exists
+        if (createErr.response?.status === 409 || createErr.message?.includes('already exists')) {
+          toast.error(
+            `Já existe um seguro com o nome "${data.name.trim()}". Por favor:\n\n` +
+            `• Use um nome diferente, ou\n` +
+            `• Delete o seguro existente na lista e tente novamente, ou\n` +
+            `• Selecione o seguro existente e clique em "Ver Procedimentos" para enviar um novo PDF`,
+            { duration: 8000 }
+          )
+          setProcessing(false)
+          return
+        }
+        throw createErr
+      }
 
       // Step 2: Upload PDF
       const formData = new FormData()
@@ -112,7 +129,8 @@ export function InsuranceProviderForm({ clinicId, provider, onClose }: Insurance
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao fazer upload do PDF')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erro ao fazer upload do PDF')
       }
 
       toast.success('Seguro criado e PDF enviado com sucesso! Processamento iniciado.')
@@ -122,17 +140,8 @@ export function InsuranceProviderForm({ clinicId, provider, onClose }: Insurance
         onClose()
       }, 1500)
     } catch (err: any) {
-      const errorMessage = err.message || 'Erro ao criar seguro'
-
-      // Check if it's a duplicate name error
-      if (errorMessage.includes('already exists') || err.status === 409) {
-        toast.error(
-          `Já existe um seguro com o nome "${data.name.trim()}". Use um nome diferente ou delete o existente na lista de seguros.`,
-          { duration: 5000 }
-        )
-      } else {
-        toast.error(errorMessage)
-      }
+      console.error('Error creating insurance provider:', err)
+      toast.error(err.message || 'Erro ao criar seguro')
     } finally {
       setProcessing(false)
     }
