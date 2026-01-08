@@ -273,8 +273,8 @@ Retorne um JSON no seguinte formato:
 
     // Clean up
     console.log('🧹 Limpando recursos temporários...')
-    await openai.beta.assistants.del(assistant.id)
-    await openai.files.del(file.id)
+    await openai.beta.assistants.delete(assistant.id)
+    await openai.files.delete(file.id)
 
     console.log('✅ Resposta recebida da OpenAI')
     console.log('📝 Resposta completa:', responseText?.substring(0, 500))
