@@ -44,10 +44,19 @@ const upload = multer({
   }
 })
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Initialize OpenAI (only if API key is available)
+let openai: OpenAI | null = null
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
+  } else {
+    console.warn('⚠️ OPENAI_API_KEY not configured. PDF processing will not be available.')
+  }
+} catch (error) {
+  console.error('❌ Failed to initialize OpenAI client:', error)
+}
 
 /**
  * POST /api/insurance/:providerId/upload-pdf
@@ -145,6 +154,22 @@ async function processPDFDocument(documentId: string, filePath: string, provider
 
   try {
     console.log('🔄 Iniciando processamento do PDF:', { documentId, providerId, providerName })
+
+    // Check if OpenAI is available
+    if (!openai) {
+      console.error('❌ OpenAI client not initialized (missing API key)')
+      await client.query(
+        `UPDATE insurance_provider_documents
+         SET processing_status = 'FAILED',
+             processed_at = CURRENT_TIMESTAMP,
+             extracted_data = $1
+         WHERE id = $2`,
+        [JSON.stringify({
+          error: 'OpenAI API key not configured. Please contact system administrator.'
+        }), documentId]
+      )
+      return
+    }
 
     // Upload PDF to OpenAI
     console.log('📤 Enviando PDF para OpenAI...')
