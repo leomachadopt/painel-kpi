@@ -16,19 +16,24 @@ const __dirname = path.dirname(__filename)
 const router = express.Router()
 
 // Configure multer for PDF uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../public/uploads/insurance-pdfs')
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-    }
-    cb(null, uploadDir)
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`
-    cb(null, uniqueName)
-  }
-})
+// Use memory storage for serverless (Vercel) compatibility
+const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME
+
+const storage = isServerless
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, '../../public/uploads/insurance-pdfs')
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true })
+        }
+        cb(null, uploadDir)
+      },
+      filename: (req, file, cb) => {
+        const uniqueName = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`
+        cb(null, uniqueName)
+      }
+    })
 
 const upload = multer({
   storage,
@@ -87,8 +92,14 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
     )
 
     if (providerCheck.rows.length === 0) {
-      // Clean up uploaded file
-      fs.unlinkSync(uploadedFile.path)
+      // Clean up uploaded file (only if using disk storage)
+      if (uploadedFile.path) {
+        try {
+          fs.unlinkSync(uploadedFile.path)
+        } catch (err) {
+          console.error('Error deleting file:', err)
+        }
+      }
       return res.status(404).json({ error: 'Operadora não encontrada' })
     }
 
@@ -107,7 +118,7 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
         documentId,
         providerId,
         uploadedFile.originalname,
-        uploadedFile.path,
+        uploadedFile.path || 'memory',
         uploadedFile.size,
         uploadedFile.mimetype,
         req.user.id
@@ -117,7 +128,9 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
     console.log('✅ Documento registrado, iniciando processamento em background')
 
     // Process PDF in background
-    processPDFDocument(documentId, uploadedFile.path, providerId, clinicId, provider.name)
+    // Pass buffer if using memory storage, path if using disk storage
+    const fileData = uploadedFile.buffer || uploadedFile.path
+    processPDFDocument(documentId, fileData, providerId, clinicId, provider.name, uploadedFile.originalname)
       .catch(err => {
         console.error('❌ Error processing PDF:', err)
       })
@@ -131,8 +144,8 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
   } catch (error) {
     console.error('Error uploading PDF:', error)
 
-    // Clean up uploaded file on error
-    if (req.file) {
+    // Clean up uploaded file on error (only if using disk storage)
+    if (req.file && req.file.path) {
       try {
         fs.unlinkSync(req.file.path)
       } catch (err) {
@@ -149,7 +162,14 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
 /**
  * Process PDF document with OpenAI
  */
-async function processPDFDocument(documentId: string, filePath: string, providerId: string, clinicId: string, providerName: string) {
+async function processPDFDocument(
+  documentId: string,
+  fileData: Buffer | string,
+  providerId: string,
+  clinicId: string,
+  providerName: string,
+  fileName: string
+) {
   const client = await pool.connect()
 
   try {
@@ -173,10 +193,14 @@ async function processPDFDocument(documentId: string, filePath: string, provider
 
     // Upload PDF to OpenAI
     console.log('📤 Enviando PDF para OpenAI...')
-    const fileStream = fs.createReadStream(filePath)
+
+    // Create file for upload - OpenAI SDK accepts Buffer or ReadStream
+    const fileToUpload = Buffer.isBuffer(fileData)
+      ? fileData
+      : fs.createReadStream(fileData)
 
     const file = await openai.files.create({
-      file: fileStream,
+      file: fileToUpload as any,
       purpose: 'assistants'
     })
 
