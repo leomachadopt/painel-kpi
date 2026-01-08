@@ -148,68 +148,35 @@ async function processPDFDocument(documentId: string, filePath: string, provider
 
     // Verificar se estamos em ambiente serverless (Vercel)
     const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME
-    
+
     if (isServerless) {
-      console.warn('⚠️ Ambiente serverless detectado. PDF processing pode não funcionar corretamente.')
+      console.warn('⚠️ Ambiente serverless detectado. Processamento de PDF desabilitado.')
       await client.query(
-        `UPDATE insurance_provider_documents 
+        `UPDATE insurance_provider_documents
          SET processing_status = 'FAILED',
              processed_at = CURRENT_TIMESTAMP,
              extracted_data = $1
          WHERE id = $2`,
-        [JSON.stringify({ error: 'Processamento de PDF não disponível em ambiente serverless. Use um ambiente com suporte completo a Node.js.' }), documentId]
+        [JSON.stringify({
+          error: 'Processamento de PDF não disponível no ambiente Vercel (serverless). Esta funcionalidade requer ambiente com suporte a bibliotecas nativas. Por favor, use o ambiente local para processar PDFs.'
+        }), documentId]
       )
       return
     }
 
-    // Convert PDF pages to images
-    console.log('📄 Convertendo PDF em imagens...')
-    
-    // Import dinâmico apenas quando necessário
-    let pdfModule
-    try {
-      pdfModule = await import('pdf-to-img')
-    } catch (importError: any) {
-      console.error('❌ Erro ao importar pdf-to-img:', importError.message)
-      await client.query(
-        `UPDATE insurance_provider_documents 
-         SET processing_status = 'FAILED',
-             processed_at = CURRENT_TIMESTAMP,
-             extracted_data = $1
-         WHERE id = $2`,
-        [JSON.stringify({ error: `Erro ao carregar módulo de PDF: ${importError.message}` }), documentId]
-      )
-      return
-    }
-
-    const { pdf } = pdfModule
-    
-    let imagePages: string[] = []
-    try {
-      const document = await pdf(filePath, { scale: 2 })
-
-      let pageNum = 0
-      for await (const page of document) {
-        pageNum++
-        // Convert to base64
-        const base64Image = page.toString('base64')
-        imagePages.push(base64Image)
-        console.log(`  ✓ Página ${pageNum} convertida`)
-      }
-
-      console.log(`✅ ${imagePages.length} páginas convertidas em imagens`)
-    } catch (pdfError: any) {
-      console.error('❌ Erro ao processar PDF:', pdfError)
-      await client.query(
-        `UPDATE insurance_provider_documents 
-         SET processing_status = 'FAILED',
-             processed_at = CURRENT_TIMESTAMP,
-             extracted_data = $1
-         WHERE id = $2`,
-        [JSON.stringify({ error: `Erro ao processar PDF: ${pdfError.message}` }), documentId]
-      )
-      return
-    }
+    // Marcar como falha - funcionalidade desabilitada temporariamente
+    console.warn('⚠️ Processamento de PDF temporariamente desabilitado')
+    await client.query(
+      `UPDATE insurance_provider_documents
+       SET processing_status = 'FAILED',
+           processed_at = CURRENT_TIMESTAMP,
+           extracted_data = $1
+       WHERE id = $2`,
+      [JSON.stringify({
+        error: 'Funcionalidade de processamento de PDF está temporariamente desabilitada. Aguarde próxima atualização.'
+      }), documentId]
+    )
+    return
 
     // Get procedure base for comparison
     console.log('📋 Carregando tabela base de procedimentos...')
