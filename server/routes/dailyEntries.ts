@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db.js'
-import { getUserPermissions } from '../middleware/permissions.js'
+import { getUserPermissions, requirePermission } from '../middleware/permissions.js'
 
 const router = Router()
 
@@ -269,6 +269,66 @@ async function canEditAdvanceInvoice(req: any, clinicId: string): Promise<boolea
   if (role === 'COLABORADOR') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditAdvanceInvoice === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can create/edit accounts payable entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditAccountsPayable permission
+ */
+async function canEditAccountsPayable(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditAccountsPayable === true
+  }
+
+  return false
+}
+
+/**
+ * Helper function to check if user can view accounts payable entries
+ * GESTOR_CLINICA always can, COLABORADOR needs canViewAccountsPayable permission
+ */
+async function canViewAccountsPayable(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs permission
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canViewAccountsPayable === true
   }
 
   return false
@@ -4130,6 +4190,232 @@ router.delete('/advance-invoice/:clinicId/:entryId', async (req, res) => {
   } catch (error) {
     console.error('Delete advance invoice entry error:', error)
     res.status(500).json({ error: 'Failed to delete advance invoice entry' })
+  }
+})
+
+// ================================
+// ACCOUNTS PAYABLE ENTRIES
+// ================================
+router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const result = await query(
+      `SELECT 
+        ap.*,
+        s.name as supplier_name
+      FROM accounts_payable ap
+      LEFT JOIN suppliers s ON ap.supplier_id = s.id
+      WHERE ap.clinic_id = $1 
+      ORDER BY ap.due_date ASC, ap.created_at DESC`,
+      [clinicId]
+    )
+
+    res.json(
+      result.rows.map((row) => ({
+        id: row.id,
+        clinicId: row.clinic_id,
+        description: row.description,
+        supplierId: row.supplier_id || null,
+        supplierName: row.supplier_name || null,
+        amount: parseFloat(row.amount),
+        dueDate: row.due_date,
+        paid: row.paid || false,
+        paidDate: row.paid_date || null,
+        category: row.category || null,
+        notes: row.notes || null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }))
+    )
+  } catch (error) {
+    console.error('Get accounts payable entries error:', error)
+    res.status(500).json({ error: 'Failed to fetch accounts payable entries' })
+  }
+})
+
+router.get('/accounts-payable/:clinicId/counts', requirePermission('canViewAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayStr = today.toISOString().split('T')[0]
+    
+    const nextWeek = new Date(today)
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    const nextWeekStr = nextWeek.toISOString().split('T')[0]
+
+    // Contas vencidas (antes de hoje)
+    const overdueResult = await query(
+      `SELECT COUNT(*) as count 
+       FROM accounts_payable 
+       WHERE clinic_id = $1 AND paid = false AND due_date < $2`,
+      [clinicId, todayStr]
+    )
+
+    // Contas com vencimento hoje
+    const todayResult = await query(
+      `SELECT COUNT(*) as count 
+       FROM accounts_payable 
+       WHERE clinic_id = $1 AND paid = false AND due_date = $2`,
+      [clinicId, todayStr]
+    )
+
+    // Contas com vencimento na próxima semana (incluindo hoje)
+    const weekResult = await query(
+      `SELECT COUNT(*) as count 
+       FROM accounts_payable 
+       WHERE clinic_id = $1 AND paid = false AND due_date >= $2 AND due_date <= $3`,
+      [clinicId, todayStr, nextWeekStr]
+    )
+
+    res.json({
+      overdue: parseInt(overdueResult.rows[0].count) || 0,
+      today: parseInt(todayResult.rows[0].count) || 0,
+      week: parseInt(weekResult.rows[0].count) || 0,
+    })
+  } catch (error) {
+    console.error('Get accounts payable counts error:', error)
+    res.status(500).json({ error: 'Failed to fetch accounts payable counts' })
+  }
+})
+
+router.post('/accounts-payable/:clinicId', requirePermission('canEditAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { id, description, supplierId, amount, dueDate, category, notes } = req.body
+    
+    // Validate required fields
+    if (!description || !amount || !dueDate) {
+      return res.status(400).json({ error: 'Missing required fields: description, amount, dueDate' })
+    }
+    
+    const entryId = id || `accounts-payable-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    
+    await query(
+      `INSERT INTO accounts_payable 
+       (id, clinic_id, description, supplier_id, amount, due_date, category, notes, paid, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [
+        entryId,
+        clinicId,
+        description,
+        supplierId || null,
+        amount,
+        dueDate,
+        category || null,
+        notes || null,
+      ]
+    )
+
+    res.json({
+      id: entryId,
+      clinicId,
+      description,
+      supplierId: supplierId || null,
+      amount: parseFloat(amount),
+      dueDate,
+      paid: false,
+      category: category || null,
+      notes: notes || null,
+    })
+  } catch (error: any) {
+    console.error('Create accounts payable entry error:', error)
+    res.status(500).json({
+      error: 'Failed to create accounts payable entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.put('/accounts-payable/:clinicId/:entryId', requirePermission('canEditAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { entryId } = req.params
+    const { description, supplierId, amount, dueDate, paid, paidDate, category, notes } = req.body
+    
+    // Validate required fields
+    if (!description || !amount || !dueDate) {
+      return res.status(400).json({ error: 'Missing required fields: description, amount, dueDate' })
+    }
+    
+    // Check if entry exists
+    const checkResult = await query(
+      `SELECT id FROM accounts_payable WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+    
+    await query(
+      `UPDATE accounts_payable
+       SET description = $1,
+           supplier_id = $2,
+           amount = $3,
+           due_date = $4,
+           paid = $5,
+           paid_date = $6,
+           category = $7,
+           notes = $8,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9 AND clinic_id = $10`,
+      [
+        description,
+        supplierId || null,
+        amount,
+        dueDate,
+        paid || false,
+        paidDate || null,
+        category || null,
+        notes || null,
+        entryId,
+        clinicId,
+      ]
+    )
+
+    res.json({
+      id: entryId,
+      clinicId,
+      description,
+      supplierId: supplierId || null,
+      amount: parseFloat(amount),
+      dueDate,
+      paid: paid || false,
+      paidDate: paidDate || null,
+      category: category || null,
+      notes: notes || null,
+    })
+  } catch (error: any) {
+    console.error('Update accounts payable entry error:', error)
+    res.status(500).json({
+      error: 'Failed to update accounts payable entry',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
+router.delete('/accounts-payable/:clinicId/:entryId', requirePermission('canEditAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { entryId } = req.params
+    const result = await query(
+      `DELETE FROM accounts_payable WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+      [entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.json({ message: 'Entry deleted successfully' })
+  } catch (error) {
+    console.error('Delete accounts payable entry error:', error)
+    res.status(500).json({ error: 'Failed to delete accounts payable entry' })
   }
 })
 

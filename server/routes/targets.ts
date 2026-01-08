@@ -1,11 +1,12 @@
 // @ts-nocheck
 import { Router } from 'express'
 import { query } from '../db.js'
+import { requirePermission } from '../middleware/permissions.js'
 
 const router = Router()
 
 // Get monthly targets for a clinic
-router.get('/:clinicId/:year/:month', async (req, res) => {
+router.get('/:clinicId/:year/:month', requirePermission('canViewTargets'), async (req, res) => {
   try {
     const { clinicId, year, month } = req.params
 
@@ -70,7 +71,7 @@ router.get('/:clinicId/:year/:month', async (req, res) => {
 })
 
 // Get all targets for a clinic
-router.get('/:clinicId', async (req, res) => {
+router.get('/:clinicId', requirePermission('canViewTargets'), async (req, res) => {
   try {
     const { clinicId } = req.params
 
@@ -126,7 +127,7 @@ router.get('/:clinicId', async (req, res) => {
 })
 
 // Update or create monthly targets
-router.put('/:clinicId/:year/:month', async (req, res) => {
+router.put('/:clinicId/:year/:month', requirePermission('canEditTargets'), async (req, res) => {
   try {
     const { clinicId, year, month } = req.params
     const targets = req.body

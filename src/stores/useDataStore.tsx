@@ -14,6 +14,7 @@ import {
   DailyConsultationControlEntry,
   DailyAlignersEntry,
   DailyAdvanceInvoiceEntry,
+  AccountsPayableEntry,
   ClinicConfiguration,
   DEFAULT_MONTHLY_TARGETS,
 } from '@/lib/types'
@@ -68,6 +69,9 @@ interface DataState {
   addAdvanceInvoiceEntry: (clinicId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   updateAdvanceInvoiceEntry: (clinicId: string, entryId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   deleteAdvanceInvoiceEntry: (clinicId: string, entryId: string) => Promise<void>
+  addAccountsPayableEntry: (clinicId: string, entry: AccountsPayableEntry) => Promise<void>
+  updateAccountsPayableEntry: (clinicId: string, entryId: string, entry: AccountsPayableEntry) => Promise<void>
+  deleteAccountsPayableEntry: (clinicId: string, entryId: string) => Promise<void>
   getProspectingEntry: (
     clinicId: string,
     date: string,
@@ -95,6 +99,7 @@ interface DataState {
   consultationControlEntries: Record<string, DailyConsultationControlEntry[]>
   alignerEntries: Record<string, DailyAlignersEntry[]>
   advanceInvoiceEntries: Record<string, DailyAdvanceInvoiceEntry[]>
+  accountsPayableEntries: Record<string, AccountsPayableEntry[]>
   cabinetEntries: Record<string, DailyCabinetUsageEntry[]>
   serviceTimeEntries: Record<string, DailyServiceTimeEntry[]>
   sourceEntries: Record<string, DailySourceEntry[]>
@@ -153,6 +158,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   >({})
   const [advanceInvoiceEntries, setAdvanceInvoiceEntries] = useState<
     Record<string, DailyAdvanceInvoiceEntry[]>
+  >({})
+  const [accountsPayableEntries, setAccountsPayableEntries] = useState<
+    Record<string, AccountsPayableEntry[]>
   >({})
 
   // Load clinics from API on mount (only if authenticated)
@@ -472,7 +480,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
-    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice] =
+    const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice, accountsPayable] =
       await Promise.all([
         dailyEntriesApi.financial.getAll(clinicId),
         dailyEntriesApi.consultation.getAll(clinicId),
@@ -483,6 +491,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         dailyEntriesApi.consultationControl.getAll(clinicId),
         dailyEntriesApi.aligner.getAll(clinicId),
         dailyEntriesApi.advanceInvoice.getAll(clinicId),
+        dailyEntriesApi.accountsPayable.getAll(clinicId),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
@@ -494,6 +503,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setProspectingEntries((prev) => ({ ...prev, [clinicId]: prospecting }))
     setAlignerEntries((prev) => ({ ...prev, [clinicId]: aligners }))
     setAdvanceInvoiceEntries((prev) => ({ ...prev, [clinicId]: advanceInvoice }))
+    setAccountsPayableEntries((prev) => ({ ...prev, [clinicId]: accountsPayable }))
   }
 
   // Load daily entries once clinics are known (backend source of truth)
@@ -1697,6 +1707,127 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const addAccountsPayableEntry = async (
+    clinicId: string,
+    entry: AccountsPayableEntry,
+  ) => {
+    const prevEntries = accountsPayableEntries[clinicId] || []
+    setAccountsPayableEntries((prev) => ({
+      ...prev,
+      [clinicId]: [...(prev[clinicId] || []), entry],
+    }))
+
+    try {
+      const saved = await dailyEntriesApi.accountsPayable.create(clinicId, entry)
+      setAccountsPayableEntries((prev) => {
+        const clinicEntries = prev[clinicId] || []
+        const index = clinicEntries.findIndex((e) => e.id === entry.id)
+        if (index >= 0) {
+          const newEntries = [...clinicEntries]
+          newEntries[index] = saved
+          return { ...prev, [clinicId]: newEntries }
+        }
+        return prev
+      })
+      toast.success('Conta a pagar registada com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAccountsPayableEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para registar conta a pagar.')
+      } else {
+        toast.error(error?.message || 'Erro ao registar conta a pagar.')
+      }
+      throw error
+    }
+  }
+
+  const updateAccountsPayableEntry = async (
+    clinicId: string,
+    entryId: string,
+    updatedEntry: AccountsPayableEntry,
+  ) => {
+    const oldEntry = accountsPayableEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!oldEntry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Atualizar localmente (otimista)
+    setAccountsPayableEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).map((e) =>
+        e.id === entryId ? updatedEntry : e,
+      ),
+    }))
+
+    try {
+      await dailyEntriesApi.accountsPayable.update(clinicId, entryId, {
+        description: updatedEntry.description,
+        supplierId: updatedEntry.supplierId,
+        amount: updatedEntry.amount,
+        dueDate: updatedEntry.dueDate,
+        paid: updatedEntry.paid,
+        paidDate: updatedEntry.paidDate,
+        category: updatedEntry.category,
+        notes: updatedEntry.notes,
+      })
+      toast.success('Conta a pagar atualizada com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAccountsPayableEntries((prev) => ({
+        ...prev,
+        [clinicId]: (prev[clinicId] || []).map((e) =>
+          e.id === entryId ? oldEntry : e,
+        ),
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para atualizar conta a pagar.')
+      } else {
+        toast.error(error?.message || 'Erro ao atualizar conta a pagar.')
+      }
+      throw error
+    }
+  }
+
+  const deleteAccountsPayableEntry = async (
+    clinicId: string,
+    entryId: string,
+  ) => {
+    const entry = accountsPayableEntries[clinicId]?.find((e) => e.id === entryId)
+    if (!entry) {
+      throw new Error('Entrada não encontrada')
+    }
+
+    // Remover da lista local (otimista)
+    setAccountsPayableEntries((prev) => ({
+      ...prev,
+      [clinicId]: (prev[clinicId] || []).filter((e) => e.id !== entryId),
+    }))
+
+    try {
+      await dailyEntriesApi.accountsPayable.delete(clinicId, entryId)
+      toast.success('Conta a pagar excluída com sucesso!')
+    } catch (error: any) {
+      // Rollback otimista
+      setAccountsPayableEntries((prev) => ({
+        ...prev,
+        [clinicId]: [...(prev[clinicId] || []), entry],
+      }))
+      const msg = String(error?.message || '').toLowerCase()
+      const isForbidden = error?.status === 403 || msg.includes('forbidden')
+      if (isForbidden) {
+        toast.error('Sem permissão para excluir conta a pagar.')
+      } else {
+        toast.error(error?.message || 'Erro ao excluir conta a pagar.')
+      }
+      throw error
+    }
+  }
+
   const deleteProspectingEntry = async (
     clinicId: string,
     entryId: string,
@@ -2470,6 +2601,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         updateAlignersEntry,
         addAdvanceInvoiceEntry,
         updateAdvanceInvoiceEntry,
+        addAccountsPayableEntry,
+        updateAccountsPayableEntry,
         getProspectingEntry,
         getConsultationControlEntry,
         deleteFinancialEntry,
@@ -2481,6 +2614,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteSourceEntry,
         deleteAlignersEntry,
         deleteAdvanceInvoiceEntry,
+        deleteAccountsPayableEntry,
         deletePatient,
         financialEntries,
         consultationEntries,
@@ -2488,6 +2622,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         consultationControlEntries,
         alignerEntries,
         advanceInvoiceEntries,
+        accountsPayableEntries,
         cabinetEntries,
         serviceTimeEntries,
         sourceEntries,

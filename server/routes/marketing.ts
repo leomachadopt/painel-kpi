@@ -18,6 +18,7 @@ import {
   selectGbpLocation,
   upsertGbpIntegration,
 } from '../marketing/google.js'
+import { requirePermission } from '../middleware/permissions.js'
 
 const router = Router()
 
@@ -126,7 +127,7 @@ function canManageClinic(req: AuthedRequest, clinicId: string) {
 // INTEGRATIONS
 // ================================
 
-router.get('/integrations/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/integrations/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -145,7 +146,7 @@ router.get('/integrations/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.put('/integrations/:clinicId/meta', async (req: AuthedRequest, res) => {
+router.put('/integrations/:clinicId/meta', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -193,7 +194,7 @@ router.put('/integrations/:clinicId/meta', async (req: AuthedRequest, res) => {
   }
 })
 
-router.put('/integrations/:clinicId/gbp', async (req: AuthedRequest, res) => {
+router.put('/integrations/:clinicId/gbp', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -245,7 +246,7 @@ router.put('/integrations/:clinicId/gbp', async (req: AuthedRequest, res) => {
   }
 })
 
-router.put('/integrations/:clinicId/rank-tracker', async (req: AuthedRequest, res) => {
+router.put('/integrations/:clinicId/rank-tracker', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -280,7 +281,7 @@ router.put('/integrations/:clinicId/rank-tracker', async (req: AuthedRequest, re
   }
 })
 
-router.delete('/integrations/:clinicId/:provider', async (req: AuthedRequest, res) => {
+router.delete('/integrations/:clinicId/:provider', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId, provider } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -302,7 +303,7 @@ router.delete('/integrations/:clinicId/:provider', async (req: AuthedRequest, re
 // ================================
 
 // Build auth URL via API call (so Authorization header is included). Frontend should use this.
-router.get('/oauth/meta/url/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/oauth/meta/url/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -315,7 +316,7 @@ router.get('/oauth/meta/url/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.get('/oauth/meta/start/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/oauth/meta/start/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -390,7 +391,7 @@ router.get('/oauth/meta/callback', async (req, res) => {
   }
 })
 
-router.get('/meta/assets/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/meta/assets/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -407,7 +408,7 @@ router.get('/meta/assets/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.post('/meta/select/:clinicId', async (req: AuthedRequest, res) => {
+router.post('/meta/select/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -446,7 +447,7 @@ router.get('/oauth/google/config', async (_req, res) => {
 })
 
 // Build auth URL via API call (so Authorization header is included). Frontend should use this.
-router.get('/oauth/google/url/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/oauth/google/url/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -459,7 +460,7 @@ router.get('/oauth/google/url/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.get('/oauth/google/start/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/oauth/google/start/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -523,7 +524,7 @@ router.get('/oauth/google/callback', async (req, res) => {
   }
 })
 
-router.get('/gbp/locations/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/gbp/locations/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -537,7 +538,7 @@ router.get('/gbp/locations/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.post('/gbp/select/:clinicId', async (req: AuthedRequest, res) => {
+router.post('/gbp/select/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -559,7 +560,7 @@ router.post('/gbp/select/:clinicId', async (req: AuthedRequest, res) => {
 // KEYWORDS (max 10 active per clinic)
 // ================================
 
-router.get('/keywords/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/keywords/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -578,7 +579,7 @@ router.get('/keywords/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.post('/keywords/:clinicId', async (req: AuthedRequest, res) => {
+router.post('/keywords/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -615,7 +616,7 @@ router.post('/keywords/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.put('/keywords/:clinicId/:keywordId', async (req: AuthedRequest, res) => {
+router.put('/keywords/:clinicId/:keywordId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId, keywordId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -650,7 +651,7 @@ router.put('/keywords/:clinicId/:keywordId', async (req: AuthedRequest, res) => 
   }
 })
 
-router.delete('/keywords/:clinicId/:keywordId', async (req: AuthedRequest, res) => {
+router.delete('/keywords/:clinicId/:keywordId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId, keywordId } = req.params
     if (!canManageClinic(req, clinicId)) {
@@ -674,7 +675,7 @@ router.delete('/keywords/:clinicId/:keywordId', async (req: AuthedRequest, res) 
 // METRICS & REPORTING
 // ================================
 
-router.get('/metrics/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/metrics/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -707,7 +708,7 @@ router.get('/metrics/:clinicId', async (req: AuthedRequest, res) => {
   }
 })
 
-router.get('/gbp/search-terms/:clinicId/:year/:month', async (req: AuthedRequest, res) => {
+router.get('/gbp/search-terms/:clinicId/:year/:month', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId, year, month } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -726,7 +727,7 @@ router.get('/gbp/search-terms/:clinicId/:year/:month', async (req: AuthedRequest
   }
 })
 
-router.get('/rankings/:clinicId', async (req: AuthedRequest, res) => {
+router.get('/rankings/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
@@ -770,7 +771,7 @@ router.get('/rankings/:clinicId', async (req: AuthedRequest, res) => {
 })
 
 // Manual stub runner (useful while wiring OAuth/providers)
-router.post('/run/:clinicId', async (req: AuthedRequest, res) => {
+router.post('/run/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
   try {
     const { clinicId } = req.params
     if (!canManageClinic(req, clinicId)) {

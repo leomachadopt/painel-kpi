@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { query } from '../db.js'
 import { authRequired, type AuthedRequest } from '../middleware/auth.js'
+import { requirePermission } from '../middleware/permissions.js'
 import crypto from 'crypto'
 
 const router = Router()
@@ -9,7 +10,7 @@ const router = Router()
 router.use(authRequired)
 
 // GET /api/tickets/:clinicId/count - Contar tickets pendentes (deve vir antes de /:clinicId)
-router.get('/:clinicId/count', async (req: AuthedRequest, res: Response) => {
+router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { clinicId } = req.params
     const userId = req.auth?.sub
@@ -50,7 +51,7 @@ router.get('/:clinicId/count', async (req: AuthedRequest, res: Response) => {
 })
 
 // GET /api/tickets/ticket/:ticketId - Buscar ticket por ID (usando prefixo para evitar conflito)
-router.get('/ticket/:ticketId', async (req: AuthedRequest, res: Response) => {
+router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { ticketId } = req.params
     const userId = req.auth?.sub
@@ -109,7 +110,7 @@ router.get('/ticket/:ticketId', async (req: AuthedRequest, res: Response) => {
 })
 
 // GET /api/tickets/:clinicId - Listar tickets da clínica
-router.get('/:clinicId', async (req: AuthedRequest, res: Response) => {
+router.get('/:clinicId', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { clinicId } = req.params
     const userId = req.auth?.sub
@@ -181,7 +182,7 @@ router.get('/:clinicId', async (req: AuthedRequest, res: Response) => {
 })
 
 // POST /api/tickets/:clinicId - Criar novo ticket
-router.post('/:clinicId', async (req: AuthedRequest, res: Response) => {
+router.post('/:clinicId', requirePermission('canEditTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { clinicId } = req.params
     const userId = req.auth?.sub
@@ -236,7 +237,7 @@ router.post('/:clinicId', async (req: AuthedRequest, res: Response) => {
 })
 
 // GET /api/tickets/:ticketId/comments - Listar comentários (deve vir antes de /:ticketId)
-router.get('/:ticketId/comments', async (req: AuthedRequest, res: Response) => {
+router.get('/:ticketId/comments', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { ticketId } = req.params
 
@@ -275,7 +276,7 @@ router.get('/:ticketId/comments', async (req: AuthedRequest, res: Response) => {
 })
 
 // PUT /api/tickets/:ticketId - Atualizar ticket
-router.put('/:ticketId', async (req: AuthedRequest, res: Response) => {
+router.put('/:ticketId', requirePermission('canEditTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { ticketId } = req.params
     const userId = req.auth?.sub
@@ -360,7 +361,7 @@ router.put('/:ticketId', async (req: AuthedRequest, res: Response) => {
 })
 
 // DELETE /api/tickets/:ticketId - Deletar ticket
-router.delete('/:ticketId', async (req: AuthedRequest, res: Response) => {
+router.delete('/:ticketId', requirePermission('canEditTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { ticketId } = req.params
     const userId = req.auth?.sub
@@ -406,7 +407,7 @@ router.delete('/:ticketId', async (req: AuthedRequest, res: Response) => {
 })
 
 // POST /api/tickets/:ticketId/comments - Adicionar comentário
-router.post('/:ticketId/comments', async (req: AuthedRequest, res: Response) => {
+router.post('/:ticketId/comments', requirePermission('canEditTickets'), async (req: AuthedRequest, res: Response) => {
   try {
     const { ticketId } = req.params
     const userId = req.auth?.sub

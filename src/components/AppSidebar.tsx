@@ -16,6 +16,7 @@ import {
   Package,
   Truck,
   Ticket,
+  CreditCard,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -52,6 +53,11 @@ export function AppSidebar() {
   const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
   const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
   const [ticketsCount, setTicketsCount] = useState(0)
+  const [accountsPayableCounts, setAccountsPayableCounts] = useState({
+    overdue: 0,
+    today: 0,
+    week: 0,
+  })
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -161,6 +167,34 @@ export function AppSidebar() {
       loadTicketsCount()
       // Recarregar a cada 30 segundos
       const interval = setInterval(loadTicketsCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [activeClinicId, user])
+
+  // Buscar contagem de contas a pagar
+  useEffect(() => {
+    const loadAccountsPayableCounts = async () => {
+      if (activeClinicId) {
+        try {
+          const result = await dailyEntriesApi.accountsPayable.getCounts(activeClinicId)
+          setAccountsPayableCounts({
+            overdue: result.overdue || 0,
+            today: result.today || 0,
+            week: result.week || 0,
+          })
+        } catch (error) {
+          console.error('Error loading accounts payable counts:', error)
+          setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
+        }
+      } else {
+        setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
+      }
+    }
+
+    if (user && activeClinicId) {
+      loadAccountsPayableCounts()
+      // Recarregar a cada 30 segundos
+      const interval = setInterval(loadAccountsPayableCounts, 30000)
       return () => clearInterval(interval)
     }
   }, [activeClinicId, user])
@@ -354,6 +388,40 @@ export function AppSidebar() {
                     <Link to={`/fornecedores/${activeClinicId}`}>
                       <Truck />
                       <span>Fornecedores</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && (canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Contas a Pagar"
+                    isActive={location.pathname.includes('/contas-a-pagar')}
+                  >
+                    <Link to={`/contas-a-pagar/${activeClinicId}`}>
+                      <CreditCard />
+                      <span>Contas a Pagar</span>
+                      {(accountsPayableCounts.overdue > 0 || accountsPayableCounts.today > 0 || accountsPayableCounts.week > 0) && (
+                        <div className="absolute right-1 flex gap-1">
+                          {accountsPayableCounts.overdue > 0 && (
+                            <SidebarMenuBadge className="bg-purple-500 text-white relative">
+                              {accountsPayableCounts.overdue > 99 ? '99+' : accountsPayableCounts.overdue}
+                            </SidebarMenuBadge>
+                          )}
+                          {accountsPayableCounts.today > 0 && (
+                            <SidebarMenuBadge className="bg-red-500 text-white relative">
+                              {accountsPayableCounts.today > 99 ? '99+' : accountsPayableCounts.today}
+                            </SidebarMenuBadge>
+                          )}
+                          {accountsPayableCounts.week > 0 && accountsPayableCounts.today === 0 && (
+                            <SidebarMenuBadge className="bg-yellow-500 text-white relative">
+                              {accountsPayableCounts.week > 99 ? '99+' : accountsPayableCounts.week}
+                            </SidebarMenuBadge>
+                          )}
+                        </div>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

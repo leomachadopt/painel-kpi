@@ -11,6 +11,7 @@ import {
   Smile,
   Package,
   Receipt,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -33,6 +34,7 @@ import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
 import { DailyConsultationControl } from '@/components/daily/DailyConsultationControl'
 import { DailyAligners } from '@/components/daily/DailyAligners'
 import { DailyOrders } from '@/components/daily/DailyOrders'
+import { DailyAccountsPayable } from '@/components/daily/DailyAccountsPayable'
 
 export default function Inputs() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -65,6 +67,7 @@ export default function Inputs() {
   const hasConsultationControl = canEdit('canEditConsultationControl')
   const hasAligners = canEdit('canEditAligners')
   const hasOrders = canEdit('canEditOrders')
+  const hasAccountsPayable = canEdit('canEditAccountsPayable')
 
   // Determinar primeira aba disponível
   const firstAvailableTab =
@@ -76,10 +79,11 @@ export default function Inputs() {
     hasServiceTime ? 'serviceTime' :
     hasConsultationControl ? 'consultationControl' :
     hasAligners ? 'aligners' :
-    hasOrders ? 'orders' : 'financial'
+    hasOrders ? 'orders' :
+    hasAccountsPayable ? 'accountsPayable' : 'financial'
 
   // Determinar aba inicial (priorizar parâmetro da URL)
-  const validTabs = ['financial', 'consultations', 'advanceInvoice', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders']
+  const validTabs = ['financial', 'consultations', 'advanceInvoice', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders', 'accountsPayable']
   const initialTab = tabParam && validTabs.includes(tabParam)
     ? tabParam
     : firstAvailableTab
@@ -202,6 +206,15 @@ export default function Inputs() {
               >
                 <Package className="h-4 w-4" />
                 <span className="whitespace-nowrap">Pedidos</span>
+              </TabsTrigger>
+            )}
+            {hasAccountsPayable && (
+              <TabsTrigger
+                value="accountsPayable"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <CreditCard className="h-4 w-4" />
+                <span className="whitespace-nowrap">Contas a Pagar</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -347,6 +360,22 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyOrders clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasAccountsPayable && (
+            <TabsContent value="accountsPayable">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contas a Pagar</CardTitle>
+                  <CardDescription>
+                    Registre as contas a pagar da clínica.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyAccountsPayable clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

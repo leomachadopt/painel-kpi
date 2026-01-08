@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import { query } from '../db.js'
+import { requirePermission } from '../middleware/permissions.js'
 
 const router = Router()
 
 // Update clinic configuration (categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands)
-router.put('/:clinicId', async (req, res) => {
+router.put('/:clinicId', requirePermission('canEditClinicConfig'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const { categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands } = req.body

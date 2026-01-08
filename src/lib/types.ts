@@ -265,6 +265,22 @@ export interface DailyAdvanceInvoiceEntry {
   value: number
 }
 
+export interface AccountsPayableEntry {
+  id: string
+  clinicId: string
+  description: string
+  supplierId?: string | null
+  supplierName?: string | null
+  amount: number
+  dueDate: string
+  paid: boolean
+  paidDate?: string | null
+  category?: string | null
+  notes?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface Supplier {
   id: string
   clinicId: string
@@ -433,6 +449,7 @@ export interface UserPermissions {
   canViewTargets: boolean
   canViewOrders: boolean
   canViewSuppliers: boolean
+  canViewAccountsPayable: boolean
   canEditFinancial: boolean
   canEditConsultations: boolean
   canEditProspecting: boolean
@@ -443,9 +460,18 @@ export interface UserPermissions {
   canEditAligners: boolean
   canEditOrders: boolean
   canEditAdvanceInvoice: boolean
+  canEditAccountsPayable: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean
+  canViewTickets: boolean
+  canEditTickets: boolean
+  canViewNPS: boolean
+  canEditNPS: boolean
+  canEditSuppliers: boolean
+  canViewMarketing: boolean
+  canEditMarketing: boolean
+  canViewAlerts: boolean
 }
 
 export interface User {

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db.js'
+import { requirePermission } from '../middleware/permissions.js'
 import crypto from 'crypto'
 
 const router = Router()
@@ -9,7 +10,7 @@ const router = Router()
 // ================================
 
 // Get all NPS surveys for a clinic
-router.get('/:clinicId/surveys', async (req, res) => {
+router.get('/:clinicId/surveys', requirePermission('canViewNPS'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const { month, year, status, page = '1', limit = '50' } = req.query
@@ -109,7 +110,7 @@ router.get('/:clinicId/surveys', async (req, res) => {
 })
 
 // Get NPS survey by ID
-router.get('/:clinicId/surveys/:surveyId', async (req, res) => {
+router.get('/:clinicId/surveys/:surveyId', requirePermission('canViewNPS'), async (req, res) => {
   try {
     const { clinicId, surveyId } = req.params
 
@@ -163,7 +164,7 @@ router.get('/:clinicId/surveys/:surveyId', async (req, res) => {
 })
 
 // Create NPS survey
-router.post('/:clinicId/surveys', async (req, res) => {
+router.post('/:clinicId/surveys', requirePermission('canEditNPS'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const {
@@ -175,14 +176,6 @@ router.post('/:clinicId/surveys', async (req, res) => {
       surveyYear,
       expiresInDays = 30,
     } = req.body
-
-    // Check access - only GESTOR can create surveys
-    if (
-      req.user?.role !== 'GESTOR_CLINICA' ||
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     // Validate required fields
     if (!patientName || !surveyMonth || !surveyYear) {
@@ -233,18 +226,10 @@ router.post('/:clinicId/surveys', async (req, res) => {
 })
 
 // Create multiple NPS surveys (bulk)
-router.post('/:clinicId/surveys/bulk', async (req, res) => {
+router.post('/:clinicId/surveys/bulk', requirePermission('canEditNPS'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const { patients, surveyMonth, surveyYear, expiresInDays = 30 } = req.body
-
-    // Check access - only GESTOR can create surveys
-    if (
-      req.user?.role !== 'GESTOR_CLINICA' ||
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     // Validate required fields
     if (!Array.isArray(patients) || !surveyMonth || !surveyYear) {
@@ -311,17 +296,9 @@ router.post('/:clinicId/surveys/bulk', async (req, res) => {
 })
 
 // Delete NPS survey
-router.delete('/:clinicId/surveys/:surveyId', async (req, res) => {
+router.delete('/:clinicId/surveys/:surveyId', requirePermission('canEditNPS'), async (req, res) => {
   try {
     const { clinicId, surveyId } = req.params
-
-    // Check access - only GESTOR can delete
-    if (
-      req.user?.role !== 'GESTOR_CLINICA' ||
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     const result = await query(
       `DELETE FROM nps_surveys WHERE id = $1 AND clinic_id = $2`,
@@ -340,17 +317,9 @@ router.delete('/:clinicId/surveys/:surveyId', async (req, res) => {
 })
 
 // Mark survey as sent
-router.post('/:clinicId/surveys/:surveyId/send', async (req, res) => {
+router.post('/:clinicId/surveys/:surveyId/send', requirePermission('canEditNPS'), async (req, res) => {
   try {
     const { clinicId, surveyId } = req.params
-
-    // Check access
-    if (
-      req.user?.role !== 'GESTOR_CLINICA' ||
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     const result = await query(
       `UPDATE nps_surveys
@@ -373,18 +342,10 @@ router.post('/:clinicId/surveys/:surveyId/send', async (req, res) => {
 })
 
 // Calculate NPS for a period
-router.get('/:clinicId/calculate', async (req, res) => {
+router.get('/:clinicId/calculate', requirePermission('canViewNPS'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const { month, year } = req.query
-
-    // Check access
-    if (
-      req.user?.role === 'GESTOR_CLINICA' &&
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     if (!month || !year) {
       return res.status(400).json({ error: 'month and year are required' })
@@ -429,18 +390,10 @@ router.get('/:clinicId/calculate', async (req, res) => {
 })
 
 // Get NPS statistics/history
-router.get('/:clinicId/stats', async (req, res) => {
+router.get('/:clinicId/stats', requirePermission('canViewNPS'), async (req, res) => {
   try {
     const { clinicId } = req.params
     const { months = '6' } = req.query
-
-    // Check access
-    if (
-      req.user?.role === 'GESTOR_CLINICA' &&
-      req.user?.clinicId !== clinicId
-    ) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
 
     // Get NPS history from monthly_data
     const result = await query(

@@ -537,6 +537,34 @@ export const dailyEntriesApi = {
         method: 'DELETE',
       }),
   },
+
+  // Accounts Payable
+  accountsPayable: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/daily-entries/accounts-payable/${clinicId}`),
+
+    getCounts: (clinicId: string) =>
+      apiCall<{ overdue: number; today: number; week: number }>(
+        `/daily-entries/accounts-payable/${clinicId}/counts`
+      ),
+
+    create: (clinicId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/accounts-payable/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(entry),
+      }),
+
+    update: (clinicId: string, entryId: string, entry: any) =>
+      apiCall<any>(`/daily-entries/accounts-payable/${clinicId}/${entryId}`, {
+        method: 'PUT',
+        body: JSON.stringify(entry),
+      }),
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/accounts-payable/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================

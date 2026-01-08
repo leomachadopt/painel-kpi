@@ -32,9 +32,19 @@ export interface UserPermissions {
   canEditConsultationControl: boolean
   canEditAligners: boolean
   canEditOrders: boolean
+  canEditAccountsPayable: boolean
+  canViewAccountsPayable: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean
+  canViewTickets: boolean
+  canEditTickets: boolean
+  canViewNPS: boolean
+  canEditNPS: boolean
+  canEditSuppliers: boolean
+  canViewMarketing: boolean
+  canEditMarketing: boolean
+  canViewAlerts: boolean
 }
 
 /**
@@ -80,9 +90,19 @@ export async function getUserPermissions(
       canEditAligners: true,
       canEditOrders: true,
       canEditAdvanceInvoice: true,
+      canEditAccountsPayable: true,
+      canViewAccountsPayable: true,
       canEditPatients: true,
       canEditClinicConfig: true,
       canEditTargets: true,
+      canViewTickets: true,
+      canEditTickets: true,
+      canViewNPS: true,
+      canEditNPS: true,
+      canEditSuppliers: true,
+      canViewMarketing: true,
+      canEditMarketing: true,
+      canViewAlerts: true,
     }
   }
 
@@ -124,9 +144,19 @@ export async function getUserPermissions(
       can_edit_aligners,
       can_edit_orders,
       can_edit_advance_invoice,
+      can_edit_accounts_payable,
+      can_view_accounts_payable,
       can_edit_patients,
       can_edit_clinic_config,
-      can_edit_targets
+      can_edit_targets,
+      can_view_tickets,
+      can_edit_tickets,
+      can_view_nps,
+      can_edit_nps,
+      can_edit_suppliers,
+      can_view_marketing,
+      can_edit_marketing,
+      can_view_alerts
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -169,9 +199,19 @@ export async function getUserPermissions(
     canEditAligners: perms.can_edit_aligners || false,
     canEditOrders: perms.can_edit_orders || false,
     canEditAdvanceInvoice: perms.can_edit_advance_invoice || false,
+    canEditAccountsPayable: perms.can_edit_accounts_payable || false,
+    canViewAccountsPayable: perms.can_view_accounts_payable || false,
     canEditPatients: perms.can_edit_patients || false,
     canEditClinicConfig: perms.can_edit_clinic_config || false,
     canEditTargets: perms.can_edit_targets || false,
+    canViewTickets: perms.can_view_tickets || false,
+    canEditTickets: perms.can_edit_tickets || false,
+    canViewNPS: perms.can_view_nps || false,
+    canEditNPS: perms.can_edit_nps || false,
+    canEditSuppliers: perms.can_edit_suppliers || false,
+    canViewMarketing: perms.can_view_marketing || false,
+    canEditMarketing: perms.can_edit_marketing || false,
+    canViewAlerts: perms.can_view_alerts || false,
   }
 }
 
@@ -207,9 +247,19 @@ function createEmptyPermissions(): UserPermissions {
     canEditAligners: false,
     canEditOrders: false,
     canEditAdvanceInvoice: false,
+    canEditAccountsPayable: false,
+    canViewAccountsPayable: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
+    canViewTickets: false,
+    canEditTickets: false,
+    canViewNPS: false,
+    canEditNPS: false,
+    canEditSuppliers: false,
+    canViewMarketing: false,
+    canEditMarketing: false,
+    canViewAlerts: false,
   }
 }
 

@@ -80,6 +80,7 @@ export default function Collaborators() {
     canViewTargets: false,
     canViewOrders: false,
     canViewSuppliers: false,
+    canViewAccountsPayable: false,
     canEditFinancial: false,
     canEditConsultations: false,
     canEditProspecting: false,
@@ -89,9 +90,18 @@ export default function Collaborators() {
     canEditConsultationControl: false,
     canEditAligners: false,
     canEditOrders: false,
+    canEditAccountsPayable: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,
+    canViewTickets: false,
+    canEditTickets: false,
+    canViewNPS: false,
+    canEditNPS: false,
+    canEditSuppliers: false,
+    canViewMarketing: false,
+    canEditMarketing: false,
+    canViewAlerts: false,
   })
 
   // Load collaborators
@@ -519,6 +529,56 @@ export default function Collaborators() {
                     Visualizar Fornecedores
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewAccountsPayable"
+                    checked={permissionsForm.canViewAccountsPayable}
+                    onCheckedChange={() => handleTogglePermission('canViewAccountsPayable')}
+                  />
+                  <Label htmlFor="canViewAccountsPayable" className="cursor-pointer">
+                    Visualizar Contas a Pagar
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewTickets"
+                    checked={permissionsForm.canViewTickets}
+                    onCheckedChange={() => handleTogglePermission('canViewTickets')}
+                  />
+                  <Label htmlFor="canViewTickets" className="cursor-pointer">
+                    Visualizar Tickets
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewNPS"
+                    checked={permissionsForm.canViewNPS}
+                    onCheckedChange={() => handleTogglePermission('canViewNPS')}
+                  />
+                  <Label htmlFor="canViewNPS" className="cursor-pointer">
+                    Visualizar NPS
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewMarketing"
+                    checked={permissionsForm.canViewMarketing}
+                    onCheckedChange={() => handleTogglePermission('canViewMarketing')}
+                  />
+                  <Label htmlFor="canViewMarketing" className="cursor-pointer">
+                    Visualizar Marketing
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewAlerts"
+                    checked={permissionsForm.canViewAlerts}
+                    onCheckedChange={() => handleTogglePermission('canViewAlerts')}
+                  />
+                  <Label htmlFor="canViewAlerts" className="cursor-pointer">
+                    Visualizar Alertas
+                  </Label>
+                </div>
               </div>
             </div>
 
@@ -626,6 +686,16 @@ export default function Collaborators() {
                     Relatório de Marketing
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canViewReportAdvanceInvoice"
+                    checked={permissionsForm.canViewReportAdvanceInvoice}
+                    onCheckedChange={() => handleTogglePermission('canViewReportAdvanceInvoice')}
+                  />
+                  <Label htmlFor="canViewReportAdvanceInvoice" className="cursor-pointer">
+                    Relatório de Adiantamento de Fatura
+                  </Label>
+                </div>
               </div>
             </div>
 
@@ -641,6 +711,16 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canEditFinancial" className="cursor-pointer">
                     Lançamentos Financeiros
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditAdvanceInvoice"
+                    checked={permissionsForm.canEditAdvanceInvoice}
+                    onCheckedChange={() => handleTogglePermission('canEditAdvanceInvoice')}
+                  />
+                  <Label htmlFor="canEditAdvanceInvoice" className="cursor-pointer">
+                    Adiantamento de Fatura
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -725,6 +805,16 @@ export default function Collaborators() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="canEditAccountsPayable"
+                    checked={permissionsForm.canEditAccountsPayable}
+                    onCheckedChange={() => handleTogglePermission('canEditAccountsPayable')}
+                  />
+                  <Label htmlFor="canEditAccountsPayable" className="cursor-pointer">
+                    Contas a Pagar
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
                     id="canEditPatients"
                     checked={permissionsForm.canEditPatients}
                     onCheckedChange={() => handleTogglePermission('canEditPatients')}
@@ -751,6 +841,46 @@ export default function Collaborators() {
                   />
                   <Label htmlFor="canEditTargets" className="cursor-pointer">
                     Editar Metas Mensais
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditTickets"
+                    checked={permissionsForm.canEditTickets}
+                    onCheckedChange={() => handleTogglePermission('canEditTickets')}
+                  />
+                  <Label htmlFor="canEditTickets" className="cursor-pointer">
+                    Editar Tickets
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditNPS"
+                    checked={permissionsForm.canEditNPS}
+                    onCheckedChange={() => handleTogglePermission('canEditNPS')}
+                  />
+                  <Label htmlFor="canEditNPS" className="cursor-pointer">
+                    Gerenciar NPS
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditSuppliers"
+                    checked={permissionsForm.canEditSuppliers}
+                    onCheckedChange={() => handleTogglePermission('canEditSuppliers')}
+                  />
+                  <Label htmlFor="canEditSuppliers" className="cursor-pointer">
+                    Editar Fornecedores
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="canEditMarketing"
+                    checked={permissionsForm.canEditMarketing}
+                    onCheckedChange={() => handleTogglePermission('canEditMarketing')}
+                  />
+                  <Label htmlFor="canEditMarketing" className="cursor-pointer">
+                    Gerenciar Marketing
                   </Label>
                 </div>
               </div>

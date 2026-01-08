@@ -45,6 +45,11 @@ export function usePermissions() {
     | 'canViewTargets'
     | 'canViewOrders'
     | 'canViewSuppliers'
+    | 'canViewAccountsPayable'
+    | 'canViewTickets'
+    | 'canViewNPS'
+    | 'canViewMarketing'
+    | 'canViewAlerts'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -84,9 +89,14 @@ export function usePermissions() {
     | 'canEditConsultationControl'
     | 'canEditAligners'
     | 'canEditOrders'
+    | 'canEditAccountsPayable'
     | 'canEditPatients'
     | 'canEditClinicConfig'
     | 'canEditTargets'
+    | 'canEditTickets'
+    | 'canEditNPS'
+    | 'canEditSuppliers'
+    | 'canEditMarketing'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -132,9 +142,14 @@ export function usePermissions() {
       permissions.canEditConsultationControl ||
       permissions.canEditAligners ||
       permissions.canEditOrders ||
+      permissions.canEditAccountsPayable ||
       permissions.canEditPatients ||
       permissions.canEditClinicConfig ||
-      permissions.canEditTargets
+      permissions.canEditTargets ||
+      permissions.canEditTickets ||
+      permissions.canEditNPS ||
+      permissions.canEditSuppliers ||
+      permissions.canEditMarketing
     )
   }
 
@@ -183,6 +198,18 @@ function createEmptyPermissions(): UserPermissions {
     canEditTargets: false,
     canViewOrders: false,
     canViewSuppliers: false,
+    canViewAccountsPayable: false,
+    canEditAccountsPayable: false,
+    canEditAdvanceInvoice: false,
+    canViewReportAdvanceInvoice: false,
+    canViewTickets: false,
+    canEditTickets: false,
+    canViewNPS: false,
+    canEditNPS: false,
+    canEditSuppliers: false,
+    canViewMarketing: false,
+    canEditMarketing: false,
+    canViewAlerts: false,
   }
 }
 
@@ -219,5 +246,17 @@ function createFullPermissions(): UserPermissions {
     canEditTargets: true,
     canViewOrders: true,
     canViewSuppliers: true,
+    canViewAccountsPayable: true,
+    canEditAccountsPayable: true,
+    canEditAdvanceInvoice: true,
+    canViewReportAdvanceInvoice: true,
+    canViewTickets: true,
+    canEditTickets: true,
+    canViewNPS: true,
+    canEditNPS: true,
+    canEditSuppliers: true,
+    canViewMarketing: true,
+    canEditMarketing: true,
+    canViewAlerts: true,
   }
 }

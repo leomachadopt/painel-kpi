@@ -16,6 +16,7 @@ import NPSSurvey from '@/pages/NPSSurvey'
 import Alerts from '@/pages/Alerts'
 import Suppliers from '@/pages/Suppliers'
 import Orders from '@/pages/Orders'
+import AccountsPayable from '@/pages/AccountsPayable'
 import Tickets from '@/pages/Tickets'
 import TicketDetail from '@/pages/TicketDetail'
 import NotFound from '@/pages/NotFound'
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/pacientes/:clinicId" element={<Patients />} />
               <Route path="/pedidos/:clinicId" element={<Orders />} />
               <Route path="/fornecedores/:clinicId" element={<Suppliers />} />
+              <Route path="/contas-a-pagar/:clinicId" element={<AccountsPayable />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/alertas/:clinicId" element={<Alerts />} />
               <Route path="/tickets/:clinicId" element={<Tickets />} />
