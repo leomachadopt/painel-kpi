@@ -51,11 +51,19 @@ export default defineConfig(({ mode }) => {
         {
           find: /zod\/v4\/core/,
           replacement: path.resolve(__dirname, 'node_modules', 'zod', 'v4', 'core'),
-        }
+        },
+        // Polyfill para stream - necessário para xlsx-js-style no navegador
+        {
+          find: /^stream$/,
+          replacement: path.resolve(__dirname, 'src', 'lib', 'stream-polyfill.ts'),
+        },
       ],
     },
     optimizeDeps: {
       include: ['xlsx-js-style'],
+    },
+    ssr: {
+      noExternal: ['xlsx-js-style'], // Para SSR, se necessário
     },
   }
 })

@@ -480,18 +480,77 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const loadDailyEntriesForClinic = async (clinicId: string) => {
+    // Função helper para tratar erros 403 silenciosamente
+    const loadWithErrorHandling = async <T,>(
+      promise: Promise<T>,
+      defaultValue: T,
+      errorMessage: string
+    ): Promise<T> => {
+      try {
+        return await promise
+      } catch (error: any) {
+        // Se for 403 (sem permissão), usar valor padrão silenciosamente
+        if (error?.status === 403) {
+          return defaultValue
+        }
+        // Para outros erros, logar mas não quebrar o carregamento
+        console.error(errorMessage, error)
+        return defaultValue
+      }
+    }
+
     const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice, accountsPayable] =
       await Promise.all([
-        dailyEntriesApi.financial.getAll(clinicId),
-        dailyEntriesApi.consultation.getAll(clinicId),
-        dailyEntriesApi.cabinet.getAll(clinicId),
-        dailyEntriesApi.serviceTime.getAll(clinicId),
-        dailyEntriesApi.source.getAll(clinicId),
-        dailyEntriesApi.prospecting.getAll(clinicId),
-        dailyEntriesApi.consultationControl.getAll(clinicId),
-        dailyEntriesApi.aligner.getAll(clinicId),
-        dailyEntriesApi.advanceInvoice.getAll(clinicId),
-        dailyEntriesApi.accountsPayable.getAll(clinicId),
+        loadWithErrorHandling(
+          dailyEntriesApi.financial.getAll(clinicId),
+          [],
+          `Failed to load financial entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.consultation.getAll(clinicId),
+          [],
+          `Failed to load consultation entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.cabinet.getAll(clinicId),
+          [],
+          `Failed to load cabinet entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.serviceTime.getAll(clinicId),
+          [],
+          `Failed to load service time entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.source.getAll(clinicId),
+          [],
+          `Failed to load source entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.prospecting.getAll(clinicId),
+          [],
+          `Failed to load prospecting entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.consultationControl.getAll(clinicId),
+          [],
+          `Failed to load consultation control entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.aligner.getAll(clinicId),
+          [],
+          `Failed to load aligner entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.advanceInvoice.getAll(clinicId),
+          [],
+          `Failed to load advance invoice entries for ${clinicId}`
+        ),
+        loadWithErrorHandling(
+          dailyEntriesApi.accountsPayable.getAll(clinicId),
+          [],
+          `Failed to load accounts payable entries for ${clinicId}`
+        ),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
@@ -509,20 +568,30 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Load daily entries once clinics are known (backend source of truth)
   // Only load if user is authenticated
   useEffect(() => {
-    if (!isAuthenticated) return
-    if (dailyEntriesLoaded) return
-    if (clinics.length === 0) return
+    if (!isAuthenticated || dailyEntriesLoaded || clinics.length === 0) {
+      return
+    }
+
+    let cancelled = false
 
     ;(async () => {
       try {
         await Promise.all(clinics.map((c) => loadDailyEntriesForClinic(c.id)))
-        setDailyEntriesLoaded(true)
+        if (!cancelled) {
+          setDailyEntriesLoaded(true)
+        }
       } catch (error) {
-        console.error('Failed to load daily entries:', error)
-        // Keep local mock entries as fallback
+        if (!cancelled) {
+          console.error('Failed to load daily entries:', error)
+          // Keep local mock entries as fallback
+        }
       }
     })()
-  }, [clinics, dailyEntriesLoaded, isAuthenticated])
+
+    return () => {
+      cancelled = true
+    }
+  }, [clinics.length, dailyEntriesLoaded, isAuthenticated])
 
   // Aggregate daily entries into monthly data after loading
   useEffect(() => {

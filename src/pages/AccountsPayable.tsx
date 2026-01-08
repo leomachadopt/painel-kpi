@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react'
+import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -41,11 +41,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ViewAccountsPayableDialog } from '@/components/accounts-payable/ViewAccountsPayableDialog'
 
 export default function AccountsPayable() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -61,6 +69,7 @@ export default function AccountsPayable() {
   const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
+  const [viewEntryId, setViewEntryId] = useState<string | null>(null)
 
   useEffect(() => {
     if (clinicId) {
@@ -313,6 +322,14 @@ export default function AccountsPayable() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setViewEntryId(entry.id)}
+                              title="Visualizar Detalhes"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             {canEditAccountsPayable && (
                               <>
                                 {!entry.paid ? (
@@ -399,6 +416,13 @@ export default function AccountsPayable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ViewAccountsPayableDialog
+        open={viewEntryId !== null}
+        onOpenChange={(open) => !open && setViewEntryId(null)}
+        entryId={viewEntryId}
+        clinicId={clinicId || ''}
+      />
     </div>
   )
 }

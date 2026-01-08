@@ -4199,6 +4199,23 @@ router.delete('/advance-invoice/:clinicId/:entryId', async (req, res) => {
 router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPayable'), async (req, res) => {
   try {
     const { clinicId } = req.params
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const role = (req as any).auth?.role || (req as any).user?.role
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' })
+    }
+
+    // Verificar se usuário tem acesso à clínica
+    if (role === 'COLABORADOR') {
+      const userClinic = await query(
+        'SELECT clinic_id FROM users WHERE id = $1',
+        [userId]
+      )
+      if (userClinic.rows[0]?.clinic_id !== clinicId) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+    }
 
     const result = await query(
       `SELECT 
@@ -4237,6 +4254,23 @@ router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPaya
 router.get('/accounts-payable/:clinicId/counts', requirePermission('canViewAccountsPayable'), async (req, res) => {
   try {
     const { clinicId } = req.params
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const role = (req as any).auth?.role || (req as any).user?.role
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' })
+    }
+
+    // Verificar se usuário tem acesso à clínica
+    if (role === 'COLABORADOR') {
+      const userClinic = await query(
+        'SELECT clinic_id FROM users WHERE id = $1',
+        [userId]
+      )
+      if (userClinic.rows[0]?.clinic_id !== clinicId) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+    }
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)

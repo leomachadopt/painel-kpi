@@ -46,6 +46,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_view_report_sources,
         p.can_view_report_consultation_control,
         p.can_view_report_marketing,
+        p.can_view_report_advance_invoice,
         p.can_view_targets,
         p.can_view_orders,
         p.can_view_suppliers,
@@ -58,9 +59,20 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_consultation_control,
         p.can_edit_aligners,
         p.can_edit_orders,
+        p.can_edit_advance_invoice,
+        p.can_edit_accounts_payable,
+        p.can_view_accounts_payable,
         p.can_edit_patients,
         p.can_edit_clinic_config,
-        p.can_edit_targets
+        p.can_edit_targets,
+        p.can_view_tickets,
+        p.can_edit_tickets,
+        p.can_view_nps,
+        p.can_edit_nps,
+        p.can_edit_suppliers,
+        p.can_view_marketing,
+        p.can_edit_marketing,
+        p.can_view_alerts
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id AND p.clinic_id = u.clinic_id
       WHERE u.clinic_id = $1 AND u.role = 'COLABORADOR'
@@ -94,6 +106,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewReportSources: row.can_view_report_sources || false,
         canViewReportConsultationControl: row.can_view_report_consultation_control || false,
         canViewReportMarketing: row.can_view_report_marketing || false,
+        canViewReportAdvanceInvoice: row.can_view_report_advance_invoice || false,
         canViewTargets: row.can_view_targets || false,
         canViewOrders: row.can_view_orders || false,
         canViewSuppliers: row.can_view_suppliers || false,
@@ -212,6 +225,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_view_report_sources,
         p.can_view_report_consultation_control,
         p.can_view_report_marketing,
+        p.can_view_report_advance_invoice,
         p.can_view_targets,
         p.can_view_orders,
         p.can_view_suppliers,
@@ -271,6 +285,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewReportSources: row.can_view_report_sources || false,
         canViewReportConsultationControl: row.can_view_report_consultation_control || false,
         canViewReportMarketing: row.can_view_report_marketing || false,
+        canViewReportAdvanceInvoice: row.can_view_report_advance_invoice || false,
         canViewTargets: row.can_view_targets || false,
         canViewOrders: row.can_view_orders || false,
         canViewSuppliers: row.can_view_suppliers || false,

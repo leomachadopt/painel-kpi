@@ -149,7 +149,9 @@ export function AppSidebar() {
   // Buscar contagem de tickets pendentes
   useEffect(() => {
     const loadTicketsCount = async () => {
-      if (activeClinicId) {
+      // Verificar permissão antes de fazer a requisição
+      const hasPermission = canView('canViewTickets')
+      if (activeClinicId && hasPermission) {
         try {
           const result = await ticketsApi.getCount(activeClinicId)
           const count = result.count || 0
@@ -164,17 +166,22 @@ export function AppSidebar() {
     }
 
     if (user && activeClinicId) {
+      const hasPermission = canView('canViewTickets')
       loadTicketsCount()
-      // Recarregar a cada 30 segundos
-      const interval = setInterval(loadTicketsCount, 30000)
-      return () => clearInterval(interval)
+      // Recarregar a cada 30 segundos apenas se tiver permissão
+      if (hasPermission) {
+        const interval = setInterval(loadTicketsCount, 30000)
+        return () => clearInterval(interval)
+      }
     }
   }, [activeClinicId, user])
 
   // Buscar contagem de contas a pagar
   useEffect(() => {
     const loadAccountsPayableCounts = async () => {
-      if (activeClinicId) {
+      // Verificar permissão antes de fazer a requisição
+      const hasPermission = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
+      if (activeClinicId && hasPermission) {
         try {
           const result = await dailyEntriesApi.accountsPayable.getCounts(activeClinicId)
           setAccountsPayableCounts({
@@ -192,10 +199,13 @@ export function AppSidebar() {
     }
 
     if (user && activeClinicId) {
+      const hasPermission = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
       loadAccountsPayableCounts()
-      // Recarregar a cada 30 segundos
-      const interval = setInterval(loadAccountsPayableCounts, 30000)
-      return () => clearInterval(interval)
+      // Recarregar a cada 30 segundos apenas se tiver permissão
+      if (hasPermission) {
+        const interval = setInterval(loadAccountsPayableCounts, 30000)
+        return () => clearInterval(interval)
+      }
     }
   }, [activeClinicId, user])
 

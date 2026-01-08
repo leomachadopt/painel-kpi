@@ -14,6 +14,7 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
   try {
     const { clinicId } = req.params
     const userId = req.auth?.sub
+    const role = req.auth?.role
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' })
@@ -21,6 +22,17 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
 
     if (!clinicId) {
       return res.status(400).json({ error: 'ID da clínica é obrigatório' })
+    }
+
+    // Verificar se usuário tem acesso à clínica
+    if (role === 'COLABORADOR') {
+      const userClinic = await query(
+        'SELECT clinic_id FROM users WHERE id = $1',
+        [userId]
+      )
+      if (userClinic.rows[0]?.clinic_id !== clinicId) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
     }
 
     const result = await query(
