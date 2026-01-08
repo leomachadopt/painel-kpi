@@ -146,37 +146,16 @@ async function processPDFDocument(documentId: string, filePath: string, provider
   try {
     console.log('🔄 Iniciando processamento do PDF:', { documentId, providerId, providerName })
 
-    // Verificar se estamos em ambiente serverless (Vercel)
-    const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME
+    // Upload PDF to OpenAI
+    console.log('📤 Enviando PDF para OpenAI...')
+    const fileStream = fs.createReadStream(filePath)
 
-    if (isServerless) {
-      console.warn('⚠️ Ambiente serverless detectado. Processamento de PDF desabilitado.')
-      await client.query(
-        `UPDATE insurance_provider_documents
-         SET processing_status = 'FAILED',
-             processed_at = CURRENT_TIMESTAMP,
-             extracted_data = $1
-         WHERE id = $2`,
-        [JSON.stringify({
-          error: 'Processamento de PDF não disponível no ambiente Vercel (serverless). Esta funcionalidade requer ambiente com suporte a bibliotecas nativas. Por favor, use o ambiente local para processar PDFs.'
-        }), documentId]
-      )
-      return
-    }
+    const file = await openai.files.create({
+      file: fileStream,
+      purpose: 'assistants'
+    })
 
-    // Marcar como falha - funcionalidade desabilitada temporariamente
-    console.warn('⚠️ Processamento de PDF temporariamente desabilitado')
-    await client.query(
-      `UPDATE insurance_provider_documents
-       SET processing_status = 'FAILED',
-           processed_at = CURRENT_TIMESTAMP,
-           extracted_data = $1
-       WHERE id = $2`,
-      [JSON.stringify({
-        error: 'Funcionalidade de processamento de PDF está temporariamente desabilitada. Aguarde próxima atualização.'
-      }), documentId]
-    )
-    return
+    console.log(`✅ PDF enviado para OpenAI: ${file.id}`)
 
     // Get procedure base for comparison
     console.log('📋 Carregando tabela base de procedimentos...')
@@ -189,10 +168,13 @@ async function processPDFDocument(documentId: string, filePath: string, provider
     const procedureBase = procedureBaseResult.rows
     console.log(`✅ ${procedureBase.length} procedimentos carregados da tabela base`)
 
-    // Prepare prompt for OpenAI with Vision
-    const systemPrompt = `Você é um especialista em extrair dados de tabelas de procedimentos odontológicos de operadoras de saúde.
+    // Create temporary assistant
+    console.log('🤖 Criando assistente temporário...')
+    const assistant = await openai.beta.assistants.create({
+      name: 'Dental Procedure Extractor',
+      instructions: `Você é um especialista em extrair dados de tabelas de procedimentos odontológicos de operadoras de saúde.
 
-Analise as imagens do documento da operadora "${providerName}" e extraia TODOS os procedimentos odontológicos encontrados.
+Analise o documento PDF anexado da operadora "${providerName}" e extraia TODOS os procedimentos odontológicos encontrados.
 
 Para cada procedimento, identifique:
 1. Código TUSS (código do procedimento)
@@ -221,47 +203,71 @@ Retorne um JSON no seguinte formato:
       "confidence": 0.95
     }
   ]
-}`
-
-    // Build messages with images
-    const messages: any[] = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Analise todas as páginas deste documento e extraia os procedimentos odontológicos:'
-          },
-          ...imagePages.map((base64Image) => ({
-            type: 'image_url',
-            image_url: {
-              url: `data:image/png;base64,${base64Image}`,
-              detail: 'high'
-            }
-          }))
-        ]
-      }
-    ]
-
-    // Call OpenAI API with Vision
-    console.log('🤖 Chamando OpenAI GPT-4o Vision para extrair dados das imagens...')
-    const completion = await openai.chat.completions.create({
+}`,
       model: 'gpt-4o',
-      messages: messages,
-      temperature: 0.1,
-      max_tokens: 4096,
-      response_format: { type: 'json_object' }
+      tools: [{ type: 'file_search' }]
     })
 
-    const responseText = completion.choices[0].message.content
+    // Create thread with the file
+    console.log('💬 Criando thread com arquivo...')
+    const thread = await openai.beta.threads.create({
+      messages: [
+        {
+          role: 'user',
+          content: 'Analise o PDF anexado e extraia todos os procedimentos odontológicos conforme as instruções.',
+          attachments: [
+            {
+              file_id: file.id,
+              tools: [{ type: 'file_search' }]
+            }
+          ]
+        }
+      ]
+    })
+
+    // Run assistant
+    console.log('⚙️ Executando assistente...')
+    const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
+      assistant_id: assistant.id
+    })
+
+    if (run.status !== 'completed') {
+      throw new Error(`Assistente falhou com status: ${run.status}`)
+    }
+
+    // Get response
+    const messages = await openai.beta.threads.messages.list(thread.id)
+    const responseMessage = messages.data[0]
+
+    let responseText = ''
+    for (const content of responseMessage.content) {
+      if (content.type === 'text') {
+        responseText += content.text.value
+      }
+    }
+
+    // Clean up
+    console.log('🧹 Limpando recursos temporários...')
+    await openai.beta.assistants.del(assistant.id)
+    await openai.files.del(file.id)
+
     console.log('✅ Resposta recebida da OpenAI')
     console.log('📝 Resposta completa:', responseText?.substring(0, 500))
 
-    const extractedData = JSON.parse(responseText)
+    // Extract JSON from response (might be wrapped in markdown code blocks)
+    let jsonText = responseText.trim()
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.substring(7)
+    }
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.substring(3)
+    }
+    if (jsonText.endsWith('```')) {
+      jsonText = jsonText.substring(0, jsonText.length - 3)
+    }
+    jsonText = jsonText.trim()
+
+    const extractedData = JSON.parse(jsonText)
     console.log(`📊 Procedimentos extraídos: ${extractedData.procedures?.length || 0}`)
 
     if (extractedData.procedures?.length === 0) {
