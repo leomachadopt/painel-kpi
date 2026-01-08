@@ -111,10 +111,12 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   // Tratamento defensivo: se o contexto não estiver disponível, tratar como não autenticado
   let isAuthenticated = false
   let authLoading = false
+  let user: any = null
   try {
     const auth = useAuth()
     isAuthenticated = auth.isAuthenticated
     authLoading = auth.loading
+    user = auth.user
   } catch (error) {
     // Se o contexto não estiver disponível (hot-reload), tratar como não autenticado
     console.warn('AuthProvider não disponível ainda, tratando como não autenticado')
@@ -479,6 +481,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
+  // Helper para verificar permissão antes de fazer requisição
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false
+    if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
+    return user.permissions?.[permission] === true
+  }
+
   const loadDailyEntriesForClinic = async (clinicId: string) => {
     // Função helper para tratar erros 403 silenciosamente
     const loadWithErrorHandling = async <T,>(
@@ -498,6 +507,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         return defaultValue
       }
     }
+
+    // Verificar permissão para accounts payable antes de fazer requisição
+    const canViewAccountsPayable = hasPermission('canViewAccountsPayable')
+    const canEditAccountsPayable = hasPermission('canEditAccountsPayable')
+    const hasAccountsPayablePermission = canViewAccountsPayable || canEditAccountsPayable
 
     const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice, accountsPayable] =
       await Promise.all([
@@ -546,11 +560,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           [],
           `Failed to load advance invoice entries for ${clinicId}`
         ),
-        loadWithErrorHandling(
-          dailyEntriesApi.accountsPayable.getAll(clinicId),
-          [],
-          `Failed to load accounts payable entries for ${clinicId}`
-        ),
+        // Verificar permissão antes de fazer requisição de accounts payable
+        hasAccountsPayablePermission
+          ? loadWithErrorHandling(
+              dailyEntriesApi.accountsPayable.getAll(clinicId),
+              [],
+              `Failed to load accounts payable entries for ${clinicId}`
+            )
+          : Promise.resolve([]),
       ])
 
     setFinancialEntries((prev) => ({ ...prev, [clinicId]: financial }))
