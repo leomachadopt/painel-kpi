@@ -69,7 +69,7 @@ interface DataState {
   addAdvanceInvoiceEntry: (clinicId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   updateAdvanceInvoiceEntry: (clinicId: string, entryId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   deleteAdvanceInvoiceEntry: (clinicId: string, entryId: string) => Promise<void>
-  addAccountsPayableEntry: (clinicId: string, entry: AccountsPayableEntry) => Promise<void>
+  addAccountsPayableEntry: (clinicId: string, entry: AccountsPayableEntry) => Promise<AccountsPayableEntry>
   updateAccountsPayableEntry: (clinicId: string, entryId: string, entry: AccountsPayableEntry) => Promise<void>
   deleteAccountsPayableEntry: (clinicId: string, entryId: string) => Promise<void>
   getProspectingEntry: (
@@ -1796,7 +1796,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   const addAccountsPayableEntry = async (
     clinicId: string,
     entry: AccountsPayableEntry,
-  ) => {
+  ): Promise<AccountsPayableEntry> => {
     const prevEntries = accountsPayableEntries[clinicId] || []
     setAccountsPayableEntries((prev) => ({
       ...prev,
@@ -1815,7 +1815,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         }
         return prev
       })
-      toast.success('Conta a pagar registada com sucesso!')
+      // Não mostrar toast aqui, deixar o componente decidir
+      return saved
     } catch (error: any) {
       // Rollback otimista
       setAccountsPayableEntries((prev) => ({ ...prev, [clinicId]: prevEntries }))

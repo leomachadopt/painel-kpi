@@ -17,6 +17,7 @@ import {
   Truck,
   Ticket,
   CreditCard,
+  Receipt,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -276,18 +277,33 @@ export function AppSidebar() {
 
         <SidebarMenu>
           {isMentor && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="Clínicas"
-                isActive={location.pathname === '/clinicas'}
-              >
-                <Link to="/clinicas">
-                  <Building2 />
-                  <span>Clínicas</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Clínicas"
+                  isActive={location.pathname === '/clinicas'}
+                >
+                  <Link to="/clinicas">
+                    <Building2 />
+                    <span>Clínicas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Tabela Base de Procedimentos"
+                  isActive={location.pathname === '/tabela-base-procedimentos'}
+                >
+                  <Link to="/tabela-base-procedimentos">
+                    <FileText />
+                    <span>Tabela Base de Procedimentos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
           )}
 
           {(currentClinic || user?.role === 'GESTOR_CLINICA') && (
@@ -432,6 +448,36 @@ export function AppSidebar() {
                           )}
                         </div>
                       )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && canEdit('canManageInsuranceProviders') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Operadoras"
+                    isActive={location.pathname.includes('/operadoras')}
+                  >
+                    <Link to={`/operadoras/${activeClinicId}`}>
+                      <Building2 />
+                      <span>Operadoras</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && (canView('canViewAdvances') || canEdit('canEditAdvances')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Adiantamentos"
+                    isActive={location.pathname.includes('/adiantamentos')}
+                  >
+                    <Link to={`/adiantamentos/${activeClinicId}`}>
+                      <Receipt />
+                      <span>Adiantamentos</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

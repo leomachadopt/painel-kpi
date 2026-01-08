@@ -33,3 +33,5 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_daily_order_approved ON daily_order_entries(clinic_id, approved) WHERE approved = false;
 
 
+
+

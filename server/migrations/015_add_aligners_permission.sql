@@ -17,3 +17,5 @@ END $$;
 COMMENT ON COLUMN user_permissions.can_edit_aligners IS 'Permission to create/edit/delete aligner entries';
 
 
+
+

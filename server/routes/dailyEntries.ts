@@ -4453,4 +4453,247 @@ router.delete('/accounts-payable/:clinicId/:entryId', requirePermission('canEdit
   }
 })
 
+// ================================
+// ACCOUNTS PAYABLE DOCUMENTS
+// ================================
+
+// Upload documento para conta a pagar
+router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission('canEditAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+    const { file, filename, mimeType } = req.body
+    
+    if (!file || !filename) {
+      return res.status(400).json({ error: 'File and filename are required' })
+    }
+    
+    // Validar formato base64
+    if (!file.startsWith('data:')) {
+      return res.status(400).json({ error: 'Invalid file format' })
+    }
+    
+    // Extrair dados base64
+    const matches = file.match(/^data:([^;]+);base64,(.+)$/)
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid file format' })
+    }
+    
+    const [, detectedMimeType, base64Data] = matches
+    
+    // Validar que é PDF
+    if (detectedMimeType !== 'application/pdf' && mimeType !== 'application/pdf') {
+      return res.status(400).json({ error: 'Apenas arquivos PDF são permitidos' })
+    }
+    
+    const buffer = Buffer.from(base64Data, 'base64')
+    
+    // Validar tamanho (max 10MB)
+    if (buffer.length > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: 'File must be less than 10MB' })
+    }
+    
+    // Verificar se a conta existe
+    const entryResult = await query(
+      `SELECT id FROM accounts_payable WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+    
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Accounts payable entry not found' })
+    }
+    
+    // Gerar nome único do arquivo
+    const documentId = `doc-${entryId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    const fileExtension = 'pdf'
+    const storedFilename = `${documentId}.${fileExtension}`
+    
+    const path = await import('path')
+    const fs = await import('fs/promises')
+    
+    // Criar diretório se não existir
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'accounts-payable')
+    await fs.mkdir(uploadsDir, { recursive: true })
+    
+    // Salvar arquivo
+    const filePath = path.join(uploadsDir, storedFilename)
+    await fs.writeFile(filePath, buffer)
+    
+    // Salvar metadados no banco
+    const auth = req.auth || req.user
+    const result = await query(
+      `INSERT INTO accounts_payable_documents 
+       (id, accounts_payable_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        documentId,
+        entryId,
+        storedFilename,
+        filename,
+        filePath,
+        buffer.length,
+        mimeType || detectedMimeType || 'application/pdf',
+        auth?.sub || auth?.id || null,
+      ]
+    )
+    
+    const doc = result.rows[0]
+    
+    res.json({
+      id: doc.id,
+      accountsPayableId: doc.accounts_payable_id,
+      filename: doc.filename,
+      originalFilename: doc.original_filename,
+      filePath: doc.file_path,
+      fileSize: doc.file_size,
+      mimeType: doc.mime_type,
+      uploadedBy: doc.uploaded_by,
+      uploadedAt: doc.uploaded_at,
+    })
+  } catch (error: any) {
+    console.error('Upload document error:', error)
+    res.status(500).json({ error: 'Failed to upload document', message: error.message })
+  }
+})
+
+// Listar documentos de uma conta a pagar
+router.get('/accounts-payable/:clinicId/:entryId/documents', requirePermission('canViewAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+    
+    // Verificar se a conta existe e pertence à clínica
+    const entryResult = await query(
+      `SELECT id FROM accounts_payable WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+    
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Accounts payable entry not found' })
+    }
+    
+    const result = await query(
+      `SELECT id, accounts_payable_id, filename, original_filename, file_path, 
+              file_size, mime_type, uploaded_by, uploaded_at
+       FROM accounts_payable_documents
+       WHERE accounts_payable_id = $1
+       ORDER BY uploaded_at DESC`,
+      [entryId]
+    )
+    
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      accountsPayableId: row.accounts_payable_id,
+      filename: row.filename,
+      originalFilename: row.original_filename,
+      filePath: row.file_path,
+      fileSize: row.file_size,
+      mimeType: row.mime_type,
+      uploadedBy: row.uploaded_by,
+      uploadedAt: row.uploaded_at,
+    })))
+  } catch (error: any) {
+    console.error('Get documents error:', error)
+    res.status(500).json({ error: 'Failed to get documents', message: error.message })
+  }
+})
+
+// Download documento
+router.get('/accounts-payable/:clinicId/:entryId/documents/:documentId/download', requirePermission('canViewAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId, entryId, documentId } = req.params
+    
+    // Verificar se a conta existe e pertence à clínica
+    const entryResult = await query(
+      `SELECT id FROM accounts_payable WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+    
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Accounts payable entry not found' })
+    }
+    
+    // Buscar documento
+    const docResult = await query(
+      `SELECT file_path, original_filename, mime_type FROM accounts_payable_documents 
+       WHERE id = $1 AND accounts_payable_id = $2`,
+      [documentId, entryId]
+    )
+    
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+    
+    const doc = docResult.rows[0]
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    
+    // Verificar se arquivo existe
+    try {
+      await fs.access(doc.file_path)
+    } catch {
+      return res.status(404).json({ error: 'File not found on disk' })
+    }
+    
+    // Ler e enviar arquivo
+    const fileBuffer = await fs.readFile(doc.file_path)
+    
+    res.setHeader('Content-Type', doc.mime_type || 'application/pdf')
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`)
+    res.setHeader('Content-Length', fileBuffer.length)
+    res.send(fileBuffer)
+  } catch (error: any) {
+    console.error('Download document error:', error)
+    res.status(500).json({ error: 'Failed to download document', message: error.message })
+  }
+})
+
+// Deletar documento
+router.delete('/accounts-payable/:clinicId/:entryId/documents/:documentId', requirePermission('canEditAccountsPayable'), async (req, res) => {
+  try {
+    const { clinicId, entryId, documentId } = req.params
+    
+    // Verificar se a conta existe e pertence à clínica
+    const entryResult = await query(
+      `SELECT id FROM accounts_payable WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+    
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Accounts payable entry not found' })
+    }
+    
+    // Buscar documento
+    const docResult = await query(
+      `SELECT file_path FROM accounts_payable_documents 
+       WHERE id = $1 AND accounts_payable_id = $2`,
+      [documentId, entryId]
+    )
+    
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+    
+    const doc = docResult.rows[0]
+    const fs = await import('fs/promises')
+    
+    // Deletar arquivo do disco
+    try {
+      await fs.unlink(doc.file_path)
+    } catch (err) {
+      console.error('Error deleting file:', err)
+    }
+    
+    // Deletar registro do banco
+    await query(
+      `DELETE FROM accounts_payable_documents WHERE id = $1`,
+      [documentId]
+    )
+    
+    res.json({ message: 'Document deleted successfully' })
+  } catch (error: any) {
+    console.error('Delete document error:', error)
+    res.status(500).json({ error: 'Failed to delete document', message: error.message })
+  }
+})
+
 export default router

@@ -19,6 +19,9 @@ import Orders from '@/pages/Orders'
 import AccountsPayable from '@/pages/AccountsPayable'
 import Tickets from '@/pages/Tickets'
 import TicketDetail from '@/pages/TicketDetail'
+import Advances from '@/pages/Advances'
+import InsuranceProviders from '@/pages/InsuranceProviders'
+import ProcedureBaseGlobal from '@/pages/ProcedureBaseGlobal'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -49,11 +52,14 @@ const App = () => (
               <Route path="/pedidos/:clinicId" element={<Orders />} />
               <Route path="/fornecedores/:clinicId" element={<Suppliers />} />
               <Route path="/contas-a-pagar/:clinicId" element={<AccountsPayable />} />
+              <Route path="/operadoras/:clinicId" element={<InsuranceProviders />} />
+              <Route path="/adiantamentos/:clinicId" element={<Advances />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/alertas/:clinicId" element={<Alerts />} />
               <Route path="/tickets/:clinicId" element={<Tickets />} />
               <Route path="/tickets/:clinicId/:ticketId" element={<TicketDetail />} />
               <Route path="/configuracoes" element={<Settings />} />
+              <Route path="/tabela-base-procedimentos" element={<ProcedureBaseGlobal />} />
               <Route path="/colaboradores" element={<Collaborators />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>

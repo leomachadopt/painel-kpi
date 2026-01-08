@@ -23,6 +23,7 @@ import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
+import { ProcedureBaseEditor } from '@/components/settings/ProcedureBaseEditor'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -706,6 +707,7 @@ export default function Settings() {
           <TabsTrigger value="targets">Metas</TabsTrigger>
           <TabsTrigger value="nps">NPS</TabsTrigger>
           <TabsTrigger value="marketing">Marketing</TabsTrigger>
+          <TabsTrigger value="procedureBase">Tabela Base de Procedimentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sources" className="space-y-6">
@@ -1246,6 +1248,27 @@ export default function Settings() {
                 clinicId={clinic.id}
                 canManage={user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic.id}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="procedureBase" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tabela Base de Procedimentos</CardTitle>
+              <CardDescription>
+                Tabela padrão global de procedimentos. Define quais procedimentos são Periciáveis ou Não Periciáveis.
+                Apenas mentores podem gerenciar esta tabela.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {user?.role === 'MENTOR' && clinic ? (
+                <ProcedureBaseEditor clinicId={clinic.id} readOnly={false} />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Apenas mentores podem gerenciar a tabela base de procedimentos.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

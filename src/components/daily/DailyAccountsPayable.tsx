@@ -16,7 +16,9 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { File, X, Loader2 } from 'lucide-react'
+import { dailyEntriesApi } from '@/services/api'
 
 const schema = z.object({
   description: z.string().min(1, 'Descrição obrigatória'),
@@ -42,10 +44,42 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
   })
 
   const [supplierName, setSupplierName] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validar apenas PDF
+    if (file.type !== 'application/pdf') {
+      toast.error('Apenas arquivos PDF são permitidos')
+      return
+    }
+
+    // Validar tamanho (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo deve ter no máximo 10MB')
+      return
+    }
+
+    setSelectedFile(file)
+  }
+
+  const removeFile = () => {
+    setSelectedFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
-      await addAccountsPayableEntry(clinic.id, {
+      setUploading(true)
+      
+      // Criar a conta a pagar
+      const entry = await addAccountsPayableEntry(clinic.id, {
         id: Math.random().toString(36),
         clinicId: clinic.id,
         description: data.description,
@@ -56,7 +90,38 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
         category: data.category || null,
         notes: data.notes || null,
       })
-      toast.success('Conta a pagar registada com sucesso!')
+
+      // Se houver arquivo, fazer upload
+      if (selectedFile && entry.id) {
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+              if (reader.result) {
+                resolve(reader.result as string)
+              } else {
+                reject(new Error('Erro ao ler arquivo'))
+              }
+            }
+            reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
+            reader.readAsDataURL(selectedFile)
+          })
+
+          await dailyEntriesApi.accountsPayable.uploadDocument(
+            clinic.id,
+            entry.id,
+            base64,
+            selectedFile.name,
+            selectedFile.type
+          )
+          toast.success('Conta a pagar e documento registados com sucesso!')
+        } catch (err: any) {
+          toast.error('Conta registada, mas erro ao enviar documento: ' + (err?.message || ''))
+        }
+      } else {
+        toast.success('Conta a pagar registada com sucesso!')
+      }
+
       form.reset({
         description: '',
         supplierId: '',
@@ -66,8 +131,14 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
         notes: '',
       })
       setSupplierName('')
+      setSelectedFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao registar conta a pagar')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -183,8 +254,52 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
           )}
         />
 
-        <Button type="submit" className="w-full">
-          Guardar Conta a Pagar
+        {/* Campo de Upload de PDF */}
+        <div className="space-y-2">
+          <FormLabel>Documento PDF (opcional)</FormLabel>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileSelect}
+                disabled={uploading}
+                className="flex-1"
+              />
+            </div>
+            {selectedFile && (
+              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
+                <div className="flex items-center gap-2">
+                  <File className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm truncate">{selectedFile.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({(selectedFile.size / 1024).toFixed(2)} KB)
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeFile}
+                  disabled={uploading}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={uploading}>
+          {uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Guardando...
+            </>
+          ) : (
+            'Guardar Conta a Pagar'
+          )}
         </Button>
       </form>
     </Form>

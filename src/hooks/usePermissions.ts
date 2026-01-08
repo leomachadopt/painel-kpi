@@ -50,6 +50,7 @@ export function usePermissions() {
     | 'canViewNPS'
     | 'canViewMarketing'
     | 'canViewAlerts'
+    | 'canViewAdvances'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -97,6 +98,9 @@ export function usePermissions() {
     | 'canEditNPS'
     | 'canEditSuppliers'
     | 'canEditMarketing'
+    | 'canEditAdvances'
+    | 'canBillAdvances'
+    | 'canManageInsuranceProviders'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true

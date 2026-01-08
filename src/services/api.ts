@@ -29,10 +29,25 @@ async function apiCall<T>(
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Session expired / token missing
+        // Não redirecionar se a requisição é para a rota de login
+        // (permite que o erro de login seja tratado pelo componente)
+        const isLoginEndpoint = endpoint.includes('/auth/login')
+        
+        // Limpar dados de autenticação
         localStorage.removeItem('kpi_user')
         localStorage.removeItem('kpi_token')
-        // Redirect to login (best-effort)
+        
+        // Para login, tratar o erro normalmente sem redirecionar
+        if (isLoginEndpoint) {
+          const error = await response.json().catch(() => ({ error: 'Invalid credentials' }))
+          const message = error.error || 'Credenciais inválidas'
+          const err: any = new Error(message)
+          err.status = response.status
+          err.payload = error
+          throw err
+        }
+        
+        // Para outras rotas, redirecionar para login
         if (typeof window !== 'undefined') {
           window.location.href = '/login'
         }
@@ -562,6 +577,133 @@ export const dailyEntriesApi = {
 
     delete: (clinicId: string, entryId: string) =>
       apiCall<{ message: string }>(`/daily-entries/accounts-payable/${clinicId}/${entryId}`, {
+        method: 'DELETE',
+      }),
+
+    uploadDocument: (clinicId: string, entryId: string, file: string, filename: string, mimeType?: string) =>
+      apiCall<any>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify({ file, filename, mimeType }),
+      }),
+
+    getDocuments: (clinicId: string, entryId: string) =>
+      apiCall<any[]>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents`),
+
+    downloadDocument: (clinicId: string, entryId: string, documentId: string) =>
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/daily-entries/accounts-payable/${clinicId}/${entryId}/documents/${documentId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to download document')
+        return res.blob()
+      }),
+
+    deleteDocument: (clinicId: string, entryId: string, documentId: string) =>
+      apiCall<{ message: string }>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents/${documentId}`, {
+        method: 'DELETE',
+      }),
+  },
+}
+
+// ================================
+// ADVANCES API
+// ================================
+export const advancesApi = {
+  insuranceProviders: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/advances/insurance-providers/${clinicId}`),
+
+    create: (clinicId: string, provider: any) =>
+      apiCall<any>(`/advances/insurance-providers/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(provider),
+      }),
+
+    update: (clinicId: string, providerId: string, provider: any) =>
+      apiCall<any>(`/advances/insurance-providers/${clinicId}/${providerId}`, {
+        method: 'PUT',
+        body: JSON.stringify(provider),
+      }),
+
+    delete: (clinicId: string, providerId: string) =>
+      apiCall<{ message: string }>(`/advances/insurance-providers/${clinicId}/${providerId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  contracts: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/advances/contracts/${clinicId}`),
+
+    getById: (clinicId: string, contractId: string) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}`),
+
+    create: (clinicId: string, contract: any) =>
+      apiCall<any>(`/advances/contracts/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(contract),
+      }),
+
+    update: (clinicId: string, contractId: string, contract: any) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}`, {
+        method: 'PUT',
+        body: JSON.stringify(contract),
+      }),
+
+    delete: (clinicId: string, contractId: string) =>
+      apiCall<{ message: string }>(`/advances/contracts/${clinicId}/${contractId}`, {
+        method: 'DELETE',
+      }),
+
+    addPayment: (clinicId: string, contractId: string, payment: any) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(payment),
+      }),
+  },
+
+  proceduresBase: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/advances/procedures/base/${clinicId}`),
+
+    create: (clinicId: string, procedure: any) =>
+      apiCall<any>(`/advances/procedures/base/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(procedure),
+      }),
+
+    update: (clinicId: string, procedureId: string, procedure: any) =>
+      apiCall<any>(`/advances/procedures/base/${clinicId}/${procedureId}`, {
+        method: 'PUT',
+        body: JSON.stringify(procedure),
+      }),
+
+    delete: (clinicId: string, procedureId: string) =>
+      apiCall<{ message: string }>(`/advances/procedures/base/${clinicId}/${procedureId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  proceduresBaseGlobal: {
+    getAll: () =>
+      apiCall<any[]>(`/advances/procedures/base/global`),
+
+    create: (procedure: any) =>
+      apiCall<any>(`/advances/procedures/base/global`, {
+        method: 'POST',
+        body: JSON.stringify(procedure),
+      }),
+
+    update: (procedureId: string, procedure: any) =>
+      apiCall<any>(`/advances/procedures/base/global/${procedureId}`, {
+        method: 'PUT',
+        body: JSON.stringify(procedure),
+      }),
+
+    delete: (procedureId: string) =>
+      apiCall<{ message: string }>(`/advances/procedures/base/global/${procedureId}`, {
         method: 'DELETE',
       }),
   },

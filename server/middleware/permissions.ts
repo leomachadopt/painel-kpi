@@ -45,6 +45,10 @@ export interface UserPermissions {
   canViewMarketing: boolean
   canEditMarketing: boolean
   canViewAlerts: boolean
+  canViewAdvances: boolean
+  canEditAdvances: boolean
+  canBillAdvances: boolean
+  canManageInsuranceProviders: boolean
 }
 
 /**
@@ -103,6 +107,10 @@ export async function getUserPermissions(
       canViewMarketing: true,
       canEditMarketing: true,
       canViewAlerts: true,
+      canViewAdvances: true,
+      canEditAdvances: true,
+      canBillAdvances: true,
+      canManageInsuranceProviders: true,
     }
   }
 
@@ -156,7 +164,11 @@ export async function getUserPermissions(
       can_edit_suppliers,
       can_view_marketing,
       can_edit_marketing,
-      can_view_alerts
+      can_view_alerts,
+      can_view_advances,
+      can_edit_advances,
+      can_bill_advances,
+      can_manage_insurance_providers
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -212,6 +224,10 @@ export async function getUserPermissions(
     canViewMarketing: perms.can_view_marketing || false,
     canEditMarketing: perms.can_edit_marketing || false,
     canViewAlerts: perms.can_view_alerts || false,
+    canViewAdvances: perms.can_view_advances || false,
+    canEditAdvances: perms.can_edit_advances || false,
+    canBillAdvances: perms.can_bill_advances || false,
+    canManageInsuranceProviders: perms.can_manage_insurance_providers || false,
   }
 }
 
@@ -260,6 +276,10 @@ function createEmptyPermissions(): UserPermissions {
     canViewMarketing: false,
     canEditMarketing: false,
     canViewAlerts: false,
+    canViewAdvances: false,
+    canEditAdvances: false,
+    canBillAdvances: false,
+    canManageInsuranceProviders: false,
   }
 }
 

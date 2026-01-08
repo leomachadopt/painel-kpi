@@ -472,6 +472,10 @@ export interface UserPermissions {
   canViewMarketing: boolean
   canEditMarketing: boolean
   canViewAlerts: boolean
+  canViewAdvances: boolean
+  canEditAdvances: boolean
+  canBillAdvances: boolean
+  canManageInsuranceProviders: boolean
 }
 
 export interface User {
@@ -586,3 +590,199 @@ export const MONTHS = [
   'Novembro',
   'Dezembro',
 ]
+
+// ================================
+// Advances and Billing System
+// ================================
+
+export interface InsuranceProvider {
+  id: string
+  clinicId: string
+  name: string
+  code?: string | null
+  contactName?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProcedureBase {
+  id: string
+  clinicId: string | null
+  code: string
+  description: string
+  isPericiable: boolean
+  adultsOnly: boolean
+  category?: string | null
+  defaultValue?: number | null
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InsuranceProviderProcedure {
+  id: string
+  insuranceProviderId: string
+  procedureBaseId?: string | null
+  providerCode: string
+  providerDescription?: string | null
+  isPericiable: boolean
+  coveragePercentage: number
+  maxValue?: number | null
+  requiresAuthorization: boolean
+  notes?: string | null
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type ContractStatus = 'ACTIVE' | 'INACTIVE' | 'CANCELLED' | 'EXPIRED'
+export type DependentRelationship = 'TITULAR' | 'CONJUGE' | 'FILHO' | 'FILHA' | 'OUTRO'
+
+export interface ContractDependent {
+  id: string
+  contractId: string
+  name: string
+  birthDate?: string | null
+  age?: number | null
+  relationship: DependentRelationship
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdvanceContract {
+  id: string
+  clinicId: string
+  patientId: string
+  patientCode?: string
+  patientName?: string
+  insuranceProviderId: string
+  insuranceProviderName?: string
+  contractNumber?: string | null
+  startDate: string
+  endDate?: string | null
+  status: ContractStatus
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+  // Calculated fields
+  totalAdvanced?: number
+  totalBilled?: number
+  balanceToBill?: number
+  dependents?: ContractDependent[]
+}
+
+export interface AdvancePayment {
+  id: string
+  contractId: string
+  paymentDate: string
+  amount: number
+  paymentMethod?: string | null
+  referenceNumber?: string | null
+  notes?: string | null
+  createdBy?: string | null
+  createdAt: string
+}
+
+export type BillingBatchStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'PARTIALLY_PAID' | 'GLOSED' | 'PARTIALLY_GLOSED' | 'ADJUSTED' | 'CANCELLED'
+
+export interface BillingBatch {
+  id: string
+  contractId: string
+  batchNumber: string
+  targetAmount: number
+  targetPericiableAmount: number
+  totalAmount: number
+  totalPericiableAmount: number
+  status: BillingBatchStatus
+  issuedAt?: string | null
+  paidAt?: string | null
+  glosedAt?: string | null
+  glosedAmount: number
+  notes?: string | null
+  createdBy?: string | null
+  createdAt: string
+  updatedAt: string
+  items?: BillingItem[]
+}
+
+export type BillingItemStatus = 'INCLUDED' | 'GLOSED' | 'ADJUSTED' | 'REMOVED'
+export type ProcedureType = 'BASE' | 'PROVIDER'
+
+export interface BillingItem {
+  id: string
+  batchId: string
+  dependentId?: string | null
+  dependentName?: string
+  procedureId: string
+  procedureType: ProcedureType
+  procedureCode: string
+  procedureDescription: string
+  isPericiable: boolean
+  unitValue: number
+  quantity: number
+  totalValue: number
+  serviceDate: string
+  status: BillingItemStatus
+  glosedAmount: number
+  glosedReason?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EligibleBillingItem {
+  id: string
+  dependentId?: string | null
+  dependentName?: string
+  procedureId: string
+  procedureType: ProcedureType
+  procedureCode: string
+  procedureDescription: string
+  isPericiable: boolean
+  unitValue: number
+  quantity: number
+  totalValue: number
+  serviceDate: string
+  alreadyBilled: boolean
+  selected?: boolean
+}
+
+export interface InsuranceProviderDocument {
+  id: string
+  insuranceProviderId: string
+  fileName: string
+  filePath: string
+  fileSize?: number | null
+  mimeType?: string | null
+  uploadDate: string
+  processed: boolean
+  processedAt?: string | null
+  processingStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+  extractedData?: any
+  createdBy?: string | null
+  createdAt: string
+}
+
+export type ProcedureMappingStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'MANUAL'
+
+export interface ProcedureMapping {
+  id: string
+  documentId: string
+  extractedProcedureCode: string
+  extractedDescription?: string | null
+  extractedIsPericiable?: boolean | null
+  extractedValue?: number | null
+  mappedProcedureBaseId?: string | null
+  mappedProviderProcedureId?: string | null
+  confidenceScore?: number | null
+  status: ProcedureMappingStatus
+  reviewedBy?: string | null
+  reviewedAt?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+}
