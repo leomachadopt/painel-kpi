@@ -301,7 +301,8 @@ Retorne um JSON no seguinte formato:
     await openai.files.delete(file.id)
 
     console.log('✅ Resposta recebida da OpenAI')
-    console.log('📝 Resposta completa:', responseText?.substring(0, 500))
+    console.log('📝 Resposta completa (primeiros 500 chars):', responseText?.substring(0, 500))
+    console.log('📏 Tamanho total da resposta:', responseText?.length, 'caracteres')
 
     // Extract JSON from response (might be wrapped in markdown code blocks)
     let jsonText = responseText.trim()
@@ -316,15 +317,23 @@ Retorne um JSON no seguinte formato:
     }
     jsonText = jsonText.trim()
 
-    const extractedData = JSON.parse(jsonText)
-    console.log(`📊 Procedimentos extraídos: ${extractedData.procedures?.length || 0}`)
+    let extractedData
+    try {
+      extractedData = JSON.parse(jsonText)
+      console.log(`📊 Procedimentos extraídos: ${extractedData.procedures?.length || 0}`)
 
-    if (extractedData.procedures?.length === 0) {
-      console.log('⚠️ AVISO: Nenhum procedimento foi extraído!')
-      console.log('💡 Possíveis causas:')
-      console.log('  - O PDF não contém tabelas de procedimentos odontológicos')
-      console.log('  - O formato da tabela não foi reconhecido pela IA')
-      console.log('  - As imagens estão muito escuras/borradas')
+      if (extractedData.procedures?.length === 0) {
+        console.log('⚠️ AVISO: Nenhum procedimento foi extraído!')
+        console.log('💡 Possíveis causas:')
+        console.log('  - O PDF não contém tabelas de procedimentos odontológicos')
+        console.log('  - O formato da tabela não foi reconhecido pela IA')
+        console.log('  - As imagens estão muito escuras/borradas')
+        console.log('📄 JSON recebido:', jsonText.substring(0, 1000))
+      }
+    } catch (parseError: any) {
+      console.error('❌ Erro ao fazer parse do JSON:', parseError.message)
+      console.log('📄 Texto que tentou parsear:', jsonText.substring(0, 1000))
+      throw new Error(`Falha ao parsear resposta da IA: ${parseError.message}`)
     }
 
     // Update document with extracted data
