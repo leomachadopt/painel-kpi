@@ -280,13 +280,23 @@ Retorne um JSON no seguinte formato:
       assistant_id: assistant.id
     })
 
+    console.log(`⚙️ Status do assistente: ${run.status}`)
+
     if (run.status !== 'completed') {
+      console.error(`❌ Assistente não completou. Status: ${run.status}`)
+      if (run.last_error) {
+        console.error('❌ Erro do assistente:', JSON.stringify(run.last_error, null, 2))
+      }
       throw new Error(`Assistente falhou com status: ${run.status}`)
     }
 
     // Get response
+    console.log('📥 Obtendo resposta do assistente...')
     const messages = await openai.beta.threads.messages.list(thread.id)
+    console.log(`📨 Total de mensagens: ${messages.data.length}`)
+
     const responseMessage = messages.data[0]
+    console.log('📨 Tipo de conteúdo:', responseMessage.content.map(c => c.type).join(', '))
 
     let responseText = ''
     for (const content of responseMessage.content) {
@@ -295,14 +305,15 @@ Retorne um JSON no seguinte formato:
       }
     }
 
+    console.log('✅ Resposta recebida da OpenAI')
+    console.log('📝 Resposta completa (primeiros 500 chars):', responseText?.substring(0, 500))
+    console.log('📏 Tamanho total da resposta:', responseText?.length, 'caracteres')
+
     // Clean up
     console.log('🧹 Limpando recursos temporários...')
     await openai.beta.assistants.delete(assistant.id)
     await openai.files.delete(file.id)
-
-    console.log('✅ Resposta recebida da OpenAI')
-    console.log('📝 Resposta completa (primeiros 500 chars):', responseText?.substring(0, 500))
-    console.log('📏 Tamanho total da resposta:', responseText?.length, 'caracteres')
+    console.log('✅ Recursos limpos')
 
     // Extract JSON from response (might be wrapped in markdown code blocks)
     let jsonText = responseText.trim()
