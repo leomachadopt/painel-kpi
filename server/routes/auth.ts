@@ -192,23 +192,11 @@ router.post('/avatar', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Image must be less than 2MB' })
     }
 
-    // Generate filename
-    const filename = `${userId}-${Date.now()}.${extension}`
-    const fs = await import('fs/promises')
-    const path = await import('path')
+    // Store base64 image directly in database (compatible with serverless environments)
+    // The image is already in base64 format, so we can store it directly
+    const avatarUrl = image
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'avatars')
-    await fs.mkdir(uploadsDir, { recursive: true })
-
-    // Save file
-    const filePath = path.join(uploadsDir, filename)
-    await fs.writeFile(filePath, buffer)
-
-    // Generate URL
-    const avatarUrl = `/uploads/avatars/${filename}`
-
-    // Update user's avatar_url
+    // Update user's avatar_url with base64 data
     await query(
       'UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2',
       [avatarUrl, userId]
@@ -234,9 +222,16 @@ router.post('/avatar', authMiddleware, async (req, res) => {
         avatarUrl: user.avatar_url,
       },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload avatar error:', error)
-    res.status(500).json({ error: 'Failed to upload avatar' })
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+    })
+    res.status(500).json({ 
+      error: 'Failed to upload avatar',
+      message: error.message 
+    })
   }
 })
 
