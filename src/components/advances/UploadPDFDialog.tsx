@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import { Loader2, Upload, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProcessingProgressIndicator } from './ProcessingProgressIndicator'
 
 interface UploadPDFDialogProps {
   providerId: string
@@ -29,6 +30,7 @@ export function UploadPDFDialog({
 }: UploadPDFDialogProps) {
   const [processing, setProcessing] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadedDocumentId, setUploadedDocumentId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,18 +76,24 @@ export function UploadPDFDialog({
         throw new Error(errorData.error || 'Erro ao fazer upload do PDF')
       }
 
+      const data = await response.json()
+      setUploadedDocumentId(data.documentId)
       toast.success('PDF enviado com sucesso! Processamento iniciado.')
-
-      // Close after a short delay
-      setTimeout(() => {
-        onClose()
-      }, 1500)
     } catch (err: any) {
       console.error('Error uploading PDF:', err)
       toast.error(err.message || 'Erro ao fazer upload do PDF')
     } finally {
       setProcessing(false)
     }
+  }
+
+  const handleProcessingComplete = () => {
+    toast.success('Procedimentos extraídos e pareados com sucesso!')
+    setTimeout(() => {
+      setUploadedDocumentId(null)
+      setSelectedFile(null)
+      onClose()
+    }, 1500)
   }
 
   return (
@@ -98,28 +106,34 @@ export function UploadPDFDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Card className="border-dashed">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="text-center">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                <h3 className="text-lg font-semibold mb-1">
-                  Extrair Dados do PDF
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  A IA irá ler o PDF e extrair automaticamente os códigos, descrições e valores dos procedimentos
-                </p>
-              </div>
+        {uploadedDocumentId ? (
+          <ProcessingProgressIndicator
+            documentId={uploadedDocumentId}
+            onComplete={handleProcessingComplete}
+          />
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="text-center">
+                  <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+                  <h3 className="text-lg font-semibold mb-1">
+                    Extrair Dados do PDF
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    A IA irá ler o PDF e extrair automaticamente os códigos, descrições e valores dos procedimentos
+                  </p>
+                </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
 
-              {selectedFile ? (
+                {selectedFile ? (
                 <div className="bg-muted p-4 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -153,38 +167,41 @@ export function UploadPDFDialog({
                   <Upload className="mr-2 h-4 w-4" />
                   Selecionar PDF
                 </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={processing}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleUpload}
-            disabled={processing || !selectedFile}
-          >
-            {processing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Enviar PDF
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        {!uploadedDocumentId && (
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={processing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleUpload}
+              disabled={processing || !selectedFile}
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Enviar PDF
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   )

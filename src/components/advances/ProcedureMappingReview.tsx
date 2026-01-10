@@ -34,6 +34,7 @@ interface ProcedureMapping {
   extracted_procedure_code: string
   extracted_description: string
   extracted_is_periciable: boolean
+  extracted_adults_only?: boolean
   extracted_value: number | null
   mapped_procedure_base_id: string | null
   confidence_score: number
@@ -125,11 +126,6 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
   }
 
   const handleApprove = async (mapping: ProcedureMapping) => {
-    if (!mapping.mapped_procedure_base_id) {
-      toast.error('Selecione um procedimento da tabela base primeiro')
-      return
-    }
-
     setProcessing(mapping.id)
     try {
       const token = localStorage.getItem('kpi_token')
@@ -144,7 +140,10 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
         body: JSON.stringify({ providerId }),
       })
 
-      if (!response.ok) throw new Error('Erro ao aprovar mapeamento')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Erro ao aprovar mapeamento')
+      }
 
       toast.success('Procedimento aprovado e adicionado à operadora')
       await loadMappings()
@@ -155,7 +154,13 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
     }
   }
 
-  const handleUpdateMapping = async (mappingId: string, procedureBaseId: string, notes?: string) => {
+  const handleUpdateMapping = async (
+    mappingId: string,
+    procedureBaseId: string | null,
+    notes?: string,
+    extractedIsPericiable?: boolean,
+    extractedAdultsOnly?: boolean
+  ) => {
     setProcessing(mappingId)
     try {
       const token = localStorage.getItem('kpi_token')
@@ -171,6 +176,8 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
           mappedProcedureBaseId: procedureBaseId,
           status: 'PENDING',
           notes,
+          extractedIsPericiable,
+          extractedAdultsOnly,
         }),
       })
 
@@ -253,7 +260,7 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Revisão de Procedimentos Extraídos</DialogTitle>
           <DialogDescription>
@@ -288,18 +295,18 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
           </Card>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Descrição Extraída</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Periciável</TableHead>
-                <TableHead>Match</TableHead>
-                <TableHead>Confiança</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="w-20">Status</TableHead>
+                <TableHead className="w-32">Código</TableHead>
+                <TableHead className="min-w-[200px] max-w-[300px]">Descrição</TableHead>
+                <TableHead className="w-24">Valor</TableHead>
+                <TableHead className="w-28">Periciável</TableHead>
+                <TableHead className="w-32">Match</TableHead>
+                <TableHead className="w-20">Conf.</TableHead>
+                <TableHead className="w-32 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -312,37 +319,48 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
               ) : (
                 mappings.map((mapping) => (
                   <TableRow key={mapping.id}>
-                    <TableCell>{getStatusBadge(mapping.status)}</TableCell>
-                    <TableCell className="font-mono text-sm">{mapping.extracted_procedure_code}</TableCell>
-                    <TableCell className="max-w-xs truncate">{mapping.extracted_description}</TableCell>
-                    <TableCell>
-                      {mapping.extracted_value ? `R$ ${mapping.extracted_value.toFixed(2)}` : '-'}
+                    <TableCell className="w-20">{getStatusBadge(mapping.status)}</TableCell>
+                    <TableCell className="w-32 font-mono text-xs">{mapping.extracted_procedure_code}</TableCell>
+                    <TableCell className="min-w-[200px] max-w-[300px]">
+                      <div className="truncate" title={mapping.extracted_description}>
+                        {mapping.extracted_description}
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      {mapping.extracted_is_periciable ? (
-                        <Badge variant="secondary">Sim</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">Não</span>
-                      )}
+                    <TableCell className="w-24 text-sm">
+                      {mapping.extracted_value != null ? `€ ${Number(mapping.extracted_value).toFixed(2)}` : '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-28">
+                      <div className="space-y-1">
+                        {mapping.extracted_is_periciable ? (
+                          <Badge variant="secondary" className="text-xs">Periciável</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Não</span>
+                        )}
+                        {mapping.extracted_adults_only && (
+                          <div className="text-xs text-muted-foreground">
+                            Adultos
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-32">
                       {mapping.mapped_procedure_base_id ? (
                         <div className="space-y-1">
                           <div className="font-mono text-xs">{mapping.base_code}</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">
+                          <div className="text-xs text-muted-foreground truncate" title={mapping.base_description}>
                             {mapping.base_description}
                           </div>
                         </div>
                       ) : (
-                        <Badge variant="outline">Sem match</Badge>
+                        <Badge variant="outline" className="text-xs">Sem match</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <span className={`font-semibold ${getConfidenceColor(mapping.confidence_score)}`}>
+                    <TableCell className="w-20">
+                      <span className={`text-xs font-semibold ${getConfidenceColor(mapping.confidence_score)}`}>
                         {(mapping.confidence_score * 100).toFixed(0)}%
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-32">
                       <div className="flex items-center justify-end gap-2">
                         {mapping.status === 'APPROVED' ? (
                           <CheckCircle className="h-5 w-5 text-green-600" />
@@ -359,23 +377,22 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                               <AlertCircle className="h-4 w-4 mr-1" />
                               Revisar
                             </Button>
-                            {mapping.mapped_procedure_base_id && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => handleApprove(mapping)}
-                                disabled={processing === mapping.id}
-                              >
-                                {processing === mapping.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Aprovar
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleApprove(mapping)}
+                              disabled={processing === mapping.id}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {processing === mapping.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Aprovar
+                                </>
+                              )}
+                            </Button>
                           </>
                         )}
                       </div>
@@ -408,21 +425,58 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                   <div>
                     <Label>Valor Extraído</Label>
                     <p className="text-sm mt-1">
-                      {selectedMapping.extracted_value
-                        ? `R$ ${selectedMapping.extracted_value.toFixed(2)}`
+                      {selectedMapping.extracted_value != null
+                        ? `€ ${Number(selectedMapping.extracted_value).toFixed(2)}`
                         : 'Não informado'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Periciável</Label>
-                    <p className="text-sm mt-1">
-                      {selectedMapping.extracted_is_periciable ? 'Sim' : 'Não'}
                     </p>
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Periciável *</Label>
+                    <Select
+                      value={selectedMapping.extracted_is_periciable ? 'true' : 'false'}
+                      onValueChange={(value) => {
+                        setSelectedMapping({
+                          ...selectedMapping,
+                          extracted_is_periciable: value === 'true',
+                        })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">Não</SelectItem>
+                        <SelectItem value="true">Sim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Exclusivo para Adultos *</Label>
+                    <Select
+                      value={(selectedMapping.extracted_adults_only ?? false) ? 'true' : 'false'}
+                      onValueChange={(value) => {
+                        setSelectedMapping({
+                          ...selectedMapping,
+                          extracted_adults_only: value === 'true',
+                        })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">Crianças e Adultos</SelectItem>
+                        <SelectItem value="true">Apenas Adultos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div>
-                  <Label>Mapear para Procedimento Base</Label>
+                  <Label>Mapear para Procedimento Base (Opcional)</Label>
                   <Select
                     value={selectedMapping.mapped_procedure_base_id || undefined}
                     onValueChange={(value) => {
@@ -433,7 +487,7 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um procedimento" />
+                      <SelectValue placeholder="Selecione um procedimento (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {procedureBase.map((proc) => (
@@ -445,6 +499,9 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O pareamento é opcional. Você pode aprovar o procedimento mesmo sem pareamento.
+                  </p>
                 </div>
 
                 <div>
@@ -476,27 +533,75 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                   >
                     Rejeitar
                   </Button>
-                  {selectedMapping.mapped_procedure_base_id && (
-                    <Button
-                      onClick={() =>
-                        handleUpdateMapping(
-                          selectedMapping.id,
-                          selectedMapping.mapped_procedure_base_id!,
-                          selectedMapping.notes
-                        )
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      await handleUpdateMapping(
+                        selectedMapping.id,
+                        selectedMapping.mapped_procedure_base_id || null,
+                        selectedMapping.notes,
+                        selectedMapping.extracted_is_periciable,
+                        selectedMapping.extracted_adults_only
+                      )
+                      setSelectedMapping(null)
+                    }}
+                    disabled={processing === selectedMapping.id}
+                  >
+                    {processing === selectedMapping.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar'
+                    )}
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setProcessing(selectedMapping.id)
+                      try {
+                        // First save the edited values
+                        const token = localStorage.getItem('kpi_token')
+                        const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
+                        await fetch(`${API_BASE_URL}/insurance/mappings/${selectedMapping.id}/update`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            mappedProcedureBaseId: selectedMapping.mapped_procedure_base_id || null,
+                            status: 'PENDING',
+                            notes: selectedMapping.notes,
+                            extractedIsPericiable: selectedMapping.extracted_is_periciable,
+                            extractedAdultsOnly: selectedMapping.extracted_adults_only,
+                          }),
+                        })
+
+                        // Then approve
+                        await handleApprove(selectedMapping)
+                        setSelectedMapping(null)
+                      } catch (err: any) {
+                        toast.error(err.message || 'Erro ao salvar e aprovar')
+                        setProcessing(null)
                       }
-                      disabled={processing === selectedMapping.id}
-                    >
-                      {processing === selectedMapping.id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Salvando...
-                        </>
-                      ) : (
-                        'Salvar e Continuar'
-                      )}
-                    </Button>
-                  )}
+                    }}
+                    disabled={processing === selectedMapping.id}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {processing === selectedMapping.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Aprovando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Salvar e Aprovar
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </DialogContent>

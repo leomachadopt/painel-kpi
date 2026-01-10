@@ -36,13 +36,15 @@ import { AdvanceContract, ContractDependent, DependentRelationship } from '@/lib
 import { Plus, X, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-const schema = z.object({
+// Schema dinâmico baseado se é criação ou edição
+const createSchema = (isEdit: boolean) => z.object({
   patientCode: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
   patientName: z.string().min(1, 'Nome obrigatório'),
   insuranceProviderId: z.string().min(1, 'Operadora é obrigatória'),
   contractNumber: z.string().optional(),
-  startDate: z.string().min(1, 'Data de início é obrigatória'),
-  endDate: z.string().optional(),
+  advanceAmount: isEdit 
+    ? z.coerce.number().min(0.01, 'Valor deve ser maior que zero').optional()
+    : z.coerce.number().min(0.01, 'Valor da fatura de adiantamento é obrigatório'),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CANCELLED', 'EXPIRED']),
   notes: z.string().optional(),
 })
@@ -59,6 +61,16 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   const [dependents, setDependents] = useState<Partial<ContractDependent>[]>([])
   const [saving, setSaving] = useState(false)
 
+  const isEdit = !!contract
+  const schema = createSchema(isEdit)
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(value)
+  }
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -66,8 +78,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
       patientName: contract?.patientName || '',
       insuranceProviderId: contract?.insuranceProviderId || '',
       contractNumber: contract?.contractNumber || '',
-      startDate: contract?.startDate || new Date().toISOString().split('T')[0],
-      endDate: contract?.endDate || '',
+      advanceAmount: undefined,
       status: (contract?.status as any) || 'ACTIVE',
       notes: contract?.notes || '',
     },
@@ -75,10 +86,16 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
 
   useEffect(() => {
     loadInsuranceProviders()
-    if (contract?.dependents) {
-      setDependents(contract.dependents)
-    }
   }, [])
+
+  useEffect(() => {
+    if (contract?.id) {
+      loadContractDetails()
+    } else {
+      // Se não há contrato (criação), limpa os dependentes
+      setDependents([])
+    }
+  }, [contract?.id])
 
   const loadInsuranceProviders = async () => {
     try {
@@ -88,6 +105,34 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
       toast.error('Erro ao carregar operadoras')
     } finally {
       setLoadingProviders(false)
+    }
+  }
+
+  const loadContractDetails = async () => {
+    if (!contract?.id) return
+    
+    try {
+      const contractDetails = await advancesApi.contracts.getById(clinicId, contract.id)
+      if (contractDetails.dependents) {
+        // Formatar datas e calcular idades para os dependentes carregados
+        const formattedDependents = contractDetails.dependents.map((dep: any) => ({
+          ...dep,
+          birthDate: formatDateForInput(dep.birthDate),
+          age: dep.age || (dep.birthDate ? calculateAge(dep.birthDate) : undefined),
+        }))
+        setDependents(formattedDependents)
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar detalhes do contrato:', err)
+      // Se falhar, tenta usar os dependentes do contrato passado como prop
+      if (contract?.dependents) {
+        const formattedDependents = contract.dependents.map((dep: any) => ({
+          ...dep,
+          birthDate: formatDateForInput(dep.birthDate),
+          age: dep.age || (dep.birthDate ? calculateAge(dep.birthDate) : undefined),
+        }))
+        setDependents(formattedDependents)
+      }
     }
   }
 
@@ -107,9 +152,60 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
     setDependents(dependents.filter((_, i) => i !== index))
   }
 
+  const calculateAge = (birthDate: string | null | undefined): number | undefined => {
+    if (!birthDate) return undefined
+    
+    try {
+      const birth = new Date(birthDate)
+      if (isNaN(birth.getTime())) return undefined
+      
+      const today = new Date()
+      let age = today.getFullYear() - birth.getFullYear()
+      const monthDiff = today.getMonth() - birth.getMonth()
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--
+      }
+      
+      return age >= 0 ? age : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  const formatDateForInput = (date: string | null | undefined): string => {
+    if (!date) return ''
+    
+    try {
+      // Se já está no formato YYYY-MM-DD, retorna direto
+      if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date
+      }
+      
+      // Tenta converter para Date e formatar
+      const dateObj = new Date(date)
+      if (isNaN(dateObj.getTime())) return ''
+      
+      const year = dateObj.getFullYear()
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      const day = String(dateObj.getDate()).padStart(2, '0')
+      
+      return `${year}-${month}-${day}`
+    } catch {
+      return ''
+    }
+  }
+
   const updateDependent = (index: number, field: string, value: any) => {
     const updated = [...dependents]
     updated[index] = { ...updated[index], [field]: value }
+    
+    // Se a data de nascimento foi alterada, calcular a idade automaticamente
+    if (field === 'birthDate') {
+      const calculatedAge = calculateAge(value)
+      updated[index].age = calculatedAge
+    }
+    
     setDependents(updated)
   }
 
@@ -126,21 +222,63 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         patientId,
         insuranceProviderId: data.insuranceProviderId,
         contractNumber: data.contractNumber || null,
-        startDate: data.startDate,
-        endDate: data.endDate || null,
+        startDate: new Date().toISOString().split('T')[0], // Data atual como padrão
+        endDate: null,
         status: data.status,
         notes: data.notes || null,
-        dependents: dependents.filter((d) => d.name && d.name.trim()),
+        dependents: dependents
+          .filter((d) => d.name && d.name.trim())
+          .map((d) => ({
+            ...d,
+            birthDate: d.birthDate || null, // Garantir que está no formato correto
+            age: d.age || null,
+          })),
       }
 
+      let savedContract
       if (contract) {
         // Update existing contract
-        await advancesApi.contracts.update(clinicId, contract.id, contractData)
+        savedContract = await advancesApi.contracts.update(clinicId, contract.id, contractData)
         toast.success('Contrato atualizado com sucesso!')
       } else {
-        // Create new contract
-        await advancesApi.contracts.create(clinicId, contractData)
+        // Create new contract - validar que o valor foi fornecido
+        if (!data.advanceAmount || data.advanceAmount <= 0) {
+          form.setError('advanceAmount', {
+            message: 'Valor da fatura de adiantamento é obrigatório',
+          })
+          setSaving(false)
+          return
+        }
+
+        savedContract = await advancesApi.contracts.create(clinicId, contractData)
+        console.log('Contrato criado:', savedContract)
         toast.success('Contrato criado com sucesso!')
+        
+        // Criar o pagamento de adiantamento
+        try {
+          console.log('Criando pagamento:', {
+            contractId: savedContract.id,
+            amount: data.advanceAmount,
+            clinicId,
+          })
+          const payment = await advancesApi.contracts.addPayment(clinicId, savedContract.id, {
+            paymentDate: new Date().toISOString().split('T')[0],
+            amount: data.advanceAmount,
+            paymentMethod: null,
+            referenceNumber: null,
+            notes: 'Pagamento inicial do contrato',
+          })
+          console.log('Pagamento criado com sucesso:', payment)
+          toast.success(`Valor de adiantamento de ${formatCurrency(data.advanceAmount)} registrado!`)
+        } catch (paymentErr: any) {
+          console.error('Erro ao criar pagamento:', paymentErr)
+          console.error('Detalhes do erro:', {
+            message: paymentErr.message,
+            status: paymentErr.status,
+            response: paymentErr.response,
+          })
+          toast.error(`Contrato criado, mas erro ao registrar pagamento: ${paymentErr.message || 'Erro desconhecido'}`)
+        }
       }
 
       onClose()
@@ -221,7 +359,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="contractNumber"
@@ -229,40 +367,37 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                   <FormItem>
                     <FormLabel>Número do Contrato</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Opcional" />
+                      <Input {...field} placeholder="Opcional" disabled={saving} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Início *</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Término</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!contract && (
+                <FormField
+                  control={form.control}
+                  name="advanceAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor da Fatura de Adiantamento *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          placeholder="0.00"
+                          disabled={saving}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <FormField
@@ -331,6 +466,9 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                               updateDependent(index, 'age', parseInt(e.target.value) || undefined)
                             }
                             placeholder="Idade"
+                            readOnly
+                            className="bg-muted cursor-not-allowed"
+                            title="Idade calculada automaticamente a partir da data de nascimento"
                           />
                         </div>
                         <div>

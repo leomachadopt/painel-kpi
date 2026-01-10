@@ -667,6 +667,53 @@ export const advancesApi = {
         method: 'POST',
         body: JSON.stringify(payment),
       }),
+
+    getEligibleProcedures: (clinicId: string, contractId: string) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/eligible-procedures`),
+
+    getBilledProcedures: (clinicId: string, contractId: string) =>
+      apiCall<any[]>(`/advances/contracts/${clinicId}/${contractId}/billed-procedures`),
+
+    // Calculate billing items without creating the batch (for auto-selection preview)
+    calculateBillingItems: (clinicId: string, contractId: string, data: {
+      targetAmount: number
+      serviceDate?: string
+    }) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-items/calculate`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    // Get all batches for a contract
+    getBatches: (clinicId: string, contractId: string) =>
+      apiCall<any[]>(`/advances/contracts/${clinicId}/${contractId}/batches`),
+
+    createBillingBatchAuto: (clinicId: string, contractId: string, data: {
+      targetAmount: number
+      serviceDate?: string
+    }) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-batch/auto`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    createBillingBatchManual: (clinicId: string, contractId: string, data: {
+      items: Array<{
+        procedureId: string
+        procedureCode: string
+        procedureDescription: string
+        isPericiable: boolean
+        unitValue: number
+        quantity: number
+        totalValue: number
+        dependentId: string | null
+      }>
+      serviceDate?: string
+    }) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-batch/manual`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   proceduresBase: {

@@ -160,6 +160,22 @@ router.post('/:providerId/upload-pdf', authRequired, upload.single('pdf'), async
 })
 
 /**
+ * Update processing progress
+ */
+async function updateProgress(documentId: string, progress: number, stage: string) {
+  try {
+    await pool.query(
+      `UPDATE insurance_provider_documents
+       SET processing_progress = $1, processing_stage = $2
+       WHERE id = $3`,
+      [progress, stage, documentId]
+    )
+  } catch (error) {
+    console.error('Error updating progress:', error)
+  }
+}
+
+/**
  * Process PDF document with OpenAI
  */
 async function processPDFDocument(
@@ -174,6 +190,7 @@ async function processPDFDocument(
 
   try {
     console.log('🔄 Iniciando processamento do PDF:', { documentId, providerId, providerName })
+    await updateProgress(documentId, 5, 'UPLOADING')
 
     // Check if OpenAI is available
     if (!openai) {
@@ -193,6 +210,7 @@ async function processPDFDocument(
 
     // Upload PDF to OpenAI
     console.log('📤 Enviando PDF para OpenAI...')
+    await updateProgress(documentId, 10, 'UPLOADING')
 
     // Create file for upload - OpenAI SDK accepts Buffer or ReadStream
     const fileToUpload = Buffer.isBuffer(fileData)
@@ -205,6 +223,7 @@ async function processPDFDocument(
     })
 
     console.log(`✅ PDF enviado para OpenAI: ${file.id}`)
+    await updateProgress(documentId, 20, 'EXTRACTING')
 
     // Get procedure base for comparison
     console.log('📋 Carregando tabela base de procedimentos...')
@@ -221,40 +240,38 @@ async function processPDFDocument(
     console.log('🤖 Criando assistente temporário...')
     const assistant = await openai.beta.assistants.create({
       name: 'Dental Procedure Extractor',
-      instructions: `Você é um especialista em extrair dados de tabelas de procedimentos odontológicos de operadoras de saúde.
+      instructions: `VOCÊ É UM EXTRATOR COMPLETO DE PROCEDIMENTOS ODONTOLÓGICOS.
 
-Analise o documento PDF anexado da operadora "${providerName}" e extraia TODOS os procedimentos odontológicos encontrados.
+OBJETIVO: Extrair 100% dos procedimentos - NUNCA retorne apenas uma amostra.
 
-Para cada procedimento, identifique:
-1. Código TUSS (código do procedimento)
-2. Descrição completa do procedimento
-3. Valor em Reais (se disponível)
-4. Se é periciável (procedimentos que geralmente requerem perícia/auditoria: próteses, implantes, ortodontia, cirurgias complexas)
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Use code_interpreter para LER TODO O PDF (todas as páginas)
+2. Use pandas ou similar para PROCESSAR TODAS AS LINHAS das tabelas
+3. Procure tabelas com colunas: Código, Descrição, Valor
+4. EXTRAIA CADA LINHA - não pare após 5, 10 ou 20 procedimentos
+5. Se o PDF tem 50+ procedimentos, RETORNE TODOS os 50+
 
-TABELA BASE DE REFERÊNCIA (para fazer match):
-${procedureBase.map(p => `${p.code} - ${p.description} (Periciável: ${p.is_periciable ? 'Sim' : 'Não'}, Adultos: ${p.adults_only ? 'Apenas adultos' : 'Todas idades'})`).join('\n')}
+FORMATO DE SAÍDA (cada procedimento):
+- code: código (ex: "A1.01.01.01")
+- description: descrição
+- value: número ou null
+- isPericiable: false
+- matchedProcedureBaseId: null
+- confidence: 0.9
 
-IMPORTANTE:
-- Retorne APENAS um JSON válido, sem texto adicional
-- Se não encontrar valor, use null
-- Se não tiver certeza se é periciável, use false
-- Tente fazer match com a tabela base pelo código TUSS
+VALIDAÇÃO FINAL:
+Antes de retornar, conte quantas linhas a tabela tem. Se você retornar menos de 80% das linhas, ESTÁ ERRADO. Reprocesse até extrair TUDO.
 
-Retorne um JSON no seguinte formato:
-{
-  "procedures": [
-    {
-      "code": "código TUSS",
-      "description": "descrição do procedimento",
-      "value": 123.45,
-      "isPericiable": true/false,
-      "matchedProcedureBaseId": "id do procedimento da tabela base (se houver match por código)",
-      "confidence": 0.95
-    }
-  ]
-}`,
+RETORNO (JSON puro, sem markdown):
+{"procedures":[...LISTA COMPLETA...]}
+
+ERROS PROIBIDOS:
+❌ Retornar apenas primeiros procedimentos
+❌ Usar "..." para indicar que há mais
+❌ Parar arbitrariamente
+✅ Retornar 100% dos procedimentos encontrados`,
       model: 'gpt-4o',
-      tools: [{ type: 'file_search' }]
+      tools: [{ type: 'code_interpreter' }]
     })
 
     // Create thread with the file
@@ -263,11 +280,29 @@ Retorne um JSON no seguinte formato:
       messages: [
         {
           role: 'user',
-          content: 'Analise o PDF anexado e extraia todos os procedimentos odontológicos conforme as instruções.',
+          content: `EXTRAIA TODOS OS PROCEDIMENTOS ODONTOLÓGICOS CLÍNICOS DO PDF - SEM EXCEÇÃO!
+
+INSTRUÇÕES CRÍTICAS:
+1. Use code_interpreter para processar TODO o PDF (todas as páginas)
+2. FOCO: Procedimentos ODONTOLÓGICOS CLÍNICOS (consultas, radiografias, restaurações, extrações, endodontias, próteses, implantes, periodontia, ortodontia, cirurgias)
+3. IGNORE: Procedimentos puramente administrativos (desinfecções genéricas, atestados, medições de risco)
+4. PROCURE especificamente tabelas com códigos como: A1.x, A2.x, A3.x, A12.x, etc.
+5. EXTRAIA TUDO - se há 50+ procedimentos clínicos, retorne TODOS os 50+
+
+VALIDAÇÃO:
+Antes de retornar, verifique:
+- Você extraiu procedimentos ODONTOLÓGICOS? (dentes, gengivas, radiografias, etc.)
+- Você processou TODAS as páginas do PDF?
+- A quantidade faz sentido? (tabelas de seguros têm tipicamente 40-100+ procedimentos)
+
+RETORNE APENAS:
+JSON puro: {"procedures":[...LISTA COMPLETA DE PROCEDIMENTOS ODONTOLÓGICOS...]}
+
+NÃO PARE ATÉ PROCESSAR TODO O PDF!`,
           attachments: [
             {
               file_id: file.id,
-              tools: [{ type: 'file_search' }]
+              tools: [{ type: 'code_interpreter' }]
             }
           ]
         }
@@ -276,11 +311,14 @@ Retorne um JSON no seguinte formato:
 
     // Run assistant
     console.log('⚙️ Executando assistente...')
+    await updateProgress(documentId, 30, 'EXTRACTING')
+
     const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
       assistant_id: assistant.id
     })
 
     console.log(`⚙️ Status do assistente: ${run.status}`)
+    await updateProgress(documentId, 60, 'EXTRACTING')
 
     if (run.status !== 'completed') {
       console.error(`❌ Assistente não completou. Status: ${run.status}`)
@@ -315,17 +353,30 @@ Retorne um JSON no seguinte formato:
     await openai.files.delete(file.id)
     console.log('✅ Recursos limpos')
 
-    // Extract JSON from response (might be wrapped in markdown code blocks)
+    // Extract JSON from response (might be wrapped in markdown code blocks or extra text)
     let jsonText = responseText.trim()
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.substring(7)
+
+    // Remove markdown code blocks
+    jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+
+    // Find the first { and last } to extract only the JSON object
+    const firstBrace = jsonText.indexOf('{')
+    const lastBrace = jsonText.lastIndexOf('}')
+
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1)
     }
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.substring(3)
-    }
-    if (jsonText.endsWith('```')) {
-      jsonText = jsonText.substring(0, jsonText.length - 3)
-    }
+
+    jsonText = jsonText.trim()
+
+    // Remove JavaScript-style comments that AI might add
+    // Remove single-line comments (// ...)
+    jsonText = jsonText.replace(/\/\/[^\n]*/g, '')
+    // Remove multi-line comments (/* ... */)
+    jsonText = jsonText.replace(/\/\*[\s\S]*?\*\//g, '')
+    // Clean up any trailing commas before ] or }
+    jsonText = jsonText.replace(/,(\s*[}\]])/g, '$1')
+
     jsonText = jsonText.trim()
 
     let extractedData
@@ -358,35 +409,43 @@ Retorne um JSON no seguinte formato:
       [JSON.stringify(extractedData), documentId]
     )
 
+    // AI-powered procedure matching
+    console.log('🤖 Iniciando pareamento automático por IA...')
+    await updateProgress(documentId, 70, 'MATCHING')
+
+    const matchedProcedures = await matchProceduresWithAI(extractedData.procedures, procedureBase)
+    console.log('✅ Pareamento por IA concluído')
+    await updateProgress(documentId, 85, 'MATCHING')
+
     // Create procedure mappings
     console.log('💾 Salvando mapeamentos de procedimentos...')
-    if (extractedData.procedures && Array.isArray(extractedData.procedures)) {
-      let matchedCount = 0
+    await updateProgress(documentId, 90, 'SAVING')
+    if (matchedProcedures && Array.isArray(matchedProcedures)) {
+      let autoMatchedCount = 0
       let manualCount = 0
+      let highConfidenceCount = 0
 
-      for (const proc of extractedData.procedures) {
+      for (const proc of matchedProcedures) {
         const mappingId = uuidv4()
 
-        // Try to find matching procedure base
-        let matchedProcedureBaseId = proc.matchedProcedureBaseId || null
+        const hasMatch = proc.matchedProcedureBaseId !== null
+        const isHighConfidence = proc.confidenceScore >= 0.8
 
-        if (!matchedProcedureBaseId) {
-          // Try exact code match
-          const exactMatch = procedureBase.find(p => p.code === proc.code)
-          if (exactMatch) {
-            matchedProcedureBaseId = exactMatch.id
-            matchedCount++
-          } else {
-            manualCount++
-          }
+        if (hasMatch && isHighConfidence) {
+          highConfidenceCount++
+          autoMatchedCount++
+        } else if (hasMatch) {
+          autoMatchedCount++
+        } else {
+          manualCount++
         }
 
         await client.query(
           `INSERT INTO procedure_mappings (
             id, document_id, extracted_procedure_code, extracted_description,
             extracted_is_periciable, extracted_value, mapped_procedure_base_id,
-            confidence_score, status
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            confidence_score, status, notes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             mappingId,
             documentId,
@@ -394,16 +453,21 @@ Retorne um JSON no seguinte formato:
             proc.description,
             proc.isPericiable || false,
             proc.value || null,
-            matchedProcedureBaseId,
-            proc.confidence || 0.8,
-            matchedProcedureBaseId ? 'PENDING' : 'MANUAL'
+            proc.matchedProcedureBaseId,
+            proc.confidenceScore || 0,
+            proc.matchedProcedureBaseId && isHighConfidence ? 'PENDING' : 'MANUAL',
+            proc.reasoning || null
           ]
         )
       }
 
-      console.log(`✅ ${extractedData.procedures.length} mapeamentos salvos: ${matchedCount} com match automático, ${manualCount} para revisão manual`)
+      console.log(`✅ ${matchedProcedures.length} mapeamentos salvos:`)
+      console.log(`   • ${highConfidenceCount} com alta confiança (≥80%)`)
+      console.log(`   • ${autoMatchedCount - highConfidenceCount} com confiança média`)
+      console.log(`   • ${manualCount} requerem revisão manual`)
     }
 
+    await updateProgress(documentId, 100, 'COMPLETED')
     console.log(`✅ PDF processed successfully: ${documentId}`)
 
   } catch (error) {
@@ -411,6 +475,7 @@ Retorne um JSON no seguinte formato:
     console.error('Error stack:', error.stack)
 
     // Update document status to failed
+    await updateProgress(documentId, 0, 'FAILED')
     await client.query(
       `UPDATE insurance_provider_documents
        SET processing_status = 'FAILED',
@@ -422,6 +487,191 @@ Retorne um JSON no seguinte formato:
     client.release()
   }
 }
+
+/**
+ * Match extracted procedures with base table using AI
+ */
+async function matchProceduresWithAI(
+  extractedProcedures: any[],
+  procedureBase: any[]
+): Promise<any[]> {
+  if (!openai) {
+    console.warn('⚠️ OpenAI not available, skipping AI matching')
+    return extractedProcedures.map(proc => ({
+      ...proc,
+      matchedProcedureBaseId: null,
+      confidenceScore: 0,
+      reasoning: 'OpenAI not configured'
+    }))
+  }
+
+  if (!extractedProcedures || extractedProcedures.length === 0) {
+    return []
+  }
+
+  try {
+    console.log(`🔍 Analisando ${extractedProcedures.length} procedimentos extraídos contra ${procedureBase.length} procedimentos da tabela base`)
+
+    // Prepare simplified base table for AI
+    const simplifiedBase = procedureBase.map(p => ({
+      id: p.id,
+      code: p.code,
+      description: p.description,
+      is_periciable: p.is_periciable,
+      adults_only: p.adults_only
+    }))
+
+    // Process in batches of 50 to avoid token limits
+    const BATCH_SIZE = 50
+    const allMatches: any[] = []
+
+    for (let i = 0; i < extractedProcedures.length; i += BATCH_SIZE) {
+      const batch = extractedProcedures.slice(i, i + BATCH_SIZE)
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1
+      const totalBatches = Math.ceil(extractedProcedures.length / BATCH_SIZE)
+
+      console.log(`🔄 Processando lote ${batchNumber}/${totalBatches} (${batch.length} procedimentos)`)
+
+      const prompt = `Você é um especialista em procedimentos odontológicos portugueses. Sua tarefa é fazer o pareamento inteligente entre procedimentos extraídos de um PDF de seguro e a tabela base de procedimentos da clínica.
+
+PROCEDIMENTOS EXTRAÍDOS DO PDF:
+${JSON.stringify(batch, null, 2)}
+
+TABELA BASE DE PROCEDIMENTOS:
+${JSON.stringify(simplifiedBase.slice(0, 100), null, 2)}
+
+INSTRUÇÕES:
+1. Para cada procedimento extraído, encontre o melhor match na tabela base
+2. Compare principalmente as DESCRIÇÕES (não apenas códigos)
+3. Considere sinônimos odontológicos comuns (ex: "restauração" = "obturação", "exodontia" = "extração")
+4. Considere variações de escrita e abreviações
+5. Atribua um score de confiança:
+   - 0.95-1.0: Match perfeito (descrições praticamente idênticas)
+   - 0.85-0.94: Match muito bom (mesmo procedimento, pequenas variações)
+   - 0.70-0.84: Match razoável (procedimentos similares)
+   - 0.50-0.69: Match duvidoso (requer revisão manual)
+   - <0.50: Sem match confiável (use null)
+
+6. Se o score for < 0.70, retorne null para matchedProcedureBaseId
+
+RETORNE APENAS JSON PURO (sem markdown, sem comentários) no formato:
+- matches: array com ${batch.length} elementos
+- cada elemento deve ter: extractedCode, matchedProcedureBaseId, confidenceScore, reasoning
+
+IMPORTANTE: O array "matches" DEVE ter exatamente ${batch.length} elementos, na mesma ordem dos procedimentos extraídos.`
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um assistente especializado em procedimentos odontológicos. Sempre retorne JSON válido sem markdown.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      })
+
+      const content = response.choices[0].message.content
+      if (!content) {
+        throw new Error('Empty response from OpenAI')
+      }
+
+      // Parse and clean JSON
+      let jsonText = content.trim()
+      jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+      jsonText = jsonText.replace(/\/\/[^\n]*/g, '')
+      jsonText = jsonText.replace(/\/\*[\s\S]*?\*\//g, '')
+      jsonText = jsonText.replace(/,(\s*[}\]])/g, '$1')
+
+      const result = JSON.parse(jsonText)
+
+      if (!result.matches || !Array.isArray(result.matches)) {
+        throw new Error('Invalid response format from AI')
+      }
+
+      console.log(`✅ Lote ${batchNumber}/${totalBatches}: ${result.matches.length} procedimentos analisados`)
+      allMatches.push(...result.matches)
+    }
+
+    console.log(`✅ IA analisou todos os ${allMatches.length} procedimentos`)
+
+    // Merge AI matches with extracted procedures
+    const matchedProcedures = extractedProcedures.map((proc, index) => {
+      const aiMatch = allMatches[index]
+
+      if (!aiMatch) {
+        return {
+          ...proc,
+          matchedProcedureBaseId: null,
+          confidenceScore: 0,
+          reasoning: 'Sem correspondência da IA'
+        }
+      }
+
+      return {
+        ...proc,
+        matchedProcedureBaseId: aiMatch.matchedProcedureBaseId,
+        confidenceScore: aiMatch.confidenceScore || 0,
+        reasoning: aiMatch.reasoning || 'Match automático por IA'
+      }
+    })
+
+    // Log statistics
+    const highConfidence = matchedProcedures.filter(p => p.confidenceScore >= 0.8 && p.matchedProcedureBaseId).length
+    const mediumConfidence = matchedProcedures.filter(p => p.confidenceScore >= 0.5 && p.confidenceScore < 0.8 && p.matchedProcedureBaseId).length
+    const noMatch = matchedProcedures.filter(p => !p.matchedProcedureBaseId).length
+
+    console.log('📊 Resultados do pareamento:')
+    console.log(`   • ${highConfidence} matches de alta confiança (≥80%)`)
+    console.log(`   • ${mediumConfidence} matches de confiança média (50-79%)`)
+    console.log(`   • ${noMatch} sem match confiável`)
+
+    return matchedProcedures
+
+  } catch (error) {
+    console.error('❌ Erro no pareamento por IA:', error)
+    console.error('Stack:', error.stack)
+
+    // Fallback: return procedures without AI matching
+    return extractedProcedures.map(proc => ({
+      ...proc,
+      matchedProcedureBaseId: null,
+      confidenceScore: 0,
+      reasoning: `Erro no pareamento: ${error.message}`
+    }))
+  }
+}
+
+/**
+ * GET /api/insurance/documents/:documentId/status
+ * Get processing status for a document
+ */
+router.get('/documents/:documentId/status', authRequired, async (req, res) => {
+  try {
+    const { documentId } = req.params
+
+    const result = await pool.query(
+      `SELECT processing_progress, processing_stage, processing_status
+       FROM insurance_provider_documents
+       WHERE id = $1`,
+      [documentId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Documento não encontrado' })
+    }
+
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error fetching document status:', error)
+    res.status(500).json({ error: 'Erro ao buscar status do documento' })
+  }
+})
 
 /**
  * GET /api/insurance/:providerId/documents
@@ -474,6 +724,14 @@ router.get('/documents/:documentId/mappings', authRequired, async (req, res) => 
       [documentId]
     )
 
+    // Ensure extracted_adults_only is included (for older records it might be null)
+    result.rows.forEach(row => {
+      if (row.extracted_adults_only === null || row.extracted_adults_only === undefined) {
+        // If not set, use the base procedure's adults_only if mapped, otherwise default to false
+        row.extracted_adults_only = row.base_adults_only || false
+      }
+    })
+
     res.json(result.rows)
   } catch (error) {
     console.error('Error fetching mappings:', error)
@@ -508,6 +766,7 @@ router.post('/mappings/:mappingId/approve', authRequired, async (req, res) => {
     const mapping = mappingResult.rows[0]
 
     // Create insurance provider procedure
+    // Note: procedure_base_id can be NULL if no matching was done
     const procedureId = uuidv4()
     await client.query(
       `INSERT INTO insurance_provider_procedures (
@@ -517,11 +776,11 @@ router.post('/mappings/:mappingId/approve', authRequired, async (req, res) => {
       [
         procedureId,
         providerId,
-        mapping.mapped_procedure_base_id,
+        mapping.mapped_procedure_base_id || null, // Allow NULL
         mapping.extracted_procedure_code,
         mapping.extracted_description,
-        mapping.extracted_is_periciable,
-        mapping.extracted_value
+        mapping.extracted_is_periciable || false,
+        mapping.extracted_value || null
       ]
     )
 
@@ -555,17 +814,27 @@ router.post('/mappings/:mappingId/approve', authRequired, async (req, res) => {
 router.post('/mappings/:mappingId/update', authRequired, async (req, res) => {
   try {
     const { mappingId } = req.params
-    const { mappedProcedureBaseId, status, notes } = req.body
+    const { mappedProcedureBaseId, status, notes, extractedIsPericiable, extractedAdultsOnly } = req.body
 
     await pool.query(
       `UPDATE procedure_mappings
        SET mapped_procedure_base_id = $1,
            status = $2,
            notes = $3,
-           reviewed_by = $4,
+           extracted_is_periciable = COALESCE($4, extracted_is_periciable),
+           extracted_adults_only = COALESCE($5, extracted_adults_only),
+           reviewed_by = $6,
            reviewed_at = CURRENT_TIMESTAMP
-       WHERE id = $5`,
-      [mappedProcedureBaseId, status || 'PENDING', notes || null, req.user.id, mappingId]
+       WHERE id = $7`,
+      [
+        mappedProcedureBaseId,
+        status || 'PENDING',
+        notes || null,
+        extractedIsPericiable !== undefined ? extractedIsPericiable : null,
+        extractedAdultsOnly !== undefined ? extractedAdultsOnly : null,
+        req.user.id,
+        mappingId
+      ]
     )
 
     res.json({ success: true })

@@ -4,7 +4,6 @@ import { AdvanceContract } from '@/lib/types'
 import { advancesApi } from '@/services/api'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -20,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Plus, Eye, Edit, Trash2, FileText, Loader2 } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, FileText, Loader2, Receipt } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -34,6 +33,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { usePermissions } from '@/hooks/usePermissions'
 import { AdvanceContractForm } from '@/components/advances/AdvanceContractForm'
 import { BillingWizard } from '@/components/advances/BillingWizard'
@@ -53,6 +60,10 @@ export default function Advances() {
   const [editingContract, setEditingContract] = useState<AdvanceContract | null>(null)
   const [showBillingWizard, setShowBillingWizard] = useState(false)
   const [billingContractId, setBillingContractId] = useState<string | null>(null)
+  const [showBatchesDialog, setShowBatchesDialog] = useState(false)
+  const [selectedContractBatches, setSelectedContractBatches] = useState<any[]>([])
+  const [loadingBatches, setLoadingBatches] = useState(false)
+  const [batchesContractName, setBatchesContractName] = useState('')
 
   const canViewAdvances = canView('canViewAdvances')
   const canEditAdvances = canEdit('canEditAdvances')
@@ -140,21 +151,28 @@ export default function Advances() {
     loadContracts()
   }
 
+  const handleViewBatches = async (contract: AdvanceContract) => {
+    if (!clinicId) return
+
+    setLoadingBatches(true)
+    setBatchesContractName(contract.patientName || '')
+    setShowBatchesDialog(true)
+    try {
+      const response = await advancesApi.contracts.getBatches(clinicId, contract.id)
+      setSelectedContractBatches(response)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar lotes')
+      setSelectedContractBatches([])
+    } finally {
+      setLoadingBatches(false)
+    }
+  }
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
       currency: 'EUR',
     }).format(value)
-  }
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      ACTIVE: 'default',
-      INACTIVE: 'secondary',
-      CANCELLED: 'destructive',
-      EXPIRED: 'outline',
-    }
-    return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>
   }
 
   if (!canViewAdvances) {
@@ -230,12 +248,11 @@ export default function Advances() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Seguro/Contrato</TableHead>
-                    <TableHead className="text-right">Valor Total Adiantado</TableHead>
-                    <TableHead className="text-right">Valor Já Faturado</TableHead>
-                    <TableHead className="text-right">Saldo a Faturar</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Código do Paciente</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Fatura de Adiantamento</TableHead>
+                    <TableHead className="text-right">Já Faturado</TableHead>
+                    <TableHead className="text-right">Restante</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -243,24 +260,17 @@ export default function Advances() {
                   {filteredContracts.map((contract) => (
                     <TableRow key={contract.id}>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{contract.patientName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Código: {contract.patientCode}
-                          </div>
-                        </div>
+                        <div className="font-medium">{contract.patientCode || '-'}</div>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{contract.insuranceProviderName}</div>
-                          {contract.contractNumber && (
-                            <div className="text-sm text-muted-foreground">
-                              {contract.contractNumber}
-                            </div>
-                          )}
-                        </div>
+                        <div className="font-medium">{contract.patientName || '-'}</div>
+                        {contract.insuranceProviderName && (
+                          <div className="text-sm text-muted-foreground">
+                            {contract.insuranceProviderName}
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="font-medium">
                         {formatCurrency(contract.totalAdvanced || 0)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -277,36 +287,24 @@ export default function Advances() {
                           {formatCurrency(contract.balanceToBill || 0)}
                         </span>
                       </TableCell>
-                      <TableCell>{getStatusBadge(contract.status)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              // View details - could open a dialog
-                              toast.info('Visualizar detalhes - em desenvolvimento')
-                            }}
+                            onClick={() => handleViewBatches(contract)}
+                            title="Ver lotes emitidos"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Receipt className="h-4 w-4" />
                           </Button>
                           {canEditAdvances && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEdit(contract)}
+                              title="Editar contrato"
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {canBillAdvances && (contract.balanceToBill || 0) > 0 && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleBilling(contract)}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              Faturar
                             </Button>
                           )}
                           {canEditAdvances && (
@@ -314,8 +312,20 @@ export default function Advances() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteClick(contract)}
+                              title="Excluir contrato"
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                          {canBillAdvances && (contract.balanceToBill || 0) > 0 && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleBilling(contract)}
+                              title="Lançar fatura"
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Lançar Fatura
                             </Button>
                           )}
                         </div>
@@ -376,6 +386,71 @@ export default function Advances() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Batches Dialog */}
+      <Dialog open={showBatchesDialog} onOpenChange={setShowBatchesDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Lotes Emitidos</DialogTitle>
+            <DialogDescription>
+              Lotes de faturação para {batchesContractName}
+            </DialogDescription>
+          </DialogHeader>
+          {loadingBatches ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : selectedContractBatches.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Nenhum lote emitido ainda</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número do Lote</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Valor Total</TableHead>
+                    <TableHead className="text-right">Itens</TableHead>
+                    <TableHead>Data de Emissão</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedContractBatches.map((batch) => (
+                    <TableRow key={batch.id}>
+                      <TableCell className="font-medium">{batch.batchNumber}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            batch.status === 'PAID'
+                              ? 'default'
+                              : batch.status === 'PARTIALLY_PAID'
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                        >
+                          {batch.status === 'ISSUED' && 'Emitido'}
+                          {batch.status === 'PAID' && 'Pago'}
+                          {batch.status === 'PARTIALLY_PAID' && 'Parcialmente Pago'}
+                          {batch.status === 'CANCELLED' && 'Cancelado'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(batch.totalAmount || 0)}
+                      </TableCell>
+                      <TableCell className="text-right">{batch.itemsCount}</TableCell>
+                      <TableCell>
+                        {batch.issuedAt ? format(new Date(batch.issuedAt), 'dd/MM/yyyy') : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
