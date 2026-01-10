@@ -121,6 +121,59 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
   }
 })
 
+// GET /api/tickets/:clinicId/users - Listar usuários da clínica para atribuição de tickets
+router.get('/:clinicId/users', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
+  try {
+    const { clinicId } = req.params
+    const userId = req.auth?.sub
+    const role = req.auth?.role
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' })
+    }
+
+    // Verificar se usuário tem acesso à clínica
+    if (role === 'COLABORADOR') {
+      const userClinic = await query(
+        'SELECT clinic_id FROM users WHERE id = $1',
+        [userId]
+      )
+      if (userClinic.rows[0]?.clinic_id !== clinicId) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+    }
+
+    // Buscar todos os usuários ativos da clínica (colaboradores e gestores)
+    const result = await query(
+      `SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.role,
+        u.avatar_url
+      FROM users u
+      WHERE u.clinic_id = $1 
+        AND u.active = true
+        AND (u.role = 'COLABORADOR' OR u.role = 'GESTOR_CLINICA')
+      ORDER BY 
+        CASE u.role 
+          WHEN 'GESTOR_CLINICA' THEN 1
+          WHEN 'COLABORADOR' THEN 2
+        END,
+        u.name ASC`,
+      [clinicId]
+    )
+
+    res.json({ users: result.rows })
+  } catch (error: any) {
+    console.error('Error fetching clinic users:', error)
+    res.status(500).json({ 
+      error: 'Erro ao buscar usuários',
+      message: error.message
+    })
+  }
+})
+
 // GET /api/tickets/:clinicId - Listar tickets da clínica
 router.get('/:clinicId', requirePermission('canViewTickets'), async (req: AuthedRequest, res: Response) => {
   try {

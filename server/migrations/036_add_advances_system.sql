@@ -306,3 +306,4 @@ GROUP BY ac.id, ac.clinic_id, ac.patient_id, p.code, p.name,
          ac.insurance_provider_id, ip.name, ac.contract_number, 
          ac.status, ac.start_date, ac.end_date;
 
+

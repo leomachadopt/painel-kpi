@@ -8,3 +8,4 @@ COMMENT ON COLUMN user_permissions.can_edit_consultation_control IS 'Permission 
 
 
 
+

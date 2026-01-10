@@ -976,6 +976,9 @@ export const ticketsApi = {
       method: 'POST',
       body: JSON.stringify({ comment }),
     }),
+
+  getUsers: (clinicId: string) =>
+    apiCall<{ users: any[] }>(`/tickets/${clinicId}/users`),
 }
 
 export default {

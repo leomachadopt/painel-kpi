@@ -28,7 +28,6 @@ import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { collaboratorsApi } from '@/services/api'
 
 export default function Tickets() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -61,24 +60,12 @@ export default function Tickets() {
   const loadCollaborators = async () => {
     if (!clinicId) return
     try {
-      const data = await collaboratorsApi.list()
-      // Incluir o próprio usuário na lista se for gestor
-      const allUsers = [...data]
-      if (user && (user.role === 'GESTOR_CLINICA' || user.role === 'MENTOR')) {
-        const userInList = allUsers.find((u) => u.id === user.id)
-        if (!userInList) {
-          allUsers.push({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          })
-        }
-      }
-      setCollaborators(allUsers)
+      // Usar a nova API que retorna todos os usuários da clínica (incluindo gestores)
+      const result = await ticketsApi.getUsers(clinicId)
+      setCollaborators(result.users)
     } catch (error) {
-      console.error('Error loading collaborators:', error)
-      // Se falhar (por exemplo, se não for gestor), incluir apenas o próprio usuário
+      console.error('Error loading users:', error)
+      // Fallback: incluir apenas o próprio usuário
       if (user) {
         setCollaborators([{
           id: user.id,
@@ -342,7 +329,9 @@ export default function Tickets() {
                           {ticket.created_by_name?.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span>Criado por: {ticket.created_by_name}</span>
+                      <span>
+                        <span className="font-medium">De:</span> {ticket.created_by_name}
+                      </span>
                     </div>
                     {ticket.assigned_to_name && (
                       <div className="flex items-center gap-2">
@@ -352,8 +341,13 @@ export default function Tickets() {
                             {ticket.assigned_to_name?.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span>Atribuído a: {ticket.assigned_to_name}</span>
+                        <span>
+                          <span className="font-medium">Para:</span> {ticket.assigned_to_name}
+                        </span>
                       </div>
+                    )}
+                    {!ticket.assigned_to_name && (
+                      <span className="text-muted-foreground italic">Sem atribuição</span>
                     )}
                     {ticket.comments_count > 0 && (
                       <span className="flex items-center gap-1">

@@ -207,6 +207,30 @@ export default function TicketDetail() {
                 </Badge>
               )}
             </div>
+            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">De:</span>
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={ticket.created_by_avatar} />
+                  <AvatarFallback className="text-xs">
+                    {ticket.created_by_name?.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{ticket.created_by_name}</span>
+              </div>
+              {ticket.assigned_to_name && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Para:</span>
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={ticket.assigned_to_avatar} />
+                    <AvatarFallback className="text-xs">
+                      {ticket.assigned_to_name?.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{ticket.assigned_to_name}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

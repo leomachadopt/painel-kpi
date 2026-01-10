@@ -69,3 +69,4 @@ CREATE INDEX IF NOT EXISTS idx_procedure_base_periciable
 -- Note: Foreign key constraint on clinic_id is removed to allow NULL values
 -- Referential integrity for non-NULL clinic_id values should be handled in application logic
 
+

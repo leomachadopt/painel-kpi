@@ -22,3 +22,4 @@ CREATE INDEX IF NOT EXISTS idx_daily_advance_invoice_doctor_id ON daily_advance_
 
 
 
+
