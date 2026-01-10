@@ -70,3 +70,4 @@ CREATE INDEX IF NOT EXISTS idx_procedure_base_periciable
 -- Referential integrity for non-NULL clinic_id values should be handled in application logic
 
 
+

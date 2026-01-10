@@ -307,3 +307,4 @@ GROUP BY ac.id, ac.clinic_id, ac.patient_id, p.code, p.name,
          ac.status, ac.start_date, ac.end_date;
 
 
+

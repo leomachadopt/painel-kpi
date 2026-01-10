@@ -688,6 +688,16 @@ export const advancesApi = {
     getBatches: (clinicId: string, contractId: string) =>
       apiCall<any[]>(`/advances/contracts/${clinicId}/${contractId}/batches`),
 
+    // Get batch details with items
+    getBatchDetails: (clinicId: string, batchId: string) =>
+      apiCall<any>(`/advances/batches/${clinicId}/${batchId}`),
+
+    // Delete batch
+    deleteBatch: (clinicId: string, batchId: string) =>
+      apiCall<any>(`/advances/batches/${clinicId}/${batchId}`, {
+        method: 'DELETE',
+      }),
+
     createBillingBatchAuto: (clinicId: string, contractId: string, data: {
       targetAmount: number
       serviceDate?: string

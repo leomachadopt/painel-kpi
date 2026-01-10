@@ -38,6 +38,8 @@ interface ProcedureMapping {
   extracted_value: number | null
   mapped_procedure_base_id: string | null
   confidence_score: number
+  ai_periciable_confidence?: number
+  ai_adults_only_confidence?: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MANUAL'
   base_code?: string
   base_description?: string
@@ -78,17 +80,29 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
       const token = localStorage.getItem('kpi_token')
       const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
+      console.log('[ProcedureMappingReview] Loading mappings for documentId:', documentId)
+      console.log('[ProcedureMappingReview] API URL:', `${API_BASE_URL}/insurance/documents/${documentId}/mappings`)
+
       const response = await fetch(`${API_BASE_URL}/insurance/documents/${documentId}/mappings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       })
 
-      if (!response.ok) throw new Error('Erro ao carregar mapeamentos')
+      console.log('[ProcedureMappingReview] Response status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[ProcedureMappingReview] Error response:', errorText)
+        throw new Error('Erro ao carregar mapeamentos')
+      }
 
       const data = await response.json()
+      console.log('[ProcedureMappingReview] Loaded mappings:', data.length, 'items')
+      console.log('[ProcedureMappingReview] First mapping:', data[0])
       setMappings(data)
     } catch (err: any) {
+      console.error('[ProcedureMappingReview] Error:', err)
       toast.error(err.message || 'Erro ao carregar mapeamentos')
     } finally {
       setLoading(false)
@@ -303,9 +317,8 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                 <TableHead className="w-32">Código</TableHead>
                 <TableHead className="min-w-[200px] max-w-[300px]">Descrição</TableHead>
                 <TableHead className="w-24">Valor</TableHead>
-                <TableHead className="w-28">Periciável</TableHead>
-                <TableHead className="w-32">Match</TableHead>
-                <TableHead className="w-20">Conf.</TableHead>
+                <TableHead className="w-36">Classificação IA</TableHead>
+                <TableHead className="w-32">Match Base</TableHead>
                 <TableHead className="w-32 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -329,18 +342,32 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                     <TableCell className="w-24 text-sm">
                       {mapping.extracted_value != null ? `€ ${Number(mapping.extracted_value).toFixed(2)}` : '-'}
                     </TableCell>
-                    <TableCell className="w-28">
+                    <TableCell className="w-36">
                       <div className="space-y-1">
-                        {mapping.extracted_is_periciable ? (
-                          <Badge variant="secondary" className="text-xs">Periciável</Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Não</span>
-                        )}
-                        {mapping.extracted_adults_only && (
-                          <div className="text-xs text-muted-foreground">
-                            Adultos
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {mapping.extracted_is_periciable ? (
+                            <Badge variant="secondary" className="text-xs">Periciável</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Não periciável</span>
+                          )}
+                          {(mapping.ai_periciable_confidence ?? 0) > 0 && (
+                            <span className={`text-xs font-semibold ${getConfidenceColor(mapping.ai_periciable_confidence ?? 0)}`}>
+                              ({((mapping.ai_periciable_confidence ?? 0) * 100).toFixed(0)}%)
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {mapping.extracted_adults_only ? (
+                            <Badge variant="secondary" className="text-xs">Apenas adultos</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Todas idades</span>
+                          )}
+                          {(mapping.ai_adults_only_confidence ?? 0) > 0 && (
+                            <span className={`text-xs font-semibold ${getConfidenceColor(mapping.ai_adults_only_confidence ?? 0)}`}>
+                              ({((mapping.ai_adults_only_confidence ?? 0) * 100).toFixed(0)}%)
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="w-32">
@@ -352,13 +379,8 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                           </div>
                         </div>
                       ) : (
-                        <Badge variant="outline" className="text-xs">Sem match</Badge>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
-                    </TableCell>
-                    <TableCell className="w-20">
-                      <span className={`text-xs font-semibold ${getConfidenceColor(mapping.confidence_score)}`}>
-                        {(mapping.confidence_score * 100).toFixed(0)}%
-                      </span>
                     </TableCell>
                     <TableCell className="w-32">
                       <div className="flex items-center justify-end gap-2">
@@ -432,9 +454,39 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                   </div>
                 </div>
 
+                {/* AI Confidence Warning */}
+                {((selectedMapping.ai_periciable_confidence ?? 0) < 0.7 || (selectedMapping.ai_adults_only_confidence ?? 0) < 0.7) && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-yellow-800">Baixa confiança da IA</p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          A IA não teve certeza na classificação. Por favor, revise manualmente os campos abaixo:
+                        </p>
+                        <ul className="text-xs text-yellow-700 mt-1 ml-4 list-disc">
+                          {(selectedMapping.ai_periciable_confidence ?? 0) < 0.7 && (
+                            <li>Periciável: {((selectedMapping.ai_periciable_confidence ?? 0) * 100).toFixed(0)}% de confiança</li>
+                          )}
+                          {(selectedMapping.ai_adults_only_confidence ?? 0) < 0.7 && (
+                            <li>Exclusivo adultos: {((selectedMapping.ai_adults_only_confidence ?? 0) * 100).toFixed(0)}% de confiança</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Periciável *</Label>
+                    <Label className="flex items-center gap-2">
+                      Periciável *
+                      {(selectedMapping.ai_periciable_confidence ?? 0) > 0 && (
+                        <span className={`text-xs font-semibold ${getConfidenceColor(selectedMapping.ai_periciable_confidence ?? 0)}`}>
+                          (IA: {((selectedMapping.ai_periciable_confidence ?? 0) * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </Label>
                     <Select
                       value={selectedMapping.extracted_is_periciable ? 'true' : 'false'}
                       onValueChange={(value) => {
@@ -454,7 +506,14 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
                     </Select>
                   </div>
                   <div>
-                    <Label>Exclusivo para Adultos *</Label>
+                    <Label className="flex items-center gap-2">
+                      Exclusivo para Adultos *
+                      {(selectedMapping.ai_adults_only_confidence ?? 0) > 0 && (
+                        <span className={`text-xs font-semibold ${getConfidenceColor(selectedMapping.ai_adults_only_confidence ?? 0)}`}>
+                          (IA: {((selectedMapping.ai_adults_only_confidence ?? 0) * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </Label>
                     <Select
                       value={(selectedMapping.extracted_adults_only ?? false) ? 'true' : 'false'}
                       onValueChange={(value) => {

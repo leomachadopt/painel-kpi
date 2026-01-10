@@ -25,3 +25,4 @@ CREATE INDEX IF NOT EXISTS idx_daily_consultation_control_clinic_date
 
 
 
+

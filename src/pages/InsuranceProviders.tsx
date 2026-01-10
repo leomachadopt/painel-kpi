@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { usePermissions } from '@/hooks/usePermissions'
 import { InsuranceProviderForm } from '@/components/advances/InsuranceProviderForm'
-import { ProcedureMappingReview } from '@/components/advances/ProcedureMappingReview'
+import { ExtractedProceduresView } from '@/components/advances/ExtractedProceduresView'
 import { UploadPDFDialog } from '@/components/advances/UploadPDFDialog'
 import { FileText, Upload } from 'lucide-react'
 
@@ -51,8 +51,8 @@ export default function InsuranceProviders() {
   const [deleting, setDeleting] = useState(false)
   const [showProviderForm, setShowProviderForm] = useState(false)
   const [editingProvider, setEditingProvider] = useState<InsuranceProvider | null>(null)
-  const [showMappingReview, setShowMappingReview] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<{ documentId: string; providerId: string } | null>(null)
+  const [showExtractedProcedures, setShowExtractedProcedures] = useState(false)
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null)
   const [providerDocuments, setProviderDocuments] = useState<Record<string, any[]>>({})
   const [showUploadPDF, setShowUploadPDF] = useState(false)
   const [uploadPDFProvider, setUploadPDFProvider] = useState<InsuranceProvider | null>(null)
@@ -167,8 +167,8 @@ export default function InsuranceProviders() {
         return
       }
 
-      setSelectedDocument({ documentId: completedDoc.id, providerId: provider.id })
-      setShowMappingReview(true)
+      setSelectedDocumentId(completedDoc.id)
+      setShowExtractedProcedures(true)
     } catch (err: any) {
       toast.error(err.message || 'Erro ao carregar documentos')
     }
@@ -353,20 +353,19 @@ export default function InsuranceProviders() {
         />
       )}
 
-      {/* Procedure Mapping Review Dialog */}
-      {showMappingReview && selectedDocument && clinicId && (
-        <ProcedureMappingReview
-          documentId={selectedDocument.documentId}
-          providerId={selectedDocument.providerId}
-          clinicId={clinicId}
+      {/* Extracted Procedures View Dialog */}
+      {showExtractedProcedures && selectedDocumentId && (
+        <ExtractedProceduresView
+          documentId={selectedDocumentId}
           onClose={() => {
-            setShowMappingReview(false)
-            setSelectedDocument(null)
+            setShowExtractedProcedures(false)
+            setSelectedDocumentId(null)
           }}
         />
       )}
     </div>
   )
 }
+
 
 

@@ -1540,6 +1540,132 @@ router.get('/contracts/:clinicId/:contractId/batches', async (req, res) => {
   }
 })
 
+// Get batch details with items
+router.get('/batches/:clinicId/:batchId', async (req, res) => {
+  try {
+    const { clinicId, batchId } = req.params
+
+    // Get batch details
+    const batchResult = await query(
+      `SELECT
+        bb.id,
+        bb.batch_number,
+        bb.status,
+        bb.total_amount,
+        bb.target_amount,
+        bb.issued_at,
+        bb.created_at,
+        bb.contract_id,
+        ac.contract_number,
+        p.name as patient_name,
+        ip.name as insurance_provider_name
+       FROM billing_batches bb
+       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+       INNER JOIN patients p ON ac.patient_id = p.id
+       INNER JOIN insurance_providers ip ON ac.insurance_provider_id = ip.id
+       WHERE bb.id = $1 AND ac.clinic_id = $2`,
+      [batchId, clinicId]
+    )
+
+    if (batchResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Batch not found' })
+    }
+
+    const batch = batchResult.rows[0]
+
+    // Get batch items
+    const itemsResult = await query(
+      `SELECT
+        bi.id,
+        bi.procedure_code,
+        bi.procedure_description,
+        bi.is_periciable,
+        bi.unit_value,
+        bi.quantity,
+        bi.total_value,
+        bi.service_date,
+        bi.dependent_id,
+        cd.name as dependent_name,
+        bi.status
+       FROM billing_items bi
+       LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
+       WHERE bi.batch_id = $1
+       ORDER BY bi.service_date DESC, bi.procedure_code`,
+      [batchId]
+    )
+
+    res.json({
+      id: batch.id,
+      batchNumber: batch.batch_number,
+      status: batch.status,
+      totalAmount: parseFloat(batch.total_amount || '0'),
+      targetAmount: parseFloat(batch.target_amount || '0'),
+      issuedAt: batch.issued_at,
+      createdAt: batch.created_at,
+      contractId: batch.contract_id,
+      contractNumber: batch.contract_number,
+      patientName: batch.patient_name,
+      insuranceProviderName: batch.insurance_provider_name,
+      items: itemsResult.rows.map(item => ({
+        id: item.id,
+        procedureCode: item.procedure_code,
+        procedureDescription: item.procedure_description,
+        isPericiable: item.is_periciable,
+        unitValue: parseFloat(item.unit_value || '0'),
+        quantity: item.quantity,
+        totalValue: parseFloat(item.total_value || '0'),
+        serviceDate: item.service_date,
+        dependentId: item.dependent_id,
+        dependentName: item.dependent_name || 'Titular',
+        status: item.status,
+      })),
+    })
+  } catch (error) {
+    console.error('Get batch details error:', error)
+    res.status(500).json({ error: 'Failed to fetch batch details' })
+  }
+})
+
+// Delete batch
+router.delete('/batches/:clinicId/:batchId', async (req, res) => {
+  const { clinicId, batchId } = req.params
+  const hasPermission = await canBillAdvances(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    // Verify batch exists and get contract info
+    const batchCheck = await query(
+      `SELECT bb.id, bb.batch_number, ac.clinic_id
+       FROM billing_batches bb
+       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+       WHERE bb.id = $1 AND ac.clinic_id = $2`,
+      [batchId, clinicId]
+    )
+
+    if (batchCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Batch not found' })
+    }
+
+    console.log(`[Delete Batch] Deleting batch ${batchCheck.rows[0].batch_number}`)
+
+    // Delete batch items first (cascade should handle this, but being explicit)
+    await query('DELETE FROM billing_items WHERE batch_id = $1', [batchId])
+
+    // Delete batch
+    await query('DELETE FROM billing_batches WHERE id = $1', [batchId])
+
+    console.log(`[Delete Batch] Batch ${batchCheck.rows[0].batch_number} deleted successfully`)
+
+    res.status(200).json({ message: 'Batch deleted successfully' })
+  } catch (error) {
+    console.error('Delete batch error:', error)
+    res.status(500).json({ error: 'Failed to delete batch' })
+  }
+})
+
 // Calculate billing items without creating batch (for preview/auto-selection)
 router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (req, res) => {
   const { clinicId, contractId } = req.params

@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Plus, Edit, Trash2, FileText, Loader2, Receipt } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, FileText, Loader2, Receipt, Eye } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -64,6 +64,12 @@ export default function Advances() {
   const [selectedContractBatches, setSelectedContractBatches] = useState<any[]>([])
   const [loadingBatches, setLoadingBatches] = useState(false)
   const [batchesContractName, setBatchesContractName] = useState('')
+  const [showBatchDetailsDialog, setShowBatchDetailsDialog] = useState(false)
+  const [selectedBatchDetails, setSelectedBatchDetails] = useState<any>(null)
+  const [loadingBatchDetails, setLoadingBatchDetails] = useState(false)
+  const [showDeleteBatchDialog, setShowDeleteBatchDialog] = useState(false)
+  const [batchToDelete, setBatchToDelete] = useState<any>(null)
+  const [deletingBatch, setDeletingBatch] = useState(false)
 
   const canViewAdvances = canView('canViewAdvances')
   const canEditAdvances = canEdit('canEditAdvances')
@@ -165,6 +171,54 @@ export default function Advances() {
       setSelectedContractBatches([])
     } finally {
       setLoadingBatches(false)
+    }
+  }
+
+  const handleViewBatchDetails = async (batch: any) => {
+    if (!clinicId) return
+
+    setLoadingBatchDetails(true)
+    setShowBatchDetailsDialog(true)
+    try {
+      const response = await advancesApi.contracts.getBatchDetails(clinicId, batch.id)
+      setSelectedBatchDetails(response)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar detalhes do lote')
+      setSelectedBatchDetails(null)
+    } finally {
+      setLoadingBatchDetails(false)
+    }
+  }
+
+  const handleDeleteBatchClick = (batch: any) => {
+    setBatchToDelete(batch)
+    setShowDeleteBatchDialog(true)
+  }
+
+  const handleDeleteBatch = async () => {
+    if (!clinicId || !batchToDelete) return
+
+    setDeletingBatch(true)
+    try {
+      await advancesApi.contracts.deleteBatch(clinicId, batchToDelete.id)
+      toast.success('Lote excluído com sucesso')
+      setShowDeleteBatchDialog(false)
+      setBatchToDelete(null)
+      // Refresh batches list
+      const currentContract = contracts.find(c =>
+        selectedContractBatches.length > 0 &&
+        c.id === selectedContractBatches[0]?.contractId
+      )
+      if (currentContract) {
+        const response = await advancesApi.contracts.getBatches(clinicId, currentContract.id)
+        setSelectedContractBatches(response)
+      }
+      // Refresh contracts to update billed amounts
+      loadContracts()
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao excluir lote')
+    } finally {
+      setDeletingBatch(false)
     }
   }
 
@@ -414,6 +468,7 @@ export default function Advances() {
                     <TableHead className="text-right">Valor Total</TableHead>
                     <TableHead className="text-right">Itens</TableHead>
                     <TableHead>Data de Emissão</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -443,6 +498,28 @@ export default function Advances() {
                       <TableCell>
                         {batch.issuedAt ? format(new Date(batch.issuedAt), 'dd/MM/yyyy') : '-'}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewBatchDetails(batch)}
+                            title="Ver detalhes"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {canBillAdvances && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteBatchClick(batch)}
+                              title="Excluir lote"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -451,6 +528,156 @@ export default function Advances() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Batch Details Dialog */}
+      <Dialog open={showBatchDetailsDialog} onOpenChange={setShowBatchDetailsDialog}>
+        <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Lote</DialogTitle>
+            <DialogDescription>
+              Informações completas e itens do lote
+            </DialogDescription>
+          </DialogHeader>
+          {loadingBatchDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : selectedBatchDetails ? (
+            <div className="space-y-6 overflow-y-auto pr-2">
+              {/* Batch Info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Número do Lote</p>
+                  <p className="font-semibold">{selectedBatchDetails.batchNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge
+                    variant={
+                      selectedBatchDetails.status === 'PAID'
+                        ? 'default'
+                        : selectedBatchDetails.status === 'PARTIALLY_PAID'
+                        ? 'secondary'
+                        : 'outline'
+                    }
+                  >
+                    {selectedBatchDetails.status === 'ISSUED' && 'Emitido'}
+                    {selectedBatchDetails.status === 'PAID' && 'Pago'}
+                    {selectedBatchDetails.status === 'PARTIALLY_PAID' && 'Parcialmente Pago'}
+                    {selectedBatchDetails.status === 'CANCELLED' && 'Cancelado'}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Paciente</p>
+                  <p className="font-semibold truncate">{selectedBatchDetails.patientName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Seguradora</p>
+                  <p className="font-semibold truncate">{selectedBatchDetails.insuranceProviderName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="font-semibold text-lg">
+                    {formatCurrency(selectedBatchDetails.totalAmount || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data de Emissão</p>
+                  <p className="font-semibold">
+                    {selectedBatchDetails.issuedAt
+                      ? format(new Date(selectedBatchDetails.issuedAt), 'dd/MM/yyyy HH:mm')
+                      : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Batch Items */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">
+                  Itens do Lote ({selectedBatchDetails.items?.length || 0})
+                </h3>
+                <div className="rounded-md border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Código</TableHead>
+                          <TableHead className="min-w-[200px]">Descrição</TableHead>
+                          <TableHead className="w-[120px]">Beneficiário</TableHead>
+                          <TableHead className="text-right w-[90px]">Valor Un.</TableHead>
+                          <TableHead className="text-right w-[60px]">Qtd</TableHead>
+                          <TableHead className="text-right w-[90px]">Total</TableHead>
+                          <TableHead className="w-[100px]">Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedBatchDetails.items?.map((item: any) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-mono text-xs">{item.procedureCode}</TableCell>
+                            <TableCell className="text-sm">
+                              <div className="max-w-[200px] truncate" title={item.procedureDescription}>
+                                {item.procedureDescription}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">{item.dependentName}</TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCurrency(item.unitValue || 0)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">{item.quantity}</TableCell>
+                            <TableCell className="text-right font-medium text-sm">
+                              {formatCurrency(item.totalValue || 0)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {item.serviceDate
+                                ? format(new Date(item.serviceDate), 'dd/MM/yyyy')
+                                : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Erro ao carregar detalhes do lote</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Batch Confirmation Dialog */}
+      <AlertDialog open={showDeleteBatchDialog} onOpenChange={setShowDeleteBatchDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Lote</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o lote{' '}
+              <strong>{batchToDelete?.batchNumber}</strong>? Esta ação não pode ser desfeita e
+              todos os itens deste lote serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingBatch}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBatch}
+              disabled={deletingBatch}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingBatch ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

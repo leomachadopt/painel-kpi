@@ -52,14 +52,16 @@ O schema foi criado com base nos tipos TypeScript existentes e inclui as seguint
 
 ### 1. Configuração Inicial
 
-As variáveis de ambiente já foram configuradas no arquivo `.env`:
+As variáveis de ambiente devem ser configuradas no arquivo `.env`:
 
 ```bash
-DATABASE_URL=postgresql://neondb_owner:npg_0xmMIovdFCh5@ep-cold-resonance-abyfebsq-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://usuario:senha@host:porta/database?sslmode=require
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:8080
 ```
+
+**⚠️ IMPORTANTE:** O arquivo `.env` contém credenciais sensíveis e não deve ser commitado no Git. Use a URI de conexão fornecida pelo seu provedor de banco de dados (Neon, por exemplo).
 
 ### 2. Migração e Seed
 

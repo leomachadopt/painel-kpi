@@ -1,7 +1,16 @@
+require('dotenv').config()
 const { Pool } = require('pg')
 
+if (!process.env.DATABASE_URL) {
+  console.error('❌ Erro: DATABASE_URL não está definida no arquivo .env')
+  process.exit(1)
+}
+
 const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_0xmMIovdFCh5@ep-cold-resonance-abyfebsq-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require',
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 })
 
 async function checkDuplicates() {
