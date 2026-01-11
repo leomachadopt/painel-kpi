@@ -179,7 +179,10 @@ export function usePermissions() {
       permissions.canEditTickets ||
       permissions.canEditNPS ||
       permissions.canEditSuppliers ||
-      permissions.canEditMarketing
+      permissions.canEditMarketing ||
+      permissions.canEditAdvances ||
+      permissions.canBillAdvances ||
+      permissions.canManageInsuranceProviders
     )
   }
 
@@ -240,6 +243,10 @@ function createEmptyPermissions(): UserPermissions {
     canViewMarketing: false,
     canEditMarketing: false,
     canViewAlerts: false,
+    canViewAdvances: false,
+    canEditAdvances: false,
+    canBillAdvances: false,
+    canManageInsuranceProviders: false,
   }
 }
 
@@ -288,5 +295,9 @@ function createFullPermissions(): UserPermissions {
     canViewMarketing: true,
     canEditMarketing: true,
     canViewAlerts: true,
+    canViewAdvances: true,
+    canEditAdvances: true,
+    canBillAdvances: true,
+    canManageInsuranceProviders: true,
   }
 }

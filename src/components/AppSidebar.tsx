@@ -453,7 +453,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {activeClinicId && canEdit('canManageInsuranceProviders') && (
+              {activeClinicId && (canView('canViewAdvances') || canEdit('canManageInsuranceProviders')) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
