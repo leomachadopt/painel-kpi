@@ -483,7 +483,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {activeClinicId && user?.role === 'GESTOR_CLINICA' && (
+              {activeClinicId && (user?.role === 'GESTOR_CLINICA' || canView('canViewNPS') || canEdit('canEditNPS')) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

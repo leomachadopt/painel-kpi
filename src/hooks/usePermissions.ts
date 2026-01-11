@@ -27,7 +27,25 @@ export function usePermissions() {
       return createFullPermissions()
     }
 
-    return user.permissions || createEmptyPermissions()
+    // Merge user permissions with empty permissions to ensure all fields are defined
+    const userPerms = user.permissions || {}
+    const emptyPerms = createEmptyPermissions()
+    
+    // Merge ensuring all fields are boolean (not null/undefined)
+    const merged: UserPermissions = { ...emptyPerms }
+    for (const key in emptyPerms) {
+      const permKey = key as keyof UserPermissions
+      merged[permKey] = userPerms[permKey] === true || userPerms[permKey] === 1
+    }
+    
+    console.log('getAllPermissions - user role:', user.role)
+    console.log('getAllPermissions - user.permissions:', userPerms)
+    console.log('getAllPermissions - merged permissions:', merged)
+    console.log('getAllPermissions - canViewAdvances:', merged.canViewAdvances)
+    console.log('getAllPermissions - canEditAdvances:', merged.canEditAdvances)
+    console.log('getAllPermissions - canManageInsuranceProviders:', merged.canManageInsuranceProviders)
+    
+    return merged
   }
 
   const permissions = getAllPermissions()
@@ -54,7 +72,10 @@ export function usePermissions() {
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
-    return permissions[section]
+    const value = permissions[section]
+    const result = value === true || value === 1
+    console.log(`canView(${section}):`, { value, result })
+    return result
   }
 
   /**
@@ -130,7 +151,10 @@ export function usePermissions() {
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
-    return permissions[resource]
+    const value = permissions[resource]
+    const result = value === true || value === 1
+    console.log(`canEdit(${resource}):`, { value, result, permissions })
+    return result
   }
 
   /**
