@@ -6,52 +6,58 @@
 
 @layer base {
   :root {
-    /* Teal Theme based on spec */
-    --background: 210 40% 98%; /* Slate 50 */
-    --foreground: 222.2 84% 4.9%;
+    /* 🦷 Dental KPI Green Theme - Based on Logo Colors */
+    --background: 0 0% 100%; /* Pure White Background */
+    --foreground: 160 40% 15%; /* Dark Green Text */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 160 40% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 160 40% 15%;
 
-    --primary: 175 77% 26%; /* Teal 700 #0F766E */
-    --primary-foreground: 210 40% 98%;
+    /* Primary: Dark Forest Green from Logo (#2D5F4A) */
+    --primary: 160 40% 28%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 168 64% 50%; /* Teal 400 #2DD4BF */
-    --secondary-foreground: 222.2 84% 4.9%;
+    /* Secondary: Fresh Leaf Green from Logo (#7FBF4D) */
+    --secondary: 90 45% 52%;
+    --secondary-foreground: 160 40% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted: Very Light Green Tint */
+    --muted: 120 20% 96%;
+    --muted-foreground: 160 20% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 84% 4.9%;
+    /* Accent: Medium Green */
+    --accent: 130 50% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 343 79% 50%; /* Rose 600 */
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%; /* Red for errors */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 175 77% 26%; /* Primary ring */
+    /* Borders with subtle green tint */
+    --border: 120 15% 90%;
+    --input: 120 15% 92%;
+    --ring: 160 40% 28%; /* Primary ring */
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
+    /* Sidebar with modern green accents */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 160 30% 20%;
+    --sidebar-primary: 160 40% 28%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 120 30% 96%;
+    --sidebar-accent-foreground: 160 40% 28%;
+    --sidebar-border: 120 15% 90%;
+    --sidebar-ring: 90 45% 52%;
 
-    /* Chart Colors - Vibrant Palette for 12 KPIs */
-    --chart-1: 173 58% 39%; /* Teal */
-    --chart-2: 12 76% 61%; /* Coral */
-    --chart-3: 197 71% 73%; /* Sky */
-    --chart-4: 43 74% 66%; /* Yellow */
-    --chart-5: 27 87% 67%; /* Orange */
+    /* Chart Colors - Green Palette with Accents */
+    --chart-1: 160 50% 35%; /* Deep Green */
+    --chart-2: 90 50% 45%; /* Light Green */
+    --chart-3: 130 45% 40%; /* Medium Green */
+    --chart-4: 75 55% 48%; /* Yellow-Green */
+    --chart-5: 45 85% 55%; /* Amber Accent */
   }
 
   .dark {
@@ -133,69 +139,157 @@
   }
 }
 
-/* Modern Glassmorphism & Shadows */
+/* 🌟 Modern Glassmorphism & Shadows with Green Accents */
 @layer utilities {
+  /* Glassmorphism with subtle green tint */
   .glass {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(127, 191, 77, 0.15);
+    box-shadow: 0 8px 32px 0 rgba(45, 95, 74, 0.08);
+  }
+
+  .glass-green {
+    background: linear-gradient(135deg, rgba(127, 191, 77, 0.05), rgba(45, 95, 74, 0.03));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(127, 191, 77, 0.2);
   }
-  
+
+  /* Modern shadows with green hints */
   .shadow-modern {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 
-                0 4px 6px -1px rgba(0, 0, 0, 0.03),
-                0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 4px 0 rgba(45, 95, 74, 0.06),
+                0 4px 8px -1px rgba(45, 95, 74, 0.04),
+                0 0 0 1px rgba(127, 191, 77, 0.03);
   }
-  
+
   .shadow-modern-lg {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
-                0 10px 15px -3px rgba(0, 0, 0, 0.08),
-                0 0 0 1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 8px -1px rgba(45, 95, 74, 0.08),
+                0 12px 20px -4px rgba(45, 95, 74, 0.1),
+                0 0 0 1px rgba(127, 191, 77, 0.04);
   }
-  
+
   .shadow-modern-xl {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08),
-                0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 12px 24px -6px rgba(45, 95, 74, 0.12),
+                0 24px 32px -8px rgba(45, 95, 74, 0.14),
+                0 0 0 1px rgba(127, 191, 77, 0.05);
   }
-  
+
+  .shadow-green-glow {
+    box-shadow: 0 0 20px rgba(127, 191, 77, 0.15),
+                0 0 40px rgba(45, 95, 74, 0.08);
+  }
+
+  /* Modern gradient backgrounds */
   .gradient-subtle {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(247, 252, 245, 0.98) 50%,
+      rgba(255, 255, 255, 0.95) 100%);
   }
-  
+
+  .gradient-green-subtle {
+    background: linear-gradient(135deg,
+      rgba(127, 191, 77, 0.03) 0%,
+      rgba(45, 95, 74, 0.02) 100%);
+  }
+
+  .gradient-green {
+    background: linear-gradient(135deg,
+      hsl(90, 45%, 52%) 0%,
+      hsl(130, 50%, 45%) 50%,
+      hsl(160, 40%, 28%) 100%);
+  }
+
+  /* Gradient borders with green */
   .gradient-border {
     position: relative;
     background: white;
   }
-  
+
   .gradient-border::before {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(45, 212, 191, 0.1));
+    padding: 1.5px;
+    background: linear-gradient(135deg,
+      rgba(127, 191, 77, 0.3) 0%,
+      rgba(45, 95, 74, 0.15) 50%,
+      rgba(127, 191, 77, 0.3) 100%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
+
+  /* Modern hover effects */
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -6px rgba(45, 95, 74, 0.15),
+                0 24px 32px -8px rgba(45, 95, 74, 0.12);
+  }
 }
 
-/* Smooth Animations */
+/* ✨ Smooth & Modern Animations */
 @layer utilities {
+  /* Fade animations */
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
+  .animate-fade-in-fast {
+    animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Slide animations */
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
+  .animate-slide-down {
+    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-slide-left {
+    animation: slideLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-slide-right {
+    animation: slideRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Scale animations */
   .animate-scale-in {
-    animation: scaleIn 0.2s ease-out;
+    animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
+  .animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Special effects */
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(127, 191, 77, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  .animate-pulse-green {
+    animation: pulseGreen 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Keyframes */
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -204,26 +298,94 @@
       opacity: 1;
     }
   }
-  
+
   @keyframes slideUp {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(16px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideLeft {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideRight {
+    from {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   @keyframes scaleIn {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.9);
     }
     to {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes pulseGreen {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(127, 191, 77, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(127, 191, 77, 0);
     }
   }
 }
@@ -289,44 +451,507 @@ div[class*="rounded-xl"] {
   border-radius: 1rem !important;
 }
 
-/* FORÇAR SOMBRAS MODERNAS EM TODOS OS CARDS */
+/* 🎨 MODERN GREEN THEME - FORCED STYLES */
+
+/* FORÇAR SOMBRAS MODERNAS COM HINTS VERDES EM TODOS OS CARDS */
 div[class*="Card"],
 [data-card],
 [role="alert"],
 div[class*="card"] {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-              0 10px 15px -3px rgba(0, 0, 0, 0.1),
-              0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 8px -2px rgba(45, 95, 74, 0.08),
+              0 12px 20px -4px rgba(45, 95, 74, 0.1),
+              0 0 0 1px rgba(127, 191, 77, 0.04) !important;
+  border: 1px solid rgba(127, 191, 77, 0.1) !important;
+  background: white !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* FORÇAR HEADER MODERNO */
+div[class*="Card"]:hover,
+[data-card]:hover,
+div[class*="card"]:hover {
+  box-shadow: 0 8px 16px -4px rgba(45, 95, 74, 0.12),
+              0 20px 32px -8px rgba(45, 95, 74, 0.14),
+              0 0 0 1px rgba(127, 191, 77, 0.06) !important;
+  transform: translateY(-2px);
+}
+
+/* FORÇAR HEADER MODERNO COM GLASSMORPHISM VERDE */
 header {
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
   background: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(45, 95, 74, 0.06),
+              0 0 0 1px rgba(127, 191, 77, 0.05) !important;
+  border-bottom: 1px solid rgba(127, 191, 77, 0.1) !important;
 }
 
-/* FORÇAR BOTÕES MODERNOS */
+/* FORÇAR BOTÕES MODERNOS COM VERDE */
 button[class*="Button"],
 button {
-  border-radius: 0.75rem !important;
-  transition: all 0.2s ease !important;
+  border-radius: 0.875rem !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-weight: 600 !important;
 }
 
-/* FORÇAR INPUTS MODERNOS */
+button[class*="primary"],
+button.bg-primary,
+button[data-variant="primary"] {
+  background: linear-gradient(135deg, hsl(160, 40%, 28%), hsl(160, 40%, 32%)) !important;
+  box-shadow: 0 2px 8px rgba(45, 95, 74, 0.25),
+              0 1px 2px rgba(45, 95, 74, 0.1) !important;
+}
+
+button[class*="primary"]:hover,
+button.bg-primary:hover,
+button[data-variant="primary"]:hover {
+  background: linear-gradient(135deg, hsl(160, 40%, 32%), hsl(160, 40%, 36%)) !important;
+  box-shadow: 0 4px 12px rgba(45, 95, 74, 0.3),
+              0 2px 4px rgba(45, 95, 74, 0.15) !important;
+  transform: translateY(-1px);
+}
+
+button[class*="secondary"],
+button.bg-secondary {
+  background: linear-gradient(135deg, hsl(90, 45%, 52%), hsl(90, 45%, 56%)) !important;
+  box-shadow: 0 2px 8px rgba(127, 191, 77, 0.25) !important;
+}
+
+button[class*="secondary"]:hover {
+  background: linear-gradient(135deg, hsl(90, 45%, 56%), hsl(90, 45%, 60%)) !important;
+  box-shadow: 0 4px 12px rgba(127, 191, 77, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* FORÇAR INPUTS MODERNOS COM VERDE */
 input,
 select,
 textarea {
-  border-radius: 0.75rem !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 0.875rem !important;
+  border: 1.5px solid rgba(127, 191, 77, 0.15) !important;
+  box-shadow: 0 1px 3px rgba(45, 95, 74, 0.05) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: white !important;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: rgba(127, 191, 77, 0.25) !important;
+  box-shadow: 0 2px 4px rgba(45, 95, 74, 0.08) !important;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  border-color: hsl(175, 77%, 26%) !important;
+  box-shadow: 0 0 0 3px rgba(127, 191, 77, 0.15),
+              0 2px 8px rgba(45, 95, 74, 0.1) !important;
+  border-color: hsl(160, 40%, 28%) !important;
+  outline: none !important;
+}
+
+/* TABS MODERNOS COM VERDE */
+[role="tablist"] button[data-state="active"] {
+  background: linear-gradient(135deg, rgba(127, 191, 77, 0.08), rgba(45, 95, 74, 0.05)) !important;
+  border-bottom: 2px solid hsl(160, 40%, 28%) !important;
+  color: hsl(160, 40%, 28%) !important;
+}
+
+/* BADGES MODERNOS */
+[class*="badge"],
+span[class*="Badge"] {
+  border-radius: 0.5rem !important;
+  padding: 0.25rem 0.75rem !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  box-shadow: 0 1px 3px rgba(45, 95, 74, 0.15) !important;
+}
+
+/* 🎯 ULTRA-MODERN DETAILS */
+
+/* Custom Scrollbar with Green */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(127, 191, 77, 0.05);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg,
+    rgba(127, 191, 77, 0.4),
+    rgba(45, 95, 74, 0.5));
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg,
+    rgba(127, 191, 77, 0.6),
+    rgba(45, 95, 74, 0.7));
+  background-clip: content-box;
+}
+
+/* Links modernos */
+a {
+  color: hsl(160, 40%, 28%);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+a:hover {
+  color: hsl(130, 50%, 45%);
+}
+
+a:not([class*="button"]):not([class*="Button"])::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    hsl(90, 45%, 52%),
+    hsl(160, 40%, 28%));
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a:not([class*="button"]):not([class*="Button"]):hover::after {
+  width: 100%;
+}
+
+/* Loading spinner verde */
+@keyframes spin-green {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  border: 3px solid rgba(127, 191, 77, 0.2);
+  border-top-color: hsl(160, 40%, 28%);
+  border-radius: 50%;
+  animation: spin-green 0.8s linear infinite;
+}
+
+/* Selection com verde */
+::selection {
+  background: rgba(127, 191, 77, 0.3);
+  color: hsl(160, 40%, 15%);
+}
+
+::-moz-selection {
+  background: rgba(127, 191, 77, 0.3);
+  color: hsl(160, 40%, 15%);
+}
+
+/* Focus visible moderno */
+*:focus-visible {
+  outline: 2px solid hsl(160, 40%, 28%);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Progress bars verdes */
+progress {
+  height: 8px;
+  border-radius: 10px;
+  background: rgba(127, 191, 77, 0.1);
+}
+
+progress::-webkit-progress-bar {
+  background: rgba(127, 191, 77, 0.1);
+  border-radius: 10px;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg,
+    hsl(90, 45%, 52%),
+    hsl(130, 50%, 45%));
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(127, 191, 77, 0.3);
+}
+
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg,
+    hsl(90, 45%, 52%),
+    hsl(130, 50%, 45%));
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(127, 191, 77, 0.3);
+}
+
+/* Tooltips modernos */
+[role="tooltip"],
+[data-tooltip] {
+  background: linear-gradient(135deg,
+    hsl(160, 40%, 28%),
+    hsl(160, 40%, 32%)) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 8px 16px rgba(45, 95, 74, 0.25),
+              0 0 0 1px rgba(127, 191, 77, 0.2) !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Dividers com verde */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(127, 191, 77, 0.3),
+    transparent);
+}
+
+/* Checkbox e Radio customizados */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: hsl(160, 40%, 28%);
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(127, 191, 77, 0.3) !important;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  background: linear-gradient(135deg,
+    hsl(90, 45%, 52%),
+    hsl(160, 40%, 28%)) !important;
+  box-shadow: 0 0 0 3px rgba(127, 191, 77, 0.2),
+              0 2px 4px rgba(45, 95, 74, 0.15) !important;
+}
+
+/* Tables modernos */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+thead {
+  background: linear-gradient(135deg,
+    rgba(127, 191, 77, 0.08),
+    rgba(45, 95, 74, 0.05));
+}
+
+thead th {
+  color: hsl(160, 40%, 28%) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem !important;
+  border-bottom: 2px solid rgba(127, 191, 77, 0.2) !important;
+}
+
+tbody tr {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(127, 191, 77, 0.08) !important;
+}
+
+tbody tr:hover {
+  background: rgba(127, 191, 77, 0.04) !important;
+  transform: scale(1.01);
+}
+
+/* Notification/Alert styles */
+[role="alert"],
+.alert {
+  border-left: 4px solid hsl(160, 40%, 28%) !important;
+  background: linear-gradient(90deg,
+    rgba(127, 191, 77, 0.1),
+    rgba(255, 255, 255, 0.95)) !important;
+}
+
+/* Modal overlays */
+[data-overlay],
+.overlay {
+  backdrop-filter: blur(8px) !important;
+  background: rgba(45, 95, 74, 0.15) !important;
+}
+
+/* 🎊 FINAL TOUCH - Subtle background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(127, 191, 77, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(45, 95, 74, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 🎯 ÍCONES DE AÇÃO ULTRA-MODERNOS */
+
+/* Botões de ação - Background circular moderno e sutil */
+button[variant="ghost"][size="icon"],
+button.h-8.w-8 {
+  background: transparent !important;
+  border-radius: 50% !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: visible;
+}
+
+/* Background verde super sutil para todos os botões de ação */
+button[variant="ghost"][size="icon"]::before,
+button.h-8.w-8::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(127, 191, 77, 0.08);
+  opacity: 1;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+/* Hover state - Background verde mais intenso */
+button[variant="ghost"][size="icon"]:hover::before,
+button.h-8.w-8:hover::before {
+  background: rgba(127, 191, 77, 0.18);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(127, 191, 77, 0.1);
+}
+
+/* Active state */
+button[variant="ghost"][size="icon"]:active::before,
+button.h-8.w-8:active::before {
+  transform: scale(0.95);
+}
+
+/* BOTÃO DE EDITAR - Verde leaf */
+button.text-primary,
+button.hover\:text-primary {
+  color: transparent !important;
+}
+
+button.text-primary svg,
+button.hover\:text-primary svg {
+  color: hsl(90, 45%, 48%) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+button.text-primary:hover svg,
+button.hover\:text-primary:hover svg {
+  color: hsl(90, 55%, 42%) !important;
+  transform: scale(1.15) rotate(5deg);
+  filter: drop-shadow(0 0 8px rgba(127, 191, 77, 0.3));
+}
+
+/* BOTÃO DE EXCLUIR - Verde forest no normal, vermelho no hover */
+button.text-destructive,
+button.hover\:text-destructive {
+  color: transparent !important;
+}
+
+button.text-destructive svg,
+button.hover\:text-destructive svg {
+  color: hsl(160, 40%, 32%) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+button.text-destructive:hover svg,
+button.hover\:text-destructive:hover svg {
+  color: hsl(0, 72%, 51%) !important;
+  transform: scale(1.15) rotate(-5deg);
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.3));
+}
+
+button.text-destructive:hover::before {
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Disabled state */
+button[variant="ghost"][size="icon"]:disabled,
+button.h-8.w-8:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+button[variant="ghost"][size="icon"]:disabled::before,
+button.h-8.w-8:disabled::before {
+  background: rgba(127, 191, 77, 0.05) !important;
+}
+
+/* Ícone de Check/Success - Verde claro */
+.text-green-600,
+button .text-green-600,
+svg.text-green-600 {
+  color: hsl(90, 45%, 52%) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover .text-green-600,
+button:hover svg.text-green-600 {
+  color: hsl(90, 55%, 45%) !important;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 8px rgba(127, 191, 77, 0.4));
+}
+
+/* Ícones de seta e outros muted */
+.text-muted-foreground,
+button .text-muted-foreground,
+svg.text-muted-foreground {
+  color: hsl(160, 30%, 40%) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover .text-muted-foreground,
+button:hover svg.text-muted-foreground {
+  color: hsl(90, 45%, 52%) !important;
+  transform: scale(1.1);
+}
+
+/* Animação de pulse para focus */
+@keyframes icon-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+button[variant="ghost"][size="icon"]:focus-visible,
+button.h-8.w-8:focus-visible {
+  outline: 2px solid hsl(90, 45%, 52%) !important;
+  outline-offset: 3px;
+  animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+/* Loading spinner verde */
+.animate-spin {
+  color: hsl(160, 40%, 28%) !important;
+}
+
+/* Melhorar visibilidade dos ícones pequenos */
+svg.h-4.w-4,
+svg.h-5.w-5 {
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+}
+
+/* Remover backgrounds inline que conflitam */
+button.hover\:bg-primary\/10,
+button.hover\:bg-destructive\/10 {
+  background: transparent !important;
 }

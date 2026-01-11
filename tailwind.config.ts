@@ -81,6 +81,29 @@ export default {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        // 🦷 Dental KPI Green Palette - Based on Logo
+        'dental-green': {
+          50: '#f0f9f4',
+          100: '#dcf3e4',
+          200: '#bae6cd',
+          300: '#8dd4ad',
+          400: '#7fbf4d', // Light green from logo
+          500: '#5ea83a',
+          600: '#478a2c',
+          700: '#3a6e25',
+          800: '#2d5f4a', // Dark green from logo
+          900: '#1f4232',
+        },
+        'dental-leaf': {
+          light: 'hsl(90, 45%, 52%)', // #7FBF4D
+          DEFAULT: 'hsl(90, 45%, 48%)',
+          dark: 'hsl(90, 45%, 42%)',
+        },
+        'dental-forest': {
+          light: 'hsl(160, 40%, 35%)',
+          DEFAULT: 'hsl(160, 40%, 28%)', // #2D5F4A
+          dark: 'hsl(160, 40%, 22%)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
