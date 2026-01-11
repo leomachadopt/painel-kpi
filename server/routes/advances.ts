@@ -57,6 +57,32 @@ async function canBillAdvances(req: any, clinicId: string): Promise<boolean> {
 }
 
 /**
+ * Helper function to check if user can view advances
+ */
+async function canViewAdvances(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canViewAdvances === true || permissions.canEditAdvances === true
+  }
+
+  return false
+}
+
+/**
  * Helper function to check if user can manage insurance providers
  */
 async function canManageInsuranceProviders(req: any, clinicId: string): Promise<boolean> {
@@ -90,6 +116,14 @@ async function canManageInsuranceProviders(req: any, clinicId: string): Promise<
 router.get('/insurance-providers/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
+    
+    // Check if user can view advances or manage insurance providers
+    const canView = await canViewAdvances(req, clinicId)
+    const canManage = await canManageInsuranceProviders(req, clinicId)
+    
+    if (!canView && !canManage) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
 
     const result = await query(
       `SELECT id, clinic_id, name, code, contact_name, contact_email, contact_phone, notes, created_at, updated_at

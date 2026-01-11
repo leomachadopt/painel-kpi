@@ -43,7 +43,7 @@ import { FileText, Upload, FileCode } from 'lucide-react'
 export default function InsuranceProviders() {
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
-  const { canEdit } = usePermissions()
+  const { canView, canEdit } = usePermissions()
   const [providers, setProviders] = useState<InsuranceProvider[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -70,12 +70,13 @@ export default function InsuranceProviders() {
   }>>({})
 
   const canManageProviders = canEdit('canManageInsuranceProviders')
+  const canViewProviders = canView('canViewAdvances') || canEdit('canManageInsuranceProviders')
 
   useEffect(() => {
-    if (clinicId) {
+    if (clinicId && canViewProviders) {
       loadProviders()
     }
-  }, [clinicId])
+  }, [clinicId, canViewProviders])
 
   useEffect(() => {
     if (providers.length > 0 && clinicId) {
@@ -281,6 +282,20 @@ export default function InsuranceProviders() {
     } catch (err: any) {
       toast.error(err.message || 'Erro ao carregar documentos')
     }
+  }
+
+  if (!canViewProviders) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Você não tem permissão para visualizar operadoras e seguros.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

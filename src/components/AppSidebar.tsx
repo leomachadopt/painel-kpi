@@ -498,34 +498,34 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {user?.role === 'GESTOR_CLINICA' && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Configurações"
-                      isActive={location.pathname.includes('/configuracoes')}
-                    >
-                      <Link to="/configuracoes">
-                        <Settings />
-                        <span>Configurações</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+              {(user?.role === 'GESTOR_CLINICA' || canEdit('canEditClinicConfig')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Configurações"
+                    isActive={location.pathname.includes('/configuracoes')}
+                  >
+                    <Link to="/configuracoes">
+                      <Settings />
+                      <span>Configurações</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Colaboradores"
-                      isActive={location.pathname.includes('/colaboradores')}
-                    >
-                      <Link to="/colaboradores">
-                        <UserCog />
-                        <span>Colaboradores</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
+              {user?.role === 'GESTOR_CLINICA' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Colaboradores"
+                    isActive={location.pathname.includes('/colaboradores')}
+                  >
+                    <Link to="/colaboradores">
+                      <UserCog />
+                      <span>Colaboradores</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               )}
             </>
           )}

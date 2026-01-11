@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
@@ -465,6 +466,7 @@ const OrderItemsEditor = ({
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const { canEdit } = usePermissions()
   const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
 
   // Helper to auto-select input content on focus for better UX
@@ -504,10 +506,14 @@ export default function Settings() {
     )
   }, [clinic?.id, selectedMonth, selectedYear, getMonthlyTargets])
 
-  // Permission control: MENTOR can manage all clinics, GESTOR can only manage their own
-  const canManageConfig = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
-  // Both MENTOR and GESTOR can edit targets
-  const canEditTargets = user?.role === 'MENTOR' || (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id)
+  // Permission control: MENTOR can manage all clinics, GESTOR can only manage their own, or collaborator with permission
+  const canManageConfig = user?.role === 'MENTOR' || 
+    (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id) ||
+    canEdit('canEditClinicConfig')
+  // Both MENTOR and GESTOR can edit targets, or collaborator with permission
+  const canEditTargets = user?.role === 'MENTOR' || 
+    (user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic?.id) ||
+    canEdit('canEditTargets')
 
   const [config, setConfig] = useState<any>(null)
   const [npsQuestion, setNpsQuestion] = useState('')
@@ -932,7 +938,7 @@ export default function Settings() {
             <CardContent className="space-y-6">
               {!canEditTargets && (
                 <p className="text-sm text-muted-foreground bg-muted p-3 rounded">
-                  Apenas o mentor ou gestor da clínica podem editar as metas.
+                  Você não tem permissão para editar as metas.
                 </p>
               )}
               <div className="grid grid-cols-2 gap-4">
