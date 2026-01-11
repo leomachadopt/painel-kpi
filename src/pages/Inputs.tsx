@@ -10,7 +10,6 @@ import {
   CalendarCheck,
   Smile,
   Package,
-  Receipt,
   CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -27,7 +26,6 @@ import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DailyFinancials } from '@/components/daily/DailyFinancials'
 import { DailyConsultations } from '@/components/daily/DailyConsultations'
-import { DailyAdvanceInvoice } from '@/components/daily/DailyAdvanceInvoice'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
 import { DailyCabinets } from '@/components/daily/DailyCabinets'
 import { DailyServiceTime } from '@/components/daily/DailyServiceTime'
@@ -60,7 +58,6 @@ export default function Inputs() {
   // Verificar permissões
   const hasFinancial = canEdit('canEditFinancial')
   const hasConsultations = canEdit('canEditConsultations')
-  const hasAdvanceInvoice = canEdit('canEditAdvanceInvoice')
   const hasProspecting = canEdit('canEditProspecting')
   const hasCabinets = canEdit('canEditCabinets')
   const hasServiceTime = canEdit('canEditServiceTime')
@@ -73,7 +70,6 @@ export default function Inputs() {
   const firstAvailableTab =
     hasFinancial ? 'financial' :
     hasConsultations ? 'consultations' :
-    hasAdvanceInvoice ? 'advanceInvoice' :
     hasProspecting ? 'prospecting' :
     hasCabinets ? 'cabinets' :
     hasServiceTime ? 'serviceTime' :
@@ -83,7 +79,7 @@ export default function Inputs() {
     hasAccountsPayable ? 'accountsPayable' : 'financial'
 
   // Determinar aba inicial (priorizar parâmetro da URL)
-  const validTabs = ['financial', 'consultations', 'advanceInvoice', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders', 'accountsPayable']
+  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders', 'accountsPayable']
   const initialTab = tabParam && validTabs.includes(tabParam)
     ? tabParam
     : firstAvailableTab
@@ -143,15 +139,6 @@ export default function Inputs() {
               >
                 <UserPlus className="h-4 w-4" />
                 <span className="whitespace-nowrap">1.ªs Consultas</span>
-              </TabsTrigger>
-            )}
-            {hasAdvanceInvoice && (
-              <TabsTrigger
-                value="advanceInvoice"
-                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
-              >
-                <Receipt className="h-4 w-4" />
-                <span className="whitespace-nowrap text-[10px] sm:text-xs">Fatura de Adiantamento</span>
               </TabsTrigger>
             )}
             {hasProspecting && (
@@ -248,22 +235,6 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyConsultations clinic={clinic} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {hasAdvanceInvoice && (
-            <TabsContent value="advanceInvoice">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fatura de Adiantamento</CardTitle>
-                  <CardDescription>
-                    Registe as faturas de adiantamento por paciente e médico.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DailyAdvanceInvoice clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

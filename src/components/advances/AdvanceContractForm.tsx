@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PatientCodeInput } from '@/components/PatientCodeInput'
 import {
   Select,
   SelectContent,
@@ -33,7 +32,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { advancesApi, patientsApi } from '@/services/api'
 import { toast } from 'sonner'
 import { AdvanceContract, ContractDependent, DependentRelationship } from '@/lib/types'
-import { Plus, X, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2, Check } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 // Schema dinâmico baseado se é criação ou edição
@@ -61,6 +60,8 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   const [dependents, setDependents] = useState<Partial<ContractDependent & { code?: string }>[]>([])
   const [saving, setSaving] = useState(false)
   const [loadingPatientCodes, setLoadingPatientCodes] = useState<Set<number>>(new Set())
+  const [loadingPatient, setLoadingPatient] = useState(false)
+  const [patientFound, setPatientFound] = useState(false)
 
   const isEdit = !!contract
   const schema = createSchema(isEdit)
@@ -92,9 +93,11 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   useEffect(() => {
     if (contract?.id) {
       loadContractDetails()
+      setPatientFound(false)
     } else {
       // Se não há contrato (criação), limpa os dependentes
       setDependents([])
+      setPatientFound(false)
     }
   }, [contract?.id])
 
@@ -148,6 +151,34 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         age: undefined,
       },
     ])
+  }
+
+  const handlePatientCodeChange = async (code: string) => {
+    const cleanCode = code.replace(/\D/g, '').slice(0, 6)
+    form.setValue('patientCode', cleanCode)
+    
+    if (cleanCode.length >= 1 && cleanCode.length <= 6) {
+      setLoadingPatient(true)
+      setPatientFound(false)
+      try {
+        const patient = await patientsApi.getByCode(clinicId, cleanCode)
+        if (patient) {
+          form.setValue('patientName', patient.name || '')
+          setPatientFound(true)
+          toast.success(`Paciente encontrado: ${patient.name}`)
+        }
+      } catch (err: any) {
+        if (err?.status !== 404) {
+          console.error('Erro ao buscar paciente:', err)
+        }
+        setPatientFound(false)
+      } finally {
+        setLoadingPatient(false)
+      }
+    } else if (cleanCode.length === 0) {
+      form.setValue('patientName', '')
+      setPatientFound(false)
+    }
   }
 
   const handleDependentCodeChange = async (index: number, code: string) => {
@@ -336,8 +367,8 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {contract ? 'Editar Contrato' : 'Novo Contrato de Adiantamento'}
           </DialogTitle>
@@ -349,27 +380,57 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <div className="grid grid-cols-4 gap-3">
               <FormField
                 control={form.control}
                 name="patientCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Código do Paciente *</FormLabel>
+                    <FormLabel className="text-sm">Código do Paciente *</FormLabel>
                     <FormControl>
-                      <PatientCodeInput
-                        clinicId={clinicId}
-                        value={field.value}
-                        onCodeChange={field.onChange}
-                        patientName={form.watch('patientName')}
-                        onPatientNameChange={(name) => form.setValue('patientName', name)}
-                        label=""
-                        codeError={form.formState.errors.patientCode?.message}
-                        patientNameError={form.formState.errors.patientName?.message}
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          onChange={(e) => handlePatientCodeChange(e.target.value)}
+                          placeholder="Ex: 1234"
+                          className="font-mono"
+                          maxLength={6}
+                          disabled={saving}
+                        />
+                        {loadingPatient && (
+                          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                        {patientFound && !loadingPatient && field.value && (
+                          <Check className="absolute right-2 top-2.5 h-4 w-4 text-green-600" />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">1 a 6 dígitos</p>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="patientName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm">Nome do Paciente *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Nome completo"
+                        disabled={saving || patientFound}
+                        className={patientFound ? 'bg-muted' : ''}
                       />
                     </FormControl>
                     <FormMessage />
+                    {patientFound && (
+                      <p className="text-xs text-green-600 mt-1">✓ Paciente encontrado</p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -379,11 +440,11 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                 name="insuranceProviderId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Operadora/Seguro *</FormLabel>
+                    <FormLabel className="text-sm">Operadora/Seguro *</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={loadingProviders}
+                      disabled={loadingProviders || saving}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -402,15 +463,39 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm">Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={saving}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Ativo</SelectItem>
+                        <SelectItem value="INACTIVE">Inativo</SelectItem>
+                        <SelectItem value="CANCELLED">Cancelado</SelectItem>
+                        <SelectItem value="EXPIRED">Expirado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
                 name="contractNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Número do Contrato</FormLabel>
+                    <FormLabel className="text-sm">Número do Contrato</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Opcional" disabled={saving} />
                     </FormControl>
@@ -425,7 +510,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                   name="advanceAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor da Fatura de Adiantamento *</FormLabel>
+                      <FormLabel className="text-sm">Valor da Fatura de Adiantamento *</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -445,39 +530,15 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
               )}
             </div>
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Ativo</SelectItem>
-                      <SelectItem value="INACTIVE">Inativo</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelado</SelectItem>
-                      <SelectItem value="EXPIRED">Expirado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label>Dependentes</Label>
+                <Label className="text-sm">Dependentes</Label>
                 <Button type="button" variant="outline" size="sm" onClick={addDependent}>
                   <Plus className="h-4 w-4 mr-1" />
                   Adicionar Dependente
                 </Button>
               </div>
-              <ScrollArea className="h-48 border rounded-md p-4">
+              <ScrollArea className={`border rounded-md p-3 ${dependents.length === 0 ? 'h-20' : 'h-40'}`}>
                 {dependents.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Nenhum dependente adicionado
@@ -573,16 +634,17 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel className="text-sm">Observações</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Observações sobre o contrato" rows={3} />
+                    <Textarea {...field} placeholder="Observações sobre o contrato" rows={2} className="resize-none" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
               <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
                 Cancelar
               </Button>
