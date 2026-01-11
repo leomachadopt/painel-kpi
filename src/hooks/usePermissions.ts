@@ -59,6 +59,7 @@ export function usePermissions() {
 
   /**
    * Check if user can view a specific report tab
+   * Reports are now based on resource permissions, not specific report permissions
    */
   const canViewReport = (reportTab: keyof Pick<UserPermissions,
     | 'canViewReportFinancial'
@@ -71,10 +72,35 @@ export function usePermissions() {
     | 'canViewReportSources'
     | 'canViewReportConsultationControl'
     | 'canViewReportMarketing'
+    | 'canViewReportAdvanceInvoice'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
-    return permissions[reportTab]
+
+    // Map report tabs to resource permissions
+    const reportToResourceMap: Record<string, keyof UserPermissions> = {
+      canViewReportFinancial: 'canEditFinancial', // Financial report requires financial edit permission
+      canViewReportBilling: 'canEditFinancial', // Billing is part of financial
+      canViewReportConsultations: 'canEditConsultations', // Consultations report requires consultations edit permission
+      canViewReportAligners: 'canEditAligners', // Aligners report requires aligners edit permission
+      canViewReportProspecting: 'canEditProspecting', // Prospecting report requires prospecting edit permission
+      canViewReportCabinets: 'canEditCabinets', // Cabinets report requires cabinets edit permission
+      canViewReportServiceTime: 'canEditServiceTime', // Service time report requires service time edit permission
+      canViewReportSources: 'canEditSources', // Sources report requires sources edit permission
+      canViewReportConsultationControl: 'canEditConsultationControl', // Consultation control report requires consultation control edit permission
+      canViewReportMarketing: 'canEditMarketing', // Marketing report requires marketing edit permission
+      canViewReportAdvanceInvoice: 'canEditAdvances', // Advance invoice report requires advances edit permission
+    }
+
+    const resourcePermission = reportToResourceMap[reportTab]
+    if (resourcePermission) {
+      // Check if user has view or edit permission for the resource
+      // For reports, we check if they can edit (which implies they can view)
+      return permissions[resourcePermission] || false
+    }
+
+    // Fallback to specific report permission if mapping not found
+    return permissions[reportTab] || false
   }
 
   /**

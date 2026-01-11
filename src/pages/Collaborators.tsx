@@ -31,7 +31,9 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { Plus, Pencil, Trash2, Shield, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { collaboratorsApi } from '@/services/api'
-import type { User, UserPermissions } from '@/lib/types'
+import type { User, UserPermissions, ResourcePermissions } from '@/lib/types'
+import { ResourcePermissionsGrid } from '@/components/permissions/ResourcePermissionsGrid'
+import { mapLegacyPermissionsToResources, mapResourcePermissionsToLegacy } from '@/lib/permissionsMapping'
 
 export default function Collaborators() {
   const { isGestor } = usePermissions()
@@ -59,50 +61,8 @@ export default function Collaborators() {
     password: '',
   })
 
-  // Permissions form state
-  const [permissionsForm, setPermissionsForm] = useState<UserPermissions>({
-    canViewDashboardOverview: false,
-    canViewDashboardFinancial: false,
-    canViewDashboardCommercial: false,
-    canViewDashboardOperational: false,
-    canViewDashboardMarketing: false,
-    canViewReports: false,
-    canViewReportFinancial: false,
-    canViewReportBilling: false,
-    canViewReportConsultations: false,
-    canViewReportAligners: false,
-    canViewReportProspecting: false,
-    canViewReportCabinets: false,
-    canViewReportServiceTime: false,
-    canViewReportSources: false,
-    canViewReportConsultationControl: false,
-    canViewReportMarketing: false,
-    canViewTargets: false,
-    canViewOrders: false,
-    canViewSuppliers: false,
-    canViewAccountsPayable: false,
-    canEditFinancial: false,
-    canEditConsultations: false,
-    canEditProspecting: false,
-    canEditCabinets: false,
-    canEditServiceTime: false,
-    canEditSources: false,
-    canEditConsultationControl: false,
-    canEditAligners: false,
-    canEditOrders: false,
-    canEditAccountsPayable: false,
-    canEditPatients: false,
-    canEditClinicConfig: false,
-    canEditTargets: false,
-    canViewTickets: false,
-    canEditTickets: false,
-    canViewNPS: false,
-    canEditNPS: false,
-    canEditSuppliers: false,
-    canViewMarketing: false,
-    canEditMarketing: false,
-    canViewAlerts: false,
-  })
+  // Resource permissions form state (new format)
+  const [resourcePermissions, setResourcePermissions] = useState<ResourcePermissions>({})
 
   // Load collaborators
   useEffect(() => {
@@ -144,41 +104,13 @@ export default function Collaborators() {
 
   const handleOpenPermissions = (collaborator: any) => {
     setSelectedCollaborator(collaborator)
-    // Garantir que todas as permissões sejam inicializadas, mesclando com o estado padrão
-    setPermissionsForm({
-      canViewDashboardOverview: false,
-      canViewDashboardFinancial: false,
-      canViewDashboardCommercial: false,
-      canViewDashboardOperational: false,
-      canViewDashboardMarketing: false,
-      canViewReports: false,
-      canViewReportFinancial: false,
-      canViewReportBilling: false,
-      canViewReportConsultations: false,
-      canViewReportAligners: false,
-      canViewReportProspecting: false,
-      canViewReportCabinets: false,
-      canViewReportServiceTime: false,
-      canViewReportSources: false,
-      canViewReportConsultationControl: false,
-      canViewReportMarketing: false,
-      canViewTargets: false,
-      canViewOrders: false,
-      canViewSuppliers: false,
-      canEditFinancial: false,
-      canEditConsultations: false,
-      canEditProspecting: false,
-      canEditCabinets: false,
-      canEditServiceTime: false,
-      canEditSources: false,
-      canEditConsultationControl: false,
-      canEditAligners: false,
-      canEditOrders: false,
-      canEditPatients: false,
-      canEditClinicConfig: false,
-      canEditTargets: false,
-      ...(collaborator.permissions || {}),
-    })
+    // Convert legacy permissions to resource permissions
+    const legacyPerms = collaborator.permissions || {}
+    console.log('Loading permissions for collaborator:', collaborator.name)
+    console.log('Legacy permissions from API:', legacyPerms)
+    const resourcePerms = mapLegacyPermissionsToResources(legacyPerms as UserPermissions)
+    console.log('Converted resource permissions:', resourcePerms)
+    setResourcePermissions(resourcePerms)
     setShowPermissionsModal(true)
   }
 
@@ -232,16 +164,28 @@ export default function Collaborators() {
 
     try {
       setSubmitting(true)
-      await collaboratorsApi.updatePermissions(selectedCollaborator.id, permissionsForm)
+      // Convert resource permissions back to legacy format for API
+      const legacyPermissions = mapResourcePermissionsToLegacy(resourcePermissions)
+      console.log('Resource permissions:', resourcePermissions)
+      console.log('Legacy permissions:', legacyPermissions)
+      await collaboratorsApi.updatePermissions(selectedCollaborator.id, legacyPermissions as UserPermissions)
       toast.success('Permissões atualizadas com sucesso')
       setShowPermissionsModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
     } catch (error: any) {
+      console.error('Error saving permissions:', error)
       toast.error(error.message || 'Erro ao atualizar permissões')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleResourcePermissionChange = (resourceId: string, level: import('@/lib/types').PermissionLevel) => {
+    setResourcePermissions((prev) => ({
+      ...prev,
+      [resourceId]: level,
+    }))
   }
 
   const handleDeleteCollaborator = async () => {
@@ -259,13 +203,6 @@ export default function Collaborators() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const handleTogglePermission = (key: keyof UserPermissions) => {
-    setPermissionsForm((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
   }
 
   if (!isGestor()) {
@@ -425,468 +362,23 @@ export default function Collaborators() {
 
       {/* Permissions Modal */}
       <Dialog open={showPermissionsModal} onOpenChange={setShowPermissionsModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               Permissões de {selectedCollaborator?.name}
             </DialogTitle>
             <DialogDescription>
-              Configure o que este colaborador pode visualizar e editar
+              Configure o que este colaborador pode visualizar e editar. Clique nos sliders para alternar entre Permitido e Negado.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
-            {/* View Permissions */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">📊 Permissões de Visualização</h3>
-              <div className="space-y-2 border rounded-lg p-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewDashboardOverview"
-                    checked={permissionsForm.canViewDashboardOverview}
-                    onCheckedChange={() => handleTogglePermission('canViewDashboardOverview')}
-                  />
-                  <Label htmlFor="canViewDashboardOverview" className="cursor-pointer">
-                    Visão Geral do Dashboard
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewDashboardFinancial"
-                    checked={permissionsForm.canViewDashboardFinancial}
-                    onCheckedChange={() => handleTogglePermission('canViewDashboardFinancial')}
-                  />
-                  <Label htmlFor="canViewDashboardFinancial" className="cursor-pointer">
-                    Dashboard Financeiro
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewDashboardCommercial"
-                    checked={permissionsForm.canViewDashboardCommercial}
-                    onCheckedChange={() => handleTogglePermission('canViewDashboardCommercial')}
-                  />
-                  <Label htmlFor="canViewDashboardCommercial" className="cursor-pointer">
-                    Dashboard Comercial
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewDashboardOperational"
-                    checked={permissionsForm.canViewDashboardOperational}
-                    onCheckedChange={() => handleTogglePermission('canViewDashboardOperational')}
-                  />
-                  <Label htmlFor="canViewDashboardOperational" className="cursor-pointer">
-                    Dashboard Operacional
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewDashboardMarketing"
-                    checked={permissionsForm.canViewDashboardMarketing}
-                    onCheckedChange={() => handleTogglePermission('canViewDashboardMarketing')}
-                  />
-                  <Label htmlFor="canViewDashboardMarketing" className="cursor-pointer">
-                    Dashboard Marketing
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReports"
-                    checked={permissionsForm.canViewReports}
-                    onCheckedChange={() => handleTogglePermission('canViewReports')}
-                  />
-                  <Label htmlFor="canViewReports" className="cursor-pointer">
-                    Acesso a Relatórios (Geral)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewTargets"
-                    checked={permissionsForm.canViewTargets}
-                    onCheckedChange={() => handleTogglePermission('canViewTargets')}
-                  />
-                  <Label htmlFor="canViewTargets" className="cursor-pointer">
-                    Metas Mensais
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewOrders"
-                    checked={permissionsForm.canViewOrders}
-                    onCheckedChange={() => handleTogglePermission('canViewOrders')}
-                  />
-                  <Label htmlFor="canViewOrders" className="cursor-pointer">
-                    Visualizar Pedidos
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewSuppliers"
-                    checked={permissionsForm.canViewSuppliers}
-                    onCheckedChange={() => handleTogglePermission('canViewSuppliers')}
-                  />
-                  <Label htmlFor="canViewSuppliers" className="cursor-pointer">
-                    Visualizar Fornecedores
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewAccountsPayable"
-                    checked={permissionsForm.canViewAccountsPayable}
-                    onCheckedChange={() => handleTogglePermission('canViewAccountsPayable')}
-                  />
-                  <Label htmlFor="canViewAccountsPayable" className="cursor-pointer">
-                    Visualizar Contas a Pagar
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewTickets"
-                    checked={permissionsForm.canViewTickets}
-                    onCheckedChange={() => handleTogglePermission('canViewTickets')}
-                  />
-                  <Label htmlFor="canViewTickets" className="cursor-pointer">
-                    Visualizar Tickets
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewNPS"
-                    checked={permissionsForm.canViewNPS}
-                    onCheckedChange={() => handleTogglePermission('canViewNPS')}
-                  />
-                  <Label htmlFor="canViewNPS" className="cursor-pointer">
-                    Visualizar NPS
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewMarketing"
-                    checked={permissionsForm.canViewMarketing}
-                    onCheckedChange={() => handleTogglePermission('canViewMarketing')}
-                  />
-                  <Label htmlFor="canViewMarketing" className="cursor-pointer">
-                    Visualizar Marketing
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewAlerts"
-                    checked={permissionsForm.canViewAlerts}
-                    onCheckedChange={() => handleTogglePermission('canViewAlerts')}
-                  />
-                  <Label htmlFor="canViewAlerts" className="cursor-pointer">
-                    Visualizar Alertas
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Report Tab Permissions */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">📋 Permissões de Abas de Relatórios</h3>
-              <div className="space-y-2 border rounded-lg p-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportFinancial"
-                    checked={permissionsForm.canViewReportFinancial}
-                    onCheckedChange={() => handleTogglePermission('canViewReportFinancial')}
-                  />
-                  <Label htmlFor="canViewReportFinancial" className="cursor-pointer">
-                    Relatório Financeiro
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportBilling"
-                    checked={permissionsForm.canViewReportBilling}
-                    onCheckedChange={() => handleTogglePermission('canViewReportBilling')}
-                  />
-                  <Label htmlFor="canViewReportBilling" className="cursor-pointer">
-                    Relatório de Faturação
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportConsultations"
-                    checked={permissionsForm.canViewReportConsultations}
-                    onCheckedChange={() => handleTogglePermission('canViewReportConsultations')}
-                  />
-                  <Label htmlFor="canViewReportConsultations" className="cursor-pointer">
-                    Relatório de 1.ªs Consultas
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportAligners"
-                    checked={permissionsForm.canViewReportAligners}
-                    onCheckedChange={() => handleTogglePermission('canViewReportAligners')}
-                  />
-                  <Label htmlFor="canViewReportAligners" className="cursor-pointer">
-                    Relatório de Alinhadores
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportProspecting"
-                    checked={permissionsForm.canViewReportProspecting}
-                    onCheckedChange={() => handleTogglePermission('canViewReportProspecting')}
-                  />
-                  <Label htmlFor="canViewReportProspecting" className="cursor-pointer">
-                    Relatório de Prospecção
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportCabinets"
-                    checked={permissionsForm.canViewReportCabinets}
-                    onCheckedChange={() => handleTogglePermission('canViewReportCabinets')}
-                  />
-                  <Label htmlFor="canViewReportCabinets" className="cursor-pointer">
-                    Relatório de Gabinetes
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportServiceTime"
-                    checked={permissionsForm.canViewReportServiceTime}
-                    onCheckedChange={() => handleTogglePermission('canViewReportServiceTime')}
-                  />
-                  <Label htmlFor="canViewReportServiceTime" className="cursor-pointer">
-                    Relatório de Tempos
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportSources"
-                    checked={permissionsForm.canViewReportSources}
-                    onCheckedChange={() => handleTogglePermission('canViewReportSources')}
-                  />
-                  <Label htmlFor="canViewReportSources" className="cursor-pointer">
-                    Relatório de Fontes
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportConsultationControl"
-                    checked={permissionsForm.canViewReportConsultationControl}
-                    onCheckedChange={() => handleTogglePermission('canViewReportConsultationControl')}
-                  />
-                  <Label htmlFor="canViewReportConsultationControl" className="cursor-pointer">
-                    Relatório de Controle
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportMarketing"
-                    checked={permissionsForm.canViewReportMarketing}
-                    onCheckedChange={() => handleTogglePermission('canViewReportMarketing')}
-                  />
-                  <Label htmlFor="canViewReportMarketing" className="cursor-pointer">
-                    Relatório de Marketing
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canViewReportAdvanceInvoice"
-                    checked={permissionsForm.canViewReportAdvanceInvoice}
-                    onCheckedChange={() => handleTogglePermission('canViewReportAdvanceInvoice')}
-                  />
-                  <Label htmlFor="canViewReportAdvanceInvoice" className="cursor-pointer">
-                    Relatório de Adiantamento de Fatura
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Edit Permissions */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">✏️ Permissões de Edição</h3>
-              <div className="space-y-2 border rounded-lg p-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditFinancial"
-                    checked={permissionsForm.canEditFinancial}
-                    onCheckedChange={() => handleTogglePermission('canEditFinancial')}
-                  />
-                  <Label htmlFor="canEditFinancial" className="cursor-pointer">
-                    Lançamentos Financeiros
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditAdvanceInvoice"
-                    checked={permissionsForm.canEditAdvanceInvoice}
-                    onCheckedChange={() => handleTogglePermission('canEditAdvanceInvoice')}
-                  />
-                  <Label htmlFor="canEditAdvanceInvoice" className="cursor-pointer">
-                    Adiantamento de Fatura
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditConsultations"
-                    checked={permissionsForm.canEditConsultations}
-                    onCheckedChange={() => handleTogglePermission('canEditConsultations')}
-                  />
-                  <Label htmlFor="canEditConsultations" className="cursor-pointer">
-                    Consultas e Planos
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditProspecting"
-                    checked={permissionsForm.canEditProspecting}
-                    onCheckedChange={() => handleTogglePermission('canEditProspecting')}
-                  />
-                  <Label htmlFor="canEditProspecting" className="cursor-pointer">
-                    Prospecção (Leads/Contatos)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditCabinets"
-                    checked={permissionsForm.canEditCabinets}
-                    onCheckedChange={() => handleTogglePermission('canEditCabinets')}
-                  />
-                  <Label htmlFor="canEditCabinets" className="cursor-pointer">
-                    Uso de Gabinetes
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditServiceTime"
-                    checked={permissionsForm.canEditServiceTime}
-                    onCheckedChange={() => handleTogglePermission('canEditServiceTime')}
-                  />
-                  <Label htmlFor="canEditServiceTime" className="cursor-pointer">
-                    Tempo de Atendimento
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditSources"
-                    checked={permissionsForm.canEditSources}
-                    onCheckedChange={() => handleTogglePermission('canEditSources')}
-                  />
-                  <Label htmlFor="canEditSources" className="cursor-pointer">
-                    Fontes e Campanhas
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditConsultationControl"
-                    checked={permissionsForm.canEditConsultationControl}
-                    onCheckedChange={() => handleTogglePermission('canEditConsultationControl')}
-                  />
-                  <Label htmlFor="canEditConsultationControl" className="cursor-pointer">
-                    Controle de Consultas
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditAligners"
-                    checked={permissionsForm.canEditAligners}
-                    onCheckedChange={() => handleTogglePermission('canEditAligners')}
-                  />
-                  <Label htmlFor="canEditAligners" className="cursor-pointer">
-                    Alinhadores
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditOrders"
-                    checked={permissionsForm.canEditOrders}
-                    onCheckedChange={() => handleTogglePermission('canEditOrders')}
-                  />
-                  <Label htmlFor="canEditOrders" className="cursor-pointer">
-                    Editar Pedidos
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditAccountsPayable"
-                    checked={permissionsForm.canEditAccountsPayable}
-                    onCheckedChange={() => handleTogglePermission('canEditAccountsPayable')}
-                  />
-                  <Label htmlFor="canEditAccountsPayable" className="cursor-pointer">
-                    Contas a Pagar
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditPatients"
-                    checked={permissionsForm.canEditPatients}
-                    onCheckedChange={() => handleTogglePermission('canEditPatients')}
-                  />
-                  <Label htmlFor="canEditPatients" className="cursor-pointer">
-                    Cadastro de Pacientes
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditClinicConfig"
-                    checked={permissionsForm.canEditClinicConfig}
-                    onCheckedChange={() => handleTogglePermission('canEditClinicConfig')}
-                  />
-                  <Label htmlFor="canEditClinicConfig" className="cursor-pointer">
-                    Configurações da Clínica
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditTargets"
-                    checked={permissionsForm.canEditTargets}
-                    onCheckedChange={() => handleTogglePermission('canEditTargets')}
-                  />
-                  <Label htmlFor="canEditTargets" className="cursor-pointer">
-                    Editar Metas Mensais
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditTickets"
-                    checked={permissionsForm.canEditTickets}
-                    onCheckedChange={() => handleTogglePermission('canEditTickets')}
-                  />
-                  <Label htmlFor="canEditTickets" className="cursor-pointer">
-                    Editar Tickets
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditNPS"
-                    checked={permissionsForm.canEditNPS}
-                    onCheckedChange={() => handleTogglePermission('canEditNPS')}
-                  />
-                  <Label htmlFor="canEditNPS" className="cursor-pointer">
-                    Gerenciar NPS
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditSuppliers"
-                    checked={permissionsForm.canEditSuppliers}
-                    onCheckedChange={() => handleTogglePermission('canEditSuppliers')}
-                  />
-                  <Label htmlFor="canEditSuppliers" className="cursor-pointer">
-                    Editar Fornecedores
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="canEditMarketing"
-                    checked={permissionsForm.canEditMarketing}
-                    onCheckedChange={() => handleTogglePermission('canEditMarketing')}
-                  />
-                  <Label htmlFor="canEditMarketing" className="cursor-pointer">
-                    Gerenciar Marketing
-                  </Label>
-                </div>
-              </div>
-            </div>
+          <div className="flex-1 overflow-y-auto pr-2 py-4">
+            <ResourcePermissionsGrid
+              permissions={resourcePermissions}
+              onChange={handleResourcePermissionChange}
+              disabled={submitting}
+            />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
             <Button variant="outline" onClick={() => setShowPermissionsModal(false)}>
               Cancelar
             </Button>

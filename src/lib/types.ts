@@ -430,6 +430,17 @@ export interface Alert {
   entryId?: string
 }
 
+export type PermissionLevel = 'DENIED' | 'IF_RESPONSIBLE' | 'ALLOWED'
+
+export interface ResourcePermission {
+  resourceId: string
+  permissionLevel: PermissionLevel
+}
+
+export interface ResourcePermissions {
+  [resourceId: string]: PermissionLevel
+}
+
 export interface UserPermissions {
   canViewDashboardOverview: boolean
   canViewDashboardFinancial: boolean
