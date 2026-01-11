@@ -318,45 +318,35 @@ export function mapResourcePermissionsToLegacy(
   for (const [resourceId, level] of Object.entries(resourcePermissions)) {
     const resource = RESOURCE_PERMISSIONS.find((r) => r.id === resourceId)
     if (!resource) {
-      console.log(`Resource ${resourceId} not found in RESOURCE_PERMISSIONS`)
       continue
     }
 
     const isAllowed = level === 'ALLOWED'
-    console.log(`Mapping resource ${resourceId} (${level}) to legacy permissions`)
 
     // Map each action type to legacy permissions
     resource.mapsTo.view?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - view: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.edit?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - edit: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.create?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - create: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.delete?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - delete: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.export?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - export: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.bill?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - bill: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.manage?.forEach((perm) => {
       result[perm] = isAllowed
-      console.log(`  - manage: ${perm} = ${isAllowed}`)
     })
   }
 
-  console.log('Final mapped legacy permissions:', result)
   return result
 }
 
@@ -368,8 +358,6 @@ export function mapLegacyPermissionsToResources(
 ): ResourcePermissions {
   const result: ResourcePermissions = {}
 
-  console.log('mapLegacyPermissionsToResources - Input:', legacyPermissions)
-
   for (const resource of RESOURCE_PERMISSIONS) {
     let hasAnyPermission = false
 
@@ -379,57 +367,48 @@ export function mapLegacyPermissionsToResources(
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found view permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.edit?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found edit permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.create?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found create permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.delete?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found delete permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.export?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found export permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.bill?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found bill permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.manage?.forEach((perm) => {
       const value = legacyPermissions[perm]
       if (value === true || value === 1) {
         hasAnyPermission = true
-        console.log(`Resource ${resource.id}: Found manage permission ${perm} = ${value}`)
       }
     })
 
     result[resource.id] = hasAnyPermission ? 'ALLOWED' : 'DENIED'
-    console.log(`Resource ${resource.id}: ${hasAnyPermission ? 'ALLOWED' : 'DENIED'}`)
   }
 
-  console.log('mapLegacyPermissionsToResources - Output:', result)
   return result
 }
 

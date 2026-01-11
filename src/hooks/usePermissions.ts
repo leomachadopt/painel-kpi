@@ -38,13 +38,6 @@ export function usePermissions() {
       merged[permKey] = userPerms[permKey] === true || userPerms[permKey] === 1
     }
     
-    console.log('getAllPermissions - user role:', user.role)
-    console.log('getAllPermissions - user.permissions:', userPerms)
-    console.log('getAllPermissions - merged permissions:', merged)
-    console.log('getAllPermissions - canViewAdvances:', merged.canViewAdvances)
-    console.log('getAllPermissions - canEditAdvances:', merged.canEditAdvances)
-    console.log('getAllPermissions - canManageInsuranceProviders:', merged.canManageInsuranceProviders)
-    
     return merged
   }
 
@@ -73,9 +66,7 @@ export function usePermissions() {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
     const value = permissions[section]
-    const result = value === true || value === 1
-    console.log(`canView(${section}):`, { value, result })
-    return result
+    return value === true || value === 1
   }
 
   /**
@@ -152,9 +143,7 @@ export function usePermissions() {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
     const value = permissions[resource]
-    const result = value === true || value === 1
-    console.log(`canEdit(${resource}):`, { value, result, permissions })
-    return result
+    return value === true || value === 1
   }
 
   /**

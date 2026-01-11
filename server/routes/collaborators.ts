@@ -432,15 +432,6 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
       return res.status(400).json({ error: 'Permissions are required' })
     }
 
-    console.log('=== SAVING PERMISSIONS TO DB ===')
-    console.log('Received permissions:', JSON.stringify(permissions, null, 2))
-    console.log('Specific advances permissions being saved:', {
-      canViewAdvances: permissions.canViewAdvances,
-      canEditAdvances: permissions.canEditAdvances,
-      canBillAdvances: permissions.canBillAdvances,
-      canManageInsuranceProviders: permissions.canManageInsuranceProviders,
-    })
-
     // Check if collaborator belongs to this clinic
     const checkResult = await query(
       'SELECT id FROM users WHERE id = $1 AND clinic_id = $2 AND role = $3',
@@ -602,10 +593,10 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         permissions.canViewMarketing || false,
         permissions.canEditMarketing || false,
         permissions.canViewAlerts || false,
-        permissions.canViewAdvances || false,
-        permissions.canEditAdvances || false,
-        permissions.canBillAdvances || false,
-        permissions.canManageInsuranceProviders || false,
+        Boolean(permissions.canViewAdvances),
+        Boolean(permissions.canEditAdvances),
+        Boolean(permissions.canBillAdvances),
+        Boolean(permissions.canManageInsuranceProviders),
       ]
     )
 

@@ -180,13 +180,6 @@ export async function getUserPermissions(
   }
 
   const perms = result.rows[0]
-  console.log('getUserPermissions - Raw DB values for advances:', {
-    can_view_advances: perms.can_view_advances,
-    can_edit_advances: perms.can_edit_advances,
-    can_bill_advances: perms.can_bill_advances,
-    can_manage_insurance_providers: perms.can_manage_insurance_providers,
-    type_can_view_advances: typeof perms.can_view_advances,
-  })
   const permissions = {
     canViewDashboardOverview: perms.can_view_dashboard_overview || false,
     canViewDashboardFinancial: perms.can_view_dashboard_financial || false,
@@ -231,17 +224,11 @@ export async function getUserPermissions(
     canViewMarketing: perms.can_view_marketing || false,
     canEditMarketing: perms.can_edit_marketing || false,
     canViewAlerts: perms.can_view_alerts || false,
-    canViewAdvances: perms.can_view_advances || false,
-    canEditAdvances: perms.can_edit_advances || false,
-    canBillAdvances: perms.can_bill_advances || false,
-    canManageInsuranceProviders: perms.can_manage_insurance_providers || false,
+    canViewAdvances: Boolean(perms.can_view_advances),
+    canEditAdvances: Boolean(perms.can_edit_advances),
+    canBillAdvances: Boolean(perms.can_bill_advances),
+    canManageInsuranceProviders: Boolean(perms.can_manage_insurance_providers),
   }
-  console.log('getUserPermissions - Final permissions object includes:', {
-    canViewAdvances: permissions.canViewAdvances,
-    canEditAdvances: permissions.canEditAdvances,
-    canBillAdvances: permissions.canBillAdvances,
-    canManageInsuranceProviders: permissions.canManageInsuranceProviders,
-  })
   return permissions
 }
 
