@@ -25,10 +25,7 @@ import { advancesApi } from '@/services/api'
 import { ProcedureBase } from '@/lib/types'
 
 interface ImportItem {
-  codigo: string
   descricao: string
-  encargo_adse_eur?: string
-  copagamento_beneficiario_eur?: string
 }
 
 export function ProcedureBaseEditorGlobal() {
@@ -41,27 +38,19 @@ export function ProcedureBaseEditorGlobal() {
   const [importPreview, setImportPreview] = useState<ImportItem[]>([])
   const [importConfig, setImportConfig] = useState({
     isPericiable: false,
-    category: '',
-    useEncargo: true,
   })
   const [importing, setImporting] = useState(false)
 
   const [newProcedure, setNewProcedure] = useState({
-    code: '',
     description: '',
     isPericiable: false,
     adultsOnly: false,
-    category: '',
-    defaultValue: '',
   })
 
   const [editProcedure, setEditProcedure] = useState({
-    code: '',
     description: '',
     isPericiable: false,
     adultsOnly: false,
-    category: '',
-    defaultValue: '',
     active: true,
   })
 
@@ -82,32 +71,20 @@ export function ProcedureBaseEditorGlobal() {
   }
 
   const handleAdd = async () => {
-    if (!newProcedure.code || !newProcedure.description) {
-      toast.error('Código e descrição são obrigatórios')
+    if (!newProcedure.description || !newProcedure.description.trim()) {
+      toast.error('Descrição é obrigatória')
       return
-    }
-
-    // Validar defaultValue
-    let validatedDefaultValue = null
-    if (newProcedure.defaultValue && newProcedure.defaultValue.trim() !== '') {
-      const numValue = parseFloat(newProcedure.defaultValue.replace(',', '.'))
-      if (!isNaN(numValue) && isFinite(numValue)) {
-        validatedDefaultValue = numValue
-      }
     }
 
     setSaving(true)
     try {
       await advancesApi.proceduresBaseGlobal.create({
-        code: newProcedure.code.trim(),
         description: newProcedure.description.trim(),
         isPericiable: newProcedure.isPericiable,
         adultsOnly: newProcedure.adultsOnly,
-        category: newProcedure.category || null,
-        defaultValue: validatedDefaultValue,
       })
       toast.success('Procedimento adicionado com sucesso')
-      setNewProcedure({ code: '', description: '', isPericiable: false, adultsOnly: false, category: '', defaultValue: '' })
+      setNewProcedure({ description: '', isPericiable: false, adultsOnly: false })
       loadProcedures()
     } catch (err: any) {
       toast.error(err.message || 'Erro ao adicionar procedimento')
@@ -119,40 +96,25 @@ export function ProcedureBaseEditorGlobal() {
   const handleStartEdit = (procedure: ProcedureBase) => {
     setEditingId(procedure.id)
     setEditProcedure({
-      code: procedure.code,
       description: procedure.description,
       isPericiable: procedure.isPericiable,
       adultsOnly: procedure.adultsOnly || false,
-      category: procedure.category || '',
-      defaultValue: procedure.defaultValue?.toString() || '',
       active: procedure.active,
     })
   }
 
   const handleSaveEdit = async (id: string) => {
-    if (!editProcedure.code || !editProcedure.description) {
-      toast.error('Código e descrição são obrigatórios')
+    if (!editProcedure.description || !editProcedure.description.trim()) {
+      toast.error('Descrição é obrigatória')
       return
-    }
-
-    // Validar defaultValue
-    let validatedDefaultValue = null
-    if (editProcedure.defaultValue && editProcedure.defaultValue.trim() !== '') {
-      const numValue = parseFloat(editProcedure.defaultValue.replace(',', '.'))
-      if (!isNaN(numValue) && isFinite(numValue)) {
-        validatedDefaultValue = numValue
-      }
     }
 
     setSaving(true)
     try {
       await advancesApi.proceduresBaseGlobal.update(id, {
-        code: editProcedure.code.trim(),
         description: editProcedure.description.trim(),
         isPericiable: editProcedure.isPericiable,
         adultsOnly: editProcedure.adultsOnly,
-        category: editProcedure.category || null,
-        defaultValue: validatedDefaultValue,
         active: editProcedure.active,
       })
       toast.success('Procedimento atualizado com sucesso')
@@ -209,31 +171,20 @@ export function ProcedureBaseEditorGlobal() {
 
     for (const item of importPreview) {
       try {
-        const valueStr = importConfig.useEncargo
-          ? item.encargo_adse_eur || item.copagamento_beneficiario_eur || ''
-          : item.copagamento_beneficiario_eur || item.encargo_adse_eur || ''
-        
-        // Validar e converter o valor
-        let defaultValue = null
-        if (valueStr && valueStr.trim() !== '') {
-          const numValue = parseFloat(valueStr.replace(',', '.'))
-          if (!isNaN(numValue) && isFinite(numValue)) {
-            defaultValue = numValue
-          }
+        if (!item.descricao || !item.descricao.trim()) {
+          errorCount++
+          continue
         }
 
         await advancesApi.proceduresBaseGlobal.create({
-          code: item.codigo.trim(),
           description: item.descricao.trim(),
           isPericiable: importConfig.isPericiable,
           adultsOnly: false, // Por padrão, permite adultos e crianças na importação
-          category: importConfig.category || null,
-          defaultValue,
         })
         successCount++
       } catch (err: any) {
         errorCount++
-        console.error('Error importing item:', item.codigo, err)
+        console.error('Error importing item:', item.descricao, err)
       }
     }
 
@@ -252,11 +203,6 @@ export function ProcedureBaseEditorGlobal() {
     loadProcedures()
   }
 
-  const formatValue = (valueStr: string | undefined): string => {
-    if (!valueStr) return '-'
-    const num = parseFloat(valueStr.replace(',', '.'))
-    return isNaN(num) ? '-' : `€${num.toFixed(2)}`
-  }
 
   if (loading) {
     return <div className="text-center py-8">Carregando...</div>
@@ -274,32 +220,12 @@ export function ProcedureBaseEditorGlobal() {
             Importar JSON
           </Button>
         </div>
-        <div className="grid grid-cols-7 gap-2 p-4 border rounded-lg bg-muted/50">
-          <Input
-            placeholder="Código *"
-            value={newProcedure.code}
-            onChange={(e) => setNewProcedure({ ...newProcedure, code: e.target.value })}
-            className="col-span-1"
-          />
+        <div className="grid grid-cols-4 gap-2 p-4 border rounded-lg bg-muted/50">
           <Input
             placeholder="Descrição *"
             value={newProcedure.description}
             onChange={(e) => setNewProcedure({ ...newProcedure, description: e.target.value })}
             className="col-span-2"
-          />
-          <Input
-            placeholder="Categoria"
-            value={newProcedure.category}
-            onChange={(e) => setNewProcedure({ ...newProcedure, category: e.target.value })}
-            className="col-span-1"
-          />
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="Valor padrão"
-            value={newProcedure.defaultValue}
-            onChange={(e) => setNewProcedure({ ...newProcedure, defaultValue: e.target.value })}
-            className="col-span-1"
           />
           <div className="flex items-center gap-2 col-span-1">
             <Checkbox
@@ -317,7 +243,7 @@ export function ProcedureBaseEditorGlobal() {
                 setNewProcedure({ ...newProcedure, adultsOnly: checked === true })
               }
             />
-            <Label className="text-sm">Adulto</Label>
+            <Label className="text-sm">Apenas Adultos</Label>
             <Button onClick={handleAdd} size="icon" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </Button>
@@ -339,34 +265,12 @@ export function ProcedureBaseEditorGlobal() {
               {editingId === procedure.id ? (
                 <>
                   <Input
-                    value={editProcedure.code}
-                    onChange={(e) => setEditProcedure({ ...editProcedure, code: e.target.value })}
-                    className="w-32"
-                  />
-                  <Input
                     value={editProcedure.description}
                     onChange={(e) =>
                       setEditProcedure({ ...editProcedure, description: e.target.value })
                     }
                     className="flex-1"
-                  />
-                  <Input
-                    value={editProcedure.category}
-                    onChange={(e) =>
-                      setEditProcedure({ ...editProcedure, category: e.target.value })
-                    }
-                    placeholder="Categoria"
-                    className="w-32"
-                  />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={editProcedure.defaultValue}
-                    onChange={(e) =>
-                      setEditProcedure({ ...editProcedure, defaultValue: e.target.value })
-                    }
-                    placeholder="Valor"
-                    className="w-24"
+                    placeholder="Descrição"
                   />
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -384,7 +288,7 @@ export function ProcedureBaseEditorGlobal() {
                         setEditProcedure({ ...editProcedure, adultsOnly: checked === true })
                       }
                     />
-                    <Label className="text-sm">Adulto</Label>
+                    <Label className="text-sm">Apenas Adultos</Label>
                   </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -409,15 +313,8 @@ export function ProcedureBaseEditorGlobal() {
                 </>
               ) : (
                 <>
-                  <div className="w-32 font-mono text-sm">{procedure.code}</div>
                   <div className="flex-1">{procedure.description}</div>
-                  <div className="w-32 text-sm text-muted-foreground">
-                    {procedure.category || '-'}
-                  </div>
-                  <div className="w-24 text-sm">
-                    {procedure.defaultValue ? `€${procedure.defaultValue.toFixed(2)}` : '-'}
-                  </div>
-                  <div className="w-24">
+                  <div className="w-32">
                     {procedure.isPericiable ? (
                       <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                         Periciável
@@ -428,10 +325,10 @@ export function ProcedureBaseEditorGlobal() {
                       </span>
                     )}
                   </div>
-                  <div className="w-20">
+                  <div className="w-32">
                     {procedure.adultsOnly ? (
                       <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        Só Adultos
+                        Apenas Adultos
                       </span>
                     ) : (
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
@@ -439,7 +336,7 @@ export function ProcedureBaseEditorGlobal() {
                       </span>
                     )}
                   </div>
-                  <div className="w-16">
+                  <div className="w-20">
                     {procedure.active ? (
                       <span className="text-xs text-green-600">Ativo</span>
                     ) : (
@@ -475,8 +372,7 @@ export function ProcedureBaseEditorGlobal() {
           <DialogHeader>
             <DialogTitle>Importar Procedimentos via JSON</DialogTitle>
             <DialogDescription>
-              Cole o JSON com os procedimentos. Formato esperado: array de objetos com campos
-              codigo, descricao, encargo_adse_eur e/ou copagamento_beneficiario_eur
+              Cole o JSON com os procedimentos. Formato esperado: array de objetos com campo "descricao".
             </DialogDescription>
           </DialogHeader>
 
@@ -486,7 +382,7 @@ export function ProcedureBaseEditorGlobal() {
               <Textarea
                 value={importJson}
                 onChange={(e) => setImportJson(e.target.value)}
-                placeholder='[{"codigo": "61500", "descricao": "PROT.REM.ACRÍLICO...", "encargo_adse_eur": "47,25"}]'
+                placeholder='[{"descricao": "Implante dentário"}, {"descricao": "Extração de dente do siso"}]'
                 rows={8}
                 className="font-mono text-sm"
               />
@@ -505,28 +401,11 @@ export function ProcedureBaseEditorGlobal() {
             {importPreview.length > 0 && (
               <>
                 <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-4">
                     <Label className="text-base font-semibold">
                       Preview: {importPreview.length} procedimento(s) encontrado(s)
                     </Label>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm">Valor a usar:</Label>
-                        <Select
-                          value={importConfig.useEncargo ? 'encargo' : 'copagamento'}
-                          onValueChange={(value) =>
-                            setImportConfig({ ...importConfig, useEncargo: value === 'encargo' })
-                          }
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="encargo">Encargo ADSE</SelectItem>
-                            <SelectItem value="copagamento">Copagamento</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={importConfig.isPericiable}
@@ -536,31 +415,13 @@ export function ProcedureBaseEditorGlobal() {
                         />
                         <Label className="text-sm">Todos Periciáveis</Label>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          placeholder="Categoria padrão"
-                          value={importConfig.category}
-                          onChange={(e) =>
-                            setImportConfig({ ...importConfig, category: e.target.value })
-                          }
-                          className="w-32"
-                        />
-                      </div>
                     </div>
                   </div>
 
                   <div className="max-h-64 overflow-y-auto border rounded p-2 space-y-1">
                     {importPreview.slice(0, 10).map((item, idx) => (
                       <div key={idx} className="text-sm p-2 bg-muted rounded flex gap-4">
-                        <span className="font-mono w-20">{item.codigo}</span>
                         <span className="flex-1">{item.descricao}</span>
-                        <span className="w-24 text-right">
-                          {formatValue(
-                            importConfig.useEncargo
-                              ? item.encargo_adse_eur
-                              : item.copagamento_beneficiario_eur
-                          )}
-                        </span>
                       </div>
                     ))}
                     {importPreview.length > 10 && (

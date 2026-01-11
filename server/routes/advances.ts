@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { query } from '../db.js'
+import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
@@ -1080,10 +1080,10 @@ router.get('/procedures/base/global', async (req, res) => {
 
   try {
     const result = await query(
-      `SELECT id, clinic_id, code, description, is_periciable, adults_only, category, default_value, active, created_at, updated_at
+      `SELECT id, clinic_id, code, description, is_periciable, adults_only, active, created_at, updated_at
        FROM procedure_base_table
        WHERE clinic_id IS NULL
-       ORDER BY code ASC`
+       ORDER BY description ASC`
     )
 
     res.json(
@@ -1094,8 +1094,6 @@ router.get('/procedures/base/global', async (req, res) => {
         description: row.description,
         isPericiable: row.is_periciable,
         adultsOnly: row.adults_only || false,
-        category: row.category,
-        defaultValue: row.default_value ? parseFloat(row.default_value) : null,
         active: row.active,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -1115,37 +1113,23 @@ router.post('/procedures/base/global', async (req, res) => {
   }
 
   try {
-    const { code, description, isPericiable, adultsOnly, category, defaultValue } = req.body
+    const { description, isPericiable, adultsOnly } = req.body
 
-    if (!code || !description) {
-      return res.status(400).json({ error: 'Code and description are required' })
-    }
-
-    // Validar e converter defaultValue
-    let validatedDefaultValue = null
-    if (defaultValue !== null && defaultValue !== undefined && defaultValue !== '') {
-      const numValue = typeof defaultValue === 'string' 
-        ? parseFloat(defaultValue.replace(',', '.')) 
-        : parseFloat(defaultValue)
-      if (!isNaN(numValue) && isFinite(numValue)) {
-        validatedDefaultValue = numValue
-      }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Descrição é obrigatória' })
     }
 
     const procedureId = `procedure-base-global-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
     const result = await query(
       `INSERT INTO procedure_base_table (id, clinic_id, code, description, is_periciable, adults_only, category, default_value)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7)
+       VALUES ($1, NULL, NULL, $2, $3, $4, NULL, NULL)
        RETURNING *`,
       [
         procedureId,
-        code.trim(),
         description.trim(),
         isPericiable || false,
         adultsOnly || false,
-        category?.trim() || null,
-        validatedDefaultValue,
       ]
     )
 
@@ -1157,8 +1141,6 @@ router.post('/procedures/base/global', async (req, res) => {
       description: row.description,
       isPericiable: row.is_periciable,
       adultsOnly: row.adults_only || false,
-      category: row.category,
-      defaultValue: row.default_value ? parseFloat(row.default_value) : null,
       active: row.active,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -1167,7 +1149,7 @@ router.post('/procedures/base/global', async (req, res) => {
     console.error('Create global procedure base error:', error)
     console.error('Error details:', error.message, error.detail, error.code)
     if (error.code === '23505') {
-      return res.status(409).json({ error: 'Procedure code already exists in global table' })
+      return res.status(409).json({ error: 'Descrição já existe na tabela global' })
     }
     res.status(500).json({ error: 'Failed to create procedure', details: error.message })
   }
@@ -1183,42 +1165,28 @@ router.put('/procedures/base/global/:procedureId', async (req, res) => {
   }
 
   try {
-    const { code, description, isPericiable, adultsOnly, category, defaultValue, active } = req.body
+    const { description, isPericiable, adultsOnly, active } = req.body
 
-    if (!code || !description) {
-      return res.status(400).json({ error: 'Code and description are required' })
-    }
-
-    // Validar e converter defaultValue
-    let validatedDefaultValue = null
-    if (defaultValue !== null && defaultValue !== undefined && defaultValue !== '') {
-      const numValue = typeof defaultValue === 'string' 
-        ? parseFloat(defaultValue.replace(',', '.')) 
-        : parseFloat(defaultValue)
-      if (!isNaN(numValue) && isFinite(numValue)) {
-        validatedDefaultValue = numValue
-      }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Descrição é obrigatória' })
     }
 
     const result = await query(
       `UPDATE procedure_base_table
-       SET code = $1, description = $2, is_periciable = $3, adults_only = $4, category = $5, default_value = $6, active = $7
-       WHERE id = $8 AND clinic_id IS NULL
+       SET description = $1, is_periciable = $2, adults_only = $3, active = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5 AND clinic_id IS NULL
        RETURNING *`,
       [
-        code.trim(),
         description.trim(),
         isPericiable || false,
         adultsOnly || false,
-        category?.trim() || null,
-        validatedDefaultValue,
         active !== undefined ? active : true,
         procedureId,
       ]
     )
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Procedure not found in global table' })
+      return res.status(404).json({ error: 'Procedimento não encontrado na tabela global' })
     }
 
     const row = result.rows[0]
@@ -1229,8 +1197,6 @@ router.put('/procedures/base/global/:procedureId', async (req, res) => {
       description: row.description,
       isPericiable: row.is_periciable,
       adultsOnly: row.adults_only || false,
-      category: row.category,
-      defaultValue: row.default_value ? parseFloat(row.default_value) : null,
       active: row.active,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -1239,7 +1205,7 @@ router.put('/procedures/base/global/:procedureId', async (req, res) => {
     console.error('Update global procedure base error:', error)
     console.error('Error details:', error.message, error.detail, error.code)
     if (error.code === '23505') {
-      return res.status(409).json({ error: 'Procedure code already exists in global table' })
+      return res.status(409).json({ error: 'Descrição já existe na tabela global' })
     }
     res.status(500).json({ error: 'Failed to update procedure', details: error.message })
   }
@@ -1651,15 +1617,28 @@ router.delete('/batches/:clinicId/:batchId', async (req, res) => {
 
     console.log(`[Delete Batch] Deleting batch ${batchCheck.rows[0].batch_number}`)
 
-    // Delete batch items first (cascade should handle this, but being explicit)
-    await query('DELETE FROM billing_items WHERE batch_id = $1', [batchId])
+    // Use transaction to ensure atomicity
+    const client = await getClient()
+    try {
+      await client.query('BEGIN')
 
-    // Delete batch
-    await query('DELETE FROM billing_batches WHERE id = $1', [batchId])
+      // Delete batch items first (cascade should handle this, but being explicit)
+      await client.query('DELETE FROM billing_items WHERE batch_id = $1', [batchId])
 
-    console.log(`[Delete Batch] Batch ${batchCheck.rows[0].batch_number} deleted successfully`)
+      // Delete batch
+      await client.query('DELETE FROM billing_batches WHERE id = $1', [batchId])
 
-    res.status(200).json({ message: 'Batch deleted successfully' })
+      await client.query('COMMIT')
+      client.release()
+
+      console.log(`[Delete Batch] Batch ${batchCheck.rows[0].batch_number} deleted successfully`)
+
+      res.status(200).json({ message: 'Batch deleted successfully' })
+    } catch (txError) {
+      await client.query('ROLLBACK').catch(() => {})
+      client.release()
+      throw txError
+    }
   } catch (error) {
     console.error('Delete batch error:', error)
     res.status(500).json({ error: 'Failed to delete batch' })
@@ -2244,8 +2223,8 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/auto', async (req, r
     await query(
       `INSERT INTO billing_batches (
         id, contract_id, batch_number, target_amount, target_periciable_amount,
-        total_amount, total_periciable_amount, status, issued_at, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8)`,
+        total_amount, total_periciable_amount, status, issued_at, created_by, doctor_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8, $9)`,
       [
         batchId,
         contractId,
@@ -2255,6 +2234,7 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/auto', async (req, r
         totalAmount,
         totalPericiable,
         userId,
+        doctorId,
       ]
     )
 
@@ -2336,12 +2316,16 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
   }
 
   try {
-    const { items, serviceDate } = req.body
+    const { items, serviceDate, doctorId } = req.body
 
     console.log(`[Billing Manual] Received request for contract ${contractId} with ${items?.length || 0} items`)
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' })
+    }
+
+    if (!doctorId) {
+      return res.status(400).json({ error: 'Doctor ID is required' })
     }
 
     const finalServiceDate = serviceDate || new Date().toISOString().split('T')[0]
@@ -2439,8 +2423,8 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
     await query(
       `INSERT INTO billing_batches (
         id, contract_id, batch_number, target_amount, target_periciable_amount,
-        total_amount, total_periciable_amount, status, issued_at, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8)`,
+        total_amount, total_periciable_amount, status, issued_at, created_by, doctor_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8, $9)`,
       [
         batchId,
         contractId,
@@ -2450,6 +2434,7 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
         totalAmount,
         totalPericiable,
         userId,
+        doctorId,
       ]
     )
 

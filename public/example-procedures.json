@@ -1,0 +1,40 @@
+{
+  "procedures": [
+    {
+      "code": "61851",
+      "description": "CONSULTA ODONTO-ESTOMATOLOGICA",
+      "value": 15.75
+    },
+    {
+      "code": "61852",
+      "description": "RESTAURAÇÃO",
+      "value": 19.69
+    },
+    {
+      "code": "61853",
+      "description": "ENDODONTIA 1ª SESSÃO",
+      "value": 15.75
+    },
+    {
+      "code": "61854",
+      "description": "ENDODONTIA COM OBTURAÇÃO DE CANAIS",
+      "value": 27.56
+    },
+    {
+      "code": "61855",
+      "description": "EXTRAÇÃO DENTÁRIA",
+      "value": 12.50
+    },
+    {
+      "code": "A1.01.01.01",
+      "description": "CONSULTA DE URGÊNCIA",
+      "value": 20.00
+    },
+    {
+      "code": "A1.01.01.02",
+      "description": "CONSULTA DE ROTINA",
+      "value": 15.00
+    }
+  ]
+}
+

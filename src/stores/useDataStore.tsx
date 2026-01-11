@@ -69,6 +69,7 @@ interface DataState {
   addAdvanceInvoiceEntry: (clinicId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   updateAdvanceInvoiceEntry: (clinicId: string, entryId: string, entry: DailyAdvanceInvoiceEntry) => Promise<void>
   deleteAdvanceInvoiceEntry: (clinicId: string, entryId: string) => Promise<void>
+  reloadAdvanceInvoiceEntries: (clinicId: string) => Promise<void>
   addAccountsPayableEntry: (clinicId: string, entry: AccountsPayableEntry) => Promise<AccountsPayableEntry>
   updateAccountsPayableEntry: (clinicId: string, entryId: string, entry: AccountsPayableEntry) => Promise<void>
   deleteAccountsPayableEntry: (clinicId: string, entryId: string) => Promise<void>
@@ -1793,6 +1794,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const reloadAdvanceInvoiceEntries = async (clinicId: string) => {
+    try {
+      const advanceInvoice = await dailyEntriesApi.advanceInvoice.getAll(clinicId)
+      setAdvanceInvoiceEntries((prev) => ({ ...prev, [clinicId]: advanceInvoice }))
+    } catch (error: any) {
+      console.error(`Failed to reload advance invoice entries for ${clinicId}:`, error)
+      // Não mostrar toast para não incomodar o usuário
+    }
+  }
+
   const addAccountsPayableEntry = async (
     clinicId: string,
     entry: AccountsPayableEntry,
@@ -2701,6 +2712,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         deleteSourceEntry,
         deleteAlignersEntry,
         deleteAdvanceInvoiceEntry,
+        reloadAdvanceInvoiceEntries,
         deleteAccountsPayableEntry,
         deletePatient,
         financialEntries,

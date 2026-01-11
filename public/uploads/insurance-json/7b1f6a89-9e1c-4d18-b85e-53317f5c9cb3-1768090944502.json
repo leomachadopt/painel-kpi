@@ -1,0 +1,3314 @@
+{
+  "procedures": [
+    {
+      "code": "A2.02.01.03",
+      "description": "Aplicação tópica de fosfato de caseína",
+      "value": 15.0
+    },
+    {
+      "code": "A2.02.01.04",
+      "description": "Aplicação de revelador de placa",
+      "value": 15.0
+    },
+    {
+      "code": "A2.02.01.05",
+      "description": "Aplicação de agente dessensibilizante",
+      "value": 15.0
+    },
+    {
+      "code": "A3.01.01.01",
+      "description": "Restauração directa definitiva em amálgama de uma face",
+      "value": 18.0
+    },
+    {
+      "code": "A3.01.01.02",
+      "description": "Restauração directa definitiva em amálgama de duas faces",
+      "value": 20.0
+    },
+    {
+      "code": "A3.01.01.03",
+      "description": "Restauração directa definitiva em amálgama de três faces",
+      "value": 27.0
+    },
+    {
+      "code": "A3.01.01.04",
+      "description": "Restauração directa definitiva em amálgama de quatro faces",
+      "value": 27.0
+    },
+    {
+      "code": "A3.01.01.05",
+      "description": "Restauração directa definitiva em amálgama de cinco faces",
+      "value": 30.0
+    },
+    {
+      "code": "A3.01.02.01",
+      "description": "Restauração directa definitiva em resina composta de uma face",
+      "value": 20.0
+    },
+    {
+      "code": "A3.01.02.02",
+      "description": "Restauração directa definitiva em resina composta de duas faces",
+      "value": 26.0
+    },
+    {
+      "code": "A3.01.02.03",
+      "description": "Restauração directa definitiva em resina composta de três faces",
+      "value": 32.0
+    },
+    {
+      "code": "A3.01.02.04",
+      "description": "Restauração directa definitiva em resina composta de quatro faces",
+      "value": 32.0
+    },
+    {
+      "code": "A3.01.02.05",
+      "description": "Restauração directa definitiva em resina composta de cinco faces",
+      "value": 35.0
+    },
+    {
+      "code": "A3.01.03.01",
+      "description": "Restauração directa definitiva em cimento de ionómero de vidromodificado de uma face",
+      "value": 15.0
+    },
+    {
+      "code": "A3.01.03.02",
+      "description": "Restauração directa definitiva em cimento de ionómero de vidro modificado de duas faces",
+      "value": 20.0
+    },
+    {
+      "code": "A3.01.03.03",
+      "description": "Restauração directa definitiva em cimento de ionómero de vidro modificado de três faces",
+      "value": 23.0
+    },
+    {
+      "code": "A3.01.03.04",
+      "description": "Restauração directa definitiva em cimento de ionómero de vidro modificado de quatro faces",
+      "value": 23.0
+    },
+    {
+      "code": "A3.01.03.05",
+      "description": "Restauração directa definitiva em cimento de ionómero de vidro modificado de cinco faces",
+      "value": 25.0
+    },
+    {
+      "code": "A3.02.02.01",
+      "description": "Restauração indirecta em resina composta de uma face",
+      "value": 30.0
+    },
+    {
+      "code": "A3.02.02.02",
+      "description": "Restauração indirecta em resina composta de duas faces",
+      "value": 35.0
+    },
+    {
+      "code": "A3.02.02.03",
+      "description": "Restauração indirecta em resina composta de três faces",
+      "value": 38.0
+    },
+    {
+      "code": "A3.02.02.04",
+      "description": "Restauração indirecta em resina composta de quatro faces",
+      "value": 38.0
+    },
+    {
+      "code": "A3.02.02.05",
+      "description": "Restauração indirecta em resina composta de cinco faces",
+      "value": 40.0
+    },
+    {
+      "code": "A3.03.02.01",
+      "description": "Restauração provisória em resina composta de uma face",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.02.02",
+      "description": "Restauração provisória em resina composta de duas faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.02.03",
+      "description": "Restauração provisória em resina composta de três faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.02.04",
+      "description": "Restauração provisória em resina composta de quatro faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.02.05",
+      "description": "Restauração provisória em resina composta de cinco faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.03.01",
+      "description": "Restauração provisória em cimento de ionómero de vidro modificado de uma face",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.03.02",
+      "description": "Restauração provisória em cimento de ionómero de vidro modificado de duas faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.03.03",
+      "description": "Restauração provisória em cimento de ionómero de vidro modificado de três faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.03.04",
+      "description": "Restauração provisória em cimento de ionómero de vidro modificado de quatro faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.03.05",
+      "description": "Restauração provisória em cimento de ionómero de vidro modificado de cinco faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.04.01",
+      "description": "Restauração provisória em cimento de ionómero de vidro de uma face",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.04.02",
+      "description": "Restauração provisória em cimento de ionómero de vidro de duas faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.04.03",
+      "description": "Restauração provisória em cimento de ionómero de vidro de três faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.04.04",
+      "description": "Restauração provisória em cimento de ionómero de vidro de quatro faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.04.05",
+      "description": "Restauração provisória em cimento de ionómero de vidro de cinco faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.05.01",
+      "description": "Restauração provisória em óxido de zinco de uma face",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.05.02",
+      "description": "Restauração provisória em óxido de zinco de duas faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.05.03",
+      "description": "Restauração provisória em óxido de zinco de três faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.05.04",
+      "description": "Restauração provisória em óxido de zinco de quatro faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.05.05",
+      "description": "Restauração provisória em óxido de zinco de cinco faces",
+      "value": 10.0
+    },
+    {
+      "code": "A3.03.06.01",
+      "description": "Restauração parcial estética (por peça)",
+      "value": 70.0
+    },
+    {
+      "code": "A3.03.06.02",
+      "description": "Restauração parcial estratificada (por peça)",
+      "value": 125.0
+    },
+    {
+      "code": "A3.04.01.01",
+      "description": "Protecção pulpar directa com hidróxido de cálcio",
+      "value": 22.0
+    },
+    {
+      "code": "A3.04.01.02",
+      "description": "Protecção pulpar directa com MTA",
+      "value": 25.0
+    },
+    {
+      "code": "A3.05.01.01",
+      "description": "Espigão metálico",
+      "value": 5.0
+    },
+    {
+      "code": "A3.05.01.02",
+      "description": "Espigão em fibra",
+      "value": 5.0
+    },
+    {
+      "code": "A3.05.01.03",
+      "description": "Espigão individualizado em resina composta reforçada por fibra",
+      "value": 5.0
+    },
+    {
+      "code": "A3.05.01.04",
+      "description": "Pino dentinário",
+      "value": 5.0
+    },
+    {
+      "code": "A3.06.01.01",
+      "description": "Reforço com incrustação cerâmica",
+      "value": 60.0
+    },
+    {
+      "code": "A3.07.01.01",
+      "description": "Colagem de fragmento dentário",
+      "value": 25.0
+    },
+    {
+      "code": "A3.09.01.01",
+      "description": "Microabrasão",
+      "value": 15.0
+    },
+    {
+      "code": "A3.10.01.01",
+      "description": "Coronoplastia",
+      "value": 20.0
+    },
+    {
+      "code": "A3.11.01.01",
+      "description": "Sessão de branqueamento interno intensivo no consultório",
+      "value": 25.0
+    },
+    {
+      "code": "A3.11.01.02",
+      "description": "Sessão de branqueamento interno em ambulatório",
+      "value": 20.0
+    },
+    {
+      "code": "A3.11.02.01",
+      "description": "Branqueamento externo intensivo em consultório",
+      "value": 189.0
+    },
+    {
+      "code": "A3.11.02.02",
+      "description": "Branqueamento externo em ambulatório",
+      "value": 89.0
+    },
+    {
+      "code": "A3.11.02.03",
+      "description": "Branqueamento externo assistido no consultório",
+      "value": 149.0
+    },
+    {
+      "code": "A3.13.01.01",
+      "description": "Ferulização com resina composta sem meios de reforço",
+      "value": 30.0
+    },
+    {
+      "code": "A3.13.01.02",
+      "description": "Ferulização com resina composta e meios de reforço",
+      "value": 35.0
+    },
+    {
+      "code": "A3.14.01.01",
+      "description": "Aplicação de levantamento de mordida",
+      "value": 30.0
+    },
+    {
+      "code": "A3.14.01.02",
+      "description": "Remoção de levantamento de mordida",
+      "value": 25.0
+    },
+    {
+      "code": "A4.01.01.01",
+      "description": "Preparação químico-mecânica de dente com um canal",
+      "value": 25.0
+    },
+    {
+      "code": "A4.01.01.02",
+      "description": "Preparação químico-mecânica de dente com dois canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.01.01.03",
+      "description": "Preparação químico-mecânica de dente com três canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.01.01.04",
+      "description": "Preparação químico-mecânica de dente com quatro canais",
+      "value": 38.0
+    },
+    {
+      "code": "A4.01.01.05",
+      "description": "Preparação químico-mecânica de dente com cinco canais",
+      "value": 38.0
+    },
+    {
+      "code": "A4.01.02.01",
+      "description": "Obturação canalar de dente com um canal",
+      "value": 28.0
+    },
+    {
+      "code": "A4.01.02.02",
+      "description": "Obturação canalar de dente com dois canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.01.02.03",
+      "description": "Obturação canalar de dente com três canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.01.02.04",
+      "description": "Obturação canalar de dente com quatro canais",
+      "value": 33.0
+    },
+    {
+      "code": "A4.01.02.05",
+      "description": "Obturação canalar de dente com cinco canais",
+      "value": 33.0
+    },
+    {
+      "code": "A4.02.01.01",
+      "description": "Preparação químico-mecânica de dente com um canal",
+      "value": 24.0
+    },
+    {
+      "code": "A4.02.01.02",
+      "description": "Preparação químico-mecânica de dente com dois canais",
+      "value": 34.0
+    },
+    {
+      "code": "A4.02.01.03",
+      "description": "Preparação químico-mecânica de dente com três canais",
+      "value": 34.0
+    },
+    {
+      "code": "A4.02.01.04",
+      "description": "Preparação químico-mecânica de dente com quatro canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.02.01.05",
+      "description": "Preparação químico-mecânica de dente com cinco canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.02.02.01",
+      "description": "Obturação canalar de dente com um canal",
+      "value": 28.0
+    },
+    {
+      "code": "A4.02.02.02",
+      "description": "Obturação canalar de dente com dois canais",
+      "value": 28.0
+    },
+    {
+      "code": "A4.02.02.03",
+      "description": "Obturação canalar de dente com três canais",
+      "value": 28.0
+    },
+    {
+      "code": "A4.02.02.04",
+      "description": "Obturação canalar de dente com quatro canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.02.02.05",
+      "description": "Obturação canalar de dente com cinco canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.03.01.01",
+      "description": "Preparação químico-mecânica de dente com um canal",
+      "value": 24.0
+    },
+    {
+      "code": "A4.03.01.02",
+      "description": "Preparação químico-mecânica de dente com dois canais",
+      "value": 37.0
+    },
+    {
+      "code": "A4.03.01.03",
+      "description": "Preparação químico-mecânica de dente com três canais",
+      "value": 37.0
+    },
+    {
+      "code": "A4.03.01.04",
+      "description": "Preparação químico-mecânica de dente com quatro canais",
+      "value": 39.9
+    },
+    {
+      "code": "A4.03.01.05",
+      "description": "Preparação químico-mecânica de dente com cinco canais",
+      "value": 39.0
+    },
+    {
+      "code": "A4.03.02.01",
+      "description": "Obturação canalar de dente com um canal",
+      "value": 28.0
+    },
+    {
+      "code": "A4.03.02.02",
+      "description": "Obturação canalar de dente com dois canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.03.02.03",
+      "description": "Obturação canalar de dente com três canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.04.02.04",
+      "description": "Obturação canalar de dente com quatro canais",
+      "value": 34.0
+    },
+    {
+      "code": "A4.04.02.05",
+      "description": "Obturação canalar de dente com cinco canais",
+      "value": 34.0
+    },
+    {
+      "code": "A4.04.03.01",
+      "description": "Desobturação canalar de dente com um canal",
+      "value": 24.0
+    },
+    {
+      "code": "A4.04.03.02",
+      "description": "Desobturação canalar de dente com dois canais",
+      "value": 30.0
+    },
+    {
+      "code": "A4.04.03.03",
+      "description": "Desobturação canalar de dente com três canais",
+      "value": 30.0
+    },
+    {
+      "code": "A4.04.03.04",
+      "description": "Desobturação canalar de dente com quatro canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.04.03.05",
+      "description": "Desobturação canalar de dente com cinco canais",
+      "value": 32.0
+    },
+    {
+      "code": "A4.04.01.01",
+      "description": "Preparação químico-mecânica de dente com um canal",
+      "value": 35.0
+    },
+    {
+      "code": "A4.04.01.02",
+      "description": "Preparação químico-mecânica de dente com dois canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.04.01.03",
+      "description": "Preparação químico-mecânica de dente com três canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.04.01.04",
+      "description": "Preparação químico-mecânica de dente com quatro canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.04.01.05",
+      "description": "Preparação químico-mecânica de dente com cinco canais",
+      "value": 35.0
+    },
+    {
+      "code": "A4.04.02.01",
+      "description": "Obturação canalar de dente com um canal",
+      "value": 28.0
+    },
+    {
+      "code": "A4.04.02.02",
+      "description": "Obturação canalar de dente com dois canais",
+      "value": 31.0
+    },
+    {
+      "code": "A4.04.02.03",
+      "description": "Obturação canalar de dente com três canais",
+      "value": 31.0
+    },
+    {
+      "code": "A4.05.01.01",
+      "description": "Abordagem de instrumento fracturado no canal radicular",
+      "value": 25.0
+    },
+    {
+      "code": "A4.05.01.02",
+      "description": "Remoção de instrumento fracturado no canal radicular",
+      "value": 25.0
+    },
+    {
+      "code": "A4.05.01.03",
+      "description": "Eliminação de bloqueio no canal radicular",
+      "value": 31.0
+    },
+    {
+      "code": "A4.05.01.04",
+      "description": "Eliminação de degrau no canal radicular",
+      "value": 30.0
+    },
+    {
+      "code": "A4.05.01.05",
+      "description": "Eliminação de calcificação no canal radicular",
+      "value": 30.0
+    },
+    {
+      "code": "A4.05.01.06",
+      "description": "Remoção de espigão radicular",
+      "value": 31.0
+    },
+    {
+      "code": "A4.07.01.01",
+      "description": "Microcirurgia endodôntica de dente monorradicular",
+      "value": 35.0
+    },
+    {
+      "code": "A4.08.01.02",
+      "description": "Microcirurgia endodôntica de dente multirradicular",
+      "value": 40.0
+    },
+    {
+      "code": "A4.08.01.03",
+      "description": "Microcirurgia exploratória de diagnóstico",
+      "value": 35.0
+    },
+    {
+      "code": "A4.09.01.01",
+      "description": "Apexificação de dente monorradicular",
+      "value": 30.0
+    },
+    {
+      "code": "A4.09.01.02",
+      "description": "Apexificação de dente multirradicular",
+      "value": 35.0
+    },
+    {
+      "code": "A4.09.01.03",
+      "description": "Sessão de tratamento com vista à apexificação",
+      "value": 25.0
+    },
+    {
+      "code": "A4.10.01.01",
+      "description": "Apexogénese de dente monorradicular",
+      "value": 30.0
+    },
+    {
+      "code": "A4.10.01.02",
+      "description": "Apexogénese de dente multirradicular",
+      "value": 35.0
+    },
+    {
+      "code": "A4.10.01.03",
+      "description": "Sessão de tratamento com vista à indução de apexogénese",
+      "value": 25.0
+    },
+    {
+      "code": "A4.11.01.01",
+      "description": "Reparação não cirúrgica de perfuração radicular",
+      "value": 40.0
+    },
+    {
+      "code": "A4.11.01.02",
+      "description": "Reparação cirúrgica de perfuração radicular",
+      "value": 55.0
+    },
+    {
+      "code": "A4.11.02.01",
+      "description": "Reparação não cirúrgica de perfuração de furca",
+      "value": 40.0
+    },
+    {
+      "code": "A4.11.02.02",
+      "description": "Reparação cirúrgica de perfuração de furca",
+      "value": 55.0
+    },
+    {
+      "code": "A4.11.03.01",
+      "description": "Tratamento de reabsorção radicular externa",
+      "value": 50.0
+    },
+    {
+      "code": "A4.11.03.02",
+      "description": "Tratamento de reabsorção radicular interna",
+      "value": 50.0
+    },
+    {
+      "code": "A4.12.01.01",
+      "description": "Pulpotomia de dente monorradicular",
+      "value": 20.0
+    },
+    {
+      "code": "A4.12.01.02",
+      "description": "Pulpotomia de dente multirradicular",
+      "value": 24.0
+    },
+    {
+      "code": "A4.13.01.01",
+      "description": "Pulpectomia coronária de urgência de dente monorradicular",
+      "value": 15.0
+    },
+    {
+      "code": "A4.13.01.02",
+      "description": "Pulpectomia coronária de urgência de dente multirradicular",
+      "value": 20.0
+    },
+    {
+      "code": "A4.15.01.01",
+      "description": "Selamento intra-coronário",
+      "value": 26.0
+    },
+    {
+      "code": "A4.16.01.01",
+      "description": "Preparação de espaço canalar para espigão",
+      "value": 25.0
+    },
+    {
+      "code": "A5.01.02.01",
+      "description": "Exodontia de dente decíduo monorradicular com odontossecção",
+      "value": 25.0
+    },
+    {
+      "code": "A5.01.02.02",
+      "description": "Exodontia de dente decíduo multirradicular com odontossecção",
+      "value": 25.0
+    },
+    {
+      "code": "A5.01.03.01",
+      "description": "Exodontia de dente decíduo monorradicular com osteotomia",
+      "value": 25.0
+    },
+    {
+      "code": "A5.01.03.02",
+      "description": "Exodontia de dente decíduo multirradicular com osteotomia",
+      "value": 25.0
+    },
+    {
+      "code": "A5.01.04.01",
+      "description": "Exodontia de dente decíduo monorradicular com odontossecção e osteotomia",
+      "value": 30.0
+    },
+    {
+      "code": "A5.01.04.02",
+      "description": "Exodontia de dente decíduo multirradicular com odontossecção e osteotomia",
+      "value": 30.0
+    },
+    {
+      "code": "A5.01.05.01",
+      "description": "Exodontia de dente decíduo monorradicular incluso",
+      "value": 40.0
+    },
+    {
+      "code": "A5.01.05.02",
+      "description": "Exodontia de dente decíduo multirradicular incluso",
+      "value": 40.0
+    },
+    {
+      "code": "A5.02.02.01",
+      "description": "Exodontia de dente monorradicular com odontossecção",
+      "value": 30.0
+    },
+    {
+      "code": "A5.02.02.02",
+      "description": "Exodontia de dente multirradicular com odontossecção",
+      "value": 30.0
+    },
+    {
+      "code": "A5.02.03.01",
+      "description": "Exodontia de dente monorradicular com osteotomia",
+      "value": 30.0
+    },
+    {
+      "code": "A5.02.03.02",
+      "description": "Exodontia de dente multirradicular com osteotomia",
+      "value": 30.0
+    },
+    {
+      "code": "A5.02.04.01",
+      "description": "Exodontia de dente monorradicular com odontossecção e osteotomia",
+      "value": 35.0
+    },
+    {
+      "code": "A5.02.04.02",
+      "description": "Exodontia de dente multirradicular com odontossecção e osteotomia",
+      "value": 35.0
+    },
+    {
+      "code": "A5.02.05.01",
+      "description": "Exodontia de dente monorradicular incluso",
+      "value": 50.0
+    },
+    {
+      "code": "A5.02.05.02",
+      "description": "Exodontia de dente multirradicular incluso",
+      "value": 50.0
+    },
+    {
+      "code": "A5.03.01.01",
+      "description": "Exodontia de dente supranumerário",
+      "value": 30.0
+    },
+    {
+      "code": "A5.03.02.01",
+      "description": "Exodontia de dente supranumerário com odontossecção",
+      "value": 35.0
+    },
+    {
+      "code": "A5.03.03.01",
+      "description": "Exodontia de dente supranumerário com osteotomia",
+      "value": 35.0
+    },
+    {
+      "code": "A5.03.04.01",
+      "description": "Exodontia de dente supranumerário com odontossecção e osteotomia",
+      "value": 40.0
+    },
+    {
+      "code": "A5.03.05.01",
+      "description": "Exodontia de dente supranumerário incluso",
+      "value": 50.0
+    },
+    {
+      "code": "A5.05.01.01",
+      "description": "Germectomia",
+      "value": 40.0
+    },
+    {
+      "code": "A5.06.01.01",
+      "description": "Reimplante intencional de dente monorradicular",
+      "value": 35.0
+    },
+    {
+      "code": "A5.06.01.02",
+      "description": "Reimplante intencional de dente multirradicular",
+      "value": 35.0
+    },
+    {
+      "code": "A5.06.01.03",
+      "description": "Reposicionamento dentário pós-traumatismo",
+      "value": 25.0
+    },
+    {
+      "code": "A5.07.01.01",
+      "description": "Hemissecção",
+      "value": 35.0
+    },
+    {
+      "code": "A5.08.01.01",
+      "description": "Amputação radicular",
+      "value": 20.0
+    },
+    {
+      "code": "A5.09.01.01",
+      "description": "Autotransplante de dente monorradicular",
+      "value": 40.0
+    },
+    {
+      "code": "A5.09.01.02",
+      "description": "Autotransplante de dente multirradicular",
+      "value": 40.0
+    },
+    {
+      "code": "A5.10.01.01",
+      "description": "Drenagem de abcesso através da mucosa oral",
+      "value": 20.0
+    },
+    {
+      "code": "A5.10.01.02",
+      "description": "Drenagem de abcesso por via coronária",
+      "value": 25.0
+    },
+    {
+      "code": "A5.10.01.03",
+      "description": "Drenagem de abcesso por via cutânea",
+      "value": 25.0
+    },
+    {
+      "code": "A5.10.02.01",
+      "description": "Drenagem de hematoma através da mucosa oral",
+      "value": 25.0
+    },
+    {
+      "code": "A5.10.02.02",
+      "description": "Drenagem de hematoma por via coronária",
+      "value": 30.0
+    },
+    {
+      "code": "A5.10.02.03",
+      "description": "Drenagem de hematoma por via cutânea",
+      "value": 30.0
+    },
+    {
+      "code": "A5.11.01.01",
+      "description": "Cirurgia periapical de dente monorradicular",
+      "value": 45.0
+    },
+    {
+      "code": "A5.11.01.02",
+      "description": "Cirurgia periapical de dente plurirradicular",
+      "value": 50.0
+    },
+    {
+      "code": "A5.12.01.01",
+      "description": "Enucleação de quisto",
+      "value": 30.0
+    },
+    {
+      "code": "A5.13.01.01",
+      "description": "Marsupialização de quisto",
+      "value": 30.0
+    },
+    {
+      "code": "A5.14.01.01",
+      "description": "Exérese de tumor dos tecidos moles",
+      "value": 40.0
+    },
+    {
+      "code": "A5.15.01.01",
+      "description": "Exérese de tumor ósseo",
+      "value": 80.0
+    },
+    {
+      "code": "A5.16.01.01",
+      "description": "Biópsia de tecidos moles",
+      "value": 20.0
+    },
+    {
+      "code": "A5.16.01.02",
+      "description": "Biópsia de tecidos duros",
+      "value": 35.0
+    },
+    {
+      "code": "A5.16.01.03",
+      "description": "Biópsia aspirativa",
+      "value": 40.0
+    },
+    {
+      "code": "A5.16.01.04",
+      "description": "Biópsia de glândulas salivares minor",
+      "value": 40.0
+    },
+    {
+      "code": "A5.17.01.01",
+      "description": "Sialolitotomia",
+      "value": 35.0
+    },
+    {
+      "code": "A5.18.01.01",
+      "description": "Aprofundamento do vestíbulo - primeiro quadrante",
+      "value": 60.0
+    },
+    {
+      "code": "A5.18.01.02",
+      "description": "Aprofundamento do vestíbulo - segundo quadrante",
+      "value": 60.0
+    },
+    {
+      "code": "A5.18.01.03",
+      "description": "Aprofundamento do vestíbulo - terceiro quadrante",
+      "value": 60.0
+    },
+    {
+      "code": "A5.18.01.04",
+      "description": "Aprofundamento do vestíbulo - quarto quadrante",
+      "value": 60.0
+    },
+    {
+      "code": "A5.18.02.01",
+      "description": "Aprofundamento do vestíbulo - primeiro sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.18.02.02",
+      "description": "Aprofundamento do vestíbulo - segundo sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.18.02.03",
+      "description": "Aprofundamento do vestíbulo - terceiro sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.18.02.04",
+      "description": "Aprofundamento do vestíbulo - quarto sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.18.02.05",
+      "description": "Aprofundamento do vestíbulo - quinto sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.18.02.06",
+      "description": "Aprofundamento do vestíbulo - sexto sextante",
+      "value": 45.0
+    },
+    {
+      "code": "A5.19.01.01",
+      "description": "Excisão de bridas gengivais - primeiro quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A5.19.01.02",
+      "description": "Excisão de bridas gengivais - segundo quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A5.19.01.03",
+      "description": "Excisão de bridas gengivais - terceiro quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A5.19.01.04",
+      "description": "Excisão de bridas gengivais - quarto quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A5.19.02.01",
+      "description": "Excisão de bridas gengivais - primeiro sextante",
+      "value": 35.0
+    },
+    {
+      "code": "A5.19.02.02",
+      "description": "Excisão de bridas gengivais - segundo sextante",
+      "value": 25.0
+    },
+    {
+      "code": "A5.19.02.03",
+      "description": "Excisão de bridas gengivais - terceiro sextante",
+      "value": 25.0
+    },
+    {
+      "code": "A5.19.02.04",
+      "description": "Excisão de bridas gengivais - quarto sextante",
+      "value": 25.0
+    },
+    {
+      "code": "A5.19.02.05",
+      "description": "Excisão de bridas gengivais - quinto sextante",
+      "value": 25.0
+    },
+    {
+      "code": "A5.19.02.06",
+      "description": "Excisão de bridas gengivais - sexto sextante",
+      "value": 25.0
+    },
+    {
+      "code": "A5.20.01.01",
+      "description": "Excisão de lesão da língua nos 2/3 anteriores",
+      "value": 50.0
+    },
+    {
+      "code": "A5.20.01.02",
+      "description": "Excisão de lesão da língua no 1/3 posterior",
+      "value": 50.0
+    },
+    {
+      "code": "A5.20.01.03",
+      "description": "Excisão de lesão no lábio",
+      "value": 40.0
+    },
+    {
+      "code": "A5.20.01.04",
+      "description": "Excisão de lesão do pavimento da boca",
+      "value": 50.0
+    },
+    {
+      "code": "A5.20.01.05",
+      "description": "Excisão de lesões da mucosa jugal",
+      "value": 40.0
+    },
+    {
+      "code": "A5.20.01.06",
+      "description": "Excisão de lesões do palato",
+      "value": 50.0
+    },
+    {
+      "code": "A5.21.01.01",
+      "description": "Frenectomia lingual",
+      "value": 50.0
+    },
+    {
+      "code": "A5.21.01.02",
+      "description": "Frenectomia labial superior",
+      "value": 50.0
+    },
+    {
+      "code": "A5.21.01.03",
+      "description": "Frenectomia labial inferior",
+      "value": 50.0
+    },
+    {
+      "code": "A5.22.01.01",
+      "description": "Frenotomia lingual",
+      "value": 40.0
+    },
+    {
+      "code": "A5.22.01.02",
+      "description": "Frenotomia labial superior",
+      "value": 40.0
+    },
+    {
+      "code": "A5.22.01.03",
+      "description": "Frenotomia labial inferior",
+      "value": 40.0
+    },
+    {
+      "code": "A5.23.01.01",
+      "description": "Correcção de defeitos ósseos sem biomateriais",
+      "value": 80.0
+    },
+    {
+      "code": "A5.23.01.02",
+      "description": "Correcção de defeitos ósseos com biomateriais",
+      "value": 120.0
+    },
+    {
+      "code": "A5.23.01.03",
+      "description": "Correcção de defeitos ósseos com utilização de membranas (não reabsorvíveis)",
+      "value": 120.0
+    },
+    {
+      "code": "A5.23.01.04",
+      "description": "Correcção de defeitos ósseos com utilização de membranas (reabsorvíveis)",
+      "value": 120.0
+    },
+    {
+      "code": "A5.24.01.01",
+      "description": "Osteoplastia com biomateriais",
+      "value": 100.0
+    },
+    {
+      "code": "A5.24.01.02",
+      "description": "Osteoplastia sem biomateriais",
+      "value": 80.0
+    },
+    {
+      "code": "A5.25.01.01",
+      "description": "Elevação de seio maxilar com biomateriais",
+      "value": 450.0
+    },
+    {
+      "code": "A5.25.01.02",
+      "description": "Elevação de seio maxilar sem biomateriais",
+      "value": 300.0
+    },
+    {
+      "code": "A5.26.01.01",
+      "description": "Ulectomia",
+      "value": 40.0
+    },
+    {
+      "code": "A5.27.01.01",
+      "description": "Ulotomia",
+      "value": 40.0
+    },
+    {
+      "code": "A5.28.01.01",
+      "description": "Fenestração óssea para favorecimento de erupção",
+      "value": 45.0
+    },
+    {
+      "code": "A5.29.01.01",
+      "description": "Exposição de dente incluso para tracção ortodôntica",
+      "value": 45.0
+    },
+    {
+      "code": "A5.30.01.01",
+      "description": "Encerramento de comunicação oro-antral",
+      "value": 85.0
+    },
+    {
+      "code": "A5.31.01.01",
+      "description": "Distracção óssea alveolar",
+      "value": 220.0
+    },
+    {
+      "code": "A5.32.01.01",
+      "description": "Sessão de crioterapia",
+      "value": 70.0
+    },
+    {
+      "code": "A5.33.01.01",
+      "description": "Sessão de laserterapia",
+      "value": 65.0
+    },
+    {
+      "code": "A5.34.01.01",
+      "description": "Artrocentese",
+      "value": 160.0
+    },
+    {
+      "code": "A5.35.01.01",
+      "description": "Sialometria",
+      "value": 400.0
+    },
+    {
+      "code": "A5.36.01.01",
+      "description": "Litotrícia de cálculos salivares",
+      "value": 40.0
+    },
+    {
+      "code": "A5.37.01.01",
+      "description": "Desepitelização da mucosa oral",
+      "value": 65.0
+    },
+    {
+      "code": "A5.38.01.01",
+      "description": "Aumento de volume para correcção de defeitos peri-orais",
+      "value": 105.0
+    },
+    {
+      "code": "A5.39.01.01",
+      "description": "Sutura de ferida operatória - Não Reabsorvível / Absorvível",
+      "value": 13.0
+    },
+    {
+      "code": "A5.39.01.02",
+      "description": "Sutura de ferida não operatória",
+      "value": 13.0
+    },
+    {
+      "code": "A6.01.01.01",
+      "description": "Registo do diagnóstico no periodontograma",
+      "value": 18.0
+    },
+    {
+      "code": "A6.01.02.05",
+      "description": "Remoção de pigmento dentário com jacto de bicarbonato",
+      "value": 10.0
+    },
+    {
+      "code": "A6.02.01.01",
+      "description": "Raspagem e alisamento radicular",
+      "value": 25.0
+    },
+    {
+      "code": "A6.02.02.01",
+      "description": "Raspagem e alisamento radicular - 1º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.02.02.02",
+      "description": "Raspagem e alisamento radicular - 2º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.02.02.03",
+      "description": "Raspagem e alisamento radicular - 3º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.02.02.04",
+      "description": "Raspagem e alisamento radicular - 4º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.02.03.01",
+      "description": "Raspagem e alisamento radicular - 1º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.02.03.02",
+      "description": "Raspagem e alisamento radicular - 2º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.02.03.03",
+      "description": "Raspagem e alisamento radicular - 3º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.02.03.04",
+      "description": "Raspagem e alisamento radicular - 4º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.02.03.05",
+      "description": "Raspagem e alisamento radicular - 5º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.02.03.06",
+      "description": "Raspagem e alisamento radicular - 6º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.03.01.01",
+      "description": "Tratamento periodontal de manutenção",
+      "value": 25.0
+    },
+    {
+      "code": "A6.04.01.01",
+      "description": "Gengivoplastia",
+      "value": 30.0
+    },
+    {
+      "code": "A6.04.02.01",
+      "description": "Gengivoplastia - 1º Quadrante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.04.02.02",
+      "description": "Gengivoplastia - 2º Quadrante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.04.02.03",
+      "description": "Gengivoplastia - 3º Quadrante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.04.02.04",
+      "description": "Gengivoplastia - 4º Quadrante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.04.03.01",
+      "description": "Gengivoplastia - 1º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.04.03.02",
+      "description": "Gengivoplastia - 2º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.04.03.03",
+      "description": "Gengivoplastia - 3º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.04.03.04",
+      "description": "Gengivoplastia - 4º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.04.03.05",
+      "description": "Gengivoplastia - 5º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.04.03.06",
+      "description": "Gengivoplastia - 6º Sextante",
+      "value": 24.0
+    },
+    {
+      "code": "A6.05.01.01",
+      "description": "Gengivectomia",
+      "value": 25.0
+    },
+    {
+      "code": "A6.05.02.01",
+      "description": "Gengivectomia - 1º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.05.02.02",
+      "description": "Gengivectomia - 2º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.05.02.03",
+      "description": "Gengivectomia - 3º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.05.02.04",
+      "description": "Gengivectomia - 4º Quadrante",
+      "value": 25.0
+    },
+    {
+      "code": "A6.05.03.01",
+      "description": "Gengivectomia - 1º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.05.03.02",
+      "description": "Gengivectomia - 2º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.05.03.03",
+      "description": "Gengivectomia - 3º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.05.03.04",
+      "description": "Gengivectomia - 4º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.05.03.05",
+      "description": "Gengivectomia - 5º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.05.03.06",
+      "description": "Gengivectomia - 6º Sextante",
+      "value": 18.0
+    },
+    {
+      "code": "A6.06.01.01",
+      "description": "Cirurgia de retalho",
+      "value": 35.0
+    },
+    {
+      "code": "A6.06.02.01",
+      "description": "Cirurgia de retalho - 1º Quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A6.06.02.02",
+      "description": "Cirurgia de retalho - 2º Quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A6.06.02.03",
+      "description": "Cirurgia de retalho - 3º Quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A6.06.02.04",
+      "description": "Cirurgia de retalho - 4º Quadrante",
+      "value": 35.0
+    },
+    {
+      "code": "A6.06.03.01",
+      "description": "Cirurgia de retalho - 1º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.06.03.02",
+      "description": "Cirurgia de retalho - 2º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.06.03.03",
+      "description": "Cirurgia de retalho - 3º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.06.03.04",
+      "description": "Cirurgia de retalho - 4º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.06.03.05",
+      "description": "Cirurgia de retalho - 5º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.06.03.06",
+      "description": "Cirurgia de retalho - 6º Sextante",
+      "value": 30.0
+    },
+    {
+      "code": "A6.07.01.01",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo",
+      "value": 90.0
+    },
+    {
+      "code": "A6.07.02.01",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 1º Quadrante",
+      "value": 90.0
+    },
+    {
+      "code": "A6.07.02.02",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 2º Quadrante",
+      "value": 90.0
+    },
+    {
+      "code": "A6.07.02.03",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 3º Quadrante",
+      "value": 90.0
+    },
+    {
+      "code": "A6.07.02.04",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 4º Quadrante",
+      "value": 90.0
+    },
+    {
+      "code": "A6.07.03.01",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 1º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.07.03.02",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 2º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.07.03.03",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 3º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.07.03.04",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 4º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.07.03.05",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 5º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.07.03.06",
+      "description": "Cirurgia de retalho para tratamento periodontal regenerativo - 6º Sextante",
+      "value": 65.0
+    },
+    {
+      "code": "A6.08.01.02",
+      "description": "Enxerto gengival ou de tecido conjuntivo para recobrimento radicular",
+      "value": 42.0
+    },
+    {
+      "code": "A6.09.01.01",
+      "description": "Enxerto ósseo para aumento do rebordo alveolar",
+      "value": 110.0
+    },
+    {
+      "code": "A6.10.01.01",
+      "description": "Regeneração tecidular guiada para correcção de defeitos infra-ósseos",
+      "value": 100.0
+    },
+    {
+      "code": "A6.10.01.02",
+      "description": "Regeneração tecidular guiada para recobrimento radicular",
+      "value": 100.0
+    },
+    {
+      "code": "A6.10.01.05",
+      "description": "Materiais de substituição óssea para correcção de defeitos infra-ósseos",
+      "value": 110.0
+    },
+    {
+      "code": "A6.11.01.01",
+      "description": "Remoção de membrana",
+      "value": 40.0
+    },
+    {
+      "code": "A6.12.01.01",
+      "description": "Aplicação tópica de medicação",
+      "value": 20.0
+    },
+    {
+      "code": "A7.01.01.02",
+      "description": "Estudo de reabilitação com implantes com programa informático",
+      "value": 50.0
+    },
+    {
+      "code": "A7.01.01.03",
+      "description": "Guia radiológica (por arcada)",
+      "value": 60.0
+    },
+    {
+      "code": "A7.01.01.04",
+      "description": "Guia cirúrgica (por arcada)",
+      "value": 60.0
+    },
+    {
+      "code": "A7.01.01.05",
+      "description": "Guia cirúrgica obtida através de estudo imagiológico",
+      "value": 70.0
+    },
+    {
+      "code": "A7.02.01.01",
+      "description": "Cirurgia para colocação de um implante",
+      "value": 500.0
+    },
+    {
+      "code": "A7.02.01.02",
+      "description": "Cirurgia para colocação de mais do que 1 implante (por implante)",
+      "value": 500.0
+    },
+    {
+      "code": "A7.02.01.05",
+      "description": "Cirurgia para colocação de implante provisório",
+      "value": 250.0
+    },
+    {
+      "code": "A7.02.01.06",
+      "description": "Cirurgia para colocação de mais do que 1 implante provisório (por implante)",
+      "value": 230.0
+    },
+    {
+      "code": "A7.02.01.07",
+      "description": "Cirurgia para colocação de implante zigomático (por implante)",
+      "value": 500.0
+    },
+    {
+      "code": "A7.02.01.08",
+      "description": "Cirurgia para colocação de um implante imediato pós-extracção",
+      "value": 500.0
+    },
+    {
+      "code": "A7.02.01.10",
+      "description": "Cirurgia para colocação de um implante com provisionalização fixa imediata",
+      "value": 520.0
+    },
+    {
+      "code": "A7.02.01.13",
+      "description": "3",
+      "value": 0.0
+    },
+    {
+      "code": "A7.02.01.14",
+      "description": "1",
+      "value": 300.0
+    },
+    {
+      "code": "A7.02.01.15",
+      "description": "Prótese Hibrida",
+      "value": 3100.0
+    },
+    {
+      "code": "A7.03.01.01",
+      "description": "Explantação de implante",
+      "value": 60.0
+    },
+    {
+      "code": "A7.04.01.01",
+      "description": "Regeneração óssea prévia à colocação de implante",
+      "value": 150.0
+    },
+    {
+      "code": "A7.04.01.02",
+      "description": "Regeneração óssea simultânea com colocação de implante",
+      "value": 150.0
+    },
+    {
+      "code": "A7.04.01.03",
+      "description": "Regeneração óssea simultânea com explantação de implante",
+      "value": 150.0
+    },
+    {
+      "code": "A7.05.01.01",
+      "description": "Cirurgia para elevação do seio maxilar com janela lateral e utilização de aloenxerto",
+      "value": 450.0
+    },
+    {
+      "code": "A7.05.01.02",
+      "description": "Cirurgia para elevação do seio maxilar com janela lateral e utilização de autoenxerto",
+      "value": 400.0
+    },
+    {
+      "code": "A7.06.01.00",
+      "description": "Mantimento e reajuste anual de próteses sobre implantes (por implante)",
+      "value": 23.0
+    },
+    {
+      "code": "A7.07.01.01",
+      "description": "Enxerto de osso autologo",
+      "value": 185.0
+    },
+    {
+      "code": "A7.07.01.02",
+      "description": "Materiais de substituição óssea",
+      "value": 110.0
+    },
+    {
+      "code": "A7.07.01.03",
+      "description": "Membrana não reabsorvível",
+      "value": 120.0
+    },
+    {
+      "code": "A7.07.01.04",
+      "description": "Membrana reabsorvível",
+      "value": 125.0
+    },
+    {
+      "code": "A7.07.01.05",
+      "description": "Proteínas de matriz de esmalte",
+      "value": 135.0
+    },
+    {
+      "code": "A8.B1.01.01",
+      "description": "Prótese em resina acrílica com um dente",
+      "value": 70.0
+    },
+    {
+      "code": "A8.B1.01.02",
+      "description": "Prótese em resina acrílica com dois dentes",
+      "value": 80.0
+    },
+    {
+      "code": "A8.B1.01.03",
+      "description": "Prótese em resina acrílica com três dentes",
+      "value": 90.0
+    },
+    {
+      "code": "A8.B1.01.04",
+      "description": "Prótese em resina acrílica com quatro dentes",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B1.01.05",
+      "description": "Prótese em resina acrílica com cinco dentes",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B1.01.06",
+      "description": "Prótese em resina acrílica com seis dentes",
+      "value": 120.0
+    },
+    {
+      "code": "A8.B1.01.07",
+      "description": "Prótese em resina acrílica com sete dentes",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B1.01.08",
+      "description": "Prótese em resina acrílica com oito dentes",
+      "value": 140.0
+    },
+    {
+      "code": "A8.B1.01.09",
+      "description": "Prótese em resina acrílica com nove dentes",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B1.01.10",
+      "description": "Prótese em resina acrílica com dez dentes",
+      "value": 160.0
+    },
+    {
+      "code": "A8.B1.01.11",
+      "description": "Prótese em resina acrílica com onze dentes",
+      "value": 170.0
+    },
+    {
+      "code": "A8.B1.01.12",
+      "description": "Prótese em resina acrílica com doze dentes",
+      "value": 180.0
+    },
+    {
+      "code": "A8.B1.01.13",
+      "description": "Prótese em resina acrílica com treze dentes",
+      "value": 190.0
+    },
+    {
+      "code": "A8.B1.01.14",
+      "description": "Prótese em resina acrílica com catorze dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B1.02.01",
+      "description": "Prótese em cobalto-cromo com um dente",
+      "value": 120.0
+    },
+    {
+      "code": "A8.B1.02.02",
+      "description": "Prótese em cobalto-cromo com dois dentes",
+      "value": 140.0
+    },
+    {
+      "code": "A8.B1.02.03",
+      "description": "Prótese em cobalto-cromo com três dentes",
+      "value": 160.0
+    },
+    {
+      "code": "A8.B1.02.04",
+      "description": "Prótese em cobalto-cromo com quatro dentes",
+      "value": 180.0
+    },
+    {
+      "code": "A8.B1.02.05",
+      "description": "Prótese em cobalto-cromo com cinco dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B1.02.06",
+      "description": "Prótese em cobalto-cromo com seis dentes",
+      "value": 220.0
+    },
+    {
+      "code": "A8.B1.02.07",
+      "description": "Prótese em cobalto-cromo com sete dentes",
+      "value": 240.0
+    },
+    {
+      "code": "A8.B1.02.08",
+      "description": "Prótese em cobalto-cromo com oito dentes",
+      "value": 260.0
+    },
+    {
+      "code": "A8.B1.02.09",
+      "description": "Prótese em cobalto-cromo com nove dentes",
+      "value": 280.0
+    },
+    {
+      "code": "A8.B1.02.10",
+      "description": "Prótese em cobalto-cromo com dez dentes",
+      "value": 300.0
+    },
+    {
+      "code": "A8.B1.02.11",
+      "description": "Prótese em cobalto-cromo com onze dentes",
+      "value": 320.0
+    },
+    {
+      "code": "A8.B1.02.12",
+      "description": "Prótese em cobalto-cromo com doze dentes",
+      "value": 340.0
+    },
+    {
+      "code": "A8.B1.02.13",
+      "description": "Prótese em cobalto-cromo com treze dentes",
+      "value": 360.0
+    },
+    {
+      "code": "A8.B1.02.14",
+      "description": "Prótese em cobalto-cromo com catorze dentes",
+      "value": 380.0
+    },
+    {
+      "code": "A8.B1.03.01",
+      "description": "Prótese em nylon com um dente",
+      "value": 140.0
+    },
+    {
+      "code": "A8.B1.03.02",
+      "description": "Prótese em nylon com dois dentes",
+      "value": 145.0
+    },
+    {
+      "code": "A8.B1.03.03",
+      "description": "Prótese em nylon com três dentes",
+      "value": 155.0
+    },
+    {
+      "code": "A8.B1.03.04",
+      "description": "Prótese em nylon com quatro dentes",
+      "value": 160.0
+    },
+    {
+      "code": "A8.B1.03.05",
+      "description": "Prótese em nylon com cinco dentes",
+      "value": 170.0
+    },
+    {
+      "code": "A8.B1.03.06",
+      "description": "Prótese em nylon com seis dentes",
+      "value": 185.0
+    },
+    {
+      "code": "A8.B1.03.07",
+      "description": "Prótese em nylon com sete dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B1.03.08",
+      "description": "Prótese em nylon com oito dentes",
+      "value": 210.0
+    },
+    {
+      "code": "A8.B1.03.09",
+      "description": "Prótese em nylon com nove dentes",
+      "value": 220.0
+    },
+    {
+      "code": "A8.B1.03.10",
+      "description": "Prótese em nylon com dez dentes",
+      "value": 230.0
+    },
+    {
+      "code": "A8.B1.03.11",
+      "description": "Prótese em nylon com onze dentes",
+      "value": 240.0
+    },
+    {
+      "code": "A8.B1.03.12",
+      "description": "Prótese em nylon com doze dentes",
+      "value": 250.0
+    },
+    {
+      "code": "A8.B1.03.13",
+      "description": "Prótese em nylon com treze dentes",
+      "value": 260.0
+    },
+    {
+      "code": "A8.B1.03.14",
+      "description": "Prótese em nylon com catorze dentes",
+      "value": 270.0
+    },
+    {
+      "code": "A8.B1.04.01",
+      "description": "Prótese em titânio com um dente",
+      "value": 210.0
+    },
+    {
+      "code": "A8.B1.04.02",
+      "description": "Prótese em titânio com dois dentes",
+      "value": 245.0
+    },
+    {
+      "code": "A8.B1.04.03",
+      "description": "Prótese em titânio com três dentes",
+      "value": 300.0
+    },
+    {
+      "code": "A8.B1.04.04",
+      "description": "Prótese em titânio com quatro dentes",
+      "value": 340.0
+    },
+    {
+      "code": "A8.B1.04.05",
+      "description": "Prótese em titânio com cinco dentes",
+      "value": 380.0
+    },
+    {
+      "code": "A8.B1.04.06",
+      "description": "Prótese em titânio com seis dentes",
+      "value": 420.0
+    },
+    {
+      "code": "A8.B1.04.07",
+      "description": "Prótese em titânio com sete dentes",
+      "value": 435.0
+    },
+    {
+      "code": "A8.B1.04.08",
+      "description": "Prótese em titânio com oito dentes",
+      "value": 450.0
+    },
+    {
+      "code": "A8.B1.04.09",
+      "description": "Prótese em titânio com nove dentes",
+      "value": 470.0
+    },
+    {
+      "code": "A8.B1.04.10",
+      "description": "Prótese em titânio com dez dentes",
+      "value": 490.0
+    },
+    {
+      "code": "A8.B1.04.11",
+      "description": "Prótese em titânio com onze dentes",
+      "value": 515.0
+    },
+    {
+      "code": "A8.B1.04.12",
+      "description": "Prótese em titânio com doze dentes",
+      "value": 520.0
+    },
+    {
+      "code": "A8.B1.04.13",
+      "description": "Prótese em titânio com treze dentes",
+      "value": 535.0
+    },
+    {
+      "code": "A8.B1.04.14",
+      "description": "Prótese em titânio com catorze dentes",
+      "value": 555.0
+    },
+    {
+      "code": "A8.B1.07.02",
+      "description": "Gancho em aço inox",
+      "value": 15.0
+    },
+    {
+      "code": "A8.B1.07.05",
+      "description": "Gancho estético",
+      "value": 42.0
+    },
+    {
+      "code": "A8.B1.08.01",
+      "description": "Calha para barra de Dolder",
+      "value": 195.0
+    },
+    {
+      "code": "A8.B1.08.02",
+      "description": "Barra de Dolder",
+      "value": 300.0
+    },
+    {
+      "code": "A8.B1.09.01",
+      "description": "Conserto de prótese sem impressão",
+      "value": 15.0
+    },
+    {
+      "code": "A8.B1.09.02",
+      "description": "Conserto de prótese com impressão",
+      "value": 21.0
+    },
+    {
+      "code": "A8.B1.09.03",
+      "description": "Soldadura em prótese esquelética",
+      "value": 45.0
+    },
+    {
+      "code": "A8.B1.10.01",
+      "description": "Acrescento de dente em prótese em resina acrílica sem impressão",
+      "value": 20.0
+    },
+    {
+      "code": "A8.B1.10.02",
+      "description": "Acrescento de dente em prótese em resina acrílica com impressão",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B1.10.03",
+      "description": "Acrescento de gancho em prótese de resina acrílica",
+      "value": 16.0
+    },
+    {
+      "code": "A8.B1.10.04",
+      "description": "Acrescento de barra de aço inox sem impressão",
+      "value": 20.0
+    },
+    {
+      "code": "A8.B1.10.05",
+      "description": "Acrescento de barra de aço inox com impressão",
+      "value": 40.0
+    },
+    {
+      "code": "A8.B1.10.06",
+      "description": "Acrescento de sela sobre prótese esquelética com soldadura e dente",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B1.10.07",
+      "description": "Acrescento de rede em cobalto-cromo",
+      "value": 50.0
+    },
+    {
+      "code": "A8.B1.10.08",
+      "description": "Acrescento de barra lingual ou palatina em cobalto-cromo",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B1.10.09",
+      "description": "Gancho fundido",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B1.10.10",
+      "description": "Face oclusal fundida",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B1.11.01",
+      "description": "Rebasamento directo duro",
+      "value": 40.0
+    },
+    {
+      "code": "A8.B1.11.02",
+      "description": "Rebasamento directo mole",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B1.12.01",
+      "description": "Rebasamento indirecto duro",
+      "value": 45.0
+    },
+    {
+      "code": "A8.B1.12.02",
+      "description": "Rebasamento indirecto mole",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B1.13.01",
+      "description": "Suplemento resina acrílica hipoalergénica (por arcada)",
+      "value": 45.0
+    },
+    {
+      "code": "A8.B2.02.01",
+      "description": "Espigão e falso coto (método directo)",
+      "value": 65.0
+    },
+    {
+      "code": "A8.B2.02.02",
+      "description": "Espigão e falso coto fundido",
+      "value": 75.0
+    },
+    {
+      "code": "A8.B2.02.03",
+      "description": "Espigão e falso coto fundido e ceramizado",
+      "value": 105.0
+    },
+    {
+      "code": "A8.B2.02.04",
+      "description": "Espigão com sistema de retenção",
+      "value": 70.0
+    },
+    {
+      "code": "A8.B2.02.05",
+      "description": "Espigão e falso coto fundido Zircónio",
+      "value": 250.0
+    },
+    {
+      "code": "A8.B3.01.01",
+      "description": "Coroa provisória acrílica (método directo)",
+      "value": 20.0
+    },
+    {
+      "code": "A8.B3.01.02",
+      "description": "Coroa provisória acrílica (método indirecto)",
+      "value": 20.0
+    },
+    {
+      "code": "A8.B3.01.03",
+      "description": "Coroa provisória em compósito (método directo)",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B3.01.04",
+      "description": "Faceta provisória (método directo)",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B3.01.05",
+      "description": "Incrustação provisória",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B3.02.01",
+      "description": "Coroa acrílica",
+      "value": 90.0
+    },
+    {
+      "code": "A8.B3.02.02",
+      "description": "Coroa em cerómero",
+      "value": 120.0
+    },
+    {
+      "code": "A8.B3.02.03",
+      "description": "Coroa metálica",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B3.02.04",
+      "description": "Coroa metálica pré-formada",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B3.02.05",
+      "description": "Coroa metaloacrílica",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.02.06",
+      "description": "Coroa metalocerâmica",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B3.02.07",
+      "description": "Coroa metalocerâmica com ombro em cerâmica",
+      "value": 260.0
+    },
+    {
+      "code": "A8.B3.02.08",
+      "description": "Coroa cerâmica",
+      "value": 330.0
+    },
+    {
+      "code": "A8.B3.02.09",
+      "description": "Faceta cerâmica",
+      "value": 215.0
+    },
+    {
+      "code": "A8.B3.02.10",
+      "description": "Faceta compósito",
+      "value": 80.0
+    },
+    {
+      "code": "A8.B3.02.11",
+      "description": "Faceta zircónio ou dissilicato de lítio",
+      "value": 360.0
+    },
+    {
+      "code": "A8.B3.02.12",
+      "description": "Faceta cerâmica prensada",
+      "value": 385.0
+    },
+    {
+      "code": "A8.B3.02.13",
+      "description": "Faceta ultrafina (lente de contacto dental)",
+      "value": 420.0
+    },
+    {
+      "code": "A8.B3.02.14",
+      "description": "Coroa Zircónio",
+      "value": 445.0
+    },
+    {
+      "code": "A8.B3.03.01",
+      "description": "Incrustação em metal de uma face dentária",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.03.02",
+      "description": "Incrustação em metal de duas faces dentárias",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.03.03",
+      "description": "Incrustação em metal de três faces dentárias",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.03.04",
+      "description": "Incrustação em metal de quatro faces dentárias",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.03.05",
+      "description": "Incrustação em metal de cinco faces dentárias",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B3.04.01",
+      "description": "Incrustação em cerâmica de uma face dentária",
+      "value": 189.0
+    },
+    {
+      "code": "A8.B3.04.02",
+      "description": "Incrustação em cerâmica de duas faces dentárias",
+      "value": 189.0
+    },
+    {
+      "code": "A8.B3.04.03",
+      "description": "Incrustação em cerâmica de três faces dentárias",
+      "value": 189.0
+    },
+    {
+      "code": "A8.B3.04.04",
+      "description": "Incrustação em cerâmica de quatro faces dentárias",
+      "value": 189.0
+    },
+    {
+      "code": "A8.B3.04.05",
+      "description": "Incrustação em cerâmica de cinco faces dentárias",
+      "value": 189.0
+    },
+    {
+      "code": "A8.B4.01.01",
+      "description": "Coroa pilar provisória acrílica (método directo)",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B4.01.02",
+      "description": "Coroa pilar provisória acrílica (método indirecto)",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B4.01.03",
+      "description": "Incrustação pilar provisória",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B4.01.04",
+      "description": "Coroa pilar provisória aparafusada sobre implante",
+      "value": 70.0
+    },
+    {
+      "code": "A8.B4.01.05",
+      "description": "Coroa pilar provisória cimentada sobre implante",
+      "value": 35.0
+    },
+    {
+      "code": "A8.B4.02.01",
+      "description": "Coroa pilar em resina acrílica",
+      "value": 90.0
+    },
+    {
+      "code": "A8.B4.02.02",
+      "description": "Coroa pilar em cerómero",
+      "value": 120.0
+    },
+    {
+      "code": "A8.B4.02.03",
+      "description": "Coroa pilar metálica",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.02.04",
+      "description": "Coroa pilar metaloacrílica",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B4.02.05",
+      "description": "Coroa pilar metalocerâmica",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B4.02.06",
+      "description": "Coroa pilar cerâmica",
+      "value": 330.0
+    },
+    {
+      "code": "A8.B4.02.07",
+      "description": "Coroa pilar aparafusada sobre implante",
+      "value": 400.0
+    },
+    {
+      "code": "A8.B4.02.08",
+      "description": "Coroa pilar cimentada sobre implante",
+      "value": 400.0
+    },
+    {
+      "code": "A8.B4.02.09",
+      "description": "Coroa pilar Zircónio",
+      "value": 445.0
+    },
+    {
+      "code": "A8.B4.03.01",
+      "description": "Incrustação pilar em metal de uma face dentária",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.03.02",
+      "description": "Incrustação pilar em metal de duas faces dentárias",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.03.03",
+      "description": "Incrustação pilar em metal de três faces dentárias",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.03.04",
+      "description": "Incrustação pilar em metal de quatro faces dentárias",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.03.05",
+      "description": "Incrustação pilar em metal de cinco faces dentárias",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B4.03.06",
+      "description": "Retentor metálico para ponte adesiva",
+      "value": 75.0
+    },
+    {
+      "code": "A8.B4.04.01",
+      "description": "Incrustação pilar em cerâmica de uma face dentária",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B4.04.02",
+      "description": "Incrustação pilar em cerâmica de duas faces dentárias",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B4.04.03",
+      "description": "Incrustação pilar em cerâmica de três faces dentárias",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B4.04.04",
+      "description": "Incrustação pilar em cerâmica de quatro faces dentárias",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B4.04.05",
+      "description": "Incrustação pilar em cerâmica de cinco faces dentárias",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B4.04.06",
+      "description": "Retentor cerâmico para ponte adesiva",
+      "value": 80.0
+    },
+    {
+      "code": "A8.B5.01.01",
+      "description": "Coroa pôntico provisória em resina acrílica (método directo)",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B5.01.02",
+      "description": "Coroa pôntico provisória em resina acrílica (método indirecto)",
+      "value": 25.0
+    },
+    {
+      "code": "A8.B5.02.01",
+      "description": "Coroa pôntico em resina acrílica",
+      "value": 90.0
+    },
+    {
+      "code": "A8.B5.02.02",
+      "description": "Coroa pôntico em cerómero",
+      "value": 120.0
+    },
+    {
+      "code": "A8.B5.02.03",
+      "description": "Coroa pôntico metálica",
+      "value": 110.0
+    },
+    {
+      "code": "A8.B5.02.04",
+      "description": "Coroa pôntico metaloacrílica",
+      "value": 130.0
+    },
+    {
+      "code": "A8.B5.02.05",
+      "description": "Coroa pôntico metalocerâmica",
+      "value": 200.0
+    },
+    {
+      "code": "A8.B5.02.06",
+      "description": "Coroa pôntico cerâmica",
+      "value": 330.0
+    },
+    {
+      "code": "A8.B5.02.07",
+      "description": "Coroa pôntico Zircónio",
+      "value": 445.0
+    },
+    {
+      "code": "A8.B7.01.01",
+      "description": "Conector em bola",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B7.01.02",
+      "description": "Conector em bola sobre implante",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B7.01.03",
+      "description": "Conector intra-coronário",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B7.01.04",
+      "description": "Conector extra-coronário",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B7.01.05",
+      "description": "Conector de pilar transepitelial",
+      "value": 100.0
+    },
+    {
+      "code": "A8.B8.01.07",
+      "description": "Cimentação de prótese fixa antiga sobre dentes",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B8.01.08",
+      "description": "Cimentação de prótese fixa antiga sobre implantes",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B8.01.09",
+      "description": "Cimentação de prótese fixa antiga aparafusada sobre implantes",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B9.01.01",
+      "description": "Enceramento diagnóstico, por elemento",
+      "value": 8.0
+    },
+    {
+      "code": "A8.B9.01.02",
+      "description": "Mock-up directo em resina, por elemento",
+      "value": 6.0
+    },
+    {
+      "code": "A8.B9.01.03",
+      "description": "Mock-up indirecto em resina, por elemento",
+      "value": 8.0
+    },
+    {
+      "code": "A8.B9.01.04",
+      "description": "Reparação de prótese fixa",
+      "value": 65.0
+    },
+    {
+      "code": "A8.B9.01.05",
+      "description": "Coroa pré-formada para dente decíduo",
+      "value": 60.0
+    },
+    {
+      "code": "A8.B9.01.06",
+      "description": "Desmontagem de coroa unitária",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B9.01.07",
+      "description": "Desmontagem de ponte",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B9.01.08",
+      "description": "Reforço metálico fundido em ponte provisória (cada elemento)",
+      "value": 30.0
+    },
+    {
+      "code": "A8.B9.02.02",
+      "description": "Pilar transepetelial metalo-cerâmico",
+      "value": 125.0
+    },
+    {
+      "code": "A8.B9.02.03",
+      "description": "Pilar transepetelial cerâmico",
+      "value": 150.0
+    },
+    {
+      "code": "A8.B9.02.05",
+      "description": "Pilar transepetelial metálico fundido de base mecanizada",
+      "value": 125.0
+    },
+    {
+      "code": "A9.B1.01.01",
+      "description": "Prótese obturadora maxilar em resina acrílica com um dente",
+      "value": 65.0
+    },
+    {
+      "code": "A9.B1.01.02",
+      "description": "Prótese obturadora maxilar em resina acrílica com dois dentes",
+      "value": 75.0
+    },
+    {
+      "code": "A9.B1.01.03",
+      "description": "Prótese obturadora maxilar em resina acrílica com três dentes",
+      "value": 85.0
+    },
+    {
+      "code": "A9.B1.01.04",
+      "description": "Prótese obturadora maxilar em resina acrílica com quatro dentes",
+      "value": 95.0
+    },
+    {
+      "code": "A9.B1.01.05",
+      "description": "Prótese obturadora maxilar em resina acrílica com cinco dentes",
+      "value": 105.0
+    },
+    {
+      "code": "A9.B1.01.06",
+      "description": "Prótese obturadora maxilar em resina acrílica com seis dentes",
+      "value": 120.0
+    },
+    {
+      "code": "A9.B1.01.07",
+      "description": "Prótese obturadora maxilar em resina acrílica com sete dentes",
+      "value": 130.0
+    },
+    {
+      "code": "A9.B1.01.08",
+      "description": "Prótese obturadora maxilar em resina acrílica com oito dentes",
+      "value": 140.0
+    },
+    {
+      "code": "A9.B1.01.09",
+      "description": "Prótese obturadora maxilar em resina acrílica com nove dentes",
+      "value": 150.0
+    },
+    {
+      "code": "A9.B1.01.10",
+      "description": "Prótese obturadora maxilar em resina acrílica com dez dentes",
+      "value": 170.0
+    },
+    {
+      "code": "A9.B1.01.11",
+      "description": "Prótese obturadora maxilar em resina acrílica com onze dentes",
+      "value": 180.0
+    },
+    {
+      "code": "A9.B1.01.12",
+      "description": "Prótese obturadora maxilar em resina acrílica com doze dentes",
+      "value": 190.0
+    },
+    {
+      "code": "A9.B1.01.13",
+      "description": "Prótese obturadora maxilar em resina acrílica com treze dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A9.B1.01.14",
+      "description": "Prótese obturadora maxilar em resina acrílica com catorze dentes",
+      "value": 210.0
+    },
+    {
+      "code": "A9.B1.02.01",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com um dente",
+      "value": 125.0
+    },
+    {
+      "code": "A9.B1.02.02",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com dois dentes",
+      "value": 140.0
+    },
+    {
+      "code": "A9.B1.02.03",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com três dentes",
+      "value": 160.0
+    },
+    {
+      "code": "A9.B1.02.04",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com quatro dentes",
+      "value": 190.0
+    },
+    {
+      "code": "A9.B1.02.05",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com cinco dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A9.B1.02.06",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com seis dentes",
+      "value": 235.0
+    },
+    {
+      "code": "A9.B1.02.07",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com sete dentes",
+      "value": 265.0
+    },
+    {
+      "code": "A9.B1.02.08",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com oito dentes",
+      "value": 285.0
+    },
+    {
+      "code": "A9.B1.02.09",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com nove dentes",
+      "value": 300.0
+    },
+    {
+      "code": "A9.B1.02.10",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com dez dentes",
+      "value": 330.0
+    },
+    {
+      "code": "A9.B1.02.11",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com onze dentes",
+      "value": 350.0
+    },
+    {
+      "code": "A9.B1.02.12",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com doze dentes",
+      "value": 375.0
+    },
+    {
+      "code": "A9.B1.02.13",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com treze dentes",
+      "value": 390.0
+    },
+    {
+      "code": "A9.B1.02.14",
+      "description": "Prótese obturadora maxilar em cromo-cobalto com catorze dentes",
+      "value": 405.0
+    },
+    {
+      "code": "A9.B1.03.01",
+      "description": "Prótese obturadora maxilar em nylon com um dente",
+      "value": 120.0
+    },
+    {
+      "code": "A9.B1.03.02",
+      "description": "Prótese obturadora maxilar em nylon com dois dentes",
+      "value": 140.0
+    },
+    {
+      "code": "A9.B1.03.03",
+      "description": "Prótese obturadora maxilar em nylon com três dentes",
+      "value": 160.0
+    },
+    {
+      "code": "A9.B1.03.04",
+      "description": "Prótese obturadora maxilar em nylon com quatro dentes",
+      "value": 170.0
+    },
+    {
+      "code": "A9.B1.03.05",
+      "description": "Prótese obturadora maxilar em nylon com cinco dentes",
+      "value": 180.0
+    },
+    {
+      "code": "A9.B1.03.06",
+      "description": "Prótese obturadora maxilar em nylon com seis dentes",
+      "value": 185.0
+    },
+    {
+      "code": "A9.B1.03.07",
+      "description": "Prótese obturadora maxilar em nylon com sete dentes",
+      "value": 195.0
+    },
+    {
+      "code": "A9.B1.03.08",
+      "description": "Prótese obturadora maxilar em nylon com oito dentes",
+      "value": 200.0
+    },
+    {
+      "code": "A9.B1.03.09",
+      "description": "Prótese obturadora maxilar em nylon com nove dentes",
+      "value": 210.0
+    },
+    {
+      "code": "A9.B1.03.10",
+      "description": "Prótese obturadora maxilar em nylon com dez dentes",
+      "value": 215.0
+    },
+    {
+      "code": "A9.B1.03.11",
+      "description": "Prótese obturadora maxilar em nylon com onze dentes",
+      "value": 220.0
+    },
+    {
+      "code": "A9.B1.03.12",
+      "description": "Prótese obturadora maxilar em nylon com doze dentes",
+      "value": 230.0
+    },
+    {
+      "code": "A9.B1.03.13",
+      "description": "Prótese obturadora maxilar em nylon com treze dentes",
+      "value": 235.0
+    },
+    {
+      "code": "A9.B1.03.14",
+      "description": "Prótese obturadora maxilar em nylon com catorze dentes",
+      "value": 240.0
+    },
+    {
+      "code": "A9.B1.04.01",
+      "description": "Prótese obturadora maxilar em titânio com um dente",
+      "value": 160.0
+    },
+    {
+      "code": "A9.B1.04.02",
+      "description": "Prótese obturadora maxilar em titânio com dois dentes",
+      "value": 185.0
+    },
+    {
+      "code": "A9.B1.04.03",
+      "description": "Prótese obturadora maxilar em titânio com três dentes",
+      "value": 205.0
+    },
+    {
+      "code": "A9.B1.04.04",
+      "description": "Prótese obturadora maxilar em titânio com quatro dentes",
+      "value": 220.0
+    },
+    {
+      "code": "A9.B1.04.05",
+      "description": "Prótese obturadora maxilar em titânio com cinco dentes",
+      "value": 230.0
+    },
+    {
+      "code": "A9.B1.04.06",
+      "description": "Prótese obturadora maxilar em titânio com seis dentes",
+      "value": 250.0
+    },
+    {
+      "code": "A9.B1.04.07",
+      "description": "Prótese obturadora maxilar em titânio com sete dentes",
+      "value": 265.0
+    },
+    {
+      "code": "A9.B1.04.08",
+      "description": "Prótese obturadora maxilar em titânio com oito dentes",
+      "value": 280.0
+    },
+    {
+      "code": "A9.B1.04.09",
+      "description": "Prótese obturadora maxilar em titânio com nove dentes",
+      "value": 290.0
+    },
+    {
+      "code": "A9.B1.04.10",
+      "description": "Prótese obturadora maxilar em titânio com dez dentes",
+      "value": 320.0
+    },
+    {
+      "code": "A9.B1.04.11",
+      "description": "Prótese obturadora maxilar em titânio com onze dentes",
+      "value": 330.0
+    },
+    {
+      "code": "A9.B1.04.12",
+      "description": "Prótese obturadora maxilar em titânio com doze dentes",
+      "value": 340.0
+    },
+    {
+      "code": "A9.B1.04.13",
+      "description": "Prótese obturadora maxilar em titânio com treze dentes",
+      "value": 360.0
+    },
+    {
+      "code": "A9.B1.04.14",
+      "description": "Prótese obturadora maxilar em titânio com catorze dentes",
+      "value": 400.0
+    },
+    {
+      "code": "A9.01.05.01",
+      "description": "Impressão em alginato de loca cirúrgica de maxilectomia",
+      "value": 15.0
+    },
+    {
+      "code": "A9.01.05.02",
+      "description": "Impressão em elastómero de loca cirúrgica de maxilectomia",
+      "value": 15.0
+    },
+    {
+      "code": "A10.01.01.01",
+      "description": "Estudo ortodôntico",
+      "value": 40.0
+    },
+    {
+      "code": "A10.02.02.01",
+      "description": "Determinação da idade óssea",
+      "value": 25.0
+    },
+    {
+      "code": "A10.03.01.02",
+      "description": "Montagem de arco facial",
+      "value": 20.0
+    },
+    {
+      "code": "A10.03.01.03",
+      "description": "Análise de modelos de estudo com montagem em articulador",
+      "value": 50.0
+    },
+    {
+      "code": "A10.04.01.01",
+      "description": "Mantenedor de espaço removível",
+      "value": 39.0
+    },
+    {
+      "code": "A10.04.01.02",
+      "description": "Mantenedor de espaço fixo",
+      "value": 45.0
+    },
+    {
+      "code": "A10.05.01.01",
+      "description": "Aparelho removível biomecânico maxilar",
+      "value": 200.0
+    },
+    {
+      "code": "A10.05.01.02",
+      "description": "Aparelho removível biomecânico mandibular",
+      "value": 200.0
+    },
+    {
+      "code": "A10.05.02.01",
+      "description": "Aparelho funcional",
+      "value": 270.0
+    },
+    {
+      "code": "A10.05.03.01",
+      "description": "Aparelho fixo completo maxilar",
+      "value": 256.0
+    },
+    {
+      "code": "A10.05.03.02",
+      "description": "Aparelho fixo completo mandibular",
+      "value": 256.0
+    },
+    {
+      "code": "A10.05.03.03",
+      "description": "Aparelho fixo parcial",
+      "value": 130.0
+    },
+    {
+      "code": "A10.05.03.AA",
+      "description": "Aparelho fixo completo autoligável maxilar",
+      "value": 600.0
+    },
+    {
+      "code": "A10.05.03.AB",
+      "description": "Aparelho fixo completo autoligável mandibular",
+      "value": 600.0
+    },
+    {
+      "code": "A10.05.03.AC",
+      "description": "Aparelho fixo autoligável parcial",
+      "value": 305.0
+    },
+    {
+      "code": "A10.05.03.BA",
+      "description": "Suplemento Aparelho fixo completo brackets de cerâmica maxilar",
+      "value": 180.0
+    },
+    {
+      "code": "A10.05.03.BB",
+      "description": "Suplemento Aparelho fixo completo brackets de cerâmica mandibular",
+      "value": 180.0
+    },
+    {
+      "code": "A10.05.03.BC",
+      "description": "Suplemento Aparelho fixo parcial brackets de cerâmica",
+      "value": 95.0
+    },
+    {
+      "code": "A10.05.03.CA",
+      "description": "Suplemento Aparelho fixo completo brackets de fibra de vidro maxilar",
+      "value": 140.0
+    },
+    {
+      "code": "A10.05.03.CB",
+      "description": "Suplemento Aparelho fixo completo brackets de fibra de vidro mandibular",
+      "value": 140.0
+    },
+    {
+      "code": "A10.05.03.CC",
+      "description": "Suplemento Aparelho fixo parcial brackets de fibra de vidro",
+      "value": 75.0
+    },
+    {
+      "code": "A10.05.03.DA",
+      "description": "Suplemento Aparelho fixo completo brackets de cerâmica autoligável maxilar",
+      "value": 215.0
+    },
+    {
+      "code": "A10.05.03.DB",
+      "description": "Suplemento Aparelho fixo completo brackets de cerâmica autoligável mandibular",
+      "value": 215.0
+    },
+    {
+      "code": "A10.05.03.DC",
+      "description": "Suplemento Aparelho fixo parcial brackets de cerâmica autoligável",
+      "value": 115.0
+    },
+    {
+      "code": "A10.05.03.EA",
+      "description": "Reposição de bracket (unidade)",
+      "value": 3.0
+    },
+    {
+      "code": "A10.05.03.EB",
+      "description": "Reposição de bracket estético (unidade)",
+      "value": 5.0
+    },
+    {
+      "code": "A10.05.03.EC",
+      "description": "Reposição de bracket autoligável (unidade)",
+      "value": 10.0
+    },
+    {
+      "code": "A10.05.03.ED",
+      "description": "Reposição de bracket de cerâmica autoligável (unidade)",
+      "value": 15.0
+    },
+    {
+      "code": "A10.05.04.01",
+      "description": "Aparelho de expansão fixo",
+      "value": 200.0
+    },
+    {
+      "code": "A10.05.05.01",
+      "description": "Transição de aparelho fixo parcial para completo",
+      "value": 130.0
+    },
+    {
+      "code": "A10.05.06.01",
+      "description": "Aparelho ortopédico extra-oral",
+      "value": 175.0
+    },
+    {
+      "code": "A10.05.07.01",
+      "description": "Aparelho de contenção removível",
+      "value": 120.0
+    },
+    {
+      "code": "A10.05.07.02",
+      "description": "Aparelho de contenção fixo",
+      "value": 120.0
+    },
+    {
+      "code": "A10.06.01.02",
+      "description": "Simulação cirúrgica cefalométrica",
+      "value": 35.0
+    },
+    {
+      "code": "A10.06.02.01",
+      "description": "Goteira cirúrgica",
+      "value": 80.0
+    },
+    {
+      "code": "A10.07.01.01",
+      "description": "Conserto de aparelho removível",
+      "value": 15.0
+    },
+    {
+      "code": "A10.08.01.01",
+      "description": "Controlo de aparelho removível biomecânico",
+      "value": 30.0
+    },
+    {
+      "code": "A10.08.02.01",
+      "description": "Controlo de aparelho removível funcional",
+      "value": 30.0
+    },
+    {
+      "code": "A10.08.03.01",
+      "description": "Controlo de aparelho fixo",
+      "value": 30.0
+    },
+    {
+      "code": "A10.08.04.01",
+      "description": "Controlo de aparelho ortopédico extra-oral",
+      "value": 30.0
+    },
+    {
+      "code": "A10.08.05.01",
+      "description": "Controlo de aparelho de contenção",
+      "value": 30.0
+    },
+    {
+      "code": "A10.09.01.01",
+      "description": "Implante ortodôntico",
+      "value": 185.0
+    },
+    {
+      "code": "A10.10.02.01",
+      "description": "3",
+      "value": 700.0
+    },
+    {
+      "code": "A10.10.02.0A",
+      "description": "3",
+      "value": 300.0
+    },
+    {
+      "code": "A10.10.02.02",
+      "description": "1",
+      "value": 900.0
+    },
+    {
+      "code": "A10.10.02.03",
+      "description": "2",
+      "value": 400.0
+    },
+    {
+      "code": "A10.10.02.04",
+      "description": "1",
+      "value": 115.0
+    },
+    {
+      "code": "A10.10.02.05",
+      "description": "1",
+      "value": 415.0
+    },
+    {
+      "code": "A10.10.02.06",
+      "description": "Tratamento Ortodôntico FIRST maxilar e mandibular (duas arcadas)",
+      "value": 1900.0
+    },
+    {
+      "code": "A10.10.03.01",
+      "description": "Renovação por perda de alinhador (unidade)",
+      "value": 60.0
+    },
+    {
+      "code": "A10.10.04.01",
+      "description": "Aparelho de contenção invisível Tipo Vivera (unidade)",
+      "value": 350.0
+    },
+    {
+      "code": "A10.11.01.01",
+      "description": "3",
+      "value": 400.0
+    },
+    {
+      "code": "A10.11.01.02",
+      "description": "4",
+      "value": 900.0
+    },
+    {
+      "code": "A10.11.02.01",
+      "description": "2",
+      "value": 500.0
+    },
+    {
+      "code": "A10.11.02.02",
+      "description": "3",
+      "value": 800.0
+    },
+    {
+      "code": "A10.11.03.01",
+      "description": "Reposição de bracket lingual (unidade)",
+      "value": 95.0
+    },
+    {
+      "code": "A11.01.01.01",
+      "description": "Acerto oclusal por subtracção/ desgastes selectivos",
+      "value": 31.0
+    },
+    {
+      "code": "A11.01.01.02",
+      "description": "Acerto oclusal por adição",
+      "value": 40.0
+    },
+    {
+      "code": "A11.01.01.03",
+      "description": "Controlo da relação oclusal e do estado clínico em DTM ou DOF",
+      "value": 30.0
+    },
+    {
+      "code": "A11.01.01.04",
+      "description": "Intervenção em situação urgente de DTM ou DOF",
+      "value": 40.0
+    },
+    {
+      "code": "A11.01.01.05",
+      "description": "Plano de tratamento escrito referente a DTM ou DOF",
+      "value": 30.0
+    },
+    {
+      "code": "A11.01.01.06",
+      "description": "Relatório clínico pericial referente a DTM ou DOF",
+      "value": 30.0
+    },
+    {
+      "code": "A11.01.01.07",
+      "description": "Infiltração anestésica intra-oral em DTM ou DOF",
+      "value": 40.0
+    },
+    {
+      "code": "A11.01.01.08",
+      "description": "Infiltração anestésica extra-oral em DTM ou DOF",
+      "value": 40.0
+    },
+    {
+      "code": "A11.02.01.01",
+      "description": "Montagem de modelos em articulador semi-ajustável, sem valores individuais",
+      "value": 70.0
+    },
+    {
+      "code": "A11.02.01.02",
+      "description": "Montagem de modelos em articulador semi-ajustável, com valores individuais",
+      "value": 80.0
+    },
+    {
+      "code": "A11.02.01.03",
+      "description": "Montagem de modelos em articulador totalmente ajustável",
+      "value": 95.0
+    },
+    {
+      "code": "A11.02.01.05",
+      "description": "Enceramento oclusal de diagnóstico",
+      "value": 80.0
+    },
+    {
+      "code": "A11.03.01.01",
+      "description": "Axiografia mecânica",
+      "value": 110.0
+    },
+    {
+      "code": "A11.03.01.02",
+      "description": "Axiografia electrónica ou digital",
+      "value": 70.0
+    },
+    {
+      "code": "A11.03.01.03",
+      "description": "Cinesiografia para estudo da cinemática mandibular",
+      "value": 135.0
+    },
+    {
+      "code": "A11.04.01.01",
+      "description": "Electromiografia de superfície",
+      "value": 110.0
+    },
+    {
+      "code": "A11.04.01.02",
+      "description": "Inactivação de pontos gatilho miofaciais",
+      "value": 105.0
+    },
+    {
+      "code": "A11.04.01.03",
+      "description": "Sessão de T.E.N.S. (miomonitor)",
+      "value": 90.0
+    },
+    {
+      "code": "A11.04.01.04",
+      "description": "Electrossonografia (electrovibrografia) da ATM",
+      "value": 125.0
+    },
+    {
+      "code": "A11.04.01.05",
+      "description": "Miorrelaxamento por bio-feedback",
+      "value": 125.0
+    },
+    {
+      "code": "A11.05.01.06",
+      "description": "Confecção e adaptação clínica de aparelho de interposição maxilar resiliente",
+      "value": 100.0
+    },
+    {
+      "code": "A11.05.01.07",
+      "description": "Controlo clínico de aparelho de interposição maxilar",
+      "value": 30.0
+    },
+    {
+      "code": "A11.06.01.06",
+      "description": "Confecção e adaptação clínica de aparelho de interposição mandibular resiliente",
+      "value": 100.0
+    },
+    {
+      "code": "A11.06.01.07",
+      "description": "Controlo clínico de aparelho de interposição mandibular",
+      "value": 30.0
+    },
+    {
+      "code": "A12.B1.01.04",
+      "description": "Realização e interpretação de seriografia",
+      "value": 20.0
+    },
+    {
+      "code": "A12.B1.02.04",
+      "description": "Realização de seriografia",
+      "value": 20.0
+    },
+    {
+      "code": "A12.B2.01.04",
+      "description": "Realização e interpretação de radiografia axial (Hirtz)",
+      "value": 27.0
+    },
+    {
+      "code": "A12.B2.01.05",
+      "description": "Realização e interpretação de radiografia antero-posterior dos seios maxilares",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.01.06",
+      "description": "Realização e interpretação de radiografia da ATM",
+      "value": 33.0
+    },
+    {
+      "code": "A12.B2.01.07",
+      "description": "Realização e interpretação de radiografia transcraniana",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.01.08",
+      "description": "Realização e interpretação de radiografia transfacial",
+      "value": 27.0
+    },
+    {
+      "code": "A12.B2.01.09",
+      "description": "Realização e interpretação de radiografia de mão e punho",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.01.10",
+      "description": "Realização e interpretação de tomografia computorizada",
+      "value": 60.0
+    },
+    {
+      "code": "A12.B2.02.04",
+      "description": "Realização de radiografia axial (Hirtz)",
+      "value": 27.0
+    },
+    {
+      "code": "A12.B2.02.05",
+      "description": "Realização de radiografia antero-posterior dos seios maxilares",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.02.06",
+      "description": "Realização de radiografia da ATM",
+      "value": 33.0
+    },
+    {
+      "code": "A12.B2.02.07",
+      "description": "Realização de radiografia transcraniana",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.02.08",
+      "description": "Realização de radiografia transfacial",
+      "value": 27.0
+    },
+    {
+      "code": "A12.B2.02.09",
+      "description": "Realização de radiografia de mão e punho",
+      "value": 25.0
+    },
+    {
+      "code": "A12.B2.02.10",
+      "description": "Realização de tomografia computorizada",
+      "value": 60.0
+    },
+    {
+      "code": "A12.B3.01.01",
+      "description": "Registo fotográfico intra-oral",
+      "value": 15.0
+    },
+    {
+      "code": "A12.B3.01.02",
+      "description": "Registo fotográfico extra-oral",
+      "value": 10.0
+    },
+    {
+      "code": "A12.B3.01.03",
+      "description": "Registo fotográfico de modelos",
+      "value": 7.0
+    },
+    {
+      "code": "A12.B3.01.04",
+      "description": "Registo fotográfico de exames imagiológicos",
+      "value": 7.0
+    },
+    {
+      "code": "A13.02.05.01",
+      "description": "Colheitas de material biológico",
+      "value": 35.0
+    },
+    {
+      "code": "A14.01.01.01",
+      "description": "Relatório clínico",
+      "value": 25.0
+    },
+    {
+      "code": "A14.01.02.01",
+      "description": "Simulação de tratamento em programa informático",
+      "value": 30.0
+    },
+    {
+      "code": "A14.01.03.01",
+      "description": "Enceramento de diagnóstico e tratamento sobre modelos",
+      "value": 40.0
+    },
+    {
+      "code": "A14.01.04.01",
+      "description": "Goteira terapêutica para aplicação tópica de produtos",
+      "value": 40.0
+    },
+    {
+      "code": "A14.01.05.01",
+      "description": "Goteira de protecção de braquiterapia",
+      "value": 100.0
+    },
+    {
+      "code": "A14.01.06.01",
+      "description": "Isolamento absoluto com dique de borracha",
+      "value": 15.0
+    },
+    {
+      "code": "A14.01.07.01",
+      "description": "Obtenção e utilização de plasma rico em factores de crescimento",
+      "value": 130.0
+    },
+    {
+      "code": "A14.01.09.01",
+      "description": "Utilização de microscópio cirúrgico",
+      "value": 30.0
+    },
+    {
+      "code": "A14.01.09.05",
+      "description": "Montagem de modelos em articulador",
+      "value": 70.0
+    },
+    {
+      "code": "A14.02.01.01",
+      "description": "Sedação consciente inalatória (primeiros 60 minutos)",
+      "value": 85.0
+    },
+    {
+      "code": "A14.02.01.02",
+      "description": "Sedação consciente inalatória (por cada 30 minutos seguintes)",
+      "value": 42.5
+    }
+  ]
+}

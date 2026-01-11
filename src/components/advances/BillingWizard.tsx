@@ -17,9 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { advancesApi } from '@/services/api'
+import { advancesApi, clinicsApi } from '@/services/api'
 import { toast } from 'sonner'
-import { AdvanceContract } from '@/lib/types'
+import { AdvanceContract, Clinic } from '@/lib/types'
 import { Loader2, Calculator, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -83,12 +83,15 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
   const [billedProcedures, setBilledProcedures] = useState<BilledProcedure[]>([])
   const [dependents, setDependents] = useState<Array<{ id: string; name: string; age: number | null; relationship: string }>>([])
   const [patientAge, setPatientAge] = useState<number | null>(null)
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null) // Opcional - apenas para seleção automática
+  const [activePeople, setActivePeople] = useState<Set<string | null>>(new Set()) // Pessoas ativas para adicionar procedimentos
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [calculating, setCalculating] = useState(false)
   const [creating, setCreating] = useState(false)
   const [targetAmount, setTargetAmount] = useState('')
+  const [clinic, setClinic] = useState<Clinic | null>(null)
+  const [doctorId, setDoctorId] = useState<string>('')
 
   useEffect(() => {
     loadData()
@@ -97,6 +100,10 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
   const loadData = async () => {
     setLoading(true)
     try {
+      // Load clinic to get doctors
+      const clinicData = await clinicsApi.getById(clinicId)
+      setClinic(clinicData)
+
       // Load contract
       const contractData = await advancesApi.contracts.getById(clinicId, contractId)
       setContract(contractData)
@@ -110,7 +117,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       setDependents(eligibleData.dependents || [])
       setPatientAge(eligibleData.patientAge || null)
 
-      // Set default selected person to Titular
+      // Set default selected person to Titular (apenas para seleção automática)
       if (eligibleData.patientAge !== null || eligibleData.patientAge !== undefined) {
         setSelectedPerson({
           id: null,
@@ -131,44 +138,58 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     }
   }
 
-  // Filter procedures based on selected person's age and already billed procedures
-  const getFilteredProcedures = () => {
-    if (!selectedPerson) return []
-
-    const isAdult = selectedPerson.age !== null && selectedPerson.age >= 18
-
-    // First filter by age
-    let filtered = eligibleProcedures.filter(proc => {
-      if (isAdult) return true
-      return !proc.adultsOnly // Children can only see non-adults-only procedures
-    })
-
-    // Filter out procedures already billed for this specific person
-    const billedForPerson = billedProcedures.filter(bp => {
-      // Match by dependentId: null for titular, or specific dependent id
-      return bp.dependentId === selectedPerson.id
-    })
-
-    const billedCodesForPerson = new Set(billedForPerson.map(bp => bp.procedureCode))
-    
-    // Exclude already billed procedures for this person
-    filtered = filtered.filter(proc => !billedCodesForPerson.has(proc.procedureCode))
-
-    return filtered
+  // Verifica se um procedimento já foi faturado para uma pessoa específica
+  const isProcedureBilledForPerson = (procedureCode: string, dependentId: string | null) => {
+    return billedProcedures.some(bp => 
+      bp.procedureCode === procedureCode && bp.dependentId === dependentId
+    )
   }
 
-  // Get billed procedures for selected person
-  const getBilledForSelectedPerson = () => {
-    if (!selectedPerson) return []
+  // Obtém procedimentos disponíveis para uma pessoa específica (não faturados e não selecionados para ela)
+  const getAvailableProceduresForPerson = (personId: string | null) => {
+    const person = getAllPeople().find(p => p.id === personId)
+    if (!person) return { periciable: [], nonPericiable: [] }
+
+    const isAdult = person.age !== null && person.age >= 18
     
-    return billedProcedures.filter(bp => {
-      // Match by dependentId: null for titular, or specific dependent id
-      return bp.dependentId === selectedPerson.id
+    // Filtra procedimentos elegíveis para esta pessoa
+    const eligible = eligibleProcedures.filter(proc => {
+      // Verifica se é elegível para esta pessoa
+      const isEligible = proc.eligibleFor.some(ef => ef.id === personId)
+      if (!isEligible) return false
+
+      // Verifica restrição de idade
+      if (proc.adultsOnly && !isAdult) return false
+
+      // Verifica se já foi faturado para esta pessoa
+      if (isProcedureBilledForPerson(proc.procedureCode, personId)) return false
+
+      // Verifica se já está selecionado para esta pessoa
+      if (isProcedureSelected(proc.id, personId)) return false
+
+      return true
     })
+
+    return {
+      periciable: eligible.filter(p => p.isPericiable),
+      nonPericiable: eligible.filter(p => !p.isPericiable)
+    }
   }
 
-  // Check if procedure is selected
-  const isProcedureSelected = (procedureId: string) => {
+  // Obtém procedimentos já faturados para uma pessoa
+  const getBilledProceduresForPerson = (personId: string | null) => {
+    return billedProcedures.filter(bp => bp.dependentId === personId)
+  }
+
+  // Check if procedure is selected (pode estar selecionado para qualquer pessoa)
+  const isProcedureSelected = (procedureId: string, dependentId?: string | null) => {
+    if (dependentId !== undefined) {
+      // Verifica se está selecionado para uma pessoa específica
+      return selectedItems.some(item => 
+        item.procedureId === procedureId && item.dependentId === dependentId
+      )
+    }
+    // Verifica se está selecionado para qualquer pessoa
     return selectedItems.some(item => item.procedureId === procedureId)
   }
 
@@ -207,8 +228,17 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       }))
 
       console.log('[BillingWizard] Automatic selection calculated:', items.length, 'items')
-      setSelectedItems(items)
-      toast.success(`Seleção automática concluída: ${items.length} procedimentos selecionados`)
+      
+      // Adiciona a pessoa selecionada às pessoas ativas se não estiver
+      if (selectedPerson && !activePeople.has(selectedPerson.id)) {
+        const newActive = new Set(activePeople)
+        newActive.add(selectedPerson.id)
+        setActivePeople(newActive)
+      }
+      
+      // Adiciona os itens ao lote (não substitui, adiciona aos existentes)
+      setSelectedItems([...selectedItems, ...items])
+      toast.success(`Seleção automática concluída: ${items.length} procedimentos adicionados`)
     } catch (err: any) {
       console.error('[BillingWizard] Error calculating selection:', err)
       toast.error(err.message || 'Erro ao calcular seleção automática')
@@ -217,38 +247,47 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     }
   }
 
-  const handleToggleProcedure = (procedure: EligibleProcedure) => {
-    if (!selectedPerson) {
-      toast.error('Selecione para quem será a fatura primeiro')
+  // Adiciona procedimento ao lote para uma pessoa específica
+  const handleAddProcedureForPerson = (procedure: EligibleProcedure, personId: string | null) => {
+    const person = getAllPeople().find(p => p.id === personId)
+    if (!person) return
+
+    // Verifica se já está selecionado para esta pessoa
+    if (isProcedureSelected(procedure.id, personId)) {
+      // Remove se já estiver selecionado
+      const index = selectedItems.findIndex(
+        item => item.procedureId === procedure.id && item.dependentId === personId
+      )
+      if (index >= 0) {
+        handleRemoveItem(index)
+        toast.success(`${procedure.procedureDescription} removido de ${person.name}`)
+      }
       return
     }
 
-    // Check if already selected
-    const existingIndex = selectedItems.findIndex(item => item.procedureId === procedure.id)
-    
-    if (existingIndex >= 0) {
-      // Remove if already selected
-      handleRemoveItem(existingIndex)
+    // Verifica se já foi faturado
+    if (isProcedureBilledForPerson(procedure.procedureCode, personId)) {
+      toast.error(`Este procedimento já foi faturado para ${person.name}`)
       return
     }
 
-    // Check if procedure is adults only and if selected person is adult
+    // Verifica se procedimento é elegível para essa pessoa
+    const isEligible = procedure.eligibleFor.some(ef => ef.id === personId)
+    if (!isEligible) {
+      toast.error('Este procedimento não é elegível para esta pessoa')
+      return
+    }
+
+    // Verifica restrição de idade
     if (procedure.adultsOnly) {
-      const isAdult = selectedPerson.age !== null && selectedPerson.age >= 18
+      const isAdult = person.age !== null && person.age >= 18
       if (!isAdult) {
         toast.error('Este procedimento é exclusivo para adultos (18+ anos)')
         return
       }
     }
 
-    // Check if procedure is eligible for selected person
-    const isEligible = procedure.eligibleFor.some(ef => ef.id === selectedPerson.id)
-    if (!isEligible) {
-      toast.error('Este procedimento não é elegível para a pessoa selecionada')
-      return
-    }
-
-    // Add new item
+    // Adiciona ao lote
     const newItem: SelectedItem = {
       procedureId: procedure.id,
       procedureCode: procedure.procedureCode,
@@ -257,11 +296,12 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       unitValue: procedure.unitValue,
       quantity: 1,
       totalValue: procedure.unitValue,
-      dependentId: selectedPerson.id,
-      dependentName: selectedPerson.name,
+      dependentId: personId,
+      dependentName: person.name,
     }
 
     setSelectedItems([...selectedItems, newItem])
+    toast.success(`${procedure.procedureDescription} adicionado para ${person.name}`)
   }
 
   const handleRemoveItem = (index: number) => {
@@ -283,8 +323,8 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       return
     }
 
-    if (!selectedPerson) {
-      toast.error('Selecione para quem será a fatura')
+    if (!doctorId) {
+      toast.error('Selecione o médico para emitir o lote')
       return
     }
 
@@ -310,6 +350,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
           dependentId: item.dependentId,
         })),
         serviceDate: new Date().toISOString().split('T')[0],
+        doctorId: doctorId,
       })
 
       console.log('[BillingWizard] Batch created successfully:', result.batchNumber)
@@ -340,16 +381,6 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
   const selectedNonPericiable = selectedItems
     .filter((item) => !item.isPericiable)
     .reduce((sum, item) => sum + item.totalValue, 0)
-
-  // Get filtered procedures based on selected person
-  const filteredProcedures = getFilteredProcedures()
-  
-  // Separate by category
-  const periciableProcedures = filteredProcedures.filter((p) => p.isPericiable)
-  const nonPericiableProcedures = filteredProcedures.filter((p) => !p.isPericiable)
-  
-  // Get billed procedures for selected person
-  const billedForSelectedPerson = getBilledForSelectedPerson()
 
   // Get all available people (patient + dependents)
   const getAllPeople = (): Person[] => {
@@ -386,7 +417,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
         <DialogHeader>
           <DialogTitle>Assistente de Faturação</DialogTitle>
           <DialogDescription>
-            Selecione para quem será a fatura e escolha os procedimentos manualmente ou use a seleção automática
+            Selecione as pessoas e adicione procedimentos ao lote. Cada pessoa pode ter seus próprios procedimentos no mesmo lote.
           </DialogDescription>
         </DialogHeader>
 
@@ -427,10 +458,57 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
             </Card>
           )}
 
-          {/* Person Selection and Auto Selection */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Seleção de Pessoas Ativas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Selecione as Pessoas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label>Selecione as pessoas para adicionar procedimentos ao lote</Label>
+                <div className="flex flex-wrap gap-2">
+                  {getAllPeople().map((person) => {
+                    const isActive = activePeople.has(person.id)
+                    const selectedCount = selectedItems.filter(item => item.dependentId === person.id).length
+                    return (
+                      <Button
+                        key={person.id || 'titular'}
+                        type="button"
+                        variant={isActive ? "default" : "outline"}
+                        onClick={() => {
+                          const newActive = new Set(activePeople)
+                          if (isActive) {
+                            newActive.delete(person.id)
+                          } else {
+                            newActive.add(person.id)
+                          }
+                          setActivePeople(newActive)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        {person.name}
+                        {person.age !== null && ` (${person.age} anos)`}
+                        {isActive && <CheckCircle2 className="h-4 w-4" />}
+                        {selectedCount > 0 && (
+                          <Badge variant="secondary" className="ml-1">
+                            {selectedCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Selecione uma ou mais pessoas para ver e adicionar procedimentos disponíveis
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seleção Automática (Opcional) */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Faturar para *</Label>
+              <Label>Faturar para (Seleção Automática)</Label>
               <Select
                 value={selectedPerson ? `${selectedPerson.id || 'null'}|${selectedPerson.name}` : ''}
                 onValueChange={(value) => {
@@ -438,13 +516,11 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                   const person = getAllPeople().find(p => (p.id || 'null') === id && p.name === name)
                   if (person) {
                     setSelectedPerson(person)
-                    // Clear selected items when changing person
-                    setSelectedItems([])
                   }
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione para quem será a fatura" />
+                  <SelectValue placeholder="Selecione para seleção automática (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   {getAllPeople().map((person) => (
@@ -454,35 +530,24 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                   ))}
                 </SelectContent>
               </Select>
-              {selectedPerson && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {selectedPerson.age !== null && selectedPerson.age >= 18 
-                    ? 'Adulto - Todos os procedimentos disponíveis'
-                    : 'Criança - Apenas procedimentos não exclusivos para adultos'}
-                </p>
-              )}
             </div>
-            <div>
-              <Label>Valor Alvo do Lote (€) - Opcional</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
-                placeholder="0.00"
-                disabled={calculating || creating || !selectedPerson}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Deixe vazio para seleção manual
-              </p>
-            </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label>Valor Alvo do Lote (€) - Opcional</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={targetAmount}
+                  onChange={(e) => setTargetAmount(e.target.value)}
+                  placeholder="0.00"
+                  disabled={calculating || creating || !selectedPerson}
+                />
+              </div>
               <Button
                 type="button"
                 onClick={calculateSelection}
                 disabled={calculating || creating || !targetAmount || parseFloat(targetAmount) <= 0 || !selectedPerson}
-                className="w-full"
               >
                 {calculating ? (
                   <>
@@ -499,73 +564,105 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
             </div>
           </div>
 
+          {/* Seleção de Médico */}
+          <div>
+            <Label>Médico *</Label>
+            <Select
+              value={doctorId}
+              onValueChange={setDoctorId}
+              disabled={creating}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o médico" />
+              </SelectTrigger>
+              <SelectContent>
+                {clinic?.configuration?.doctors?.map((doctor) => (
+                  <SelectItem key={doctor.id} value={doctor.id}>
+                    {doctor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Obrigatório para emitir o lote
+            </p>
+          </div>
+
           <Separator />
 
-          {/* 3 Columns: Periciáveis | Não Periciáveis | Já Faturados */}
-          <div className="grid grid-cols-3 gap-4">
-            {/* Column 1: Periciáveis */}
-            <div className="flex flex-col">
-              <div className="mb-2">
-                <h3 className="text-sm font-semibold">Procedimentos Periciáveis</h3>
-                <p className="text-xs text-muted-foreground">
-                  {periciableProcedures.length} disponíveis
+          {/* Abas por Pessoa Ativa */}
+          {activePeople.size === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <p className="text-sm">Selecione pelo menos uma pessoa acima para começar</p>
+                  <p className="text-xs mt-2">
+                    Você pode selecionar múltiplas pessoas para criar um lote híbrido
                 </p>
               </div>
-              <ScrollArea className="h-[500px] border rounded-md p-4">
-                {!selectedPerson ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
-                      Selecione para quem será a fatura acima
-                    </p>
-                  </div>
-                ) : periciableProcedures.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {Array.from(activePeople).map((personId) => {
+                const person = getAllPeople().find(p => p.id === personId)
+                if (!person) return null
+
+                const available = getAvailableProceduresForPerson(personId)
+                const billed = getBilledProceduresForPerson(personId)
+                const selectedForPerson = selectedItems.filter(item => item.dependentId === personId)
+
+                return (
+                  <Card key={personId || 'titular'}>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        {person.name}
+                        {person.age !== null && ` (${person.age} anos)`}
+                        <Badge variant="outline">
+                          {selectedForPerson.length} selecionados
+                        </Badge>
+                        {person.age !== null && person.age >= 18 && (
+                          <Badge variant="secondary" className="text-xs">
+                            Adulto
+                          </Badge>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4">
+                        {/* Periciáveis */}
+                        <div>
+                          <h4 className="text-xs font-semibold mb-2">
+                            Periciáveis ({available.periciable.length} disponíveis)
+                          </h4>
+                          <ScrollArea className="h-[400px] border rounded-md p-2">
+                            {available.periciable.length === 0 ? (
+                              <p className="text-xs text-muted-foreground text-center py-8">
                       Nenhum procedimento periciável disponível
                     </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {periciableProcedures.map((proc) => {
-                      const isEligible = proc.eligibleFor.some(ef => ef.id === selectedPerson.id)
-                      const isSelected = isProcedureSelected(proc.id)
-                      
+                            ) : (
+                              <div className="space-y-1">
+                                {available.periciable.map((proc) => {
+                                  const isSelected = isProcedureSelected(proc.id, personId)
                       return (
                         <div
                           key={proc.id}
-                          onClick={() => isEligible && handleToggleProcedure(proc)}
-                          className={`flex items-center gap-2 p-3 border rounded-md transition-colors ${
+                                      onClick={() => handleAddProcedureForPerson(proc, personId)}
+                                      className={`flex items-center gap-2 p-2 border rounded cursor-pointer transition-colors ${
                             isSelected 
-                              ? 'bg-green-100 border-green-500 hover:bg-green-200 cursor-pointer' 
-                              : isEligible
-                              ? 'hover:bg-muted cursor-pointer'
-                              : 'opacity-50 cursor-not-allowed'
+                                          ? 'bg-green-100 border-green-500 hover:bg-green-200' 
+                                          : 'hover:bg-muted'
                           }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-medium truncate">{proc.procedureDescription}</div>
-                              <Badge variant="outline" className="text-xs flex-shrink-0">
-                                {proc.procedureCode}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs flex-shrink-0">
-                                Periciável
-                              </Badge>
-                              {proc.adultsOnly && (
-                                <Badge variant="secondary" className="text-xs flex-shrink-0 bg-orange-100">
-                                  Adultos
-                                </Badge>
-                              )}
-                              {isSelected && (
-                                <Badge variant="default" className="text-xs flex-shrink-0 bg-green-600">
-                                  Selecionado
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {formatCurrency(proc.unitValue)}
+                                        <div className="text-xs font-medium truncate">{proc.procedureDescription}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {proc.procedureCode} • {formatCurrency(proc.unitValue)}
                             </div>
                           </div>
+                                      {isSelected && (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                      )}
                         </div>
                       )
                     })}
@@ -574,66 +671,39 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
               </ScrollArea>
             </div>
 
-            {/* Column 2: Não Periciáveis */}
-            <div className="flex flex-col">
-              <div className="mb-2">
-                <h3 className="text-sm font-semibold">Procedimentos Não Periciáveis</h3>
-                <p className="text-xs text-muted-foreground">
-                  {nonPericiableProcedures.length} disponíveis
-                </p>
-              </div>
-              <ScrollArea className="h-[500px] border rounded-md p-4">
-                {!selectedPerson ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
-                      Selecione para quem será a fatura acima
-                    </p>
-                  </div>
-                ) : nonPericiableProcedures.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
+                        {/* Não Periciáveis */}
+                        <div>
+                          <h4 className="text-xs font-semibold mb-2">
+                            Não Periciáveis ({available.nonPericiable.length} disponíveis)
+                          </h4>
+                          <ScrollArea className="h-[400px] border rounded-md p-2">
+                            {available.nonPericiable.length === 0 ? (
+                              <p className="text-xs text-muted-foreground text-center py-8">
                       Nenhum procedimento não periciável disponível
                     </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {nonPericiableProcedures.map((proc) => {
-                      const isEligible = proc.eligibleFor.some(ef => ef.id === selectedPerson.id)
-                      const isSelected = isProcedureSelected(proc.id)
-                      
+                            ) : (
+                              <div className="space-y-1">
+                                {available.nonPericiable.map((proc) => {
+                                  const isSelected = isProcedureSelected(proc.id, personId)
                       return (
                         <div
                           key={proc.id}
-                          onClick={() => isEligible && handleToggleProcedure(proc)}
-                          className={`flex items-center gap-2 p-3 border rounded-md transition-colors ${
+                                      onClick={() => handleAddProcedureForPerson(proc, personId)}
+                                      className={`flex items-center gap-2 p-2 border rounded cursor-pointer transition-colors ${
                             isSelected 
-                              ? 'bg-green-100 border-green-500 hover:bg-green-200 cursor-pointer' 
-                              : isEligible
-                              ? 'hover:bg-muted cursor-pointer'
-                              : 'opacity-50 cursor-not-allowed'
+                                          ? 'bg-green-100 border-green-500 hover:bg-green-200' 
+                                          : 'hover:bg-muted'
                           }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-medium truncate">{proc.procedureDescription}</div>
-                              <Badge variant="outline" className="text-xs flex-shrink-0">
-                                {proc.procedureCode}
-                              </Badge>
-                              {proc.adultsOnly && (
-                                <Badge variant="secondary" className="text-xs flex-shrink-0 bg-orange-100">
-                                  Adultos
-                                </Badge>
-                              )}
-                              {isSelected && (
-                                <Badge variant="default" className="text-xs flex-shrink-0 bg-green-600">
-                                  Selecionado
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {formatCurrency(proc.unitValue)}
+                                        <div className="text-xs font-medium truncate">{proc.procedureDescription}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {proc.procedureCode} • {formatCurrency(proc.unitValue)}
                             </div>
                           </div>
+                                      {isSelected && (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                      )}
                         </div>
                       )
                     })}
@@ -642,53 +712,28 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
               </ScrollArea>
             </div>
 
-            {/* Column 3: Já Faturados */}
-            <div className="flex flex-col">
-              <div className="mb-2">
-                <h3 className="text-sm font-semibold">Já Faturados</h3>
-                <p className="text-xs text-muted-foreground">
-                  {billedForSelectedPerson.length} procedimentos
-                  {selectedPerson && ` para ${selectedPerson.name}`}
-                </p>
-              </div>
-              <ScrollArea className="h-[500px] border rounded-md p-4">
-                {!selectedPerson ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
-                      Selecione para quem será a fatura acima
-                    </p>
-                  </div>
-                ) : billedForSelectedPerson.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-sm">
-                      Nenhum procedimento já faturado para {selectedPerson.name}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {billedForSelectedPerson.map((item) => (
+                        {/* Já Faturados */}
+                        <div>
+                          <h4 className="text-xs font-semibold mb-2">
+                            Já Faturados ({billed.length})
+                          </h4>
+                          <ScrollArea className="h-[400px] border rounded-md p-2">
+                            {billed.length === 0 ? (
+                              <p className="text-xs text-muted-foreground text-center py-8">
+                                Nenhum procedimento faturado
+                              </p>
+                            ) : (
+                              <div className="space-y-1">
+                                {billed.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-2 p-3 border rounded-md bg-muted/50"
+                                    className="flex items-center gap-2 p-2 border rounded bg-muted/50"
                       >
                         <XCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium truncate">{item.procedureDescription}</div>
-                            <Badge variant="outline" className="text-xs flex-shrink-0">
-                              {item.procedureCode}
-                            </Badge>
-                            {item.isPericiable && (
-                              <Badge variant="secondary" className="text-xs flex-shrink-0">
-                                Periciável
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {item.dependentName || 'Titular'} • Qtd: {item.quantity} • {formatCurrency(item.totalValue)}
-                          </div>
+                                      <div className="text-xs font-medium truncate">{item.procedureDescription}</div>
                           <div className="text-xs text-muted-foreground">
-                            Lote: {item.batchNumber} • {new Date(item.serviceDate).toLocaleDateString('pt-PT')}
+                                        {item.procedureCode} • Lote: {item.batchNumber}
                           </div>
                         </div>
                       </div>
@@ -698,6 +743,12 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
               </ScrollArea>
             </div>
           </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
 
           {/* Selected Items Summary - Always visible with real-time calculation */}
           <Card>
@@ -715,9 +766,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                 <div className="text-center py-8 text-muted-foreground">
                   <p>Nenhum procedimento selecionado</p>
                   <p className="text-xs mt-1">
-                    {selectedPerson 
-                      ? 'Use a seleção automática ou clique no botão + nos procedimentos acima'
-                      : 'Selecione para quem será a fatura primeiro'}
+                    Selecione pessoas acima e adicione procedimentos ao lote
                   </p>
                 </div>
               ) : (
@@ -792,7 +841,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
           <Button
             type="button"
             onClick={handleCreateBatch}
-            disabled={selectedItems.length === 0 || creating || !selectedPerson}
+            disabled={selectedItems.length === 0 || creating || !doctorId}
             className="bg-green-600 hover:bg-green-700"
           >
             {creating ? (
@@ -812,3 +861,4 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     </Dialog>
   )
 }
+

@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { advancesApi } from '@/services/api'
+import { advancesApi, patientsApi } from '@/services/api'
 import { toast } from 'sonner'
 import { AdvanceContract, ContractDependent, DependentRelationship } from '@/lib/types'
 import { Plus, X, Loader2 } from 'lucide-react'
@@ -58,8 +58,9 @@ interface AdvanceContractFormProps {
 export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceContractFormProps) {
   const [insuranceProviders, setInsuranceProviders] = useState<any[]>([])
   const [loadingProviders, setLoadingProviders] = useState(true)
-  const [dependents, setDependents] = useState<Partial<ContractDependent>[]>([])
+  const [dependents, setDependents] = useState<Partial<ContractDependent & { code?: string }>[]>([])
   const [saving, setSaving] = useState(false)
+  const [loadingPatientCodes, setLoadingPatientCodes] = useState<Set<number>>(new Set())
 
   const isEdit = !!contract
   const schema = createSchema(isEdit)
@@ -141,11 +142,55 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
       ...dependents,
       {
         name: '',
+        code: '',
         relationship: 'OUTRO' as DependentRelationship,
         birthDate: '',
         age: undefined,
       },
     ])
+  }
+
+  const handleDependentCodeChange = async (index: number, code: string) => {
+    const updated = [...dependents]
+    updated[index] = { ...updated[index], code: code.replace(/\D/g, '').slice(0, 6) }
+    setDependents(updated)
+
+    // Se o código tiver 1-6 dígitos, buscar o paciente
+    const cleanCode = code.replace(/\D/g, '')
+    if (cleanCode.length >= 1 && cleanCode.length <= 6) {
+      setLoadingPatientCodes(prev => new Set(prev).add(index))
+      try {
+        const patient = await patientsApi.getByCode(clinicId, cleanCode)
+        if (patient) {
+          const updatedWithName = [...dependents]
+          updatedWithName[index] = { 
+            ...updatedWithName[index], 
+            code: cleanCode,
+            name: patient.name || '',
+            birthDate: patient.birthDate ? formatDateForInput(patient.birthDate) : updatedWithName[index].birthDate,
+            age: patient.birthDate ? calculateAge(patient.birthDate) : updatedWithName[index].age,
+          }
+          setDependents(updatedWithName)
+          toast.success(`Nome preenchido automaticamente: ${patient.name}`)
+        }
+      } catch (err: any) {
+        // 404 é esperado quando paciente não existe - não mostrar erro
+        if (err?.status !== 404) {
+          console.error('Erro ao buscar paciente:', err)
+        }
+      } finally {
+        setLoadingPatientCodes(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(index)
+          return newSet
+        })
+      }
+    } else if (cleanCode.length === 0) {
+      // Se o código foi limpo, limpar também o nome se foi preenchido automaticamente
+      const updated = [...dependents]
+      updated[index] = { ...updated[index], code: '', name: '' }
+      setDependents(updated)
+    }
   }
 
   const removeDependent = (index: number) => {
@@ -440,7 +485,22 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                 ) : (
                   <div className="space-y-3">
                     {dependents.map((dep, index) => (
-                      <div key={index} className="grid grid-cols-5 gap-2 items-end">
+                      <div key={index} className="grid grid-cols-6 gap-2 items-end">
+                        <div>
+                          <Label className="text-xs">Código</Label>
+                          <div className="relative">
+                            <Input
+                              value={dep.code || ''}
+                              onChange={(e) => handleDependentCodeChange(index, e.target.value)}
+                              placeholder="Código"
+                              className="font-mono text-xs"
+                              maxLength={6}
+                            />
+                            {loadingPatientCodes.has(index) && (
+                              <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
                         <div>
                           <Label className="text-xs">Nome *</Label>
                           <Input
@@ -491,14 +551,16 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeDependent(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeDependent(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

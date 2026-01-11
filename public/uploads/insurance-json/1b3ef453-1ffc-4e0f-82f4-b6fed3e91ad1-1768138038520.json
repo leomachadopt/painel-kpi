@@ -1,0 +1,319 @@
+{
+  "procedures": [
+    {
+      "code": "61500",
+      "description": "PROT.REM.ACRÍLICO-PLACA COM 1 DENTE PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 47.25
+    },
+    {
+      "code": "61501",
+      "description": "1 DENTE PROT.REM.ACRÍLICO-PLACA COM 2 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 51.19
+    },
+    {
+      "code": "61502",
+      "description": "2 DENTES PROT.REM.ACRÍLICO-PLACA COM 3 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 55.13
+    },
+    {
+      "code": "61503",
+      "description": "3 DENTES PROT.REM.ACRÍLICO-PLACA COM 4 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 59.06
+    },
+    {
+      "code": "61504",
+      "description": "4 DENTES PROT.REM.ACRÍLICO-PLACA COM 5 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 70.88
+    },
+    {
+      "code": "61505",
+      "description": "5 DENTES PROT.REM.ACRÍLICO-PLACA COM 6 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 78.75
+    },
+    {
+      "code": "61506",
+      "description": "6 DENTES PROT.REM.ACRÍLICO-PLACA COM 2/ano 7 DENTES independentemente PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 82.69
+    },
+    {
+      "code": "61507",
+      "description": "7 DENTES independentemente PROT.REM.ACRÍLICO-PLACA COM do número de dentes 8 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 90.56
+    },
+    {
+      "code": "61508",
+      "description": "8 DENTES PROT.REM.ACRÍLICO-PLACA COM 9 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 98.44
+    },
+    {
+      "code": "61509",
+      "description": "9 DENTES PROT.REM.ACRÍLICO-PLACA COM 10 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 106.31
+    },
+    {
+      "code": "61510",
+      "description": "10 DENTES PROT.REM.ACRÍLICO-PLACA COM 11 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 114.19
+    },
+    {
+      "code": "61511",
+      "description": "11 DENTES PROT.REM.ACRÍLICO-PLACA COM 12 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 122.06
+    },
+    {
+      "code": "61512",
+      "description": "12 DENTES PROT.REM.ACRÍLICO-PLACA COM 13 DENTES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 129.94
+    },
+    {
+      "code": "61513",
+      "description": "13 DENTES PROT.REM.ACRÍLICO-PLACA COM 14 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 137.81
+    },
+    {
+      "code": "61525",
+      "description": "PLACA COM 12 DENTES COROA METÁLICA",
+      "value": 59.06
+    },
+    {
+      "code": "61526",
+      "description": "14 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 2 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 110.25
+    },
+    {
+      "code": "61527",
+      "description": "PLACA COM 2 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 3 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 118.13
+    },
+    {
+      "code": "61528",
+      "description": "PLACA COM 3 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 4 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 126.0
+    },
+    {
+      "code": "61529",
+      "description": "PLACA COM 4 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 5 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 141.75
+    },
+    {
+      "code": "61530",
+      "description": "PLACA COM 5 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 6 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 165.38
+    },
+    {
+      "code": "61531",
+      "description": "PLACA COM 6 DENTES PROT.REM.CROMO-COBALTO- independentemente PLACA COM 7 DENTES do número de dentes PROT.REM.CROMO-COBALTO-",
+      "value": 177.19
+    },
+    {
+      "code": "61532",
+      "description": "PLACA COM 7 DENTES do número de dentes PROT.REM.CROMO-COBALTO- PLACA COM 8 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 192.94
+    },
+    {
+      "code": "61533",
+      "description": "PLACA COM 8 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 9 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 200.81
+    },
+    {
+      "code": "61534",
+      "description": "PLACA COM 9 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 10 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 212.63
+    },
+    {
+      "code": "61535",
+      "description": "PLACA COM 10 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 11 DENTES PROT.REM.CROMO-COBALTO-",
+      "value": 220.5
+    },
+    {
+      "code": "61536",
+      "description": "PLACA COM 11 DENTES PROT.REM.CROMO-COBALTO- PLACA COM 12 DENTES",
+      "value": 232.31
+    },
+    {
+      "code": "61537",
+      "description": "COROA METALO-CERÂMICA",
+      "value": 105.0
+    },
+    {
+      "code": "61555",
+      "description": "COROA CERAMICA PURA PROT.FIXA-ELEMENTO PARA",
+      "value": 157.5
+    },
+    {
+      "code": "61556",
+      "description": "PROT.FIXA-ELEMENTO PARA PONTE",
+      "value": 78.75
+    },
+    {
+      "code": "61560",
+      "description": "BARRA AÇO INOXIDÁVEL",
+      "value": 55.13
+    },
+    {
+      "code": "61561",
+      "description": "CONSERTO DE PRÓTESE REBASAMENTO EM PRÓTESE",
+      "value": 11.81
+    },
+    {
+      "code": "61562",
+      "description": "REBASAMENTO EM PRÓTESE DIRETO OU INDIRETO ACRESCENTAR 1 DENTE EM",
+      "value": 39.38
+    },
+    {
+      "code": "61563",
+      "description": "DIRETO OU INDIRETO ACRESCENTAR 1 DENTE EM PROTESE ACRILICO ACRESCENTAR+DE 1 DENTE EM",
+      "value": 11.81
+    },
+    {
+      "code": "61564",
+      "description": "ACRESCENTAR+DE 1 DENTE EM PROTESE ACRÍLICO, CD DENTE +",
+      "value": 11.81
+    },
+    {
+      "code": "61565",
+      "description": "GANCHO ACRESCENTAR SELA+1 DENTE EM",
+      "value": 11.81
+    },
+    {
+      "code": "61566",
+      "description": "ACRESCENTAR SELA+1 DENTE EM PROTESE CROMO-COBALTO ACRESCENTAR+1 DENTE PROT",
+      "value": 39.38
+    },
+    {
+      "code": "61567",
+      "description": "ACRESCENTAR+1 DENTE PROT CROMO-COBALTO, CD DENTE+ APARELHO DE INTERPOSIÇÃO",
+      "value": 23.63
+    },
+    {
+      "code": "61568",
+      "description": "APARELHO DE INTERPOSIÇÃO MAXILAR CONTROLO DA RELAÇÃO OCLUSAL",
+      "value": 63.0
+    },
+    {
+      "code": "61569",
+      "description": "MAXILAR CONTROLO DA RELAÇÃO OCLUSAL E DO ESTADO CLÍNICO EM DTM ORTODONTIA - APARELHO",
+      "value": 23.63
+    },
+    {
+      "code": "61590",
+      "description": "E DO ESTADO CLÍNICO EM DTM ORTODONTIA - APARELHO REMOVÍVEL ORTODONTIA - APARELHO FIXO",
+      "value": 157.5
+    },
+    {
+      "code": "61591",
+      "description": "REMOVÍVEL ORTODONTIA - APARELHO FIXO COMPLETO",
+      "value": 189.0
+    },
+    {
+      "code": "61851",
+      "description": "CONSULTA ODONTO- ESTOMATOLOGICA",
+      "value": 15.75
+    },
+    {
+      "code": "61852",
+      "description": "ESTOMATOLOGICA RESTAURAÇÃO",
+      "value": 19.69
+    },
+    {
+      "code": "61853",
+      "description": "ENDODONTIA 1ª SESSÃO ENDODONTIA COM OBTURAÇÃO pode ser faturado, após ter sido",
+      "value": 15.75
+    },
+    {
+      "code": "61854",
+      "description": "ENDODONTIA COM OBTURAÇÃO pode ser faturado, após ter sido DE CANAIS faturado o código 61853 para o",
+      "value": 27.56
+    },
+    {
+      "code": "61855",
+      "description": "DE CANAIS faturado o código 61853 para o DESTARTARIZAÇÃO BIMAXILAR DESTARTARIZAÇÃO BIMAXILAR E",
+      "value": 15.75
+    },
+    {
+      "code": "61856",
+      "description": "CURETAGEM SUB-GENGIVAL código 61855 GENGIVECTOMIA FERULIZAÇÕES/ESTABILIZAÇÃO DE",
+      "value": 15.75
+    },
+    {
+      "code": "61857",
+      "description": "FERULIZAÇÕES/ESTABILIZAÇÃO DE PEÇAS DENTÁRIAS",
+      "value": 23.63
+    },
+    {
+      "code": "61858",
+      "description": "EXODONTIA",
+      "value": 14.18
+    },
+    {
+      "code": "61860",
+      "description": "EXODONTIA DE DENTES INCLUSOS",
+      "value": 39.38
+    },
+    {
+      "code": "61862",
+      "description": "DESTARTARIZAÇÃO BIMAXILAR E CURETAGEM SUB-GENGIVAL código 61855",
+      "value": 23.63
+    },
+    {
+      "code": "61864",
+      "description": "APICECTOMIA",
+      "value": 35.49
+    },
+    {
+      "code": "61866",
+      "description": "FRENECTOMIA",
+      "value": 27.56
+    },
+    {
+      "code": "61867",
+      "description": "EXCISÃO DE BRIDAS GENGIVAIS ABLAÇÃO DE QUISTOS DENTÁRIOS",
+      "value": 23.63
+    },
+    {
+      "code": "61868",
+      "description": "ABLAÇÃO DE QUISTOS DENTÁRIOS OU PARADENTÁRIOS CURETAGEM FOCOS OSTEITE",
+      "value": 27.56
+    },
+    {
+      "code": "61871",
+      "description": "CURETAGEM FOCOS OSTEITE /NÃO SIMULTANEA EXODONTIA INCISÃO E DRENAGEM DE",
+      "value": 11.81
+    },
+    {
+      "code": "61872",
+      "description": "INCISÃO E DRENAGEM DE ABCESSOS DE ORIGEM DENTÁRIA,",
+      "value": 11.81
+    },
+    {
+      "code": "61874",
+      "description": "RADIOGRAFIA DENTÁRIA ORTODONTIA-CONTROLO DE",
+      "value": 2.36
+    },
+    {
+      "code": "61877",
+      "description": "COMPLETO ORTOPANTOMOGRAFIA",
+      "value": 9.24
+    },
+    {
+      "code": "61878",
+      "description": "ORTODONTIA-CONTROLO DE APARELHO REMOVIVEL ORTODONTIA-CONTROLO DE",
+      "value": 9.85
+    },
+    {
+      "code": "61879",
+      "description": "APARELHO REMOVIVEL ORTODONTIA-CONTROLO DE APARELHO FIXO ORTODONTIA- APLICAÇÃO DE",
+      "value": 15.75
+    },
+    {
+      "code": "61880",
+      "description": "APARELHO FIXO ORTODONTIA- APLICAÇÃO DE NOVOS ARCOS EM APARELHO EXÉRESE DE EPULIDES,RANULAS",
+      "value": 19.69
+    },
+    {
+      "code": "61881",
+      "description": "NOVOS ARCOS EM APARELHO EXÉRESE DE EPULIDES,RANULAS OU TUMORES DE TECIDOS MOLES PROT.REM.ACRÍLICO-PLACA COM",
+      "value": 27.56
+    }
+  ]
+}

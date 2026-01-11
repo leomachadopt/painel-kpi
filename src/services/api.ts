@@ -701,6 +701,7 @@ export const advancesApi = {
     createBillingBatchAuto: (clinicId: string, contractId: string, data: {
       targetAmount: number
       serviceDate?: string
+      doctorId: string
     }) =>
       apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-batch/auto`, {
         method: 'POST',
@@ -719,6 +720,7 @@ export const advancesApi = {
         dependentId: string | null
       }>
       serviceDate?: string
+      doctorId: string
     }) =>
       apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-batch/manual`, {
         method: 'POST',

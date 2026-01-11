@@ -44,11 +44,13 @@ import { Badge } from '@/components/ui/badge'
 import { usePermissions } from '@/hooks/usePermissions'
 import { AdvanceContractForm } from '@/components/advances/AdvanceContractForm'
 import { BillingWizard } from '@/components/advances/BillingWizard'
+import useDataStore from '@/stores/useDataStore'
 
 export default function Advances() {
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
   const { canView, canEdit } = usePermissions()
+  const { reloadAdvanceInvoiceEntries } = useDataStore()
   const [contracts, setContracts] = useState<AdvanceContract[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -151,10 +153,14 @@ export default function Advances() {
     loadContracts()
   }
 
-  const handleBillingClose = () => {
+  const handleBillingClose = async () => {
     setShowBillingWizard(false)
     setBillingContractId(null)
     loadContracts()
+    // Recarregar dados do relatório de fatura de adiantamento
+    if (clinicId) {
+      await reloadAdvanceInvoiceEntries(clinicId)
+    }
   }
 
   const handleViewBatches = async (contract: AdvanceContract) => {
@@ -215,6 +221,8 @@ export default function Advances() {
       }
       // Refresh contracts to update billed amounts
       loadContracts()
+      // Recarregar dados do relatório de fatura de adiantamento
+      await reloadAdvanceInvoiceEntries(clinicId)
     } catch (err: any) {
       toast.error(err.message || 'Erro ao excluir lote')
     } finally {

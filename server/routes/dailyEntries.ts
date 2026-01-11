@@ -4005,24 +4005,87 @@ router.delete('/order-items/:clinicId/:itemId', async (req, res) => {
 router.get('/advance-invoice/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
-    const result = await query(
+    
+    // Get manual entries
+    const manualEntriesResult = await query(
       `SELECT * FROM daily_advance_invoice_entries WHERE clinic_id = $1 ORDER BY date DESC`,
       [clinicId]
     )
 
-    res.json(
-      result.rows.map((row) => ({
-        id: row.id,
-        date: row.date,
-        patientName: row.patient_name,
-        code: row.code,
-        doctorId: row.doctor_id || null,
-        billedToThirdParty: row.billed_to_third_party || false,
-        thirdPartyCode: row.third_party_code || null,
-        thirdPartyName: row.third_party_name || null,
-        value: parseFloat(row.value),
-      }))
+    const manualEntries = manualEntriesResult.rows.map((row) => ({
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      doctorId: row.doctor_id || null,
+      billedToThirdParty: row.billed_to_third_party || false,
+      thirdPartyCode: row.third_party_code || null,
+      thirdPartyName: row.third_party_name || null,
+      value: parseFloat(row.value),
+    }))
+
+    // Get billing batches (lotes) issued/paid for this clinic
+    // Group items by person (dependent_id) within each batch
+    // IMPORTANT: Only returns batches that exist in billing_batches table
+    // If a batch is deleted, it won't appear here due to INNER JOIN
+    const batchesResult = await query(
+      `SELECT 
+        bb.id as batch_id,
+        bb.batch_number,
+        bb.doctor_id,
+        bb.issued_at,
+        bb.contract_id,
+        ac.patient_id,
+        p.code as patient_code,
+        p.name as patient_name,
+        bi.dependent_id,
+        cd.name as dependent_name,
+        SUM(bi.total_value) as total_value
+       FROM billing_batches bb
+       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+       INNER JOIN patients p ON ac.patient_id = p.id
+       INNER JOIN billing_items bi ON bb.id = bi.batch_id
+       LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
+       WHERE ac.clinic_id = $1
+         AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')
+         AND bi.status != 'REMOVED'
+       GROUP BY bb.id, bb.batch_number, bb.doctor_id, bb.issued_at, bb.contract_id, 
+                ac.patient_id, p.code, p.name, bi.dependent_id, cd.name
+       ORDER BY bb.issued_at DESC`,
+      [clinicId]
     )
+    
+    console.log(`[Advance Invoice Report] Found ${batchesResult.rows.length} batch groups for clinic ${clinicId}`)
+
+    // Convert batches to DailyAdvanceInvoiceEntry format
+    const batchEntries = batchesResult.rows.map((row) => {
+      const isDependent = row.dependent_id !== null
+      // Convert issued_at timestamp to date string
+      let dateStr = new Date().toISOString().split('T')[0]
+      if (row.issued_at) {
+        const issuedDate = new Date(row.issued_at)
+        dateStr = issuedDate.toISOString().split('T')[0]
+      }
+      
+      return {
+        id: `batch-${row.batch_id}-${row.dependent_id || 'titular'}`,
+        date: dateStr,
+        patientName: isDependent ? row.dependent_name : row.patient_name,
+        code: row.patient_code, // Always use patient code
+        doctorId: row.doctor_id || null,
+        billedToThirdParty: isDependent, // True if it's a dependent
+        thirdPartyCode: isDependent ? null : null, // Dependents don't have separate codes
+        thirdPartyName: isDependent ? row.dependent_name : null,
+        value: parseFloat(row.total_value || '0'),
+        batchNumber: row.batch_number || null, // Número do lote
+        batchId: row.batch_id || null, // ID do lote
+      }
+    })
+
+    // Combine manual entries and batch entries
+    const allEntries = [...manualEntries, ...batchEntries]
+
+    res.json(allEntries)
   } catch (error) {
     console.error('Get advance invoice entries error:', error)
     res.status(500).json({ error: 'Failed to fetch advance invoice entries' })

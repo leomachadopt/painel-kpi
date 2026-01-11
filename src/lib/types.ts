@@ -263,6 +263,8 @@ export interface DailyAdvanceInvoiceEntry {
   thirdPartyCode?: string | null
   thirdPartyName?: string | null
   value: number
+  batchNumber?: string | null // Número do lote (apenas para entradas de lote)
+  batchId?: string | null // ID do lote (apenas para entradas de lote)
 }
 
 export interface AccountsPayableEntry {

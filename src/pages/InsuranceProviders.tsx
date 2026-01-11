@@ -36,7 +36,9 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { InsuranceProviderForm } from '@/components/advances/InsuranceProviderForm'
 import { ExtractedProceduresView } from '@/components/advances/ExtractedProceduresView'
 import { UploadPDFDialog } from '@/components/advances/UploadPDFDialog'
-import { FileText, Upload } from 'lucide-react'
+import { UploadJSONDialog } from '@/components/advances/UploadJSONDialog'
+import { ProcedureMappingReview } from '@/components/advances/ProcedureMappingReview'
+import { FileText, Upload, FileCode } from 'lucide-react'
 
 export default function InsuranceProviders() {
   const { user } = useAuthStore()
@@ -56,6 +58,16 @@ export default function InsuranceProviders() {
   const [providerDocuments, setProviderDocuments] = useState<Record<string, any[]>>({})
   const [showUploadPDF, setShowUploadPDF] = useState(false)
   const [uploadPDFProvider, setUploadPDFProvider] = useState<InsuranceProvider | null>(null)
+  const [showUploadJSON, setShowUploadJSON] = useState(false)
+  const [uploadJSONProvider, setUploadJSONProvider] = useState<InsuranceProvider | null>(null)
+  const [showMappingReview, setShowMappingReview] = useState(false)
+  const [selectedMappingDocumentId, setSelectedMappingDocumentId] = useState<string | null>(null)
+  const [selectedMappingProvider, setSelectedMappingProvider] = useState<InsuranceProvider | null>(null)
+  const [providerProcedureCounts, setProviderProcedureCounts] = useState<Record<string, {
+    approved: number
+    unapproved: number
+    total: number
+  }>>({})
 
   const canManageProviders = canEdit('canManageInsuranceProviders')
 
@@ -64,6 +76,20 @@ export default function InsuranceProviders() {
       loadProviders()
     }
   }, [clinicId])
+
+  useEffect(() => {
+    if (providers.length > 0 && clinicId) {
+      loadProcedureCounts()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providers.length, clinicId])
+
+  useEffect(() => {
+    if (providers.length > 0 && clinicId) {
+      loadProcedureCounts()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providers.length, clinicId])
 
   const loadProviders = async () => {
     if (!clinicId) return
@@ -137,6 +163,89 @@ export default function InsuranceProviders() {
   const handleUploadPDFClose = () => {
     setShowUploadPDF(false)
     setUploadPDFProvider(null)
+  }
+
+  const handleUploadJSON = (provider: InsuranceProvider) => {
+    setUploadJSONProvider(provider)
+    setShowUploadJSON(true)
+  }
+
+  const handleUploadJSONClose = () => {
+    setShowUploadJSON(false)
+    setUploadJSONProvider(null)
+    loadProviders() // Recarregar para mostrar o novo documento
+    loadProcedureCounts() // Recarregar contagens
+  }
+
+  const loadProcedureCounts = async () => {
+    if (!clinicId) return
+
+    const counts: Record<string, { approved: number; unapproved: number; total: number }> = {}
+    
+    for (const provider of providers) {
+      try {
+        const token = localStorage.getItem('kpi_token')
+        const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
+        const response = await fetch(`${API_BASE_URL}/insurance/${provider.id}/procedure-counts`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          counts[provider.id] = {
+            approved: data.approved || 0,
+            unapproved: data.unapproved || 0,
+            total: data.total || 0
+          }
+        } else {
+          counts[provider.id] = { approved: 0, unapproved: 0, total: 0 }
+        }
+      } catch (err) {
+        console.error(`Error loading procedure count for provider ${provider.id}:`, err)
+        counts[provider.id] = { approved: 0, unapproved: 0, total: 0 }
+      }
+    }
+
+    setProviderProcedureCounts(counts)
+  }
+
+  const handleViewMappings = async (provider: InsuranceProvider) => {
+    try {
+      const token = localStorage.getItem('kpi_token')
+      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
+      const response = await fetch(`${API_BASE_URL}/insurance/${provider.id}/documents?clinicId=${clinicId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) throw new Error('Erro ao carregar documentos')
+
+      const docs = await response.json()
+
+      if (docs.length === 0) {
+        toast.info('Nenhum documento encontrado para esta operadora')
+        return
+      }
+
+      // Get the most recent completed document
+      const completedDoc = docs.find((d: any) => d.processing_status === 'COMPLETED')
+
+      if (!completedDoc) {
+        toast.info('Nenhum documento processado encontrado')
+        return
+      }
+
+      setSelectedMappingDocumentId(completedDoc.id)
+      setSelectedMappingProvider(provider)
+      setShowMappingReview(true)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar mapeamentos')
+    }
   }
 
   const handleViewDocuments = async (provider: InsuranceProvider) => {
@@ -235,9 +344,8 @@ export default function InsuranceProviders() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Código</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
+                    <TableHead className="text-center">Aprovados</TableHead>
+                    <TableHead className="text-center">Não Aprovados</TableHead>
                     <TableHead>Documentos</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -247,11 +355,18 @@ export default function InsuranceProviders() {
                     <TableRow key={provider.id}>
                       <TableCell className="font-medium">{provider.name}</TableCell>
                       <TableCell>{provider.code || '-'}</TableCell>
-                      <TableCell>{provider.contactName || '-'}</TableCell>
-                      <TableCell>{provider.contactEmail || '-'}</TableCell>
-                      <TableCell>{provider.contactPhone || '-'}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="font-semibold text-green-600">
+                          {providerProcedureCounts[provider.id]?.approved || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="font-semibold text-orange-600">
+                          {providerProcedureCounts[provider.id]?.unapproved || 0}
+                        </span>
+                      </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -264,11 +379,20 @@ export default function InsuranceProviders() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewDocuments(provider)}
-                            title="Ver procedimentos extraídos"
+                            onClick={() => handleUploadJSON(provider)}
+                            title="Carregar procedimentos de arquivo JSON"
+                          >
+                            <FileCode className="h-4 w-4 mr-1" />
+                            Carregar JSON
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewMappings(provider)}
+                            title="Ver pareamento realizado"
                           >
                             <FileText className="h-4 w-4 mr-1" />
-                            Ver Procedimentos
+                            Ver Pareamento
                           </Button>
                         </div>
                       </TableCell>
@@ -353,6 +477,17 @@ export default function InsuranceProviders() {
         />
       )}
 
+      {/* Upload JSON Dialog */}
+      {showUploadJSON && uploadJSONProvider && clinicId && (
+        <UploadJSONDialog
+          providerId={uploadJSONProvider.id}
+          providerName={uploadJSONProvider.name}
+          clinicId={clinicId}
+          open={showUploadJSON}
+          onClose={handleUploadJSONClose}
+        />
+      )}
+
       {/* Extracted Procedures View Dialog */}
       {showExtractedProcedures && selectedDocumentId && (
         <ExtractedProceduresView
@@ -360,6 +495,21 @@ export default function InsuranceProviders() {
           onClose={() => {
             setShowExtractedProcedures(false)
             setSelectedDocumentId(null)
+          }}
+        />
+      )}
+
+      {/* Procedure Mapping Review Dialog */}
+      {showMappingReview && selectedMappingDocumentId && selectedMappingProvider && clinicId && (
+        <ProcedureMappingReview
+          documentId={selectedMappingDocumentId}
+          providerId={selectedMappingProvider.id}
+          clinicId={clinicId}
+          onClose={() => {
+            setShowMappingReview(false)
+            setSelectedMappingDocumentId(null)
+            setSelectedMappingProvider(null)
+            loadProcedureCounts() // Recarregar contagens
           }}
         />
       )}
