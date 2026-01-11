@@ -187,7 +187,7 @@ export async function getUserPermissions(
     can_manage_insurance_providers: perms.can_manage_insurance_providers,
     type_can_view_advances: typeof perms.can_view_advances,
   })
-  const result = {
+  const permissions = {
     canViewDashboardOverview: perms.can_view_dashboard_overview || false,
     canViewDashboardFinancial: perms.can_view_dashboard_financial || false,
     canViewDashboardCommercial: perms.can_view_dashboard_commercial || false,
@@ -237,12 +237,12 @@ export async function getUserPermissions(
     canManageInsuranceProviders: perms.can_manage_insurance_providers || false,
   }
   console.log('getUserPermissions - Final permissions object includes:', {
-    canViewAdvances: result.canViewAdvances,
-    canEditAdvances: result.canEditAdvances,
-    canBillAdvances: result.canBillAdvances,
-    canManageInsuranceProviders: result.canManageInsuranceProviders,
+    canViewAdvances: permissions.canViewAdvances,
+    canEditAdvances: permissions.canEditAdvances,
+    canBillAdvances: permissions.canBillAdvances,
+    canManageInsuranceProviders: permissions.canManageInsuranceProviders,
   })
-  return result
+  return permissions
 }
 
 function createEmptyPermissions(): UserPermissions {
