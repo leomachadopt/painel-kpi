@@ -108,8 +108,16 @@ export default function Collaborators() {
     const legacyPerms = collaborator.permissions || {}
     console.log('Loading permissions for collaborator:', collaborator.name)
     console.log('Legacy permissions from API:', legacyPerms)
+    console.log('Sample permission values:', {
+      canEditFinancial: legacyPerms.canEditFinancial,
+      canEditAligners: legacyPerms.canEditAligners,
+      canEditConsultations: legacyPerms.canEditConsultations,
+      canEditPatients: legacyPerms.canEditPatients,
+      typeOfCanEditFinancial: typeof legacyPerms.canEditFinancial,
+    })
     const resourcePerms = mapLegacyPermissionsToResources(legacyPerms as UserPermissions)
     console.log('Converted resource permissions:', resourcePerms)
+    console.log('Resource permissions count:', Object.keys(resourcePerms).length)
     setResourcePermissions(resourcePerms)
     setShowPermissionsModal(true)
   }

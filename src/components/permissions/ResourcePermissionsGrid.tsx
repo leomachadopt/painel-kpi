@@ -73,6 +73,7 @@ export function ResourcePermissionsGrid({
           <tbody>
             {RESOURCE_PERMISSIONS.map((resource) => {
               const currentLevel = permissions[resource.id] || 'DENIED'
+              console.log(`Resource ${resource.id}: currentLevel = ${currentLevel}, permissions object:`, permissions)
               return (
                 <tr
                   key={resource.id}

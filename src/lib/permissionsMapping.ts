@@ -356,55 +356,68 @@ export function mapLegacyPermissionsToResources(
 ): ResourcePermissions {
   const result: ResourcePermissions = {}
 
+  console.log('mapLegacyPermissionsToResources - Input:', legacyPermissions)
+
   for (const resource of RESOURCE_PERMISSIONS) {
     let hasAnyPermission = false
-    let hasFullPermission = false
 
     // Check if user has any permission for this resource
+    // Handle both true and truthy values (in case of null/undefined from DB)
     resource.mapsTo.view?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
+        console.log(`Resource ${resource.id}: Found view permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.edit?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
-        hasFullPermission = true
+        console.log(`Resource ${resource.id}: Found edit permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.create?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
-        hasFullPermission = true
+        console.log(`Resource ${resource.id}: Found create permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.delete?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
-        hasFullPermission = true
+        console.log(`Resource ${resource.id}: Found delete permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.export?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
+        console.log(`Resource ${resource.id}: Found export permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.bill?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
-        hasFullPermission = true
+        console.log(`Resource ${resource.id}: Found bill permission ${perm} = ${value}`)
       }
     })
     resource.mapsTo.manage?.forEach((perm) => {
-      if (legacyPermissions[perm]) {
+      const value = legacyPermissions[perm]
+      if (value === true || value === 1) {
         hasAnyPermission = true
-        hasFullPermission = true
+        console.log(`Resource ${resource.id}: Found manage permission ${perm} = ${value}`)
       }
     })
 
     result[resource.id] = hasAnyPermission ? 'ALLOWED' : 'DENIED'
+    console.log(`Resource ${resource.id}: ${hasAnyPermission ? 'ALLOWED' : 'DENIED'}`)
   }
 
+  console.log('mapLegacyPermissionsToResources - Output:', result)
   return result
 }
 
