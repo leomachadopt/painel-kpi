@@ -224,19 +224,13 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" asChild className="hover:bg-accent/50 transition-all">
               <Link
                 to={isMentor ? '/clinicas' : `/dashboard/${user?.clinicId}`}
+                className="flex items-center justify-center w-full px-2"
               >
-                <div 
-                  className="flex aspect-square size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
-                  style={{
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  <Building2 className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Painel KPI</span>
-                  <span className="truncate text-xs text-muted-foreground">Consultoria Clínica</span>
-                </div>
+                <img 
+                  src="/logo_kpi_horizontal2.jpg" 
+                  alt="Dental KPI" 
+                  className="h-12 w-auto max-w-full"
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

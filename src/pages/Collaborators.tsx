@@ -28,6 +28,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { usePermissions } from '@/hooks/usePermissions'
+import useAuthStore from '@/stores/useAuthStore'
 import { Plus, Pencil, Trash2, Shield, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { collaboratorsApi } from '@/services/api'
@@ -113,11 +114,18 @@ export default function Collaborators() {
       canEditAligners: legacyPerms.canEditAligners,
       canEditConsultations: legacyPerms.canEditConsultations,
       canEditPatients: legacyPerms.canEditPatients,
+      canViewAdvances: legacyPerms.canViewAdvances,
+      canEditAdvances: legacyPerms.canEditAdvances,
+      canBillAdvances: legacyPerms.canBillAdvances,
+      canManageInsuranceProviders: legacyPerms.canManageInsuranceProviders,
       typeOfCanEditFinancial: typeof legacyPerms.canEditFinancial,
+      typeOfCanViewAdvances: typeof legacyPerms.canViewAdvances,
     })
     const resourcePerms = mapLegacyPermissionsToResources(legacyPerms as UserPermissions)
     console.log('Converted resource permissions:', resourcePerms)
     console.log('Resource permissions count:', Object.keys(resourcePerms).length)
+    console.log('advances resource:', resourcePerms.advances)
+    console.log('insuranceProviders resource:', resourcePerms.insuranceProviders)
     setResourcePermissions(resourcePerms)
     setShowPermissionsModal(true)
   }
@@ -174,13 +182,26 @@ export default function Collaborators() {
       setSubmitting(true)
       // Convert resource permissions back to legacy format for API
       const legacyPermissions = mapResourcePermissionsToLegacy(resourcePermissions)
+      console.log('=== SAVING PERMISSIONS ===')
       console.log('Resource permissions:', resourcePermissions)
       console.log('Legacy permissions:', legacyPermissions)
+      console.log('Specific advances permissions:', {
+        canViewAdvances: legacyPermissions.canViewAdvances,
+        canEditAdvances: legacyPermissions.canEditAdvances,
+        canBillAdvances: legacyPermissions.canBillAdvances,
+        canManageInsuranceProviders: legacyPermissions.canManageInsuranceProviders,
+      })
       await collaboratorsApi.updatePermissions(selectedCollaborator.id, legacyPermissions as UserPermissions)
       toast.success('Permissões atualizadas com sucesso')
       setShowPermissionsModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
+      
+      // If the updated collaborator is the current user, refresh their permissions
+      if (user && user.id === selectedCollaborator.id && refreshPermissions) {
+        console.log('Refreshing permissions for current user')
+        await refreshPermissions()
+      }
     } catch (error: any) {
       console.error('Error saving permissions:', error)
       toast.error(error.message || 'Erro ao atualizar permissões')

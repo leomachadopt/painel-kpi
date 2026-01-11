@@ -317,34 +317,46 @@ export function mapResourcePermissionsToLegacy(
 
   for (const [resourceId, level] of Object.entries(resourcePermissions)) {
     const resource = RESOURCE_PERMISSIONS.find((r) => r.id === resourceId)
-    if (!resource) continue
+    if (!resource) {
+      console.log(`Resource ${resourceId} not found in RESOURCE_PERMISSIONS`)
+      continue
+    }
 
     const isAllowed = level === 'ALLOWED'
+    console.log(`Mapping resource ${resourceId} (${level}) to legacy permissions`)
 
     // Map each action type to legacy permissions
     resource.mapsTo.view?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - view: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.edit?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - edit: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.create?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - create: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.delete?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - delete: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.export?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - export: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.bill?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - bill: ${perm} = ${isAllowed}`)
     })
     resource.mapsTo.manage?.forEach((perm) => {
       result[perm] = isAllowed
+      console.log(`  - manage: ${perm} = ${isAllowed}`)
     })
   }
 
+  console.log('Final mapped legacy permissions:', result)
   return result
 }
 
