@@ -45,31 +45,43 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
   })
 
   const [supplierName, setSupplierName] = useState('')
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
-    // Validar apenas PDF
-    if (file.type !== 'application/pdf') {
-      toast.error('Apenas arquivos PDF são permitidos')
-      return
+    const validFiles: File[] = []
+    
+    for (const file of files) {
+      // Validar apenas PDF
+      if (file.type !== 'application/pdf') {
+        toast.error(`Arquivo "${file.name}" não é um PDF válido`)
+        continue
+      }
+
+      // Validar tamanho (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`Arquivo "${file.name}" excede o tamanho máximo de 10MB`)
+        continue
+      }
+
+      validFiles.push(file)
     }
 
-    // Validar tamanho (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Arquivo deve ter no máximo 10MB')
-      return
+    if (validFiles.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...validFiles])
     }
-
-    setSelectedFile(file)
   }
 
-  const removeFile = () => {
-    setSelectedFile(null)
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const clearAllFiles = () => {
+    setSelectedFiles([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -92,32 +104,50 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
         notes: data.notes || null,
       })
 
-      // Se houver arquivo, fazer upload
-      if (selectedFile && entry.id) {
-        try {
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-              if (reader.result) {
-                resolve(reader.result as string)
-              } else {
-                reject(new Error('Erro ao ler arquivo'))
-              }
-            }
-            reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
-            reader.readAsDataURL(selectedFile)
-          })
+      // Se houver arquivos, fazer upload de todos
+      if (selectedFiles.length > 0 && entry.id) {
+        let successCount = 0
+        let errorCount = 0
 
-          await dailyEntriesApi.accountsPayable.uploadDocument(
-            clinic.id,
-            entry.id,
-            base64,
-            selectedFile.name,
-            selectedFile.type
+        for (const file of selectedFiles) {
+          try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => {
+                if (reader.result) {
+                  resolve(reader.result as string)
+                } else {
+                  reject(new Error('Erro ao ler arquivo'))
+                }
+              }
+              reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
+              reader.readAsDataURL(file)
+            })
+
+            await dailyEntriesApi.accountsPayable.uploadDocument(
+              clinic.id,
+              entry.id,
+              base64,
+              file.name,
+              file.type
+            )
+            successCount++
+          } catch (err: any) {
+            errorCount++
+            console.error(`Erro ao enviar arquivo ${file.name}:`, err)
+          }
+        }
+
+        if (successCount > 0 && errorCount === 0) {
+          toast.success(
+            `Conta a pagar e ${successCount} documento${successCount > 1 ? 's' : ''} registado${successCount > 1 ? 's' : ''} com sucesso!`
           )
-          toast.success('Conta a pagar e documento registados com sucesso!')
-        } catch (err: any) {
-          toast.error('Conta registada, mas erro ao enviar documento: ' + (err?.message || ''))
+        } else if (successCount > 0 && errorCount > 0) {
+          toast.warning(
+            `Conta registada. ${successCount} documento${successCount > 1 ? 's' : ''} enviado${successCount > 1 ? 's' : ''} com sucesso, mas ${errorCount} falhou${errorCount > 1 ? 'ram' : ''}.`
+          )
+        } else {
+          toast.error('Conta registada, mas erro ao enviar documentos')
         }
       } else {
         toast.success('Conta a pagar registada com sucesso!')
@@ -132,10 +162,7 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
         notes: '',
       })
       setSupplierName('')
-      setSelectedFile(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      clearAllFiles()
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao registar conta a pagar')
     } finally {
@@ -265,39 +292,63 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
 
         {/* Campo de Upload de PDF */}
         <div className="space-y-2">
-          <FormLabel>Documento PDF (opcional)</FormLabel>
+          <FormLabel>Documentos PDF (opcional)</FormLabel>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Input
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf"
+                multiple
                 onChange={handleFileSelect}
                 disabled={uploading}
                 className="flex-1"
               />
             </div>
-            {selectedFile && (
-              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
-                <div className="flex items-center gap-2">
-                  <File className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm truncate">{selectedFile.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({(selectedFile.size / 1024).toFixed(2)} KB)
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={removeFile}
-                  disabled={uploading}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            {selectedFiles.length > 0 && (
+              <div className="space-y-2">
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-md bg-muted/20"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm truncate">{file.name}</span>
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        ({(file.size / 1024).toFixed(2)} KB)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      disabled={uploading}
+                      className="flex-shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {selectedFiles.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={clearAllFiles}
+                    disabled={uploading}
+                    className="w-full"
+                  >
+                    Remover Todos
+                  </Button>
+                )}
               </div>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Pode selecionar múltiplos arquivos PDF (máximo 10MB cada)
+          </p>
         </div>
 
         <Button type="submit" className="w-full" disabled={uploading}>

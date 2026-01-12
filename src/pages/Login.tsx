@@ -116,12 +116,9 @@ export default function Login() {
     <div className="flex min-h-screen w-full">
       {/* Left Side - Visual */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://img.usecurling.com/p/1200/1600?q=medical%20consulting&color=cyan')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-[url('/login.png')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
         <div className="z-10">
-          <div className="flex items-center gap-2 text-2xl font-bold">
-            <div className="h-8 w-8 rounded bg-white/20 backdrop-blur" />
-            Painel KPI
-          </div>
+          {/* Logo removida - agora está no lado direito */}
         </div>
         <div className="z-10 max-w-md space-y-4">
           <blockquote className="space-y-2">
@@ -135,13 +132,22 @@ export default function Login() {
           </blockquote>
         </div>
         <div className="z-10 text-xs opacity-60">
-          © 2024 Painel KPI. Todos os direitos reservados.
+          © 2024 Dental KPI. Todos os direitos reservados.
         </div>
       </div>
 
       {/* Right Side - Form */}
       <div className="flex flex-1 items-center justify-center bg-background p-8">
         <div className="w-full max-w-sm space-y-6">
+          {/* Logo no topo */}
+          <div className="flex items-center justify-center mb-6">
+            <img 
+              src="/logo_kpi_horizontal.png" 
+              alt="Dental KPI" 
+              className="h-32 w-auto"
+            />
+          </div>
+          
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
               Aceda à sua conta

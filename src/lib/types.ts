@@ -69,6 +69,7 @@ export interface Clinic {
   logoUrl?: string
   active: boolean
   lastUpdate?: string
+  country?: 'PT-BR' | 'PT-PT'
   configuration: ClinicConfiguration
 
   // Deprecated - mantido para compatibilidade, use MonthlyTargets

@@ -28,6 +28,7 @@ interface DataState {
   clinics: Clinic[]
   getClinic: (id: string) => Clinic | undefined
   updateClinicConfig: (clinicId: string, config: ClinicConfiguration) => Promise<void>
+  reloadClinics: () => Promise<void>
 
   // Monthly Targets
   getMonthlyTargets: (clinicId: string, month: number, year: number) => MonthlyTargets
@@ -184,8 +185,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         setClinics(data)
       } catch (error) {
         console.error('Failed to load clinics:', error)
-        // Fallback to mock data
-        setClinics(MOCK_CLINICS)
+        // Não usar dados mockados - apenas deixar vazio e mostrar erro
+        setClinics([])
+        toast.error('Erro ao carregar clínicas. Verifique sua conexão e tente novamente.')
       } finally {
         setLoading(false)
       }
@@ -665,6 +667,16 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const getClinic = (id: string) => clinics.find((c) => c.id === id)
+
+  const reloadClinics = async () => {
+    try {
+      const data = await clinicsApi.getAll()
+      setClinics(data)
+    } catch (error) {
+      console.error('Failed to reload clinics:', error)
+      toast.error('Erro ao recarregar clínicas')
+    }
+  }
 
   const updateClinicConfig = async (
     clinicId: string,
@@ -2678,6 +2690,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         clinics,
         getClinic,
         updateClinicConfig,
+        reloadClinics,
         getMonthlyTargets,
         loadMonthlyTargets,
         updateMonthlyTargets,

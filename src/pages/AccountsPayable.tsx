@@ -54,6 +54,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ViewAccountsPayableDialog } from '@/components/accounts-payable/ViewAccountsPayableDialog'
+import { EditAccountsPayableDialog } from '@/components/accounts-payable/EditAccountsPayableDialog'
 
 export default function AccountsPayable() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -70,6 +71,7 @@ export default function AccountsPayable() {
   const [deleting, setDeleting] = useState(false)
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [viewEntryId, setViewEntryId] = useState<string | null>(null)
+  const [editEntryId, setEditEntryId] = useState<string | null>(null)
 
   useEffect(() => {
     if (clinicId) {
@@ -332,6 +334,14 @@ export default function AccountsPayable() {
                             </Button>
                             {canEditAccountsPayable && (
                               <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setEditEntryId(entry.id)}
+                                  title="Editar"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
                                 {!entry.paid ? (
                                   <Button
                                     variant="outline"
@@ -422,6 +432,16 @@ export default function AccountsPayable() {
         onOpenChange={(open) => !open && setViewEntryId(null)}
         entryId={viewEntryId}
         clinicId={clinicId || ''}
+      />
+
+      <EditAccountsPayableDialog
+        open={editEntryId !== null}
+        onOpenChange={(open) => !open && setEditEntryId(null)}
+        entryId={editEntryId}
+        clinicId={clinicId || ''}
+        onSuccess={() => {
+          loadEntries()
+        }}
       />
     </div>
   )

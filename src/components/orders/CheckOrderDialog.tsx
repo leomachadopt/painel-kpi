@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Loader2, ClipboardCheck } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface CheckOrderDialogProps {
   open: boolean
@@ -31,6 +32,7 @@ export function CheckOrderDialog({
   clinicId,
   onSuccess,
 }: CheckOrderDialogProps) {
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [conform, setConform] = useState<boolean | null>(null)
   const [nonConformReason, setNonConformReason] = useState('')
@@ -104,7 +106,7 @@ export function CheckOrderDialog({
           </div>
 
           <div className="space-y-3">
-            <Label>Status da Conferência <span className="text-destructive">*</span></Label>
+            <Label>{t('order.checkStatus')} <span className="text-destructive">*</span></Label>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -120,7 +122,7 @@ export function CheckOrderDialog({
                   }}
                 />
                 <Label htmlFor="conform" className="font-normal cursor-pointer">
-                  Conforme
+                  {t('order.conform')}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
@@ -136,7 +138,7 @@ export function CheckOrderDialog({
                   }}
                 />
                 <Label htmlFor="non-conform" className="font-normal cursor-pointer">
-                  Não Conforme
+                  {t('order.nonConform')}
                 </Label>
               </div>
             </div>
@@ -145,13 +147,13 @@ export function CheckOrderDialog({
           {conform === false && (
             <div className="space-y-2">
               <Label htmlFor="non-conform-reason">
-                Motivo da Não Conformidade <span className="text-destructive">*</span>
+                {t('order.nonConformReason')} <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="non-conform-reason"
                 value={nonConformReason}
                 onChange={(e) => setNonConformReason(e.target.value)}
-                placeholder="Descreva o motivo da não conformidade..."
+                placeholder={t('order.nonConformPlaceholder')}
                 rows={4}
                 required
               />
@@ -164,7 +166,7 @@ export function CheckOrderDialog({
             onClick={handleClose}
             disabled={checking}
           >
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleCheck}

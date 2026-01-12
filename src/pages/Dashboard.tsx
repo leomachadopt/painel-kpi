@@ -30,6 +30,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { generateSummary } from '@/lib/summary'
 import { SummaryModal } from '@/components/SummaryModal'
+import { useTranslation } from '@/hooks/useTranslation'
 import {
   RevenueChart,
   ConsultationFunnel,
@@ -50,6 +51,7 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const { canView } = usePermissions()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [selectedMonth, setSelectedMonth] = useState<string>(
     (new Date().getMonth() + 1).toString()
@@ -146,9 +148,9 @@ export default function Dashboard() {
           <Lock className="h-6 w-6 text-destructive" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('access.denied')}</h1>
           <p className="text-muted-foreground mt-2">
-            Não tem permissão para visualizar os dados desta clínica.
+            {t('access.deniedMessage')}
           </p>
         </div>
         <Button onClick={() => navigate(`/dashboard/${user?.clinicId}`)}>

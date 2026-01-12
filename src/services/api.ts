@@ -136,7 +136,8 @@ export const clinicsApi = {
     email: string;
     password: string;
     targetRevenue?: number;
-    targetNPS?: number
+    targetNPS?: number;
+    country?: 'PT-BR' | 'PT-PT';
   }) =>
     apiCall<{ id: string; message: string }>('/clinics', {
       method: 'POST',
@@ -148,7 +149,12 @@ export const clinicsApi = {
       method: 'DELETE',
     }),
 
-  update: (clinicId: string, data: any) =>
+  update: (clinicId: string, data: {
+    name?: string;
+    ownerName?: string;
+    country?: 'PT-BR' | 'PT-PT';
+    npsQuestion?: string;
+  }) =>
     apiCall<{ message: string }>(`/clinics/${clinicId}`, {
       method: 'PUT',
       body: JSON.stringify(data),

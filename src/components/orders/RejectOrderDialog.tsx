@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface RejectOrderDialogProps {
   open: boolean
@@ -29,6 +30,7 @@ export function RejectOrderDialog({
   clinicId,
   onSuccess,
 }: RejectOrderDialogProps) {
+  const { t } = useTranslation()
   const [rejectionReason, setRejectionReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
 
@@ -36,7 +38,7 @@ export function RejectOrderDialog({
     if (!orderId || !clinicId) return
 
     if (!rejectionReason.trim()) {
-      toast.error('Por favor, informe o motivo da recusa')
+      toast.error(t('order.rejectReason') + ' ' + t('common.required'))
       return
     }
 
@@ -65,21 +67,21 @@ export function RejectOrderDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Recusar Pedido</DialogTitle>
+          <DialogTitle>{t('order.reject')}</DialogTitle>
           <DialogDescription>
-            Informe o motivo da recusa do pedido. Esta ação não pode ser desfeita.
+            {t('order.rejectDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="rejection-reason">
-              Motivo da Recusa <span className="text-destructive">*</span>
+              {t('order.rejectReason')} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="rejection-reason"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Descreva o motivo da recusa do pedido..."
+              placeholder={t('order.rejectPlaceholder')}
               rows={5}
               required
             />
@@ -91,7 +93,7 @@ export function RejectOrderDialog({
             onClick={handleClose}
             disabled={rejecting}
           >
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -101,10 +103,10 @@ export function RejectOrderDialog({
             {rejecting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Recusando...
+                {t('order.rejecting')}
               </>
             ) : (
-              'Recusar Pedido'
+              t('order.reject')
             )}
           </Button>
         </DialogFooter>

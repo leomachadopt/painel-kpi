@@ -8,22 +8,46 @@ router.get('/', async (req, res) => {
   try {
     const defaultNpsQuestion = 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?'
 
-    // Query principal sem nps_question - sempre seguro
-    const result = await query(`
-      SELECT
-        id, name, owner_name, logo_url, active, last_update,
-        target_revenue, target_aligners_min, target_aligners_max,
-        target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
-        target_nps, target_integration_rate, target_attendance_rate,
-        target_follow_up_rate, target_wait_time, target_complaints,
-        target_leads_min, target_leads_max, target_revenue_per_cabinet,
-        target_plans_presented_adults, target_plans_presented_kids,
-        target_agenda_operational, target_agenda_planning,
-        target_agenda_sales, target_agenda_leadership
-      FROM clinics
-      WHERE active = true
-      ORDER BY name
-    `)
+    // Query principal - tentar incluir country se existir, caso contrário usar NULL
+    let result
+    try {
+      result = await query(`
+        SELECT
+          id, name, owner_name, logo_url, active, last_update, country,
+          target_revenue, target_aligners_min, target_aligners_max,
+          target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+          target_nps, target_integration_rate, target_attendance_rate,
+          target_follow_up_rate, target_wait_time, target_complaints,
+          target_leads_min, target_leads_max, target_revenue_per_cabinet,
+          target_plans_presented_adults, target_plans_presented_kids,
+          target_agenda_operational, target_agenda_planning,
+          target_agenda_sales, target_agenda_leadership
+        FROM clinics
+        WHERE active = true
+        ORDER BY name
+      `)
+    } catch (error: any) {
+      // Se country não existir ainda (migration não executada), tentar sem ele
+      if (error.message?.includes('country') || error.code === '42703') {
+        result = await query(`
+          SELECT
+            id, name, owner_name, logo_url, active, last_update,
+            target_revenue, target_aligners_min, target_aligners_max,
+            target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+            target_nps, target_integration_rate, target_attendance_rate,
+            target_follow_up_rate, target_wait_time, target_complaints,
+            target_leads_min, target_leads_max, target_revenue_per_cabinet,
+            target_plans_presented_adults, target_plans_presented_kids,
+            target_agenda_operational, target_agenda_planning,
+            target_agenda_sales, target_agenda_leadership
+          FROM clinics
+          WHERE active = true
+          ORDER BY name
+        `)
+      } else {
+        throw error
+      }
+    }
 
     const clinics = await Promise.all(
       result.rows.map(async (clinic) => {
@@ -79,6 +103,7 @@ router.get('/', async (req, res) => {
             logoUrl: clinic.logo_url,
             active: clinic.active,
             lastUpdate: clinic.last_update,
+            country: (clinic as any).country || 'PT-BR',
             targetRevenue: parseFloat(clinic.target_revenue || '0'),
             targetAlignersRange: {
               min: clinic.target_aligners_min || 0,
@@ -133,6 +158,7 @@ router.get('/', async (req, res) => {
             logoUrl: clinic.logo_url,
             active: clinic.active,
             lastUpdate: clinic.last_update,
+            country: (clinic as any).country || 'PT-BR',
             targetRevenue: parseFloat(clinic.target_revenue || '0'),
             targetAlignersRange: { min: 0, max: 0 },
             targetAvgTicket: 0,
@@ -187,22 +213,46 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params
     const defaultNpsQuestion = 'Gostaríamos de saber o quanto você recomendaria nossa clínica para um amigo ou familiar?'
 
-    // Query principal sem nps_question - sempre seguro
-    const result = await query(
-      `SELECT 
-        id, name, owner_name, logo_url, active, last_update,
-        target_revenue, target_aligners_min, target_aligners_max,
-        target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
-        target_nps, target_integration_rate, target_attendance_rate,
-        target_follow_up_rate, target_wait_time, target_complaints,
-        target_leads_min, target_leads_max, target_revenue_per_cabinet,
-        target_plans_presented_adults, target_plans_presented_kids,
-        target_agenda_operational, target_agenda_planning,
-        target_agenda_sales, target_agenda_leadership
-      FROM clinics 
-      WHERE id = $1 AND active = true`,
-      [id]
-    )
+    // Query principal - tentar incluir country se existir
+    let result
+    try {
+      result = await query(
+        `SELECT 
+          id, name, owner_name, logo_url, active, last_update, country,
+          target_revenue, target_aligners_min, target_aligners_max,
+          target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+          target_nps, target_integration_rate, target_attendance_rate,
+          target_follow_up_rate, target_wait_time, target_complaints,
+          target_leads_min, target_leads_max, target_revenue_per_cabinet,
+          target_plans_presented_adults, target_plans_presented_kids,
+          target_agenda_operational, target_agenda_planning,
+          target_agenda_sales, target_agenda_leadership
+        FROM clinics 
+        WHERE id = $1 AND active = true`,
+        [id]
+      )
+    } catch (error: any) {
+      // Se country não existir ainda (migration não executada), tentar sem ele
+      if (error.message?.includes('country') || error.code === '42703') {
+        result = await query(
+          `SELECT 
+            id, name, owner_name, logo_url, active, last_update,
+            target_revenue, target_aligners_min, target_aligners_max,
+            target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+            target_nps, target_integration_rate, target_attendance_rate,
+            target_follow_up_rate, target_wait_time, target_complaints,
+            target_leads_min, target_leads_max, target_revenue_per_cabinet,
+            target_plans_presented_adults, target_plans_presented_kids,
+            target_agenda_operational, target_agenda_planning,
+            target_agenda_sales, target_agenda_leadership
+          FROM clinics 
+          WHERE id = $1 AND active = true`,
+          [id]
+        )
+      } else {
+        throw error
+      }
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Clinic not found' })
@@ -261,6 +311,7 @@ router.get('/:id', async (req, res) => {
       logoUrl: clinic.logo_url,
       active: clinic.active,
       lastUpdate: clinic.last_update,
+      country: (clinic as any).country || 'PT-BR',
       targetRevenue: parseFloat(clinic.target_revenue || '0'),
       targetAlignersRange: {
         min: clinic.target_aligners_min || 0,
@@ -405,6 +456,7 @@ router.post('/', async (req, res) => {
       password,
       targetRevenue = 100000,
       targetNPS = 80,
+      country = 'PT-BR',
     } = req.body
 
     if (!name || !ownerName) {
@@ -413,6 +465,11 @@ router.post('/', async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' })
+    }
+
+    // Validar country
+    if (country && !['PT-BR', 'PT-PT'].includes(country)) {
+      return res.status(400).json({ error: 'Invalid country. Must be PT-BR or PT-PT' })
     }
 
     // Check if email already exists
@@ -426,7 +483,7 @@ router.post('/', async (req, res) => {
 
     await query(
       `INSERT INTO clinics (
-        id, name, owner_name, active,
+        id, name, owner_name, active, country,
         target_revenue, target_aligners_min, target_aligners_max,
         target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
         target_nps, target_integration_rate, target_attendance_rate,
@@ -437,17 +494,17 @@ router.post('/', async (req, res) => {
         target_agenda_sales, target_agenda_leadership,
         created_at, last_update
       ) VALUES (
-        $1, $2, $3, true,
-        $4, 11, 15,
+        $1, $2, $3, true, $4,
+        $5, 11, 15,
         1500, 0.70, 0.85,
-        $5, 0.90, 0.95,
+        $6, 0.90, 0.95,
         0.80, 15, 5,
         50, 80, 50000,
         25, 15,
         0.40, 0.20, 0.30, 0.10,
         NOW(), NOW()
       )`,
-      [clinicId, name, ownerName, targetRevenue, targetNPS]
+      [clinicId, name, ownerName, country || 'PT-BR', targetRevenue, targetNPS]
     )
 
     // Insert default categories
@@ -556,22 +613,125 @@ router.delete('/:id', async (req, res) => {
   }
 })
 
-// Update clinic (e.g., nps_question)
+// Update clinic - permite MENTOR editar qualquer clínica, GESTOR_CLINICA só a sua própria
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { npsQuestion } = req.body
+    const { 
+      name, 
+      ownerName, 
+      country,
+      npsQuestion 
+    } = req.body
 
-    // Only GESTOR can update their own clinic
-    if (req.user?.role !== 'GESTOR_CLINICA' || req.user?.clinicId !== id) {
+    // Verificar autenticação
+    if (!req.auth) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    // Verificar se clínica existe
+    const clinicCheck = await query('SELECT id FROM clinics WHERE id = $1', [id])
+    if (clinicCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Clinic not found' })
+    }
+
+    // MENTOR pode editar qualquer clínica, GESTOR_CLINICA só a sua própria
+    if (req.auth.role === 'GESTOR_CLINICA' && req.auth.clinicId !== id) {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
+    // Construir query de update dinamicamente
+    const updates: string[] = []
+    const values: any[] = []
+    let paramIndex = 1
+
+    if (name !== undefined) {
+      updates.push(`name = $${paramIndex++}`)
+      values.push(name)
+    }
+
+    if (ownerName !== undefined) {
+      updates.push(`owner_name = $${paramIndex++}`)
+      values.push(ownerName)
+    }
+
+    if (country !== undefined) {
+      console.log('Recebido country para atualização:', country)
+      if (!['PT-BR', 'PT-PT'].includes(country)) {
+        return res.status(400).json({ error: 'Invalid country. Must be PT-BR or PT-PT' })
+      }
+      // Verificar se a coluna country existe antes de tentar atualizar
+      try {
+        const columnCheck = await query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'clinics' AND column_name = 'country'
+        `)
+        if (columnCheck.rows.length > 0) {
+          console.log('Coluna country existe, adicionando ao update')
+          updates.push(`country = $${paramIndex++}`)
+          values.push(country)
+        } else {
+          console.error('ERRO: Campo country não existe na tabela clinics. Execute a migration 050_add_country_to_clinics.sql')
+          return res.status(400).json({ 
+            error: 'Campo country não existe no banco de dados. Execute a migration 050_add_country_to_clinics.sql primeiro.' 
+          })
+        }
+      } catch (checkError) {
+        console.error('Erro ao verificar coluna country:', checkError)
+        // Tentar atualizar mesmo assim - pode funcionar se a coluna existir
+        console.log('Tentando atualizar country mesmo com erro na verificação')
+        updates.push(`country = $${paramIndex++}`)
+        values.push(country)
+      }
+    }
+
     if (npsQuestion !== undefined) {
-      await query(
-        `UPDATE clinics SET nps_question = $1, last_update = NOW() WHERE id = $2`,
-        [npsQuestion, id]
-      )
+      updates.push(`nps_question = $${paramIndex++}`)
+      values.push(npsQuestion)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' })
+    }
+
+    updates.push(`last_update = NOW()`)
+    values.push(id)
+
+    const updateQuery = `UPDATE clinics SET ${updates.join(', ')} WHERE id = $${paramIndex}`
+    
+    console.log('Executando update query:', updateQuery)
+    console.log('Valores:', values)
+    
+    try {
+      const result = await query(updateQuery, values)
+      console.log(`Clinic ${id} updated successfully. Fields: ${updates.join(', ')}`)
+      console.log('Resultado do update:', result.rowCount, 'linhas afetadas')
+      
+      // Verificar se realmente foi atualizado
+      if (country !== undefined) {
+        const verifyResult = await query('SELECT country FROM clinics WHERE id = $1', [id])
+        console.log('Valor do country após update:', verifyResult.rows[0]?.country)
+        if (verifyResult.rows[0]?.country !== country) {
+          console.error('ERRO: O country não foi atualizado corretamente!')
+          console.error('Esperado:', country, 'Atual:', verifyResult.rows[0]?.country)
+        }
+      }
+    } catch (updateError: any) {
+      console.error('Update query error:', updateError)
+      console.error('Erro completo:', {
+        message: updateError.message,
+        code: updateError.code,
+        detail: updateError.detail,
+        hint: updateError.hint
+      })
+      // Se o erro for relacionado ao campo country não existir, informar o usuário
+      if (updateError.message?.includes('country') || updateError.code === '42703') {
+        return res.status(400).json({ 
+          error: 'Campo country não existe no banco de dados. Execute a migration 050_add_country_to_clinics.sql primeiro.' 
+        })
+      }
+      throw updateError
     }
 
     res.json({ message: 'Clinic updated successfully' })

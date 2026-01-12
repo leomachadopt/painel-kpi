@@ -7,9 +7,11 @@ import useDataStore from '@/stores/useDataStore'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
   const { saveConsultationControlEntry, getConsultationControlEntry } = useDataStore()
+  const { t } = useTranslation()
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
 
@@ -106,7 +108,7 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
   return (
     <div className="space-y-6 max-w-lg">
       <div className="grid gap-2">
-        <Label>Data de Referência</Label>
+        <Label>{t('consultation.referenceDate')}</Label>
         <Input
           type="date"
           value={date}
@@ -117,22 +119,22 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
 
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">
-          Carregando dados...
+          {t('consultation.loadingData')}
         </div>
       ) : (
         <>
           <div className="space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
-              Controle de Consultas
+              {t('consultation.control')}
             </h3>
-            <CounterRow label="Não Comparecimento" field="noShow" />
-            <CounterRow label="Remarcação de Horário" field="rescheduled" />
-            <CounterRow label="Cancelamento de Consulta" field="cancelled" />
-            <CounterRow label="Marcação (Paciente Antigo)" field="oldPatientBooking" />
+            <CounterRow label={t('consultation.noShow')} field="noShow" />
+            <CounterRow label={t('consultation.rescheduled')} field="rescheduled" />
+            <CounterRow label={t('consultation.cancelled')} field="cancelled" />
+            <CounterRow label={t('consultation.oldPatientBooking')} field="oldPatientBooking" />
           </div>
 
           <Button onClick={handleSave} className="w-full">
-            <Save className="mr-2 h-4 w-4" /> Guardar Totais do Dia
+            <Save className="mr-2 h-4 w-4" /> {t('consultation.saveDayTotals')}
           </Button>
         </>
       )}

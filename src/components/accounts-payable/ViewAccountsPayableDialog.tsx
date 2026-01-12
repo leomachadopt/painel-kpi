@@ -30,7 +30,7 @@ export function ViewAccountsPayableDialog({
 }: ViewAccountsPayableDialogProps) {
   const [entry, setEntry] = useState<AccountsPayableEntry | null>(null)
   const [loading, setLoading] = useState(false)
-  const [document, setDocument] = useState<any | null>(null)
+  const [documents, setDocuments] = useState<any[]>([])
   const [loadingDoc, setLoadingDoc] = useState(false)
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function ViewAccountsPayableDialog({
       loadDocument()
     } else {
       setEntry(null)
-      setDocument(null)
+      setDocuments([])
     }
   }, [open, entryId, clinicId])
 
@@ -65,20 +65,16 @@ export function ViewAccountsPayableDialog({
     setLoadingDoc(true)
     try {
       const docs = await dailyEntriesApi.accountsPayable.getDocuments(clinicId, entryId)
-      if (docs && docs.length > 0) {
-        setDocument(docs[0]) // Pegar o primeiro documento
-      } else {
-        setDocument(null)
-      }
+      setDocuments(docs || [])
     } catch (error) {
-      console.error('Error loading document:', error)
-      setDocument(null)
+      console.error('Error loading documents:', error)
+      setDocuments([])
     } finally {
       setLoadingDoc(false)
     }
   }
 
-  const handleViewDocument = async () => {
+  const handleViewDocument = async (document: any) => {
     if (!document || !entryId || !clinicId) return
 
     try {
@@ -96,7 +92,7 @@ export function ViewAccountsPayableDialog({
     }
   }
 
-  const handleDownloadDocument = async () => {
+  const handleDownloadDocument = async (document: any) => {
     if (!document || !entryId || !clinicId) return
 
     try {
@@ -233,44 +229,51 @@ export function ViewAccountsPayableDialog({
               </div>
             )}
 
-            {/* Seção de Documento */}
+            {/* Seção de Documentos */}
             <div className="border-t pt-4">
               <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                Documento
+                Documentos {documents.length > 0 && `(${documents.length})`}
               </label>
               {loadingDoc ? (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
-              ) : document ? (
-                <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <File className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{document.originalFilename}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(document.fileSize / 1024).toFixed(2)} KB
-                      </p>
+              ) : documents.length > 0 ? (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-3 border rounded-md bg-muted/20"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <File className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{doc.originalFilename}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(doc.fileSize / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewDocument(doc)}
+                          title="Visualizar"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownloadDocument(doc)}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleViewDocument}
-                      title="Visualizar"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDownloadDocument}
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-4 text-muted-foreground">

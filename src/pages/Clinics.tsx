@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, MapPin, AlertTriangle, Trash2 } from 'lucide-react'
+import { Search, Plus, MapPin, AlertTriangle, Trash2, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,6 +22,13 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,18 +42,26 @@ import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { clinicsApi } from '@/services/api'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function Clinics() {
-  const { clinics, calculateKPIs, calculateAlerts } = useDataStore()
+  const { clinics, calculateKPIs, calculateAlerts, reloadClinics } = useDataStore()
   const { user } = useAuthStore()
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [showNewClinicDialog, setShowNewClinicDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [clinicToDelete, setClinicToDelete] = useState<string | null>(null)
   const [newClinicName, setNewClinicName] = useState('')
   const [newClinicOwner, setNewClinicOwner] = useState('')
   const [newClinicEmail, setNewClinicEmail] = useState('')
   const [newClinicPassword, setNewClinicPassword] = useState('')
+  const [newClinicCountry, setNewClinicCountry] = useState<'PT-BR' | 'PT-PT'>('PT-BR')
+  const [clinicToEdit, setClinicToEdit] = useState<any>(null)
+  const [editClinicName, setEditClinicName] = useState('')
+  const [editClinicOwner, setEditClinicOwner] = useState('')
+  const [editClinicCountry, setEditClinicCountry] = useState<'PT-BR' | 'PT-PT'>('PT-BR')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -99,6 +114,7 @@ export default function Clinics() {
         ownerName: newClinicOwner.trim(),
         email: newClinicEmail.trim(),
         password: newClinicPassword,
+        country: newClinicCountry,
       })
       toast.success('Clínica e usuário criados com sucesso!')
       setShowNewClinicDialog(false)
@@ -106,10 +122,67 @@ export default function Clinics() {
       setNewClinicOwner('')
       setNewClinicEmail('')
       setNewClinicPassword('')
+      setNewClinicCountry('PT-BR')
       // Reload page to fetch updated clinics list
       window.location.reload()
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar clínica')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditClinic = (clinic: any) => {
+    setClinicToEdit(clinic)
+    setEditClinicName(clinic.name)
+    setEditClinicOwner(clinic.ownerName)
+    setEditClinicCountry(clinic.country || 'PT-BR')
+    setShowEditDialog(true)
+  }
+
+  const handleUpdateClinic = async () => {
+    if (!clinicToEdit) return
+
+    if (!editClinicName.trim() || !editClinicOwner.trim()) {
+      toast.error('Nome e responsável são obrigatórios')
+      return
+    }
+
+    setLoading(true)
+    try {
+      console.log('Atualizando clínica:', {
+        id: clinicToEdit.id,
+        name: editClinicName.trim(),
+        ownerName: editClinicOwner.trim(),
+        country: editClinicCountry,
+      })
+      
+      await clinicsApi.update(clinicToEdit.id, {
+        name: editClinicName.trim(),
+        ownerName: editClinicOwner.trim(),
+        country: editClinicCountry,
+      })
+      
+      console.log('Clínica atualizada com sucesso, recarregando...')
+      toast.success('Clínica atualizada com sucesso!')
+      setShowEditDialog(false)
+      setClinicToEdit(null)
+      
+      // Recarregar clínicas do store para atualizar a lista sem recarregar a página
+      await reloadClinics()
+      
+      // Verificar se o valor foi realmente atualizado
+      const updatedClinics = await clinicsApi.getAll()
+      const updatedClinic = updatedClinics.find(c => c.id === clinicToEdit.id)
+      console.log('Clínica após atualização:', updatedClinic)
+      
+      if (updatedClinic && updatedClinic.country !== editClinicCountry) {
+        console.warn('Aviso: O país não foi atualizado corretamente. Valor esperado:', editClinicCountry, 'Valor atual:', updatedClinic.country)
+        toast.warning('Clínica atualizada, mas o país pode não ter sido salvo. Verifique se a migration foi executada.')
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar clínica:', error)
+      toast.error(error.message || 'Erro ao atualizar clínica')
     } finally {
       setLoading(false)
     }
@@ -234,6 +307,17 @@ export default function Clinics() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditClinic(clinic)
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -303,12 +387,12 @@ export default function Clinics() {
           <DialogHeader>
             <DialogTitle>Nova Clínica</DialogTitle>
             <DialogDescription>
-              Criar uma nova clínica no sistema
+              {t('clinic.createNew')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome da Clínica</Label>
+              <Label htmlFor="name">{t('clinic.name')}</Label>
               <Input
                 id="name"
                 placeholder="Ex: Clínica Sorriso"
@@ -317,7 +401,7 @@ export default function Clinics() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="owner">Responsável</Label>
+              <Label htmlFor="owner">{t('clinic.ownerName')}</Label>
               <Input
                 id="owner"
                 placeholder="Ex: Dr. João Silva"
@@ -326,7 +410,7 @@ export default function Clinics() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email de Acesso</Label>
+              <Label htmlFor="email">{t('clinic.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -336,7 +420,7 @@ export default function Clinics() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha de Login</Label>
+              <Label htmlFor="password">{t('clinic.password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -345,6 +429,21 @@ export default function Clinics() {
                 onChange={(e) => setNewClinicPassword(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">{t('clinic.country')}</Label>
+              <Select
+                value={newClinicCountry}
+                onValueChange={(value: 'PT-BR' | 'PT-PT') => setNewClinicCountry(value)}
+              >
+                <SelectTrigger id="country">
+                  <SelectValue placeholder={t('clinic.selectCountry')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PT-BR">Brasil (Português-BR)</SelectItem>
+                  <SelectItem value="PT-PT">Portugal (Português-PT)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -352,10 +451,72 @@ export default function Clinics() {
               onClick={() => setShowNewClinicDialog(false)}
               disabled={loading}
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleCreateClinic} disabled={loading}>
-              {loading ? 'Criando...' : 'Criar Clínica'}
+              {loading ? t('common.creating') : t('clinic.createClinic')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Clinic Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('clinic.editClinic')}</DialogTitle>
+            <DialogDescription>
+              {t('clinic.editInfo')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">{t('clinic.name')}</Label>
+              <Input
+                id="edit-name"
+                placeholder="Ex: Clínica Sorriso"
+                value={editClinicName}
+                onChange={(e) => setEditClinicName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-owner">{t('clinic.ownerName')}</Label>
+              <Input
+                id="edit-owner"
+                placeholder="Ex: Dr. João Silva"
+                value={editClinicOwner}
+                onChange={(e) => setEditClinicOwner(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-country">{t('clinic.country')}</Label>
+              <Select
+                value={editClinicCountry}
+                onValueChange={(value: 'PT-BR' | 'PT-PT') => setEditClinicCountry(value)}
+              >
+                <SelectTrigger id="edit-country">
+                  <SelectValue placeholder={t('clinic.selectCountry')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PT-BR">Brasil (Português-BR)</SelectItem>
+                  <SelectItem value="PT-PT">Portugal (Português-PT)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditDialog(false)
+                setClinicToEdit(null)
+              }}
+              disabled={loading}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleUpdateClinic} disabled={loading}>
+              {loading ? t('common.saving') : t('common.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -365,19 +526,19 @@ export default function Clinics() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>{t('common.deleteConfirm')}</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir esta clínica? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={loading}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteClinic}
               disabled={loading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {loading ? 'Excluindo...' : 'Excluir'}
+              {loading ? t('common.deleting') : t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

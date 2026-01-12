@@ -43,6 +43,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { dailyEntriesApi, ticketsApi } from '@/services/api'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
@@ -50,6 +51,7 @@ export function AppSidebar() {
   const location = useLocation()
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit, canView } = usePermissions()
+  const { t } = useTranslation()
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
   const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
   const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
@@ -256,13 +258,13 @@ export function AppSidebar() {
         {isMentor && (
           <div className="px-3 py-2">
             <h2 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden">
-              Contexto
+              {t('clinic.context')}
             </h2>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-white/50 backdrop-blur-sm p-2.5 text-sm transition-all hover:bg-accent/50 group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium">
-                    {currentClinic ? currentClinic.name : 'Selecionar Clínica'}
+                    {currentClinic ? currentClinic.name : t('clinic.selectClinic')}
                   </span>
                   <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                 </button>
@@ -290,12 +292,12 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Clínicas"
+                  tooltip={t('sidebar.clinics')}
                   isActive={location.pathname === '/clinicas'}
                 >
                   <Link to="/clinicas">
                     <Building2 />
-                    <span>Clínicas</span>
+                    <span>{t('sidebar.clinics')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -303,12 +305,12 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Tabela Base de Procedimentos"
+                  tooltip={t('sidebar.procedureBase')}
                   isActive={location.pathname === '/tabela-base-procedimentos'}
                 >
                   <Link to="/tabela-base-procedimentos">
                     <FileText />
-                    <span>Tabela Base de Procedimentos</span>
+                    <span>{t('sidebar.procedureBase')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -320,14 +322,14 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Dashboard"
+                  tooltip={t('sidebar.dashboard')}
                   isActive={location.pathname.includes('/dashboard')}
                 >
                   <Link
                     to={`/dashboard/${currentClinic?.id || user?.clinicId}`}
                   >
                     <LayoutDashboard />
-                    <span>Dashboard</span>
+                    <span>{t('sidebar.dashboard')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -336,14 +338,14 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Diário"
+                    tooltip={t('sidebar.daily')}
                     isActive={location.pathname.includes('/lancamentos')}
                   >
                     <Link
                       to={`/lancamentos/${currentClinic?.id || user?.clinicId}`}
                     >
                       <FileInput />
-                      <span>Diário</span>
+                      <span>{t('sidebar.daily')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -352,14 +354,14 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Relatórios"
+                  tooltip={t('sidebar.reports')}
                   isActive={location.pathname.includes('/relatorios')}
                 >
                   <Link
                     to={`/relatorios/${currentClinic?.id || user?.clinicId}`}
                   >
                     <FileText />
-                    <span>Relatórios</span>
+                    <span>{t('sidebar.reports')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -368,12 +370,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Pacientes"
+                    tooltip={t('sidebar.patients')}
                     isActive={location.pathname.includes('/pacientes')}
                   >
                     <Link to={`/pacientes/${activeClinicId}`}>
                       <Users />
-                      <span>Pacientes</span>
+                      <span>{t('sidebar.patients')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -383,12 +385,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Pedidos"
+                    tooltip={t('sidebar.orders')}
                     isActive={location.pathname.includes('/pedidos')}
                   >
                     <Link to={`/pedidos/${activeClinicId}`}>
                       <Package />
-                      <span>Pedidos</span>
+                      <span>{t('sidebar.orders')}</span>
                       {isGestor && (pendingOrdersCount > 0 || paymentPendingOrdersCount > 0 || invoicePendingOrdersCount > 0) && (
                         <div className="absolute right-1 flex gap-1">
                           {pendingOrdersCount > 0 && (
@@ -417,12 +419,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Fornecedores"
+                    tooltip={t('sidebar.suppliers')}
                     isActive={location.pathname.includes('/fornecedores')}
                   >
                     <Link to={`/fornecedores/${activeClinicId}`}>
                       <Truck />
-                      <span>Fornecedores</span>
+                      <span>{t('sidebar.suppliers')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -432,12 +434,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Contas a Pagar"
+                    tooltip={t('sidebar.accountsPayable')}
                     isActive={location.pathname.includes('/contas-a-pagar')}
                   >
                     <Link to={`/contas-a-pagar/${activeClinicId}`}>
                       <CreditCard />
-                      <span>Contas a Pagar</span>
+                      <span>{t('sidebar.accountsPayable')}</span>
                       {(accountsPayableCounts.overdue > 0 || accountsPayableCounts.today > 0 || accountsPayableCounts.week > 0) && (
                         <div className="absolute right-1 flex gap-1">
                           {accountsPayableCounts.overdue > 0 && (
@@ -466,12 +468,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Operadoras"
+                    tooltip={t('sidebar.insuranceProviders')}
                     isActive={location.pathname.includes('/operadoras')}
                   >
                     <Link to={`/operadoras/${activeClinicId}`}>
                       <Building2 />
-                      <span>Operadoras</span>
+                      <span>{t('sidebar.insuranceProviders')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -481,12 +483,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Adiantamentos"
+                    tooltip={t('sidebar.advances')}
                     isActive={location.pathname.includes('/adiantamentos')}
                   >
                     <Link to={`/adiantamentos/${activeClinicId}`}>
                       <Receipt />
-                      <span>Adiantamentos</span>
+                      <span>{t('sidebar.advances')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -496,12 +498,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="NPS"
+                    tooltip={t('sidebar.nps')}
                     isActive={location.pathname.includes('/nps')}
                   >
                     <Link to={`/nps/${activeClinicId}`}>
                       <Star />
-                      <span>NPS</span>
+                      <span>{t('sidebar.nps')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -511,12 +513,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Configurações"
+                    tooltip={t('sidebar.settings')}
                     isActive={location.pathname.includes('/configuracoes')}
                   >
                     <Link to="/configuracoes">
                       <Settings />
-                      <span>Configurações</span>
+                      <span>{t('sidebar.settings')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -526,12 +528,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Colaboradores"
+                    tooltip={t('sidebar.collaborators')}
                     isActive={location.pathname.includes('/colaboradores')}
                   >
                     <Link to="/colaboradores">
                       <UserCog />
-                      <span>Colaboradores</span>
+                      <span>{t('sidebar.collaborators')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -543,14 +545,14 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                tooltip="Alertas"
+                tooltip={t('sidebar.alerts')}
                 isActive={location.pathname.includes('/alertas')}
               >
                 <Link
                   to={`/alertas/${currentClinic?.id || user?.clinicId}`}
                 >
                   <Bell />
-                  <span>Alertas</span>
+                  <span>{t('sidebar.alerts')}</span>
                   {alertsCount > 0 && (
                     <SidebarMenuBadge className="bg-destructive text-destructive-foreground">
                       {alertsCount > 99 ? '99+' : alertsCount}
@@ -565,12 +567,12 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                tooltip="Tickets"
+                tooltip={t('sidebar.tickets')}
                 isActive={location.pathname.includes('/tickets')}
               >
                 <Link to={`/tickets/${currentClinic?.id || user?.clinicId}`}>
                   <Ticket />
-                  <span>Tickets</span>
+                  <span>{t('sidebar.tickets')}</span>
                   {isGestor ? (
                     // Para gestoras, mostrar dois badges separados
                     (ticketsAssignedToMe > 0 || ticketsOthers > 0) && (
