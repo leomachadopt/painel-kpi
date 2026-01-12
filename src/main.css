@@ -522,6 +522,36 @@ button[class*="secondary"]:hover {
   transform: translateY(-1px);
 }
 
+/* FORÇAR SWITCH COM CORES CORRETAS E DIREÇÃO INVERTIDA */
+button[role="switch"][data-state="checked"],
+[data-state="checked"][role="switch"] {
+  background-color: hsl(160, 40%, 28%) !important; /* primary green */
+}
+
+button[role="switch"][data-state="unchecked"],
+[data-state="unchecked"][role="switch"] {
+  background-color: #d1d5db !important; /* gray-300 */
+}
+
+button[role="switch"][data-state="checked"]:hover,
+[data-state="checked"][role="switch"]:hover {
+  background-color: hsl(160, 40%, 32%) !important;
+}
+
+button[role="switch"][data-state="unchecked"]:hover,
+[data-state="unchecked"][role="switch"]:hover {
+  background-color: #9ca3af !important; /* gray-400 */
+}
+
+/* Garantir direção invertida do thumb */
+[data-state="checked"][role="switch"] > span {
+  transform: translateX(0) !important;
+}
+
+[data-state="unchecked"][role="switch"] > span {
+  transform: translateX(1.25rem) !important; /* translate-x-5 = 1.25rem */
+}
+
 /* FORÇAR INPUTS MODERNOS COM VERDE */
 input,
 select,
