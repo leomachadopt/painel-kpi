@@ -489,6 +489,7 @@ export interface UserPermissions {
   canEditAdvances: boolean
   canBillAdvances: boolean
   canManageInsuranceProviders: boolean
+  hasSpecialAccountsPayableAccess: boolean
 }
 
 export interface User {

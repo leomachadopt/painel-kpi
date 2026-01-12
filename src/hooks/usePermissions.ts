@@ -65,6 +65,13 @@ export function usePermissions() {
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
+    
+    // Para contas a pagar, verificar também a permissão especial
+    if (section === 'canViewAccountsPayable') {
+      return permissions.canViewAccountsPayable === true || 
+             permissions.hasSpecialAccountsPayableAccess === true
+    }
+    
     const value = permissions[section]
     return value === true || value === 1
   }
@@ -246,6 +253,7 @@ function createEmptyPermissions(): UserPermissions {
     canViewSuppliers: false,
     canViewAccountsPayable: false,
     canEditAccountsPayable: false,
+    hasSpecialAccountsPayableAccess: false,
     canEditAdvanceInvoice: false,
     canViewReportAdvanceInvoice: false,
     canViewTickets: false,
@@ -298,6 +306,7 @@ function createFullPermissions(): UserPermissions {
     canViewSuppliers: true,
     canViewAccountsPayable: true,
     canEditAccountsPayable: true,
+    hasSpecialAccountsPayableAccess: true,
     canEditAdvanceInvoice: true,
     canViewReportAdvanceInvoice: true,
     canViewTickets: true,

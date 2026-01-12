@@ -64,6 +64,9 @@ export default function Collaborators() {
 
   // Resource permissions form state (new format)
   const [resourcePermissions, setResourcePermissions] = useState<ResourcePermissions>({})
+  
+  // Special permissions state
+  const [hasSpecialAccountsPayableAccess, setHasSpecialAccountsPayableAccess] = useState(false)
 
   // Load collaborators
   useEffect(() => {
@@ -109,6 +112,8 @@ export default function Collaborators() {
     const legacyPerms = collaborator.permissions || {}
     const resourcePerms = mapLegacyPermissionsToResources(legacyPerms as UserPermissions)
     setResourcePermissions(resourcePerms)
+    // Set special permissions
+    setHasSpecialAccountsPayableAccess(legacyPerms.hasSpecialAccountsPayableAccess || false)
     setShowPermissionsModal(true)
   }
 
@@ -164,14 +169,21 @@ export default function Collaborators() {
       setSubmitting(true)
       // Convert resource permissions back to legacy format for API
       const legacyPermissions = mapResourcePermissionsToLegacy(resourcePermissions)
-      await collaboratorsApi.updatePermissions(selectedCollaborator.id, legacyPermissions as UserPermissions)
+      // Add special permissions
+      const permissionsWithSpecial: UserPermissions = {
+        ...legacyPermissions,
+        hasSpecialAccountsPayableAccess,
+      } as UserPermissions
+      await collaboratorsApi.updatePermissions(selectedCollaborator.id, permissionsWithSpecial)
       toast.success('Permissões atualizadas com sucesso')
       setShowPermissionsModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
       
       // If the updated collaborator is the current user, refresh their permissions
-      if (user && user.id === selectedCollaborator.id && refreshPermissions) {
+      const currentUser = useAuthStore.getState().user
+      const refreshPermissions = useAuthStore.getState().refreshPermissions
+      if (currentUser && currentUser.id === selectedCollaborator.id && refreshPermissions) {
         await refreshPermissions()
       }
     } catch (error: any) {
@@ -371,12 +383,35 @@ export default function Collaborators() {
               Configure o que este colaborador pode visualizar e editar. Clique nos sliders para alternar entre Permitido e Negado.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 py-4">
+          <div className="flex-1 overflow-y-auto pr-2 py-4 space-y-6">
             <ResourcePermissionsGrid
               permissions={resourcePermissions}
               onChange={handleResourcePermissionChange}
               disabled={submitting}
             />
+            
+            {/* Permissões Especiais */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold mb-3">Permissões Especiais</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 p-3 rounded-md border bg-muted/30">
+                  <Checkbox
+                    id="special-accounts-payable"
+                    checked={hasSpecialAccountsPayableAccess}
+                    onCheckedChange={(checked) => 
+                      setHasSpecialAccountsPayableAccess(checked === true)
+                    }
+                    disabled={submitting}
+                  />
+                  <Label htmlFor="special-accounts-payable" className="cursor-pointer flex-1">
+                    <div className="font-medium">Acesso Especial a Contas a Pagar</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Permite acesso exclusivo à visualização e edição de contas a pagar, além da gestora da clínica
+                    </div>
+                  </Label>
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
             <Button variant="outline" onClick={() => setShowPermissionsModal(false)}>

@@ -76,7 +76,8 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_view_advances,
         p.can_edit_advances,
         p.can_bill_advances,
-        p.can_manage_insurance_providers
+        p.can_manage_insurance_providers,
+        p.has_special_accounts_payable_access
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id AND p.clinic_id = u.clinic_id
       WHERE u.clinic_id = $1 AND u.role = 'COLABORADOR'
@@ -141,6 +142,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canEditAdvances: row.can_edit_advances || false,
         canBillAdvances: row.can_bill_advances || false,
         canManageInsuranceProviders: row.can_manage_insurance_providers || false,
+        hasSpecialAccountsPayableAccess: row.has_special_accounts_payable_access || false,
       },
     }))
 
@@ -259,7 +261,12 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.can_edit_suppliers,
         p.can_view_marketing,
         p.can_edit_marketing,
-        p.can_view_alerts
+        p.can_view_alerts,
+        p.can_view_advances,
+        p.can_edit_advances,
+        p.can_bill_advances,
+        p.can_manage_insurance_providers,
+        p.has_special_accounts_payable_access
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id
       WHERE u.id = $1`,
@@ -320,6 +327,11 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewMarketing: row.can_view_marketing || false,
         canEditMarketing: row.can_edit_marketing || false,
         canViewAlerts: row.can_view_alerts || false,
+        canViewAdvances: row.can_view_advances || false,
+        canEditAdvances: row.can_edit_advances || false,
+        canBillAdvances: row.can_bill_advances || false,
+        canManageInsuranceProviders: row.can_manage_insurance_providers || false,
+        hasSpecialAccountsPayableAccess: row.has_special_accounts_payable_access || false,
       },
     }
 
@@ -492,9 +504,10 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_view_advances,
         can_edit_advances,
         can_bill_advances,
-        can_manage_insurance_providers
+        can_manage_insurance_providers,
+        has_special_accounts_payable_access
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51
       )
       ON CONFLICT (user_id, clinic_id)
       DO UPDATE SET
@@ -545,6 +558,7 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_edit_advances = $48,
         can_bill_advances = $49,
         can_manage_insurance_providers = $50,
+        has_special_accounts_payable_access = $51,
         updated_at = NOW()`,
       [
         `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -597,6 +611,7 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         Boolean(permissions.canEditAdvances),
         Boolean(permissions.canBillAdvances),
         Boolean(permissions.canManageInsuranceProviders),
+        Boolean(permissions.hasSpecialAccountsPayableAccess),
       ]
     )
 

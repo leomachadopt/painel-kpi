@@ -49,6 +49,7 @@ export interface UserPermissions {
   canEditAdvances: boolean
   canBillAdvances: boolean
   canManageInsuranceProviders: boolean
+  hasSpecialAccountsPayableAccess: boolean
 }
 
 /**
@@ -111,6 +112,7 @@ export async function getUserPermissions(
       canEditAdvances: true,
       canBillAdvances: true,
       canManageInsuranceProviders: true,
+      hasSpecialAccountsPayableAccess: true,
     }
   }
 
@@ -168,7 +170,8 @@ export async function getUserPermissions(
       can_view_advances,
       can_edit_advances,
       can_bill_advances,
-      can_manage_insurance_providers
+      can_manage_insurance_providers,
+      has_special_accounts_payable_access
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -228,7 +231,15 @@ export async function getUserPermissions(
     canEditAdvances: Boolean(perms.can_edit_advances),
     canBillAdvances: Boolean(perms.can_bill_advances),
     canManageInsuranceProviders: Boolean(perms.can_manage_insurance_providers),
+    hasSpecialAccountsPayableAccess: Boolean(perms.has_special_accounts_payable_access),
   }
+  
+  // Se o usuário tem acesso especial a contas a pagar, garantir que pode visualizar
+  if (permissions.hasSpecialAccountsPayableAccess) {
+    permissions.canViewAccountsPayable = true
+    permissions.canEditAccountsPayable = true
+  }
+  
   return permissions
 }
 
@@ -281,6 +292,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditAdvances: false,
     canBillAdvances: false,
     canManageInsuranceProviders: false,
+    hasSpecialAccountsPayableAccess: false,
   }
 }
 
@@ -348,6 +360,30 @@ export function requireMentor(req: AuthedRequest, res: Response, next: NextFunct
   }
 
   next()
+}
+
+/**
+ * Helper function to check if user has access to accounts payable
+ * GESTOR_CLINICA always has access, COLABORADOR needs canViewAccountsPayable or hasSpecialAccountsPayableAccess
+ */
+export async function canAccessAccountsPayable(
+  userId: string,
+  role: string,
+  clinicId?: string
+): Promise<boolean> {
+  // GESTOR_CLINICA and MENTOR always have access
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR - check permissions
+  if (role === 'COLABORADOR' && clinicId) {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canViewAccountsPayable === true || 
+           permissions.hasSpecialAccountsPayableAccess === true
+  }
+
+  return false
 }
 
 /**
