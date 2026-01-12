@@ -47,6 +47,7 @@ import { RejectOrderDialog } from '@/components/orders/RejectOrderDialog'
 import { CheckOrderDialog } from '@/components/orders/CheckOrderDialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useTranslation } from '@/hooks/useTranslation'
 import useAuthStore from '@/stores/useAuthStore'
 
 export default function Orders() {
@@ -56,6 +57,7 @@ export default function Orders() {
   const canViewOrders = canView('canViewOrders') || canEdit('canEditOrders')
   const canEditOrders = canEdit('canEditOrders')
   const isGestor = user?.role === 'GESTOR_CLINICA'
+  const { formatCurrency } = useTranslation()
   const [orders, setOrders] = useState<DailyOrderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')

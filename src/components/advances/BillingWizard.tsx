@@ -25,6 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface BillingWizardProps {
   clinicId: string
@@ -366,12 +367,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     // Don't reset creating flag on success to prevent any potential race conditions
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(value)
-  }
+  const { t, formatCurrency } = useTranslation()
 
   // Calculate totals in real-time
   const selectedTotal = selectedItems.reduce((sum, item) => sum + item.totalValue, 0)
@@ -415,7 +411,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Assistente de Faturação</DialogTitle>
+          <DialogTitle>{t('financial.billingWizard')}</DialogTitle>
           <DialogDescription>
             Selecione as pessoas e adicione procedimentos ao lote. Cada pessoa pode ter seus próprios procedimentos no mesmo lote.
           </DialogDescription>

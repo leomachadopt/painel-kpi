@@ -51,7 +51,7 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const { canView } = usePermissions()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
 
   const [selectedMonth, setSelectedMonth] = useState<string>(
     (new Date().getMonth() + 1).toString()
@@ -80,13 +80,13 @@ export default function Dashboard() {
 
   const kpis = useMemo(() => {
     if (!clinicId || !hasAccess) return []
-    return calculateKPIs(clinicId, currentMonth, currentYear)
-  }, [clinicId, currentMonth, currentYear, calculateKPIs, hasAccess])
+    return calculateKPIs(clinicId, currentMonth, currentYear, locale)
+  }, [clinicId, currentMonth, currentYear, calculateKPIs, hasAccess, locale])
 
   const alerts = useMemo(() => {
     if (!clinicId || !hasAccess) return []
-    return calculateAlerts(clinicId, currentMonth, currentYear)
-  }, [clinicId, currentMonth, currentYear, calculateAlerts, hasAccess])
+    return calculateAlerts(clinicId, currentMonth, currentYear, locale)
+  }, [clinicId, currentMonth, currentYear, calculateAlerts, hasAccess, locale])
 
   const monthlyData = useMemo(() => {
     if (!clinicId || !hasAccess) return undefined
@@ -128,8 +128,9 @@ export default function Dashboard() {
       currentYear,
       kpis,
       alerts,
+      locale,
     )
-  }, [clinic, currentMonth, currentYear, kpis, alerts, hasAccess])
+  }, [clinic, currentMonth, currentYear, kpis, alerts, hasAccess, locale])
 
   // Verificar permissões do dashboard
   const canViewOverview = canView('canViewDashboardOverview')

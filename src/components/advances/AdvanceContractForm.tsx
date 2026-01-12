@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from '@/hooks/useTranslation'
 import { Textarea } from '@/components/ui/textarea'
 import { advancesApi, patientsApi } from '@/services/api'
 import { toast } from 'sonner'
@@ -66,12 +67,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   const isEdit = !!contract
   const schema = createSchema(isEdit)
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(value)
-  }
+  const { formatCurrency } = useTranslation()
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),

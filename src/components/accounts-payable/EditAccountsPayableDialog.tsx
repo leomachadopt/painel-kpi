@@ -27,6 +27,7 @@ import { AccountsPayableEntry } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const schema = z.object({
   description: z.string().min(1, 'Descrição obrigatória'),
@@ -53,6 +54,7 @@ export function EditAccountsPayableDialog({
   onSuccess,
 }: EditAccountsPayableDialogProps) {
   const { updateAccountsPayableEntry } = useDataStore()
+  const { t } = useTranslation()
   const [entry, setEntry] = useState<AccountsPayableEntry | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -344,7 +346,7 @@ export function EditAccountsPayableDialog({
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor (€)</FormLabel>
+                      <FormLabel>{t('financial.valueWithCurrency')}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

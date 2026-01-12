@@ -10,12 +10,14 @@ import {
   AlertCircle,
   XCircle,
 } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface KPICardProps {
   kpi: KPI
 }
 
 export function KPICard({ kpi }: KPICardProps) {
+  const { formatCurrency, formatNumber } = useTranslation()
   const isPositive = kpi.change > 0
   const isNegative = kpi.change < 0
 
@@ -45,11 +47,7 @@ export function KPICard({ kpi }: KPICardProps) {
       return '0'
     }
     if (unit === 'currency') {
-      return new Intl.NumberFormat('pt-PT', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: 0,
-      }).format(val)
+      return formatCurrency(val)
     }
     if (unit === 'percent') {
       return `${val.toFixed(1)}%`
@@ -60,7 +58,7 @@ export function KPICard({ kpi }: KPICardProps) {
     if (unit === 'time') {
       return `${val} min`
     }
-    return val.toLocaleString('pt-PT')
+    return formatNumber(val)
   }
 
   return (

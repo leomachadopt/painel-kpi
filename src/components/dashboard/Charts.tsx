@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/chart'
 import { MonthlyData } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // --- Revenue Breakdown Chart ---
 export function RevenueChart({ data }: { data: MonthlyData }) {
@@ -203,6 +204,7 @@ export function ProspectingChart({ data }: { data: MonthlyData }) {
 
 // --- Cabinet Usage Chart ---
 export function CabinetChart({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = data.cabinets.map((c) => ({
     name: c.name,
     used: c.hoursOccupied,
@@ -223,7 +225,7 @@ export function CabinetChart({ data }: { data: MonthlyData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ocupação Gabinetes</CardTitle>
+        <CardTitle>{t('financial.cabinetOccupation')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
@@ -363,6 +365,7 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
 
 // --- Revenue Evolution Chart (6 months) ---
 export function RevenueEvolutionChart({ monthlyDataList }: { monthlyDataList: MonthlyData[] }) {
+  const { t } = useTranslation()
   // Expect last 6 months in chronological order
   const chartData = monthlyDataList.slice(-6).map((m) => ({
     month: `${m.month}/${m.year.toString().slice(-2)}`,
@@ -371,7 +374,7 @@ export function RevenueEvolutionChart({ monthlyDataList }: { monthlyDataList: Mo
 
   const chartConfig = {
     revenue: {
-      label: 'Faturação',
+      label: t('financial.billing'),
       color: 'hsl(var(--primary))',
     },
   } satisfies ChartConfig
@@ -464,6 +467,10 @@ export function OwnerAgendaChart({ data }: { data: MonthlyData }) {
 
 // --- Revenue per Cabinet Chart ---
 export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
+  const { formatCurrency, locale, formatNumber } = useTranslation()
+  const currencySymbol = locale === 'PT-BR' ? 'R$' : '€'
+  const localeString = locale === 'PT-BR' ? 'pt-BR' : 'pt-PT'
+  
   const chartData = data.cabinets
     .map(c => ({
       name: c.name,
@@ -481,7 +488,7 @@ export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Receita por Gabinete</CardTitle>
+        <CardTitle>{t('financial.revenuePerCabinet')}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -490,12 +497,12 @@ export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
         >
           <BarChart data={chartData} layout="horizontal">
             <CartesianGrid vertical={false} />
-            <XAxis type="number" dataKey="revenue" tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`} />
+            <XAxis type="number" dataKey="revenue" tickFormatter={(value) => `${currencySymbol}${(value / 1000).toFixed(0)}k`} />
             <YAxis type="category" dataKey="name" width={100} />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent 
-                formatter={(value) => `€${Number(value).toLocaleString('pt-PT')}`}
+                formatter={(value) => formatCurrency(Number(value))}
               />}
             />
             <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />

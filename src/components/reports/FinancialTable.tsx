@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { EditFinancialDialog } from './EditFinancialDialog'
 import { exportFinancialToExcel } from '@/lib/excelExport'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function FinancialTable({
   data,
@@ -28,6 +29,7 @@ export function FinancialTable({
   startDate?: string
   endDate?: string
 }) {
+  const { formatCurrency } = useTranslation()
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<DailyFinancialEntry | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -38,7 +40,7 @@ export function FinancialTable({
     clinic.configuration.cabinets.find((c) => c.id === id)?.name || id
 
   const handleDelete = async (entry: DailyFinancialEntry) => {
-    if (!confirm(`Excluir lançamento de €${entry.value} de ${entry.patientName}?`)) {
+    if (!confirm(`Excluir lançamento de ${formatCurrency(entry.value)} de ${entry.patientName}?`)) {
       return
     }
 
@@ -101,7 +103,7 @@ export function FinancialTable({
               <TableHead>Paciente</TableHead>
               <TableHead>Código</TableHead>
               <TableHead>Categoria</TableHead>
-              <TableHead>Gabinete</TableHead>
+              <TableHead>{t('financial.cabinet')}</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead className="w-[120px]">Ações</TableHead>
             </TableRow>
@@ -118,10 +120,7 @@ export function FinancialTable({
                   <TableCell>{getCategoryName(entry.categoryId)}</TableCell>
                   <TableCell>{getCabinetName(entry.cabinetId)}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {new Intl.NumberFormat('pt-PT', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    }).format(entry.value)}
+                    {formatCurrency(entry.value)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">

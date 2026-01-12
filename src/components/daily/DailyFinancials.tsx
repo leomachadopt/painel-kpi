@@ -22,20 +22,22 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
-
-const schema = z.object({
-  date: z.string(),
-  patientName: z.string().min(1, 'Nome obrigatório'),
-  code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
-  categoryId: z.string().min(1, 'Categoria obrigatória'),
-  value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
-  cabinetId: z.string().min(1, 'Gabinete obrigatório'),
-  doctorId: z.string().optional(),
-  paymentSourceId: z.string().optional(),
-})
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function DailyFinancials({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { addFinancialEntry } = useDataStore()
+  
+  const schema = z.object({
+    date: z.string(),
+    patientName: z.string().min(1, 'Nome obrigatório'),
+    code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
+    categoryId: z.string().min(1, 'Categoria obrigatória'),
+    value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
+    cabinetId: z.string().min(1, t('cabinet.required')),
+    doctorId: z.string().optional(),
+    paymentSourceId: z.string().optional(),
+  })
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -136,7 +138,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
             name="cabinetId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Gabinete</FormLabel>
+                <FormLabel>{t('financial.cabinet')}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -213,7 +215,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
           name="value"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor (€)</FormLabel>
+              <FormLabel>{t('financial.valueWithCurrency')}</FormLabel>
               <FormControl>
                 <Input
                   type="number"

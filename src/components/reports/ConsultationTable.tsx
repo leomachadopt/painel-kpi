@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { EditConsultationDialog } from './EditConsultationDialog'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function ConsultationTable({
   data,
@@ -25,6 +26,7 @@ export function ConsultationTable({
   onDelete?: () => void
 }) {
   const { deleteConsultationEntry } = useDataStore()
+  const { formatCurrency } = useTranslation()
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<DailyConsultationEntry | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -114,18 +116,12 @@ export function ConsultationTable({
                   </TableCell>
                   <TableCell className="text-right">
                     {entry.planPresentedValue && entry.planPresentedValue > 0
-                      ? new Intl.NumberFormat('pt-PT', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        }).format(entry.planPresentedValue)
+                      ? formatCurrency(entry.planPresentedValue)
                       : '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     {entry.planValue && entry.planValue > 0
-                      ? new Intl.NumberFormat('pt-PT', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        }).format(entry.planValue)
+                      ? formatCurrency(entry.planValue)
                       : '-'}
                   </TableCell>
                   {clinic && (

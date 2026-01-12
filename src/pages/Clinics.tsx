@@ -239,8 +239,9 @@ export default function Clinics() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredClinics.map((clinic) => {
-          const kpis = calculateKPIs(clinic.id, CURRENT_MONTH, CURRENT_YEAR)
-          const alerts = calculateAlerts(clinic.id, CURRENT_MONTH, CURRENT_YEAR)
+          const clinicLocale = clinic.country || 'PT-BR'
+          const kpis = calculateKPIs(clinic.id, CURRENT_MONTH, CURRENT_YEAR, clinicLocale)
+          const alerts = calculateAlerts(clinic.id, CURRENT_MONTH, CURRENT_YEAR, clinicLocale)
 
           const revenueKPI = kpis.find((k) => k.id === 'revenue_monthly')
           const alignersKPI = kpis.find((k) => k.id === 'aligner_starts')
@@ -333,7 +334,7 @@ export default function Clinics() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Faturação vs Meta
+                      {t('financial.billingVsTarget')}
                     </span>
                     <span className={`font-bold ${statusTextColor}`}>
                       {revenuePercent.toFixed(1)}%

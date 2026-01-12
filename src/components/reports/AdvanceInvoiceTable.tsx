@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { EditAdvanceInvoiceDialog } from './EditAdvanceInvoiceDialog'
 import { Badge } from '@/components/ui/badge'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface AdvanceInvoiceRow {
   entryId: string
@@ -110,12 +111,7 @@ export function AdvanceInvoiceTable({
     0
   )
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(value)
-  }
+  const { formatCurrency } = useTranslation()
 
   const handleExport = () => {
     if (!startDate || !endDate) {

@@ -20,6 +20,7 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useTranslation } from '@/hooks/useTranslation'
 import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
@@ -49,7 +50,7 @@ const ListEditor = ({
   const add = () => {
     if (!newItem) return
     const entry: any = { id: Math.random().toString(36), name: newItem }
-    if (title === 'Gabinetes') entry.standardHours = parseFloat(newHours)
+    if (title === t('cabinet.title')) entry.standardHours = parseFloat(newHours)
     onUpdate([...items, entry])
     setNewItem('')
     setNewHours('8')
@@ -75,7 +76,7 @@ const ListEditor = ({
     const updated = items.map((item) => {
       if (item.id === id) {
         const updatedItem: any = { ...item, name: editName }
-        if (title === 'Gabinetes') {
+        if (title === t('cabinet.title')) {
           updatedItem.standardHours = parseFloat(editHours)
         }
         return updatedItem
@@ -465,6 +466,7 @@ const OrderItemsEditor = ({
 }
 
 export default function Settings() {
+  const { t, locale } = useTranslation()
   const { user } = useAuthStore()
   const { canEdit } = usePermissions()
   const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
@@ -708,7 +710,7 @@ export default function Settings() {
           <TabsTrigger value="paymentSources">Fontes de Recebimento</TabsTrigger>
           <TabsTrigger value="alignerBrands">Marcas de Alinhadores</TabsTrigger>
           <TabsTrigger value="orderItems">Itens</TabsTrigger>
-          <TabsTrigger value="cabinets">Gabinetes</TabsTrigger>
+          <TabsTrigger value="cabinets">{t('sidebar.cabinets')}</TabsTrigger>
           <TabsTrigger value="doctors">Médicos</TabsTrigger>
           <TabsTrigger value="targets">Metas</TabsTrigger>
           <TabsTrigger value="nps">NPS</TabsTrigger>
@@ -857,14 +859,14 @@ export default function Settings() {
         <TabsContent value="cabinets">
           <Card>
             <CardHeader>
-              <CardTitle>Gabinetes</CardTitle>
+              <CardTitle>{t('cabinet.title')}</CardTitle>
               <CardDescription>
-                Gerir os gabinetes e horas disponíveis.
+                {t('cabinet.manage')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ListEditor
-                title="Gabinetes"
+                title={t('cabinet.title')}
                 items={config.cabinets}
                 onUpdate={(items) => setConfig({ ...config, cabinets: items })}
                 readOnly={!canManageConfig}
@@ -943,7 +945,7 @@ export default function Settings() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Faturação Mensal (€)</Label>
+                  <Label>{t('financial.monthlyBilling')} ({locale === 'PT-BR' ? 'R$' : '€'})</Label>
                   <Input
                     type="number"
                     value={targets.targetRevenue || ''}
@@ -1068,7 +1070,7 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faturação por Gabinete (€)</Label>
+                  <Label>{t('financial.billingPerCabinet')} ({locale === 'PT-BR' ? 'R$' : '€'})</Label>
                   <Input
                     type="number"
                     value={targets.targetRevenuePerCabinet || ''}

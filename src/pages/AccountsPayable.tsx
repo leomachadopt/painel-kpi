@@ -50,6 +50,7 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useTranslation } from '@/hooks/useTranslation'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -310,10 +311,7 @@ export default function AccountsPayable() {
                         <TableCell>{entry.supplierName || '-'}</TableCell>
                         <TableCell>{entry.category || '-'}</TableCell>
                         <TableCell className="font-medium">
-                          {new Intl.NumberFormat('pt-PT', {
-                            style: 'currency',
-                            currency: 'EUR',
-                          }).format(entry.amount)}
+                          {formatCurrency(entry.amount)}
                         </TableCell>
                         <TableCell>
                           {format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR })}

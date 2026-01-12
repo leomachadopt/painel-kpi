@@ -20,15 +20,17 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
-
-const schema = z.object({
-  date: z.string(),
-  cabinetId: z.string().min(1, 'Selecione um gabinete'),
-  hoursUsed: z.coerce.number().min(0),
-})
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function DailyCabinets({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { addCabinetUsageEntry } = useDataStore()
+  
+  const schema = z.object({
+    date: z.string(),
+    cabinetId: z.string().min(1, t('cabinet.selectCabinet')),
+    hoursUsed: z.coerce.number().min(0),
+  })
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -84,7 +86,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
           name="cabinetId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Gabinete</FormLabel>
+              <FormLabel>{t('financial.cabinet')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>

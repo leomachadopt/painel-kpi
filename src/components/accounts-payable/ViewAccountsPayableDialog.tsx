@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale'
 import { AccountsPayableEntry } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ViewAccountsPayableDialogProps {
   open: boolean
@@ -30,6 +31,7 @@ export function ViewAccountsPayableDialog({
   clinicId,
   refreshTrigger,
 }: ViewAccountsPayableDialogProps) {
+  const { formatCurrency } = useTranslation()
   const [entry, setEntry] = useState<AccountsPayableEntry | null>(null)
   const [loading, setLoading] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
@@ -189,10 +191,7 @@ export function ViewAccountsPayableDialog({
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Valor</label>
                 <p className="text-base font-semibold">
-                  {new Intl.NumberFormat('pt-PT', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(entry.amount)}
+                  {formatCurrency(entry.amount)}
                 </p>
               </div>
               <div>

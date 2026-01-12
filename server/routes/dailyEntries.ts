@@ -1949,7 +1949,7 @@ router.get('/suppliers/:clinicId', async (req, res) => {
     const params: any[] = [clinicId]
     
     if (search && typeof search === 'string' && search.trim()) {
-      queryStr += ` AND (name ILIKE $2 OR nif ILIKE $2)`
+      queryStr += ` AND (name ILIKE $2 OR nif ILIKE $2 OR cpf ILIKE $2 OR cnpj ILIKE $2)`
       params.push(`%${search.trim()}%`)
     }
     
@@ -1963,6 +1963,8 @@ router.get('/suppliers/:clinicId', async (req, res) => {
         clinicId: row.clinic_id,
         name: row.name,
         nif: row.nif || null,
+        cpf: row.cpf || null,
+        cnpj: row.cnpj || null,
         address: row.address || null,
         postalCode: row.postal_code || null,
         city: row.city || null,
@@ -1970,6 +1972,15 @@ router.get('/suppliers/:clinicId', async (req, res) => {
         email: row.email || null,
         website: row.website || null,
         notes: row.notes || null,
+        bankName: row.bank_name || null,
+        iban: row.iban || null,
+        nib: row.nib || null,
+        swiftBic: row.swift_bic || null,
+        bankAgency: row.bank_agency || null,
+        bankAccount: row.bank_account || null,
+        bankAccountType: row.bank_account_type || null,
+        bankCode: row.bank_code || null,
+        pixKey: row.pix_key || null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }))
@@ -2016,6 +2027,8 @@ router.get('/suppliers/:clinicId/:supplierId', async (req, res) => {
       clinicId: row.clinic_id,
       name: row.name,
       nif: row.nif || null,
+      cpf: row.cpf || null,
+      cnpj: row.cnpj || null,
       address: row.address || null,
       postalCode: row.postal_code || null,
       city: row.city || null,
@@ -2023,6 +2036,15 @@ router.get('/suppliers/:clinicId/:supplierId', async (req, res) => {
       email: row.email || null,
       website: row.website || null,
       notes: row.notes || null,
+      bankName: row.bank_name || null,
+      iban: row.iban || null,
+      nib: row.nib || null,
+      swiftBic: row.swift_bic || null,
+      bankAgency: row.bank_agency || null,
+      bankAccount: row.bank_account || null,
+      bankAccountType: row.bank_account_type || null,
+      bankCode: row.bank_code || null,
+      pixKey: row.pix_key || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2041,7 +2063,7 @@ router.post('/suppliers/:clinicId', async (req, res) => {
   }
   
   try {
-    const { name, nif, address, postalCode, city, phone, email, website, notes } = req.body
+    const { name, nif, cpf, cnpj, address, postalCode, city, phone, email, website, notes, bankName, iban, nib, swiftBic, bankAgency, bankAccount, bankAccountType, bankCode, pixKey } = req.body
     
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name is required' })
@@ -2051,14 +2073,16 @@ router.post('/suppliers/:clinicId', async (req, res) => {
     
     const result = await query(
       `INSERT INTO suppliers
-       (id, clinic_id, name, nif, address, postal_code, city, phone, email, website, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       (id, clinic_id, name, nif, cpf, cnpj, address, postal_code, city, phone, email, website, notes, bank_name, iban, nib, swift_bic, bank_agency, bank_account, bank_account_type, bank_code, pix_key)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
        RETURNING *`,
       [
         supplierId,
         clinicId,
         name.trim(),
         nif?.trim() || null,
+        cpf?.trim() || null,
+        cnpj?.trim() || null,
         address?.trim() || null,
         postalCode?.trim() || null,
         city?.trim() || null,
@@ -2066,6 +2090,15 @@ router.post('/suppliers/:clinicId', async (req, res) => {
         email?.trim() || null,
         website?.trim() || null,
         notes?.trim() || null,
+        bankName?.trim() || null,
+        iban?.trim() || null,
+        nib?.trim() || null,
+        swiftBic?.trim() || null,
+        bankAgency?.trim() || null,
+        bankAccount?.trim() || null,
+        bankAccountType?.trim() || null,
+        bankCode?.trim() || null,
+        pixKey?.trim() || null,
       ]
     )
     
@@ -2075,6 +2108,8 @@ router.post('/suppliers/:clinicId', async (req, res) => {
       clinicId: row.clinic_id,
       name: row.name,
       nif: row.nif || null,
+      cpf: row.cpf || null,
+      cnpj: row.cnpj || null,
       address: row.address || null,
       postalCode: row.postal_code || null,
       city: row.city || null,
@@ -2082,6 +2117,15 @@ router.post('/suppliers/:clinicId', async (req, res) => {
       email: row.email || null,
       website: row.website || null,
       notes: row.notes || null,
+      bankName: row.bank_name || null,
+      iban: row.iban || null,
+      nib: row.nib || null,
+      swiftBic: row.swift_bic || null,
+      bankAgency: row.bank_agency || null,
+      bankAccount: row.bank_account || null,
+      bankAccountType: row.bank_account_type || null,
+      bankCode: row.bank_code || null,
+      pixKey: row.pix_key || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })
@@ -2104,7 +2148,7 @@ router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
   
   try {
     const { supplierId } = req.params
-    const { name, nif, address, postalCode, city, phone, email, website, notes } = req.body
+    const { name, nif, cpf, cnpj, address, postalCode, city, phone, email, website, notes, bankName, iban, nib, swiftBic, bankAgency, bankAccount, bankAccountType, bankCode, pixKey } = req.body
     
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name is required' })
@@ -2112,13 +2156,17 @@ router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
     
     const result = await query(
       `UPDATE suppliers
-       SET name = $1, nif = $2, address = $3, postal_code = $4, city = $5, 
-           phone = $6, email = $7, website = $8, notes = $9
-       WHERE id = $10 AND clinic_id = $11
+       SET name = $1, nif = $2, cpf = $3, cnpj = $4, address = $5, postal_code = $6, city = $7, 
+           phone = $8, email = $9, website = $10, notes = $11,
+           bank_name = $12, iban = $13, nib = $14, swift_bic = $15,
+           bank_agency = $16, bank_account = $17, bank_account_type = $18, bank_code = $19, pix_key = $20
+       WHERE id = $21 AND clinic_id = $22
        RETURNING *`,
       [
         name.trim(),
         nif?.trim() || null,
+        cpf?.trim() || null,
+        cnpj?.trim() || null,
         address?.trim() || null,
         postalCode?.trim() || null,
         city?.trim() || null,
@@ -2126,6 +2174,15 @@ router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
         email?.trim() || null,
         website?.trim() || null,
         notes?.trim() || null,
+        bankName?.trim() || null,
+        iban?.trim() || null,
+        nib?.trim() || null,
+        swiftBic?.trim() || null,
+        bankAgency?.trim() || null,
+        bankAccount?.trim() || null,
+        bankAccountType?.trim() || null,
+        bankCode?.trim() || null,
+        pixKey?.trim() || null,
         supplierId,
         clinicId,
       ]
@@ -2141,6 +2198,8 @@ router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
       clinicId: row.clinic_id,
       name: row.name,
       nif: row.nif || null,
+      cpf: row.cpf || null,
+      cnpj: row.cnpj || null,
       address: row.address || null,
       postalCode: row.postal_code || null,
       city: row.city || null,
@@ -2148,6 +2207,15 @@ router.put('/suppliers/:clinicId/:supplierId', async (req, res) => {
       email: row.email || null,
       website: row.website || null,
       notes: row.notes || null,
+      bankName: row.bank_name || null,
+      iban: row.iban || null,
+      nib: row.nib || null,
+      swiftBic: row.swift_bic || null,
+      bankAgency: row.bank_agency || null,
+      bankAccount: row.bank_account || null,
+      bankAccountType: row.bank_account_type || null,
+      bankCode: row.bank_code || null,
+      pixKey: row.pix_key || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })

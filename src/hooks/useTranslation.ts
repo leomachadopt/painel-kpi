@@ -61,9 +61,10 @@ export function useTranslation() {
 
   // Formatação de moeda
   const formatCurrency = (value: number): string => {
+    const currency = locale === 'PT-BR' ? 'BRL' : 'EUR'
     return new Intl.NumberFormat(
       locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
-      { style: 'currency', currency: 'EUR' }
+      { style: 'currency', currency }
     ).format(value)
   }
 

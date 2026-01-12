@@ -31,6 +31,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { DailyAdvanceInvoiceEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { toast } from 'sonner'
 
 const schema = z.object({
@@ -59,6 +60,7 @@ export function EditAdvanceInvoiceDialog({
   clinic,
   onSuccess,
 }: EditAdvanceInvoiceDialogProps) {
+  const { t } = useTranslation()
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

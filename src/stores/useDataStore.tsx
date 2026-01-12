@@ -23,6 +23,7 @@ import { getMonth, getYear, parseISO } from 'date-fns'
 import { clinicsApi, dailyEntriesApi, patientsApi, targetsApi } from '@/services/api'
 import { toast } from 'sonner'
 import { useAuth } from './useAuthStore'
+import { ptBR, ptPT } from '@/lib/translations'
 
 interface DataState {
   clinics: Clinic[]
@@ -41,8 +42,8 @@ interface DataState {
     year: number,
   ) => MonthlyData | undefined
   addMonthlyData: (data: MonthlyData) => void
-  calculateKPIs: (clinicId: string, month: number, year: number) => KPI[]
-  calculateAlerts: (clinicId: string, month: number, year: number) => Alert[]
+  calculateKPIs: (clinicId: string, month: number, year: number, locale?: 'PT-BR' | 'PT-PT') => KPI[]
+  calculateAlerts: (clinicId: string, month: number, year: number, locale?: 'PT-BR' | 'PT-PT') => Alert[]
   calculateAlignersAlerts: (clinicId: string) => Alert[]
 
   // Daily Entries Actions
@@ -289,9 +290,11 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         let cabinet = data.cabinets.find((c: any) => c.id === entry.cabinetId)
         if (!cabinet) {
           const cabinetConfig = clinic.configuration.cabinets.find(c => c.id === entry.cabinetId)
+          const clinicLocale = clinic.country || 'PT-BR'
+          const defaultCabinetName = clinicLocale === 'PT-BR' ? ptBR.cabinet.defaultName : ptPT.cabinet.defaultName
           cabinet = {
             id: entry.cabinetId,
-            name: cabinetConfig?.name || `Gabinete ${entry.cabinetId}`,
+            name: cabinetConfig?.name || `${defaultCabinetName} ${entry.cabinetId}`,
             revenue: 0,
             hoursAvailable: 0,
             hoursOccupied: 0,
@@ -2055,7 +2058,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       await dailyEntriesApi.cabinet.delete(clinicId, entryId)
-      toast.success('Entrada de gabinete excluída com sucesso!')
+      const clinic = getClinic(clinicId)
+      const locale = clinic?.country || 'PT-BR'
+      const t = locale === 'PT-BR' ? ptBR : ptPT
+      toast.success(t.cabinet.deleted)
     } catch (error: any) {
       setCabinetEntries((prev) => ({
         ...prev,
@@ -2064,9 +2070,15 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       const msg = String(error?.message || '').toLowerCase()
       const isForbidden = error?.status === 403 || msg.includes('forbidden')
       if (isForbidden) {
-        toast.error('Sem permissão para excluir entrada de gabinete.')
+        const clinic = getClinic(clinicId)
+        const locale = clinic?.country || 'PT-BR'
+        const t = locale === 'PT-BR' ? ptBR : ptPT
+        toast.error(t.cabinet.noPermission)
       } else {
-        toast.error(error?.message || 'Erro ao excluir entrada de gabinete.')
+        const clinic = getClinic(clinicId)
+        const locale = clinic?.country || 'PT-BR'
+        const t = locale === 'PT-BR' ? ptBR : ptPT
+        toast.error(error?.message || t.cabinet.deleteError)
       }
       throw error
     }
@@ -2158,20 +2170,26 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     month: number,
     year: number,
+    locale: 'PT-BR' | 'PT-PT' = 'PT-BR',
   ): Alert[] => {
     const current = getMonthlyData(clinicId, month, year)
     const clinic = getClinic(clinicId)
     const targets = getMonthlyTargets(clinicId, month, year)
     if (!current || !clinic) return []
     
+    // Use clinic country if available, otherwise use passed locale
+    const effectiveLocale = clinic.country || locale
+    const t = effectiveLocale === 'PT-BR' ? ptBR : ptPT
+    
     const alerts: Alert[] = []
 
     // 1. Faturação Crítica
     if (current.revenueTotal < clinic.targetRevenue * 0.9) {
+      const percent = (current.revenueTotal / clinic.targetRevenue * 100).toFixed(0)
       alerts.push({
         id: 'billing',
-        rule: 'Faturação',
-        message: `Faturação abaixo de 90% da meta (${(current.revenueTotal / clinic.targetRevenue * 100).toFixed(0)}%). Rever estratégia comercial e volume de primeiras consultas.`,
+        rule: t.financial.billing,
+        message: t.financial.billingBelowTargetMessage.replace('{percent}', percent),
         severity: 'destructive',
       })
     }
@@ -2217,8 +2235,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (occupancyRate < targets.targetOccupancyRate - 15) {
       alerts.push({
         id: 'occupancy',
-        rule: 'Ocupação de Gabinetes',
-        message: `Ocupação em ${occupancyRate.toFixed(0)}% (meta: ${targets.targetOccupancyRate}%). Otimizar agenda e confirmar presenças.`,
+        rule: t.financial.cabinetOccupation,
+        message: `${t.financial.cabinetOccupation} em ${occupancyRate.toFixed(0)}% (meta: ${targets.targetOccupancyRate}%). Otimizar agenda e confirmar presenças.`,
         severity: 'warning',
       })
     }
@@ -2334,6 +2352,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     month: number,
     year: number,
+    locale: 'PT-BR' | 'PT-PT' = 'PT-BR',
   ): KPI[] => {
     const current = getMonthlyData(clinicId, month, year)
     const previous = getMonthlyData(
@@ -2344,6 +2363,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const clinic = getClinic(clinicId)
     const targets = getMonthlyTargets(clinicId, month, year)
     if (!current || !clinic) return []
+    
+    // Use clinic country if available, otherwise use passed locale
+    const effectiveLocale = clinic.country || locale
+    const t = effectiveLocale === 'PT-BR' ? ptBR : ptPT
     
     const getStatus = (
       v: number,
@@ -2364,7 +2387,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // ===== FINANCEIRO (4 KPIs) =====
     kpis.push({
       id: 'revenue_monthly',
-      name: 'Faturação Mensal',
+      name: t.financial.monthlyBilling,
       value: current.revenueTotal,
       unit: 'currency',
       change: calcChange(current.revenueTotal, previous?.revenueTotal),
@@ -2396,7 +2419,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'revenue_per_cabinet',
-      name: 'Receita/Gabinete',
+      name: t.financial.revenuePerCabinetName,
       value: revenuePerCabinet,
       unit: 'currency',
       change: calcChange(revenuePerCabinet, prevRevenuePerCabinet),

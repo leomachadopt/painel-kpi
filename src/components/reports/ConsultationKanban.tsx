@@ -2,11 +2,12 @@ import { DailyConsultationEntry, Clinic } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, User, Hash, Euro, Pencil, Trash2, MoreVertical } from 'lucide-react'
+import { Calendar, User, Hash, Euro, DollarSign, Pencil, Trash2, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { EditConsultationDialog } from './EditConsultationDialog'
+import { useTranslation } from '@/hooks/useTranslation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,9 +32,12 @@ export function ConsultationKanban({
   onDelete?: () => void
 }) {
   const { deleteConsultationEntry } = useDataStore()
+  const { formatCurrency, formatDate: formatDateLocale, locale, t } = useTranslation()
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<DailyConsultationEntry | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  
+  const CurrencyIcon = locale === 'PT-BR' ? DollarSign : Euro
 
   const handleDelete = async (entry: DailyConsultationEntry) => {
     if (!clinic) return
@@ -94,7 +98,7 @@ export function ConsultationKanban({
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return ''
     const date = new Date(dateStr)
-    return date.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })
+    return date.toLocaleDateString(locale === 'PT-BR' ? 'pt-BR' : 'pt-PT', { day: '2-digit', month: '2-digit' })
   }
 
   return (
@@ -201,24 +205,18 @@ export function ConsultationKanban({
                     {/* Plan Value */}
                     {entry.planAccepted && entry.planValue && entry.planValue > 0 ? (
                       <div className="flex items-center gap-1 text-sm font-semibold text-emerald-700 pt-1 border-t">
-                        <Euro className="h-3.5 w-3.5" />
+                        <CurrencyIcon className="h-3.5 w-3.5" />
                         <span>
-                          {new Intl.NumberFormat('pt-PT', {
-                            style: 'currency',
-                            currency: 'EUR',
-                          }).format(entry.planValue)}
+                          {formatCurrency(entry.planValue)}
                         </span>
                       </div>
                     ) : entry.planPresentedValue && entry.planPresentedValue > 0 ? (
                       <div className="flex items-center gap-1 text-sm font-semibold text-blue-700 pt-1 border-t">
-                        <Euro className="h-3.5 w-3.5" />
+                        <CurrencyIcon className="h-3.5 w-3.5" />
                         <span>
-                          {new Intl.NumberFormat('pt-PT', {
-                            style: 'currency',
-                            currency: 'EUR',
-                          }).format(entry.planPresentedValue)}
+                          {formatCurrency(entry.planPresentedValue)}
                         </span>
-                        <span className="text-xs text-muted-foreground font-normal">(previsto)</span>
+                        <span className="text-xs text-muted-foreground font-normal">({t('financial.previsto')})</span>
                       </div>
                     ) : null}
                   </div>

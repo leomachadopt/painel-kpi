@@ -7,13 +7,17 @@ export interface SummaryData {
   fullText: string
 }
 
-export const formatKPIValue = (val: number, unit: string) => {
+export const formatKPIValue = (val: number, unit: string, locale: 'PT-BR' | 'PT-PT' = 'PT-BR') => {
   if (unit === 'currency') {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(val)
+    const currency = locale === 'PT-BR' ? 'BRL' : 'EUR'
+    return new Intl.NumberFormat(
+      locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
+      {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+      }
+    ).format(val)
   }
   if (unit === 'percent') {
     return `${val.toFixed(1)}%`
@@ -24,7 +28,7 @@ export const formatKPIValue = (val: number, unit: string) => {
   if (unit === 'time') {
     return `${val} min`
   }
-  return val.toLocaleString('pt-PT')
+  return val.toLocaleString(locale === 'PT-BR' ? 'pt-BR' : 'pt-PT')
 }
 
 const ALERT_ACTION_MAP: Record<string, string> = {
@@ -47,6 +51,7 @@ export const generateSummary = (
   year: number,
   kpis: KPI[],
   alerts: Alert[],
+  locale: 'PT-BR' | 'PT-PT' = 'PT-BR',
 ): SummaryData => {
   // Strengths: Top 3 Success KPIs (by growth/change descending)
   const strengths = kpis
@@ -55,7 +60,7 @@ export const generateSummary = (
     .slice(0, 3)
     .map((k) => ({
       name: k.name,
-      value: formatKPIValue(k.value, k.unit),
+      value: formatKPIValue(k.value, k.unit, locale),
       change: k.change,
     }))
 
@@ -66,7 +71,7 @@ export const generateSummary = (
     .slice(0, 3)
     .map((k) => ({
       name: k.name,
-      value: formatKPIValue(k.value, k.unit),
+      value: formatKPIValue(k.value, k.unit, locale),
       change: k.change,
     }))
 

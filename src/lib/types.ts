@@ -288,7 +288,9 @@ export interface Supplier {
   id: string
   clinicId: string
   name: string
-  nif?: string | null
+  nif?: string | null // Portugal
+  cpf?: string | null // Brasil - Pessoa Física
+  cnpj?: string | null // Brasil - Pessoa Jurídica
   address?: string | null
   postalCode?: string | null
   city?: string | null
@@ -296,6 +298,17 @@ export interface Supplier {
   email?: string | null
   website?: string | null
   notes?: string | null
+  // Dados bancários Portugal
+  bankName?: string | null
+  iban?: string | null
+  nib?: string | null
+  swiftBic?: string | null
+  // Dados bancários Brasil
+  bankAgency?: string | null
+  bankAccount?: string | null
+  bankAccountType?: string | null
+  bankCode?: string | null
+  pixKey?: string | null
   createdAt: string
   updatedAt: string
 }

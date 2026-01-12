@@ -30,17 +30,7 @@ import {
 } from '@/components/ui/form'
 import { DailyFinancialEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
-
-const schema = z.object({
-  date: z.string(),
-  patientName: z.string().min(1, 'Nome obrigatório'),
-  code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
-  categoryId: z.string().min(1, 'Categoria obrigatória'),
-  value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
-  cabinetId: z.string().min(1, 'Gabinete obrigatório'),
-  doctorId: z.string().optional(),
-  paymentSourceId: z.string().optional(),
-})
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface EditFinancialDialogProps {
   open: boolean
@@ -57,6 +47,7 @@ export function EditFinancialDialog({
   clinic,
   onSuccess,
 }: EditFinancialDialogProps) {
+  const { t } = useTranslation()
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -180,7 +171,7 @@ export function EditFinancialDialog({
                 name="cabinetId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gabinete</FormLabel>
+                    <FormLabel>{t('financial.cabinet')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -257,7 +248,7 @@ export function EditFinancialDialog({
               name="value"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor (€)</FormLabel>
+                  <FormLabel>{t('financial.valueWithCurrency')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"

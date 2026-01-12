@@ -11,6 +11,7 @@ import { Trash2 } from 'lucide-react'
 import { DailyCabinetUsageEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
 import { useState } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function CabinetTable({
   data,
@@ -21,6 +22,7 @@ export function CabinetTable({
   clinic: Clinic
   onDelete?: () => void
 }) {
+  const { t } = useTranslation()
   const { deleteCabinetEntry } = useDataStore()
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -49,7 +51,7 @@ export function CabinetTable({
         <TableHeader>
           <TableRow>
             <TableHead>Data</TableHead>
-            <TableHead>Gabinete</TableHead>
+            <TableHead>{t('financial.cabinet')}</TableHead>
             <TableHead className="text-center">Horas Disponíveis</TableHead>
             <TableHead className="text-center">Horas Usadas</TableHead>
             <TableHead className="text-right">Taxa Ocupação</TableHead>

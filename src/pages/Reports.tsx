@@ -55,6 +55,7 @@ export default function Reports() {
   } = useDataStore()
   const { user } = useAuthStore()
   const { canView, canViewReport, isMentor } = usePermissions()
+  const { t } = useTranslation()
 
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -268,7 +269,7 @@ export default function Reports() {
             )}
             {canViewReport('canViewReportBilling') && (
               <TabsTrigger value="billing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Faturação
+                {t('financial.billing')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportAdvanceInvoice') && (
@@ -293,7 +294,7 @@ export default function Reports() {
             )}
             {canViewReport('canViewReportCabinets') && (
               <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Gabinetes
+                {t('sidebar.cabinets')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportServiceTime') && (

@@ -28,6 +28,7 @@ import { toast } from 'sonner'
 import { Loader2, Paperclip } from 'lucide-react'
 import { OrderDocuments } from './OrderDocuments'
 import useAuthStore from '@/stores/useAuthStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { usePermissions } from '@/hooks/usePermissions'
 
 const schema = z.object({
@@ -64,6 +65,7 @@ export function EditOrderDialog({
 }: EditOrderDialogProps) {
   const { user } = useAuthStore()
   const { isGestor } = usePermissions()
+  const { formatCurrency } = useTranslation()
   const [order, setOrder] = useState<DailyOrderEntry | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)

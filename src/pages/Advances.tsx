@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useTranslation } from '@/hooks/useTranslation'
 import { AdvanceContractForm } from '@/components/advances/AdvanceContractForm'
 import { BillingWizard } from '@/components/advances/BillingWizard'
 import useDataStore from '@/stores/useDataStore'
@@ -230,12 +231,7 @@ export default function Advances() {
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(value)
-  }
+  const { t, formatCurrency } = useTranslation()
 
   if (!canViewAdvances) {
     return (
@@ -257,7 +253,7 @@ export default function Advances() {
         <div>
           <h1 className="text-3xl font-bold">Banco de Adiantamentos</h1>
           <p className="text-muted-foreground">
-            Gerencie contratos de adiantamento e faturação
+            {t('financial.billing')}
           </p>
         </div>
         {canEditAdvances && (
@@ -274,7 +270,7 @@ export default function Advances() {
             <div>
               <CardTitle>Contratos de Adiantamento</CardTitle>
               <CardDescription>
-                Lista de todos os contratos com saldo disponível para faturação
+                {t('financial.billing')}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -455,7 +451,7 @@ export default function Advances() {
           <DialogHeader>
             <DialogTitle>Lotes Emitidos</DialogTitle>
             <DialogDescription>
-              Lotes de faturação para {batchesContractName}
+              {t('financial.billingBatch')} para {batchesContractName}
             </DialogDescription>
           </DialogHeader>
           {loadingBatches ? (

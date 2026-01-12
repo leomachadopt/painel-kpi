@@ -24,6 +24,7 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useTranslation } from '@/hooks/useTranslation'
 import { DailyFinancials } from '@/components/daily/DailyFinancials'
 import { DailyConsultations } from '@/components/daily/DailyConsultations'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
@@ -35,6 +36,7 @@ import { DailyOrders } from '@/components/daily/DailyOrders'
 import { DailyAccountsPayable } from '@/components/daily/DailyAccountsPayable'
 
 export default function Inputs() {
+  const { t } = useTranslation()
   const { clinicId } = useParams<{ clinicId: string }>()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -156,7 +158,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Armchair className="h-4 w-4" />
-                <span className="whitespace-nowrap">Gabinetes</span>
+                <span className="whitespace-nowrap">{t('sidebar.cabinets')}</span>
               </TabsTrigger>
             )}
             {hasServiceTime && (
@@ -214,7 +216,7 @@ export default function Inputs() {
                 <CardHeader>
                   <CardTitle>Lançamento Financeiro</CardTitle>
                   <CardDescription>
-                    Registe as receitas diárias por categoria e gabinete.
+                    {t('cabinet.registerRevenue')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -260,9 +262,9 @@ export default function Inputs() {
             <TabsContent value="cabinets">
               <Card>
                 <CardHeader>
-                  <CardTitle>Ocupação de Gabinetes</CardTitle>
+                  <CardTitle>{t('financial.cabinetOccupation')}</CardTitle>
                   <CardDescription>
-                    Registe as horas utilizadas em cada gabinete.
+                    {t('cabinet.registerHours')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

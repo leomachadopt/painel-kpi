@@ -21,6 +21,7 @@ import { Clinic } from '@/lib/types'
 import { SupplierInput } from '@/components/SupplierInput'
 import { ItemInput } from '@/components/ItemInput'
 import { dailyEntriesApi } from '@/services/api'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const itemSchema = z.object({
   itemId: z.string().min(1, 'Item obrigatório'),
@@ -52,6 +53,7 @@ const schema = z.object({
 })
 
 export function DailyOrders({ clinic }: { clinic: Clinic }) {
+  const { formatCurrency } = useTranslation()
   const [lookupLoading, setLookupLoading] = useState(false)
   const [supplierName, setSupplierName] = useState('')
   const [itemNames, setItemNames] = useState<Record<number, string>>({})
@@ -255,10 +257,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           <div className="flex items-center justify-between p-4 border-2 border-primary/30 rounded-md bg-primary/10 shadow-sm">
             <span className="text-base font-semibold">Total do Pedido:</span>
             <span className="text-2xl font-bold text-primary">
-              {new Intl.NumberFormat('pt-PT', {
-                style: 'currency',
-                currency: 'EUR',
-              }).format(total)}
+              {formatCurrency(total)}
             </span>
           </div>
         )}

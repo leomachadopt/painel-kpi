@@ -20,6 +20,7 @@ import { Clinic } from '@/lib/types'
 import { useState, useRef } from 'react'
 import { File, X, Loader2 } from 'lucide-react'
 import { dailyEntriesApi } from '@/services/api'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const schema = z.object({
   description: z.string().min(1, 'Descrição obrigatória'),
@@ -32,6 +33,7 @@ const schema = z.object({
 
 export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
   const { addAccountsPayableEntry } = useDataStore()
+  const { t } = useTranslation()
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -221,7 +223,7 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor (€)</FormLabel>
+                <FormLabel>{t('financial.valueWithCurrency')}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"

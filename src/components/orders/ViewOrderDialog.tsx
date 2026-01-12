@@ -12,6 +12,7 @@ import { dailyEntriesApi } from '@/services/api'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 import {
   Table,
   TableBody,
@@ -115,10 +116,7 @@ export function ViewOrderDialog({
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Total</label>
                   <p className="text-base font-bold text-primary">
-                    {new Intl.NumberFormat('pt-PT', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    }).format(order.total)}
+                    {formatCurrency(order.total)}
                   </p>
                 </div>
               )}
@@ -148,20 +146,10 @@ export function ViewOrderDialog({
                             </TableCell>
                             <TableCell>{item.quantity || 0}</TableCell>
                             <TableCell>
-                              {item.unitPrice
-                                ? new Intl.NumberFormat('pt-PT', {
-                                    style: 'currency',
-                                    currency: 'EUR',
-                                  }).format(item.unitPrice)
-                                : '-'}
+                              {item.unitPrice ? formatCurrency(item.unitPrice) : '-'}
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              {subtotal > 0
-                                ? new Intl.NumberFormat('pt-PT', {
-                                    style: 'currency',
-                                    currency: 'EUR',
-                                  }).format(subtotal)
-                                : '-'}
+                              {subtotal > 0 ? formatCurrency(subtotal) : '-'}
                             </TableCell>
                           </TableRow>
                         )

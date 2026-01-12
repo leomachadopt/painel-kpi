@@ -12,6 +12,7 @@ import { Download } from 'lucide-react'
 import { DailyFinancialEntry, Clinic } from '@/lib/types'
 import { exportFinancialToExcel } from '@/lib/excelExport'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface BillingRow {
   doctorId: string | null
@@ -103,12 +104,7 @@ export function BillingTable({
     })
   })
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(value)
-  }
+  const { formatCurrency } = useTranslation()
 
   const handleExport = () => {
     if (!startDate || !endDate) {
