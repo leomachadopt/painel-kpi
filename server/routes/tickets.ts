@@ -35,17 +35,37 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
       }
     }
 
-    // Filtrar apenas tickets onde o usuário está envolvido (criador ou responsável)
+    // Verificar se a tabela ticket_assignees existe
+    const tableExists = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'ticket_assignees'
+      )
+    `)
+    const hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
+
+    // Filtrar apenas tickets onde o usuário está envolvido (criador, responsável ou atribuído)
     // Gestores podem ver todos os tickets da clínica
     let sql = `
-      SELECT COUNT(*) as count
-      FROM tickets
-      WHERE clinic_id = $1 AND status = 'PENDING'
+      SELECT COUNT(DISTINCT t.id) as count
+      FROM tickets t
     `
+    
+    if (hasTicketAssigneesTable) {
+      sql += `LEFT JOIN ticket_assignees ta ON ta.ticket_id = t.id`
+    }
+    
+    sql += ` WHERE t.clinic_id = $1 AND t.status = 'PENDING'`
+    
     const params: any[] = [clinicId]
 
     if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
-      sql += ` AND (created_by = $2 OR assigned_to = $2)`
+      if (hasTicketAssigneesTable) {
+        sql += ` AND (t.created_by = $2 OR t.assigned_to = $2 OR ta.user_id = $2)`
+      } else {
+        sql += ` AND (t.created_by = $2 OR t.assigned_to = $2)`
+      }
       params.push(userId)
     }
 
@@ -82,6 +102,31 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
       return res.status(401).json({ error: 'Usuário não autenticado' })
     }
 
+    // Verificar se a tabela ticket_assignees existe
+    const tableExists = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'ticket_assignees'
+      )
+    `)
+    const hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
+
+    let assigneesQuery = `'[]'::json as assignees`
+    if (hasTicketAssigneesTable) {
+      assigneesQuery = `COALESCE(
+        (SELECT json_agg(json_build_object(
+          'id', u3.id,
+          'name', u3.name,
+          'avatar_url', u3.avatar_url
+        ))
+        FROM ticket_assignees ta
+        JOIN users u3 ON ta.user_id = u3.id
+        WHERE ta.ticket_id = t.id),
+        '[]'::json
+      ) as assignees`
+    }
+
     const result = await query(
       `SELECT 
         t.*,
@@ -89,7 +134,8 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
         u1.avatar_url as created_by_avatar,
         u2.name as assigned_to_name,
         u2.avatar_url as assigned_to_avatar,
-        (SELECT COUNT(*) FROM ticket_comments WHERE ticket_id = t.id) as comments_count
+        (SELECT COUNT(*) FROM ticket_comments WHERE ticket_id = t.id) as comments_count,
+        ${assigneesQuery}
       FROM tickets t
       LEFT JOIN users u1 ON t.created_by = u1.id
       LEFT JOIN users u2 ON t.assigned_to = u2.id
@@ -114,10 +160,15 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
       }
     }
 
-    // Verificar se usuário está envolvido no ticket (criador ou responsável)
+    // Verificar se usuário está envolvido no ticket (criador, responsável ou atribuído)
     // Gestores podem ver todos os tickets da clínica
     if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
-      if (ticket.created_by !== userId && ticket.assigned_to !== userId) {
+      let isAssigned = false
+      if (hasTicketAssigneesTable && ticket.assignees) {
+        const assignees = ticket.assignees || []
+        isAssigned = Array.isArray(assignees) && assignees.some((a: any) => a.id === userId)
+      }
+      if (ticket.created_by !== userId && ticket.assigned_to !== userId && !isAssigned) {
         return res.status(403).json({ error: 'Acesso negado: você não está envolvido neste ticket' })
       }
     }
@@ -215,45 +266,95 @@ router.get('/:clinicId', requirePermission('canViewTickets'), async (req: Authed
 
     const { status, assignedTo } = req.query
 
-    let sql = `
+    // Verificar se a tabela ticket_assignees existe
+    let hasTicketAssigneesTable = false
+    try {
+      const tableExists = await query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'ticket_assignees'
+        )
+      `)
+      hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
+    } catch (err) {
+      // Se houver erro ao verificar, assumir que a tabela não existe
+      hasTicketAssigneesTable = false
+    }
+
+    let assigneesSubquery = `'[]'::json as assignees`
+    if (hasTicketAssigneesTable) {
+      assigneesSubquery = `COALESCE(
+        (SELECT json_agg(json_build_object(
+          'id', u3.id,
+          'name', u3.name,
+          'avatar_url', u3.avatar_url
+        ))
+        FROM ticket_assignees ta
+        JOIN users u3 ON ta.user_id = u3.id
+        WHERE ta.ticket_id = t.id),
+        '[]'::json
+      ) as assignees`
+    }
+
+    const params: any[] = [clinicId]
+    let paramIndex = 2
+    let userFilter = ''
+    let statusFilter = ''
+    let assignedToFilter = ''
+
+    // Filtrar apenas tickets onde o usuário está envolvido (criador, responsável ou atribuído)
+    // Gestores podem ver todos os tickets da clínica
+    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
+      if (hasTicketAssigneesTable) {
+        userFilter = ` AND (
+          t.created_by = $${paramIndex} 
+          OR t.assigned_to = $${paramIndex} 
+          OR EXISTS (SELECT 1 FROM ticket_assignees ta WHERE ta.ticket_id = t.id AND ta.user_id = $${paramIndex})
+        )`
+      } else {
+        userFilter = ` AND (t.created_by = $${paramIndex} OR t.assigned_to = $${paramIndex})`
+      }
+      params.push(userId)
+      paramIndex++
+    }
+
+    if (status && status !== 'all') {
+      statusFilter = ` AND t.status = $${paramIndex}`
+      params.push(status)
+      paramIndex++
+    }
+
+    if (assignedTo && assignedTo !== 'all') {
+      if (hasTicketAssigneesTable) {
+        assignedToFilter = ` AND (
+          t.assigned_to = $${paramIndex} 
+          OR EXISTS (SELECT 1 FROM ticket_assignees ta WHERE ta.ticket_id = t.id AND ta.user_id = $${paramIndex})
+        )`
+      } else {
+        assignedToFilter = ` AND t.assigned_to = $${paramIndex}`
+      }
+      params.push(assignedTo)
+      paramIndex++
+    }
+
+    const sqlQuery = `
       SELECT 
         t.*,
         u1.name as created_by_name,
         u1.avatar_url as created_by_avatar,
         u2.name as assigned_to_name,
         u2.avatar_url as assigned_to_avatar,
-        (SELECT COUNT(*) FROM ticket_comments WHERE ticket_id = t.id) as comments_count
+        (SELECT COUNT(*) FROM ticket_comments WHERE ticket_id = t.id) as comments_count,
+        ${assigneesSubquery}
       FROM tickets t
       LEFT JOIN users u1 ON t.created_by = u1.id
       LEFT JOIN users u2 ON t.assigned_to = u2.id
-      WHERE t.clinic_id = $1
+      WHERE t.clinic_id = $1${userFilter}${statusFilter}${assignedToFilter}
+      ORDER BY t.created_at DESC
     `
-    const params: any[] = [clinicId]
-    let paramIndex = 2
 
-    // Filtrar apenas tickets onde o usuário está envolvido (criador ou responsável)
-    // Gestores podem ver todos os tickets da clínica
-    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
-      sql += ` AND (t.created_by = $${paramIndex} OR t.assigned_to = $${paramIndex})`
-      params.push(userId)
-      paramIndex++
-    }
-
-    if (status && status !== 'all') {
-      sql += ` AND t.status = $${paramIndex}`
-      params.push(status)
-      paramIndex++
-    }
-
-    if (assignedTo && assignedTo !== 'all') {
-      sql += ` AND t.assigned_to = $${paramIndex}`
-      params.push(assignedTo)
-      paramIndex++
-    }
-
-    sql += ` ORDER BY t.created_at DESC`
-
-    const result = await query(sql, params)
+    const result = await query(sqlQuery, params)
     res.json({ tickets: result.rows })
   } catch (error: any) {
     console.error('Error fetching tickets:', error)
@@ -261,7 +362,8 @@ router.get('/:clinicId', requirePermission('canViewTickets'), async (req: Authed
       message: error.message,
       code: error.code,
       detail: error.detail,
-      hint: error.hint
+      hint: error.hint,
+      stack: error.stack
     })
     res.status(500).json({ 
       error: 'Erro ao buscar tickets',
@@ -276,7 +378,7 @@ router.post('/:clinicId', requirePermission('canEditTickets'), async (req: Authe
   try {
     const { clinicId } = req.params
     const userId = req.auth?.sub
-    const { title, description, priority, assignedTo, dueDate } = req.body
+    const { title, description, assignedTo, assignedToMultiple } = req.body
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' })
@@ -286,8 +388,17 @@ router.post('/:clinicId', requirePermission('canEditTickets'), async (req: Authe
       return res.status(400).json({ error: 'Título é obrigatório' })
     }
 
-    // Normalizar assignedTo: se for 'none', converter para null
-    const normalizedAssignedTo = assignedTo === 'none' || assignedTo === '' ? null : assignedTo
+    // Suportar tanto assignedTo (string única) quanto assignedToMultiple (array)
+    // Para compatibilidade com código antigo
+    let assignees: string[] = []
+    if (assignedToMultiple && Array.isArray(assignedToMultiple)) {
+      assignees = assignedToMultiple.filter((id: string) => id && id !== 'none')
+    } else if (assignedTo && assignedTo !== 'none' && assignedTo !== '') {
+      assignees = [assignedTo]
+    }
+
+    // Normalizar assignedTo para manter compatibilidade: usar o primeiro da lista ou null
+    const normalizedAssignedTo = assignees.length > 0 ? assignees[0] : null
 
     const id = crypto.randomUUID()
     await query(
@@ -296,13 +407,52 @@ router.post('/:clinicId', requirePermission('canEditTickets'), async (req: Authe
       [id, clinicId, title, description || null, normalizedAssignedTo, userId]
     )
 
+    // Verificar se a tabela ticket_assignees existe
+    const tableExists = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'ticket_assignees'
+      )
+    `)
+    const hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
+
+    // Inserir múltiplos colaboradores na tabela ticket_assignees
+    if (hasTicketAssigneesTable && assignees.length > 0) {
+      for (const assigneeId of assignees) {
+        const assigneeId_uuid = crypto.randomUUID()
+        await query(
+          `INSERT INTO ticket_assignees (id, ticket_id, user_id)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (ticket_id, user_id) DO NOTHING`,
+          [assigneeId_uuid, id, assigneeId]
+        )
+      }
+    }
+
+    let assigneesQuery = `'[]'::json as assignees`
+    if (hasTicketAssigneesTable) {
+      assigneesQuery = `COALESCE(
+        (SELECT json_agg(json_build_object(
+          'id', u3.id,
+          'name', u3.name,
+          'avatar_url', u3.avatar_url
+        ))
+        FROM ticket_assignees ta
+        JOIN users u3 ON ta.user_id = u3.id
+        WHERE ta.ticket_id = t.id),
+        '[]'::json
+      ) as assignees`
+    }
+
     const result = await query(
       `SELECT 
         t.*,
         u1.name as created_by_name,
         u1.avatar_url as created_by_avatar,
         u2.name as assigned_to_name,
-        u2.avatar_url as assigned_to_avatar
+        u2.avatar_url as assigned_to_avatar,
+        ${assigneesQuery}
       FROM tickets t
       LEFT JOIN users u1 ON t.created_by = u1.id
       LEFT JOIN users u2 ON t.assigned_to = u2.id
@@ -370,7 +520,7 @@ router.put('/:ticketId', requirePermission('canEditTickets'), async (req: Authed
   try {
     const { ticketId } = req.params
     const userId = req.auth?.sub
-    const { title, description, status, assignedTo } = req.body
+    const { title, description, status, assignedTo, assignedToMultiple } = req.body
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' })
@@ -403,22 +553,83 @@ router.put('/:ticketId', requirePermission('canEditTickets'), async (req: Authed
         updates.push(`completed_at = NULL`)
       }
     }
-    if (assignedTo !== undefined) {
-      // Normalizar assignedTo: se for 'none', converter para null
-      const normalizedAssignedTo = assignedTo === 'none' || assignedTo === '' ? null : assignedTo
+
+    // Suportar tanto assignedTo (string única) quanto assignedToMultiple (array)
+    let assignees: string[] = []
+    if (assignedToMultiple !== undefined) {
+      if (Array.isArray(assignedToMultiple)) {
+        assignees = assignedToMultiple.filter((id: string) => id && id !== 'none')
+      }
+    } else if (assignedTo !== undefined) {
+      if (assignedTo === 'none' || assignedTo === '') {
+        assignees = []
+      } else {
+        assignees = [assignedTo]
+      }
+    }
+
+    // Atualizar assigned_to (para compatibilidade) - usar o primeiro da lista ou null
+    if (assignedTo !== undefined || assignedToMultiple !== undefined) {
+      const normalizedAssignedTo = assignees.length > 0 ? assignees[0] : null
       updates.push(`assigned_to = $${paramIndex++}`)
       params.push(normalizedAssignedTo)
     }
 
-    if (updates.length === 0) {
+    if (updates.length === 0 && assignedToMultiple === undefined) {
       return res.status(400).json({ error: 'Nenhum campo para atualizar' })
     }
 
-    params.push(ticketId)
-    await query(
-      `UPDATE tickets SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex}`,
-      params
-    )
+    // Atualizar ticket
+    if (updates.length > 0) {
+      params.push(ticketId)
+      await query(
+        `UPDATE tickets SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex}`,
+        params
+      )
+    }
+
+    // Verificar se a tabela ticket_assignees existe
+    const tableExists = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'ticket_assignees'
+      )
+    `)
+    const hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
+
+    // Atualizar lista de colaboradores atribuídos
+    if (hasTicketAssigneesTable && (assignedToMultiple !== undefined || assignedTo !== undefined)) {
+      // Remover todos os assignees existentes
+      await query('DELETE FROM ticket_assignees WHERE ticket_id = $1', [ticketId])
+      
+      // Inserir novos assignees
+      if (assignees.length > 0) {
+        for (const assigneeId of assignees) {
+          const assigneeId_uuid = crypto.randomUUID()
+          await query(
+            `INSERT INTO ticket_assignees (id, ticket_id, user_id)
+             VALUES ($1, $2, $3)`,
+            [assigneeId_uuid, ticketId, assigneeId]
+          )
+        }
+      }
+    }
+
+    let assigneesQuery = `'[]'::json as assignees`
+    if (hasTicketAssigneesTable) {
+      assigneesQuery = `COALESCE(
+        (SELECT json_agg(json_build_object(
+          'id', u3.id,
+          'name', u3.name,
+          'avatar_url', u3.avatar_url
+        ))
+        FROM ticket_assignees ta
+        JOIN users u3 ON ta.user_id = u3.id
+        WHERE ta.ticket_id = t.id),
+        '[]'::json
+      ) as assignees`
+    }
 
     const result = await query(
       `SELECT 
@@ -426,7 +637,8 @@ router.put('/:ticketId', requirePermission('canEditTickets'), async (req: Authed
         u1.name as created_by_name,
         u1.avatar_url as created_by_avatar,
         u2.name as assigned_to_name,
-        u2.avatar_url as assigned_to_avatar
+        u2.avatar_url as assigned_to_avatar,
+        ${assigneesQuery}
       FROM tickets t
       LEFT JOIN users u1 ON t.created_by = u1.id
       LEFT JOIN users u2 ON t.assigned_to = u2.id

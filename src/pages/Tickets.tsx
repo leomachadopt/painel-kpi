@@ -28,6 +28,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Checkbox } from '@/components/ui/checkbox'
 
 export default function Tickets() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -48,6 +49,7 @@ export default function Tickets() {
     title: '',
     description: '',
     assignedTo: 'none',
+    assignedToMultiple: [] as string[],
   })
 
   useEffect(() => {
@@ -104,7 +106,7 @@ export default function Tickets() {
       await ticketsApi.create(clinicId, {
         title: createForm.title,
         description: createForm.description || undefined,
-        assignedTo: createForm.assignedTo === 'none' ? undefined : createForm.assignedTo || undefined,
+        assignedToMultiple: createForm.assignedToMultiple.length > 0 ? createForm.assignedToMultiple : undefined,
       })
 
       toast.success('Ticket criado com sucesso')
@@ -113,6 +115,7 @@ export default function Tickets() {
         title: '',
         description: '',
         assignedTo: 'none',
+        assignedToMultiple: [],
       })
       loadTickets()
     } catch (error: any) {
@@ -120,6 +123,18 @@ export default function Tickets() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleToggleAssignee = (collabId: string) => {
+    setCreateForm((prev) => {
+      const isSelected = prev.assignedToMultiple.includes(collabId)
+      return {
+        ...prev,
+        assignedToMultiple: isSelected
+          ? prev.assignedToMultiple.filter((id) => id !== collabId)
+          : [...prev.assignedToMultiple, collabId],
+      }
+    })
   }
 
   const handleTicketClick = (ticket: any) => {
@@ -194,23 +209,42 @@ export default function Tickets() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="assignedTo">Atribuir a</Label>
-                <Select
-                  value={createForm.assignedTo}
-                  onValueChange={(value) => setCreateForm({ ...createForm, assignedTo: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um colaborador (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Ninguém</SelectItem>
-                    {collaborators.map((collab) => (
-                      <SelectItem key={collab.id} value={collab.id}>
-                        {collab.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Atribuir a (pode selecionar múltiplos)</Label>
+                <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
+                  {collaborators.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum colaborador disponível</p>
+                  ) : (
+                    collaborators.map((collab) => (
+                      <div key={collab.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`assignee-${collab.id}`}
+                          checked={createForm.assignedToMultiple.includes(collab.id)}
+                          onCheckedChange={() => handleToggleAssignee(collab.id)}
+                        />
+                        <Label
+                          htmlFor={`assignee-${collab.id}`}
+                          className="text-sm font-normal cursor-pointer flex items-center gap-2 flex-1"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={collab.avatar_url} />
+                            <AvatarFallback className="text-xs">
+                              {collab.name?.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {collab.name}
+                          {collab.role === 'GESTOR_CLINICA' && (
+                            <Badge variant="outline" className="text-xs">Gestor</Badge>
+                          )}
+                        </Label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {createForm.assignedToMultiple.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {createForm.assignedToMultiple.length} colaborador{createForm.assignedToMultiple.length > 1 ? 'es' : ''} selecionado{createForm.assignedToMultiple.length > 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpenCreateDialog(false)}>
@@ -333,7 +367,24 @@ export default function Tickets() {
                         <span className="font-medium">De:</span> {ticket.created_by_name}
                       </span>
                     </div>
-                    {ticket.assigned_to_name && (
+                    {ticket.assignees && Array.isArray(ticket.assignees) && ticket.assignees.length > 0 ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">Para:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {ticket.assignees.map((assignee: any) => (
+                            <div key={assignee.id} className="flex items-center gap-1">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={assignee.avatar_url} />
+                                <AvatarFallback className="text-xs">
+                                  {assignee.name?.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{assignee.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : ticket.assigned_to_name ? (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={ticket.assigned_to_avatar} />
@@ -345,8 +396,7 @@ export default function Tickets() {
                           <span className="font-medium">Para:</span> {ticket.assigned_to_name}
                         </span>
                       </div>
-                    )}
-                    {!ticket.assigned_to_name && (
+                    ) : (
                       <span className="text-muted-foreground italic">Sem atribuição</span>
                     )}
                     {ticket.comments_count > 0 && (

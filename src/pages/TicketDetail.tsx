@@ -200,12 +200,19 @@ export default function TicketDetail() {
               <Badge variant={isClosed ? 'secondary' : 'default'}>
                 {getStatusLabel(ticket.status)}
               </Badge>
-              {ticket.assigned_to_name && (
+              {ticket.assignees && Array.isArray(ticket.assignees) && ticket.assignees.length > 0 ? (
+                ticket.assignees.map((assignee: any) => (
+                  <Badge key={assignee.id} variant="outline">
+                    <User className="h-3 w-3 mr-1" />
+                    {assignee.name}
+                  </Badge>
+                ))
+              ) : ticket.assigned_to_name ? (
                 <Badge variant="outline">
                   <User className="h-3 w-3 mr-1" />
                   {ticket.assigned_to_name}
                 </Badge>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -218,7 +225,22 @@ export default function TicketDetail() {
                 </Avatar>
                 <span>{ticket.created_by_name}</span>
               </div>
-              {ticket.assigned_to_name && (
+              {ticket.assignees && Array.isArray(ticket.assignees) && ticket.assignees.length > 0 ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium">Para:</span>
+                  {ticket.assignees.map((assignee: any) => (
+                    <div key={assignee.id} className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={assignee.avatar_url} />
+                        <AvatarFallback className="text-xs">
+                          {assignee.name?.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{assignee.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : ticket.assigned_to_name ? (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Para:</span>
                   <Avatar className="h-5 w-5">
@@ -229,7 +251,7 @@ export default function TicketDetail() {
                   </Avatar>
                   <span>{ticket.assigned_to_name}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

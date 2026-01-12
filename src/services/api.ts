@@ -958,6 +958,7 @@ export const ticketsApi = {
     title: string
     description?: string
     assignedTo?: string
+    assignedToMultiple?: string[]
   }) =>
     apiCall<{ ticket: any }>(`/tickets/${clinicId}`, {
       method: 'POST',
