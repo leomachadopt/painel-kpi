@@ -45,8 +45,50 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
     `)
     const hasTicketAssigneesTable = tableExists.rows[0]?.exists || false
 
-    // Filtrar apenas tickets onde o usuário está envolvido (criador, responsável ou atribuído)
-    // Gestores podem ver todos os tickets da clínica
+    // Se for gestora, retornar contagens separadas
+    if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+      // Contar tickets atribuídos à gestora (criados por ela, atribuídos a ela, ou na tabela assignees)
+      let assignedToMeSql = `
+        SELECT COUNT(DISTINCT t.id) as count
+        FROM tickets t
+        WHERE t.clinic_id = $1 AND t.status = 'PENDING' AND (
+          t.created_by = $2
+          OR t.assigned_to = $2
+      `
+      
+      if (hasTicketAssigneesTable) {
+        assignedToMeSql += ` OR EXISTS (SELECT 1 FROM ticket_assignees ta WHERE ta.ticket_id = t.id AND ta.user_id = $2)`
+      }
+      
+      assignedToMeSql += `)`
+
+      const assignedToMeResult = await query(assignedToMeSql, [clinicId, userId])
+      const assignedToMeCount = Number(assignedToMeResult.rows[0]?.count || 0)
+
+      // Contar outros tickets abertos (não criados pela gestora, não atribuídos a ela, e não na tabela assignees)
+      let othersSql = `
+        SELECT COUNT(DISTINCT t.id) as count
+        FROM tickets t
+        WHERE t.clinic_id = $1 AND t.status = 'PENDING' 
+          AND t.created_by != $2
+          AND (t.assigned_to IS NULL OR t.assigned_to != $2)
+      `
+      
+      if (hasTicketAssigneesTable) {
+        othersSql += ` AND NOT EXISTS (SELECT 1 FROM ticket_assignees ta WHERE ta.ticket_id = t.id AND ta.user_id = $2)`
+      }
+
+      const othersResult = await query(othersSql, [clinicId, userId])
+      const othersCount = Number(othersResult.rows[0]?.count || 0)
+
+      return res.json({ 
+        count: assignedToMeCount + othersCount, // Total para compatibilidade
+        assignedToMe: assignedToMeCount,
+        others: othersCount
+      })
+    }
+
+    // Para outros usuários, manter comportamento atual
     let sql = `
       SELECT COUNT(DISTINCT t.id) as count
       FROM tickets t
@@ -60,17 +102,14 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
     
     const params: any[] = [clinicId]
 
-    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
-      if (hasTicketAssigneesTable) {
-        sql += ` AND (t.created_by = $2 OR t.assigned_to = $2 OR ta.user_id = $2)`
-      } else {
-        sql += ` AND (t.created_by = $2 OR t.assigned_to = $2)`
-      }
-      params.push(userId)
+    if (hasTicketAssigneesTable) {
+      sql += ` AND (t.created_by = $2 OR t.assigned_to = $2 OR ta.user_id = $2)`
+    } else {
+      sql += ` AND (t.created_by = $2 OR t.assigned_to = $2)`
     }
+    params.push(userId)
 
     const result = await query(sql, params)
-
     const count = Number(result.rows[0]?.count || 0)
     
     res.json({ count })

@@ -234,10 +234,18 @@ export async function getUserPermissions(
     hasSpecialAccountsPayableAccess: Boolean(perms.has_special_accounts_payable_access),
   }
   
-  // Se o usuário tem acesso especial a contas a pagar, garantir que pode visualizar
-  if (permissions.hasSpecialAccountsPayableAccess) {
-    permissions.canViewAccountsPayable = true
-    permissions.canEditAccountsPayable = true
+  // Para contas a pagar, apenas colaboradores com permissão especial têm acesso
+  // Ignorar canViewAccountsPayable e canEditAccountsPayable se não tiver permissão especial
+  if (role === 'COLABORADOR') {
+    if (permissions.hasSpecialAccountsPayableAccess) {
+      // Se tem permissão especial, garantir acesso
+      permissions.canViewAccountsPayable = true
+      permissions.canEditAccountsPayable = true
+    } else {
+      // Se não tem permissão especial, negar acesso mesmo que tenha as outras permissões
+      permissions.canViewAccountsPayable = false
+      permissions.canEditAccountsPayable = false
+    }
   }
   
   return permissions

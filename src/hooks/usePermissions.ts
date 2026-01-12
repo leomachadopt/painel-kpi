@@ -66,10 +66,9 @@ export function usePermissions() {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
     
-    // Para contas a pagar, verificar também a permissão especial
+    // Para contas a pagar, apenas colaboradores com permissão especial podem ver
     if (section === 'canViewAccountsPayable') {
-      return permissions.canViewAccountsPayable === true || 
-             permissions.hasSpecialAccountsPayableAccess === true
+      return permissions.hasSpecialAccountsPayableAccess === true
     }
     
     const value = permissions[section]
@@ -149,6 +148,12 @@ export function usePermissions() {
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
+    
+    // Para contas a pagar, apenas colaboradores com permissão especial podem editar
+    if (resource === 'canEditAccountsPayable') {
+      return permissions.hasSpecialAccountsPayableAccess === true
+    }
+    
     const value = permissions[resource]
     return value === true || value === 1
   }

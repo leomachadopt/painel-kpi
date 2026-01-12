@@ -949,7 +949,7 @@ export const ticketsApi = {
   },
 
   getCount: (clinicId: string) =>
-    apiCall<{ count: number }>(`/tickets/${clinicId}/count`),
+    apiCall<{ count: number; assignedToMe?: number; others?: number }>(`/tickets/${clinicId}/count`),
 
   getById: (ticketId: string) =>
     apiCall<{ ticket: any }>(`/tickets/ticket/${ticketId}`),

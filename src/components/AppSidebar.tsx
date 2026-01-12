@@ -54,6 +54,8 @@ export function AppSidebar() {
   const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
   const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
   const [ticketsCount, setTicketsCount] = useState(0)
+  const [ticketsAssignedToMe, setTicketsAssignedToMe] = useState(0)
+  const [ticketsOthers, setTicketsOthers] = useState(0)
   const [accountsPayableCounts, setAccountsPayableCounts] = useState({
     overdue: 0,
     today: 0,
@@ -157,12 +159,25 @@ export function AppSidebar() {
           const result = await ticketsApi.getCount(activeClinicId)
           const count = result.count || 0
           setTicketsCount(count)
+          
+          // Se for gestora, usar contagens separadas
+          if (isGestor && result.assignedToMe !== undefined && result.others !== undefined) {
+            setTicketsAssignedToMe(result.assignedToMe || 0)
+            setTicketsOthers(result.others || 0)
+          } else {
+            setTicketsAssignedToMe(0)
+            setTicketsOthers(0)
+          }
         } catch (error) {
           console.error('Error loading tickets count:', error)
           setTicketsCount(0)
+          setTicketsAssignedToMe(0)
+          setTicketsOthers(0)
         }
       } else {
         setTicketsCount(0)
+        setTicketsAssignedToMe(0)
+        setTicketsOthers(0)
       }
     }
 
@@ -175,7 +190,7 @@ export function AppSidebar() {
         return () => clearInterval(interval)
       }
     }
-  }, [activeClinicId, user])
+  }, [activeClinicId, user, isGestor])
 
   // Buscar contagem de contas a pagar
   useEffect(() => {
@@ -556,10 +571,29 @@ export function AppSidebar() {
                 <Link to={`/tickets/${currentClinic?.id || user?.clinicId}`}>
                   <Ticket />
                   <span>Tickets</span>
-                  {ticketsCount > 0 && (
-                    <SidebarMenuBadge className="bg-orange-500 text-white">
-                      {ticketsCount > 99 ? '99+' : ticketsCount}
-                    </SidebarMenuBadge>
+                  {isGestor ? (
+                    // Para gestoras, mostrar dois badges separados
+                    (ticketsAssignedToMe > 0 || ticketsOthers > 0) && (
+                      <div className="absolute right-1 flex gap-1">
+                        {ticketsAssignedToMe > 0 && (
+                          <SidebarMenuBadge className="bg-orange-500 text-white relative" title="Tickets atribuídos a você">
+                            {ticketsAssignedToMe > 99 ? '99+' : ticketsAssignedToMe}
+                          </SidebarMenuBadge>
+                        )}
+                        {ticketsOthers > 0 && (
+                          <SidebarMenuBadge className="bg-blue-500 text-white relative" title="Outros tickets abertos">
+                            {ticketsOthers > 99 ? '99+' : ticketsOthers}
+                          </SidebarMenuBadge>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    // Para outros usuários, manter comportamento atual
+                    ticketsCount > 0 && (
+                      <SidebarMenuBadge className="bg-orange-500 text-white">
+                        {ticketsCount > 99 ? '99+' : ticketsCount}
+                      </SidebarMenuBadge>
+                    )
                   )}
                 </Link>
               </SidebarMenuButton>
