@@ -2309,9 +2309,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Alerta 4: Scanner com mais de 20 dias e paciente não aprovado
-      if (entry.hasScanner && entry.scannerCollectionDate) {
+      // O alerta desaparece quando o tratamento avança para a fase "Plano Aprovado"
+      if (entry.hasScanner && entry.scannerCollectionDate && entry.awaitingApproval !== true) {
         const scannerDate = new Date(entry.scannerCollectionDate)
-        if (scannerDate < twentyDaysAgo && !entry.approved) {
+        if (scannerDate < twentyDaysAgo) {
           const daysDiff = Math.floor((today.getTime() - scannerDate.getTime()) / (1000 * 60 * 60 * 24))
           alerts.push({
             id: `aligner-scanner-${entry.id}`,
