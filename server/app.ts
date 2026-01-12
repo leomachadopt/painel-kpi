@@ -112,7 +112,8 @@ export function createApp() {
     }),
   )
 
-  app.use(express.json({ limit: '5mb' }))
+  // Limit set to match Vercel's 4.5MB body limit (3MB file = ~4MB base64)
+  app.use(express.json({ limit: '4.5mb' }))
   app.use(setUserFromAuth)
 
   // Serve static files from public directory

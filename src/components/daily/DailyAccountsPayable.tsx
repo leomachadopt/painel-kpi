@@ -62,9 +62,9 @@ export function DailyAccountsPayable({ clinic }: { clinic: Clinic }) {
         continue
       }
 
-      // Validar tamanho (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`Arquivo "${file.name}" excede o tamanho máximo de 10MB`)
+      // Validar tamanho (max 3MB devido a limitações da plataforma Vercel)
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error(`Arquivo "${file.name}" excede o tamanho máximo de 3MB`)
         continue
       }
 

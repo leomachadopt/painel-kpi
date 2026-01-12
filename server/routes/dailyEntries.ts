@@ -4585,25 +4585,38 @@ router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission(
     if (!file.startsWith('data:')) {
       return res.status(400).json({ error: 'Invalid file format' })
     }
-    
+
     // Extrair dados base64
     const matches = file.match(/^data:([^;]+);base64,(.+)$/)
     if (!matches) {
       return res.status(400).json({ error: 'Invalid file format' })
     }
-    
+
     const [, detectedMimeType, base64Data] = matches
-    
+
     // Validar que é PDF
     if (detectedMimeType !== 'application/pdf' && mimeType !== 'application/pdf') {
       return res.status(400).json({ error: 'Apenas arquivos PDF são permitidos' })
     }
-    
+
+    // Validar tamanho do base64 (Vercel tem limite de ~4.5MB no body da requisição)
+    // Base64 aumenta o tamanho em ~33%, então um arquivo de 3MB vira ~4MB em base64
+    const base64SizeInMB = (base64Data.length / 1024 / 1024)
+    if (base64SizeInMB > 3.5) {
+      return res.status(413).json({
+        error: 'Arquivo muito grande',
+        message: 'O arquivo deve ter no máximo 3MB devido a limitações da plataforma de hospedagem'
+      })
+    }
+
     const buffer = Buffer.from(base64Data, 'base64')
-    
-    // Validar tamanho (max 10MB)
+
+    // Validar tamanho do arquivo decodificado (max 10MB)
     if (buffer.length > 10 * 1024 * 1024) {
-      return res.status(400).json({ error: 'File must be less than 10MB' })
+      return res.status(413).json({
+        error: 'Arquivo muito grande',
+        message: 'O arquivo deve ter no máximo 10MB'
+      })
     }
     
     // Verificar se a conta existe
@@ -4621,33 +4634,23 @@ router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission(
     const fileExtension = 'pdf'
     const storedFilename = `${documentId}.${fileExtension}`
     
-    const path = await import('path')
-    const fs = await import('fs/promises')
-    
-    // Criar diretório se não existir
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'accounts-payable')
-    await fs.mkdir(uploadsDir, { recursive: true })
-    
-    // Salvar arquivo
-    const filePath = path.join(uploadsDir, storedFilename)
-    await fs.writeFile(filePath, buffer)
-    
-    // Salvar metadados no banco
+    // Salvar metadados e arquivo diretamente no banco de dados
     const auth = req.auth || req.user
     const result = await query(
       `INSERT INTO accounts_payable_documents 
-       (id, accounts_payable_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
+       (id, accounts_payable_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by, file_data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, accounts_payable_id, filename, original_filename, file_size, mime_type, uploaded_by, uploaded_at`,
       [
         documentId,
         entryId,
         storedFilename,
         filename,
-        filePath,
+        null, // file_path agora é opcional (mantido para compatibilidade)
         buffer.length,
         mimeType || detectedMimeType || 'application/pdf',
         auth?.sub || auth?.id || null,
+        buffer, // Armazenar o arquivo diretamente no banco como BYTEA
       ]
     )
     
@@ -4658,7 +4661,6 @@ router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission(
       accountsPayableId: doc.accounts_payable_id,
       filename: doc.filename,
       originalFilename: doc.original_filename,
-      filePath: doc.file_path,
       fileSize: doc.file_size,
       mimeType: doc.mime_type,
       uploadedBy: doc.uploaded_by,
@@ -4734,52 +4736,32 @@ router.get('/accounts-payable/:clinicId/:entryId/documents/:documentId/download'
       return res.status(404).json({ error: 'Accounts payable entry not found' })
     }
     
-    // Buscar documento
+    // Buscar documento (incluindo file_data)
     const docResult = await query(
-      `SELECT id, file_path, original_filename, mime_type FROM accounts_payable_documents 
+      `SELECT id, file_data, original_filename, mime_type, file_size FROM accounts_payable_documents 
        WHERE id = $1 AND accounts_payable_id = $2`,
       [documentId, entryId]
     )
     
     if (docResult.rows.length === 0) {
       console.error('Document not found in database:', { documentId, entryId })
-      // Verificar se o documento existe com outro entryId (para debug)
-      const allDocs = await query(
-        `SELECT id, accounts_payable_id FROM accounts_payable_documents WHERE id = $1`,
-        [documentId]
-      )
-      if (allDocs.rows.length > 0) {
-        console.error('Document found but with different entryId:', allDocs.rows[0])
-      }
       return res.status(404).json({ error: 'Document not found', documentId, entryId })
     }
     
     const doc = docResult.rows[0]
-    const fs = await import('fs/promises')
-    const path = await import('path')
     
-    console.log('Document found, file path:', doc.file_path)
-    
-    // Verificar se arquivo existe
-    try {
-      await fs.access(doc.file_path)
-      console.log('File exists on disk')
-    } catch (accessError: any) {
-      console.error('File not found on disk:', {
-        filePath: doc.file_path,
-        error: accessError.message,
-        code: accessError.code
-      })
+    // Verificar se o arquivo está armazenado no banco
+    if (!doc.file_data) {
+      console.error('File data not found in database for document:', documentId)
       return res.status(404).json({ 
-        error: 'File not found on disk', 
-        filePath: doc.file_path,
-        message: accessError.message 
+        error: 'File data not found. Document may need to be re-uploaded.',
+        documentId 
       })
     }
     
-    // Ler e enviar arquivo
-    const fileBuffer = await fs.readFile(doc.file_path)
-    console.log('File read successfully, size:', fileBuffer.length)
+    // Converter o buffer do PostgreSQL (BYTEA) para Buffer do Node.js
+    const fileBuffer = Buffer.from(doc.file_data)
+    console.log('File read from database successfully, size:', fileBuffer.length)
     
     res.setHeader('Content-Type', doc.mime_type || 'application/pdf')
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`)
@@ -4813,9 +4795,9 @@ router.delete('/accounts-payable/:clinicId/:entryId/documents/:documentId', requ
       return res.status(404).json({ error: 'Accounts payable entry not found' })
     }
     
-    // Buscar documento
+    // Verificar se o documento existe
     const docResult = await query(
-      `SELECT file_path FROM accounts_payable_documents 
+      `SELECT id FROM accounts_payable_documents 
        WHERE id = $1 AND accounts_payable_id = $2`,
       [documentId, entryId]
     )
@@ -4824,17 +4806,7 @@ router.delete('/accounts-payable/:clinicId/:entryId/documents/:documentId', requ
       return res.status(404).json({ error: 'Document not found' })
     }
     
-    const doc = docResult.rows[0]
-    const fs = await import('fs/promises')
-    
-    // Deletar arquivo do disco
-    try {
-      await fs.unlink(doc.file_path)
-    } catch (err) {
-      console.error('Error deleting file:', err)
-    }
-    
-    // Deletar registro do banco
+    // Deletar registro do banco (o arquivo será deletado automaticamente junto com o registro)
     await query(
       `DELETE FROM accounts_payable_documents WHERE id = $1`,
       [documentId]
