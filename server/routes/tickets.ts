@@ -35,12 +35,21 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
       }
     }
 
-    const result = await query(
-      `SELECT COUNT(*) as count
+    // Filtrar apenas tickets onde o usuário está envolvido (criador ou responsável)
+    // Gestores podem ver todos os tickets da clínica
+    let sql = `
+      SELECT COUNT(*) as count
       FROM tickets
-      WHERE clinic_id = $1 AND status = 'PENDING'`,
-      [clinicId]
-    )
+      WHERE clinic_id = $1 AND status = 'PENDING'
+    `
+    const params: any[] = [clinicId]
+
+    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
+      sql += ` AND (created_by = $2 OR assigned_to = $2)`
+      params.push(userId)
+    }
+
+    const result = await query(sql, params)
 
     const count = Number(result.rows[0]?.count || 0)
     
@@ -102,6 +111,14 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
       )
       if (userClinic.rows[0]?.clinic_id !== ticket.clinic_id) {
         return res.status(403).json({ error: 'Acesso negado' })
+      }
+    }
+
+    // Verificar se usuário está envolvido no ticket (criador ou responsável)
+    // Gestores podem ver todos os tickets da clínica
+    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
+      if (ticket.created_by !== userId && ticket.assigned_to !== userId) {
+        return res.status(403).json({ error: 'Acesso negado: você não está envolvido neste ticket' })
       }
     }
 
@@ -213,6 +230,14 @@ router.get('/:clinicId', requirePermission('canViewTickets'), async (req: Authed
     `
     const params: any[] = [clinicId]
     let paramIndex = 2
+
+    // Filtrar apenas tickets onde o usuário está envolvido (criador ou responsável)
+    // Gestores podem ver todos os tickets da clínica
+    if (role !== 'GESTOR_CLINICA' && role !== 'MENTOR') {
+      sql += ` AND (t.created_by = $${paramIndex} OR t.assigned_to = $${paramIndex})`
+      params.push(userId)
+      paramIndex++
+    }
 
     if (status && status !== 'all') {
       sql += ` AND t.status = $${paramIndex}`

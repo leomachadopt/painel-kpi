@@ -2,7 +2,7 @@ import crypto from 'crypto'
 
 export type AuthTokenPayload = {
   sub: string
-  role: 'MENTOR' | 'GESTOR_CLINICA'
+  role: 'MENTOR' | 'GESTOR_CLINICA' | 'COLABORADOR'
   clinicId?: string | null
   iat: number
   exp: number
