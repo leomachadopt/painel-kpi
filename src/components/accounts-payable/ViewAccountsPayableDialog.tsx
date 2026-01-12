@@ -20,6 +20,7 @@ interface ViewAccountsPayableDialogProps {
   onOpenChange: (open: boolean) => void
   entryId: string | null
   clinicId: string
+  refreshTrigger?: number
 }
 
 export function ViewAccountsPayableDialog({
@@ -27,6 +28,7 @@ export function ViewAccountsPayableDialog({
   onOpenChange,
   entryId,
   clinicId,
+  refreshTrigger,
 }: ViewAccountsPayableDialogProps) {
   const [entry, setEntry] = useState<AccountsPayableEntry | null>(null)
   const [loading, setLoading] = useState(false)
@@ -41,7 +43,7 @@ export function ViewAccountsPayableDialog({
       setEntry(null)
       setDocuments([])
     }
-  }, [open, entryId, clinicId])
+  }, [open, entryId, clinicId, refreshTrigger])
 
   const loadEntry = async () => {
     if (!entryId || !clinicId) return
@@ -88,7 +90,9 @@ export function ViewAccountsPayableDialog({
       window.open(url, '_blank')
       setTimeout(() => window.URL.revokeObjectURL(url), 1000)
     } catch (error: any) {
-      toast.error('Erro ao visualizar documento')
+      console.error('Error viewing document:', error)
+      const errorMessage = error?.message || 'Erro ao visualizar documento'
+      toast.error(errorMessage)
     }
   }
 
@@ -111,7 +115,9 @@ export function ViewAccountsPayableDialog({
       window.URL.revokeObjectURL(url)
       window.document.body.removeChild(a)
     } catch (error: any) {
-      toast.error('Erro ao baixar documento')
+      console.error('Error downloading document:', error)
+      const errorMessage = error?.message || 'Erro ao baixar documento'
+      toast.error(errorMessage)
     }
   }
 

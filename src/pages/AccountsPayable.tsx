@@ -72,6 +72,7 @@ export default function AccountsPayable() {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
   const [viewEntryId, setViewEntryId] = useState<string | null>(null)
   const [editEntryId, setEditEntryId] = useState<string | null>(null)
+  const [documentRefreshTrigger, setDocumentRefreshTrigger] = useState(0)
 
   useEffect(() => {
     if (clinicId) {
@@ -432,6 +433,7 @@ export default function AccountsPayable() {
         onOpenChange={(open) => !open && setViewEntryId(null)}
         entryId={viewEntryId}
         clinicId={clinicId || ''}
+        refreshTrigger={documentRefreshTrigger}
       />
 
       <EditAccountsPayableDialog
@@ -441,6 +443,7 @@ export default function AccountsPayable() {
         clinicId={clinicId || ''}
         onSuccess={() => {
           loadEntries()
+          setDocumentRefreshTrigger((prev) => prev + 1)
         }}
       />
     </div>

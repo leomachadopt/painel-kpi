@@ -4572,7 +4572,9 @@ router.delete('/accounts-payable/:clinicId/:entryId', requirePermission('canEdit
 // Upload documento para conta a pagar
 router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission('canEditAccountsPayable'), async (req, res) => {
   try {
-    const { clinicId, entryId } = req.params
+    // Decodificar os parâmetros da URL para lidar com caracteres especiais
+    const clinicId = decodeURIComponent(req.params.clinicId)
+    const entryId = decodeURIComponent(req.params.entryId)
     const { file, filename, mimeType } = req.body
     
     if (!file || !filename) {
@@ -4671,7 +4673,9 @@ router.post('/accounts-payable/:clinicId/:entryId/documents', requirePermission(
 // Listar documentos de uma conta a pagar
 router.get('/accounts-payable/:clinicId/:entryId/documents', requirePermission('canViewAccountsPayable'), async (req, res) => {
   try {
-    const { clinicId, entryId } = req.params
+    // Decodificar os parâmetros da URL para lidar com caracteres especiais
+    const clinicId = decodeURIComponent(req.params.clinicId)
+    const entryId = decodeURIComponent(req.params.entryId)
     
     // Verificar se a conta existe e pertence à clínica
     const entryResult = await query(
@@ -4712,7 +4716,12 @@ router.get('/accounts-payable/:clinicId/:entryId/documents', requirePermission('
 // Download documento
 router.get('/accounts-payable/:clinicId/:entryId/documents/:documentId/download', requirePermission('canViewAccountsPayable'), async (req, res) => {
   try {
-    const { clinicId, entryId, documentId } = req.params
+    // Decodificar os parâmetros da URL para lidar com caracteres especiais
+    const clinicId = decodeURIComponent(req.params.clinicId)
+    const entryId = decodeURIComponent(req.params.entryId)
+    const documentId = decodeURIComponent(req.params.documentId)
+    
+    console.log('Download document request:', { clinicId, entryId, documentId })
     
     // Verificar se a conta existe e pertence à clínica
     const entryResult = await query(
@@ -4721,40 +4730,67 @@ router.get('/accounts-payable/:clinicId/:entryId/documents/:documentId/download'
     )
     
     if (entryResult.rows.length === 0) {
+      console.error('Accounts payable entry not found:', { entryId, clinicId })
       return res.status(404).json({ error: 'Accounts payable entry not found' })
     }
     
     // Buscar documento
     const docResult = await query(
-      `SELECT file_path, original_filename, mime_type FROM accounts_payable_documents 
+      `SELECT id, file_path, original_filename, mime_type FROM accounts_payable_documents 
        WHERE id = $1 AND accounts_payable_id = $2`,
       [documentId, entryId]
     )
     
     if (docResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Document not found' })
+      console.error('Document not found in database:', { documentId, entryId })
+      // Verificar se o documento existe com outro entryId (para debug)
+      const allDocs = await query(
+        `SELECT id, accounts_payable_id FROM accounts_payable_documents WHERE id = $1`,
+        [documentId]
+      )
+      if (allDocs.rows.length > 0) {
+        console.error('Document found but with different entryId:', allDocs.rows[0])
+      }
+      return res.status(404).json({ error: 'Document not found', documentId, entryId })
     }
     
     const doc = docResult.rows[0]
     const fs = await import('fs/promises')
     const path = await import('path')
     
+    console.log('Document found, file path:', doc.file_path)
+    
     // Verificar se arquivo existe
     try {
       await fs.access(doc.file_path)
-    } catch {
-      return res.status(404).json({ error: 'File not found on disk' })
+      console.log('File exists on disk')
+    } catch (accessError: any) {
+      console.error('File not found on disk:', {
+        filePath: doc.file_path,
+        error: accessError.message,
+        code: accessError.code
+      })
+      return res.status(404).json({ 
+        error: 'File not found on disk', 
+        filePath: doc.file_path,
+        message: accessError.message 
+      })
     }
     
     // Ler e enviar arquivo
     const fileBuffer = await fs.readFile(doc.file_path)
+    console.log('File read successfully, size:', fileBuffer.length)
     
     res.setHeader('Content-Type', doc.mime_type || 'application/pdf')
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.original_filename)}"`)
     res.setHeader('Content-Length', fileBuffer.length)
     res.send(fileBuffer)
   } catch (error: any) {
-    console.error('Download document error:', error)
+    console.error('Download document error:', {
+      error: error.message,
+      stack: error.stack,
+      params: req.params
+    })
     res.status(500).json({ error: 'Failed to download document', message: error.message })
   }
 })
@@ -4762,7 +4798,10 @@ router.get('/accounts-payable/:clinicId/:entryId/documents/:documentId/download'
 // Deletar documento
 router.delete('/accounts-payable/:clinicId/:entryId/documents/:documentId', requirePermission('canEditAccountsPayable'), async (req, res) => {
   try {
-    const { clinicId, entryId, documentId } = req.params
+    // Decodificar os parâmetros da URL para lidar com caracteres especiais
+    const clinicId = decodeURIComponent(req.params.clinicId)
+    const entryId = decodeURIComponent(req.params.entryId)
+    const documentId = decodeURIComponent(req.params.documentId)
     
     // Verificar se a conta existe e pertence à clínica
     const entryResult = await query(

@@ -59,7 +59,9 @@ export function EditAccountsPayableDialog({
   const [supplierName, setSupplierName] = useState('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [existingDocuments, setExistingDocuments] = useState<any[]>([])
+  const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([])
   const [loadingDoc, setLoadingDoc] = useState(false)
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<z.infer<typeof schema>>({
@@ -83,6 +85,7 @@ export function EditAccountsPayableDialog({
       setSupplierName('')
       setSelectedFiles([])
       setExistingDocuments([])
+      setDocumentsToDelete([])
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -139,6 +142,25 @@ export function EditAccountsPayableDialog({
     setSelectedFiles([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!clinicId || !entryId) return
+
+    setDeletingDocId(documentId)
+    try {
+      await dailyEntriesApi.accountsPayable.deleteDocument(clinicId, entryId, documentId)
+      // Remover da lista de documentos existentes
+      setExistingDocuments((prev) => prev.filter((doc) => doc.id !== documentId))
+      // Remover da lista de documentos a deletar se estiver lá
+      setDocumentsToDelete((prev) => prev.filter((id) => id !== documentId))
+      toast.success('Documento removido com sucesso!')
+    } catch (error: any) {
+      console.error('Error deleting document:', error)
+      toast.error(error?.message || 'Erro ao remover documento')
+    } finally {
+      setDeletingDocId(null)
     }
   }
 
@@ -418,6 +440,21 @@ export function EditAccountsPayableDialog({
                               </p>
                             </div>
                           </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            disabled={saving || deletingDocId === doc.id}
+                            className="flex-shrink-0 text-destructive hover:text-destructive"
+                            title="Remover documento"
+                          >
+                            {deletingDocId === doc.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       ))}
                     </div>

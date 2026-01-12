@@ -592,27 +592,35 @@ export const dailyEntriesApi = {
       }),
 
     uploadDocument: (clinicId: string, entryId: string, file: string, filename: string, mimeType?: string) =>
-      apiCall<any>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents`, {
+      apiCall<any>(`/daily-entries/accounts-payable/${encodeURIComponent(clinicId)}/${encodeURIComponent(entryId)}/documents`, {
         method: 'POST',
         body: JSON.stringify({ file, filename, mimeType }),
       }),
 
     getDocuments: (clinicId: string, entryId: string) =>
-      apiCall<any[]>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents`),
+      apiCall<any[]>(`/daily-entries/accounts-payable/${encodeURIComponent(clinicId)}/${encodeURIComponent(entryId)}/documents`),
 
-    downloadDocument: (clinicId: string, entryId: string, documentId: string) =>
-      fetch(`${import.meta.env.VITE_API_URL || ''}/api/daily-entries/accounts-payable/${clinicId}/${entryId}/documents/${documentId}/download`, {
+    downloadDocument: (clinicId: string, entryId: string, documentId: string) => {
+      const url = `${API_BASE_URL}/daily-entries/accounts-payable/${encodeURIComponent(clinicId)}/${encodeURIComponent(entryId)}/documents/${encodeURIComponent(documentId)}/download`
+      return fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('kpi_token')}`,
+          'Authorization': `Bearer ${getAuthToken()}`,
         },
       }).then(res => {
-        if (!res.ok) throw new Error('Failed to download document')
+        if (!res.ok) {
+          return res.json().then(err => {
+            throw new Error(err.error || 'Failed to download document')
+          }).catch(() => {
+            throw new Error('Failed to download document')
+          })
+        }
         return res.blob()
-      }),
+      })
+    },
 
     deleteDocument: (clinicId: string, entryId: string, documentId: string) =>
-      apiCall<{ message: string }>(`/daily-entries/accounts-payable/${clinicId}/${entryId}/documents/${documentId}`, {
+      apiCall<{ message: string }>(`/daily-entries/accounts-payable/${encodeURIComponent(clinicId)}/${encodeURIComponent(entryId)}/documents/${encodeURIComponent(documentId)}`, {
         method: 'DELETE',
       }),
   },
