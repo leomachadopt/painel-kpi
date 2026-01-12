@@ -36,6 +36,8 @@ import { AlignersTable } from '@/components/reports/AlignersTable'
 import { AlignersKanban } from '@/components/reports/AlignersKanban'
 import { MarketingReport } from '@/components/reports/MarketingReport'
 import { DailyAlignersEntry } from '@/lib/types'
+import { isBrazilClinic } from '@/lib/clinicUtils'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function Reports() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -109,6 +111,7 @@ export default function Reports() {
   }
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
+  const shouldShowAdvanceInvoice = !isBrazilClinic(clinic)
 
   // Role Access Control
   const mentorAccess = isMentor()
@@ -155,7 +158,7 @@ export default function Reports() {
   const getFirstAvailableTab = (): string => {
     if (canViewReport('canViewReportFinancial')) return 'financial'
     if (canViewReport('canViewReportBilling')) return 'billing'
-    if (canViewReport('canViewReportAdvanceInvoice')) return 'advanceInvoice'
+    if (shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice')) return 'advanceInvoice'
     if (canViewReport('canViewReportConsultations')) return 'consultations'
     if (canViewReport('canViewReportAligners')) return 'aligners'
     if (canViewReport('canViewReportProspecting')) return 'prospecting'
@@ -272,7 +275,7 @@ export default function Reports() {
                 {t('financial.billing')}
               </TabsTrigger>
             )}
-            {canViewReport('canViewReportAdvanceInvoice') && (
+            {shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice') && (
               <TabsTrigger value="advanceInvoice" className="text-[10px] sm:text-xs whitespace-nowrap min-w-[100px]">
                 Fatura de Adiantamento
               </TabsTrigger>
@@ -342,7 +345,7 @@ export default function Reports() {
               />
             </TabsContent>
           )}
-          {canViewReport('canViewReportAdvanceInvoice') && (
+          {shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice') && (
             <TabsContent value="advanceInvoice">
               <AdvanceInvoiceTable
                 data={filterByDate(advanceInvoiceEntries[clinic.id] || [])}

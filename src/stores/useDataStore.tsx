@@ -24,6 +24,7 @@ import { clinicsApi, dailyEntriesApi, patientsApi, targetsApi } from '@/services
 import { toast } from 'sonner'
 import { useAuth } from './useAuthStore'
 import { ptBR, ptPT } from '@/lib/translations'
+import { isBrazilClinic } from '@/lib/clinicUtils'
 
 interface DataState {
   clinics: Clinic[]
@@ -519,6 +520,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const canEditAccountsPayable = hasPermission('canEditAccountsPayable')
     const hasAccountsPayablePermission = canViewAccountsPayable || canEditAccountsPayable
 
+    // Verificar se a clínica é do Brasil para não carregar dados de adiantamento
+    const clinic = clinics.find((c) => c.id === clinicId)
+    const shouldLoadAdvanceInvoice = !isBrazilClinic(clinic)
+    
     const [financial, consultations, cabinets, serviceTime, sources, prospecting, consultationControl, aligners, advanceInvoice, accountsPayable] =
       await Promise.all([
         loadWithErrorHandling(
@@ -561,11 +566,13 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
           [],
           `Failed to load aligner entries for ${clinicId}`
         ),
-        loadWithErrorHandling(
-          dailyEntriesApi.advanceInvoice.getAll(clinicId),
-          [],
-          `Failed to load advance invoice entries for ${clinicId}`
-        ),
+        shouldLoadAdvanceInvoice
+          ? loadWithErrorHandling(
+              dailyEntriesApi.advanceInvoice.getAll(clinicId),
+              [],
+              `Failed to load advance invoice entries for ${clinicId}`
+            )
+          : Promise.resolve([]),
         // Verificar permissão antes de fazer requisição de accounts payable
         hasAccountsPayablePermission
           ? loadWithErrorHandling(

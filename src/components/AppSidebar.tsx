@@ -44,6 +44,7 @@ import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { dailyEntriesApi, ticketsApi } from '@/services/api'
 import { useTranslation } from '@/hooks/useTranslation'
+import { isBrazilClinic } from '@/lib/clinicUtils'
 
 export function AppSidebar() {
   const { user, logout } = useAuthStore()
@@ -479,7 +480,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {activeClinicId && (canView('canViewAdvances') || canEdit('canEditAdvances')) && (
+              {activeClinicId && !isBrazilClinic(currentClinic) && (canView('canViewAdvances') || canEdit('canEditAdvances')) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

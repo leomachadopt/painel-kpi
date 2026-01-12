@@ -34,10 +34,22 @@ import { toast } from 'sonner'
 import { collaboratorsApi } from '@/services/api'
 import type { User, UserPermissions, ResourcePermissions } from '@/lib/types'
 import { ResourcePermissionsGrid } from '@/components/permissions/ResourcePermissionsGrid'
-import { mapLegacyPermissionsToResources, mapResourcePermissionsToLegacy } from '@/lib/permissionsMapping'
+import { mapLegacyPermissionsToResources, mapResourcePermissionsToLegacy, RESOURCE_PERMISSIONS } from '@/lib/permissionsMapping'
+import { isBrazilClinic } from '@/lib/clinicUtils'
+import useDataStore from '@/stores/useDataStore'
 
 export default function Collaborators() {
   const { isGestor } = usePermissions()
+  const { user } = useAuthStore()
+  const { getClinic } = useDataStore()
+  const clinic = user?.clinicId ? getClinic(user.clinicId) : undefined
+  const shouldShowAdvances = !isBrazilClinic(clinic)
+  
+  // Filtrar recursos baseado no país da clínica
+  const filteredResources = shouldShowAdvances 
+    ? RESOURCE_PERMISSIONS 
+    : RESOURCE_PERMISSIONS.filter(r => r.id !== 'advances')
+  
   const [collaborators, setCollaborators] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -388,6 +400,7 @@ export default function Collaborators() {
               permissions={resourcePermissions}
               onChange={handleResourcePermissionChange}
               disabled={submitting}
+              resources={filteredResources}
             />
             
             {/* Permissões Especiais */}

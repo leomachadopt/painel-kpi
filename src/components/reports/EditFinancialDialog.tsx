@@ -48,6 +48,18 @@ export function EditFinancialDialog({
   onSuccess,
 }: EditFinancialDialogProps) {
   const { t } = useTranslation()
+  
+  const schema = z.object({
+    date: z.string(),
+    patientName: z.string().min(1, 'Nome obrigatório'),
+    code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
+    categoryId: z.string().min(1, 'Categoria obrigatória'),
+    value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
+    cabinetId: z.string().min(1, t('cabinet.required')),
+    doctorId: z.string().optional(),
+    paymentSourceId: z.string().optional(),
+  })
+  
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

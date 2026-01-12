@@ -1,6 +1,6 @@
 import React from 'react'
 import { Label } from '@/components/ui/label'
-import { RESOURCE_PERMISSIONS, type PermissionLevel } from '@/lib/permissionsMapping'
+import { RESOURCE_PERMISSIONS, type PermissionLevel, type ResourceConfig } from '@/lib/permissionsMapping'
 import type { ResourcePermissions } from '@/lib/types'
 import { Check, X, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -9,12 +9,14 @@ interface ResourcePermissionsGridProps {
   permissions: ResourcePermissions
   onChange: (resourceId: string, level: PermissionLevel) => void
   disabled?: boolean
+  resources?: ResourceConfig[] // Permite passar recursos customizados
 }
 
 export function ResourcePermissionsGrid({
   permissions,
   onChange,
   disabled = false,
+  resources = RESOURCE_PERMISSIONS,
 }: ResourcePermissionsGridProps) {
   const handleSliderClick = (resourceId: string, currentLevel: PermissionLevel) => {
     if (disabled) return
@@ -71,7 +73,7 @@ export function ResourcePermissionsGrid({
             </tr>
           </thead>
           <tbody>
-            {RESOURCE_PERMISSIONS.map((resource) => {
+            {resources.map((resource) => {
               const currentLevel = permissions[resource.id] || 'DENIED'
               return (
                 <tr

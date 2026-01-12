@@ -46,12 +46,14 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { AdvanceContractForm } from '@/components/advances/AdvanceContractForm'
 import { BillingWizard } from '@/components/advances/BillingWizard'
 import useDataStore from '@/stores/useDataStore'
+import { isBrazilClinic } from '@/lib/clinicUtils'
 
 export default function Advances() {
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
   const { canView, canEdit } = usePermissions()
-  const { reloadAdvanceInvoiceEntries } = useDataStore()
+  const { reloadAdvanceInvoiceEntries, getClinic } = useDataStore()
+  const clinic = clinicId ? getClinic(clinicId) : undefined
   const [contracts, setContracts] = useState<AdvanceContract[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -232,6 +234,21 @@ export default function Advances() {
   }
 
   const { t, formatCurrency } = useTranslation()
+
+  // Bloquear acesso para clínicas do Brasil
+  if (isBrazilClinic(clinic)) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Esta funcionalidade não está disponível para clínicas do Brasil.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (!canViewAdvances) {
     return (

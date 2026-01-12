@@ -65,6 +65,9 @@ export default function Patients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', birthDate: '', notes: '' })
   const [saving, setSaving] = useState(false)
+  const [showNewPatientDialog, setShowNewPatientDialog] = useState(false)
+  const [newPatientForm, setNewPatientForm] = useState({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     if (clinicId) {
@@ -176,6 +179,47 @@ export default function Patients() {
     }
   }
 
+  const handleNewPatientClick = () => {
+    setNewPatientForm({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
+    setShowNewPatientDialog(true)
+  }
+
+  const handleCreatePatient = async () => {
+    if (!clinicId) return
+
+    // Validar código (1-6 dígitos)
+    if (!newPatientForm.code || !/^\d{1,6}$/.test(newPatientForm.code)) {
+      toast.error('O código deve ter entre 1 e 6 dígitos')
+      return
+    }
+
+    // Validar nome
+    if (!newPatientForm.name.trim()) {
+      toast.error('O nome é obrigatório')
+      return
+    }
+
+    setCreating(true)
+    try {
+      await patientsApi.create(clinicId, {
+        code: newPatientForm.code,
+        name: newPatientForm.name.trim(),
+        email: newPatientForm.email || undefined,
+        phone: newPatientForm.phone || undefined,
+        birthDate: newPatientForm.birthDate || undefined,
+        notes: newPatientForm.notes || undefined,
+      })
+      toast.success('Paciente criado com sucesso')
+      setShowNewPatientDialog(false)
+      setNewPatientForm({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
+      await loadPatients(searchTerm || undefined)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar paciente')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const canEditPatient = user?.role === 'GESTOR_CLINICA' || user?.role === 'MENTOR' || user?.permissions?.canEditPatients
 
   return (
@@ -189,7 +233,7 @@ export default function Patients() {
           </p>
         </div>
         {user?.role === 'GESTOR_CLINICA' && (
-          <Button>
+          <Button onClick={handleNewPatientClick}>
             <UserPlus className="mr-2 h-4 w-4" />
             Novo Paciente
           </Button>
@@ -578,6 +622,106 @@ export default function Patients() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Patient Dialog */}
+      <Dialog open={showNewPatientDialog} onOpenChange={setShowNewPatientDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Novo Paciente</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo paciente na clínica
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-code">Código * (1-6 dígitos)</Label>
+              <Input
+                id="new-code"
+                value={newPatientForm.code}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setNewPatientForm({ ...newPatientForm, code: value })
+                }}
+                placeholder="123456"
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                O código deve ser único e ter entre 1 e 6 dígitos
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Nome *</Label>
+              <Input
+                id="new-name"
+                value={newPatientForm.name}
+                onChange={(e) => setNewPatientForm({ ...newPatientForm, name: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newPatientForm.email}
+                onChange={(e) => setNewPatientForm({ ...newPatientForm, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-phone">Telefone</Label>
+              <Input
+                id="new-phone"
+                type="tel"
+                value={newPatientForm.phone}
+                onChange={(e) => setNewPatientForm({ ...newPatientForm, phone: e.target.value })}
+                placeholder="+351 900 000 000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-birthDate">Data de Nascimento</Label>
+              <Input
+                id="new-birthDate"
+                type="date"
+                value={newPatientForm.birthDate}
+                onChange={(e) => setNewPatientForm({ ...newPatientForm, birthDate: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-notes">Observações</Label>
+              <Textarea
+                id="new-notes"
+                value={newPatientForm.notes}
+                onChange={(e) => setNewPatientForm({ ...newPatientForm, notes: e.target.value })}
+                placeholder="Notas adicionais sobre o paciente..."
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewPatientDialog(false)} disabled={creating}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreatePatient} disabled={creating || !newPatientForm.code || !newPatientForm.name.trim()}>
+              {creating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Paciente'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -25,7 +25,6 @@ import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
-import { ProcedureBaseEditor } from '@/components/settings/ProcedureBaseEditor'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -667,9 +666,9 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col gap-8 p-8 max-w-4xl mx-auto w-full">
-      <div className="flex justify-between items-center">
-        <div>
+    <div className="flex flex-col gap-8 p-8 min-w-0 overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground">
             Gerir as listas, campanhas e parâmetros da clínica.
@@ -692,7 +691,7 @@ export default function Settings() {
           )}
         </div>
         {canManageConfig && (
-          <Button onClick={handleSaveConfig} disabled={saving}>
+          <Button onClick={handleSaveConfig} disabled={saving} className="shrink-0">
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -703,20 +702,21 @@ export default function Settings() {
         )}
       </div>
 
-      <Tabs defaultValue="sources">
-        <TabsList>
-          <TabsTrigger value="sources">Fontes & Campanhas</TabsTrigger>
-          <TabsTrigger value="categories">Categorias</TabsTrigger>
-          <TabsTrigger value="paymentSources">Fontes de Recebimento</TabsTrigger>
-          <TabsTrigger value="alignerBrands">Marcas de Alinhadores</TabsTrigger>
-          <TabsTrigger value="orderItems">Itens</TabsTrigger>
-          <TabsTrigger value="cabinets">{t('sidebar.cabinets')}</TabsTrigger>
-          <TabsTrigger value="doctors">Médicos</TabsTrigger>
-          <TabsTrigger value="targets">Metas</TabsTrigger>
-          <TabsTrigger value="nps">NPS</TabsTrigger>
-          <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          <TabsTrigger value="procedureBase">Tabela Base de Procedimentos</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="sources" className="w-full">
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="inline-flex w-full min-w-max flex-wrap gap-1 h-auto p-1">
+            <TabsTrigger value="sources" className="text-xs sm:text-sm whitespace-nowrap">Fontes & Campanhas</TabsTrigger>
+            <TabsTrigger value="categories" className="text-xs sm:text-sm whitespace-nowrap">Categorias</TabsTrigger>
+            <TabsTrigger value="paymentSources" className="text-xs sm:text-sm whitespace-nowrap">Fontes de Recebimento</TabsTrigger>
+            <TabsTrigger value="alignerBrands" className="text-xs sm:text-sm whitespace-nowrap">Marcas de Alinhadores</TabsTrigger>
+            <TabsTrigger value="orderItems" className="text-xs sm:text-sm whitespace-nowrap">Itens</TabsTrigger>
+            <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap">{t('sidebar.cabinets')}</TabsTrigger>
+            <TabsTrigger value="doctors" className="text-xs sm:text-sm whitespace-nowrap">Médicos</TabsTrigger>
+            <TabsTrigger value="targets" className="text-xs sm:text-sm whitespace-nowrap">Metas</TabsTrigger>
+            <TabsTrigger value="nps" className="text-xs sm:text-sm whitespace-nowrap">NPS</TabsTrigger>
+            <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap">Marketing</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="sources" className="space-y-6">
           <Card>
@@ -1271,27 +1271,6 @@ export default function Settings() {
                 clinicId={clinic.id}
                 canManage={user?.role === 'GESTOR_CLINICA' && user.clinicId === clinic.id}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="procedureBase" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tabela Base de Procedimentos</CardTitle>
-              <CardDescription>
-                Tabela padrão global de procedimentos. Define quais procedimentos são Periciáveis ou Não Periciáveis.
-                Apenas mentores podem gerenciar esta tabela.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {user?.role === 'MENTOR' && clinic ? (
-                <ProcedureBaseEditor clinicId={clinic.id} readOnly={false} />
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Apenas mentores podem gerenciar a tabela base de procedimentos.
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

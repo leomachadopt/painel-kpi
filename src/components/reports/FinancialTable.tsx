@@ -29,7 +29,7 @@ export function FinancialTable({
   startDate?: string
   endDate?: string
 }) {
-  const { formatCurrency } = useTranslation()
+  const { formatCurrency, t } = useTranslation()
   const [deleting, setDeleting] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<DailyFinancialEntry | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
