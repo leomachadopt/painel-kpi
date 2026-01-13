@@ -24,14 +24,17 @@ import { Clinic } from '@/lib/types'
 import { useTranslation } from '@/hooks/useTranslation'
 
 export function DailyCabinets({ clinic }: { clinic: Clinic }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const { addCabinetUsageEntry } = useDataStore()
+  
+  // Capturar mensagem de forma estável para evitar problemas de escopo na minificação
+  const selectCabinetMessage = useMemo(() => t('cabinet.selectCabinet'), [t, locale])
   
   const schema = useMemo(() => z.object({
     date: z.string(),
-    cabinetId: z.string().min(1, t('cabinet.selectCabinet')),
+    cabinetId: z.string().min(1, selectCabinetMessage),
     hoursUsed: z.coerce.number().min(0),
-  }), [t])
+  }), [selectCabinetMessage])
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

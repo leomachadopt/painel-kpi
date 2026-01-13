@@ -26,8 +26,11 @@ import { Clinic } from '@/lib/types'
 import { useTranslation } from '@/hooks/useTranslation'
 
 export function DailyFinancials({ clinic }: { clinic: Clinic }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const { addFinancialEntry } = useDataStore()
+  
+  // Capturar mensagem de forma estável para evitar problemas de escopo na minificação
+  const cabinetRequiredMessage = useMemo(() => t('cabinet.required'), [t, locale])
   
   const schema = useMemo(() => z.object({
     date: z.string(),
@@ -35,10 +38,10 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
     code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
     categoryId: z.string().min(1, 'Categoria obrigatória'),
     value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
-    cabinetId: z.string().min(1, t('cabinet.required')),
+    cabinetId: z.string().min(1, cabinetRequiredMessage),
     doctorId: z.string().optional(),
     paymentSourceId: z.string().optional(),
-  }), [t])
+  }), [cabinetRequiredMessage])
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

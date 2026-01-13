@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
@@ -38,8 +38,8 @@ export function useTranslation() {
     return (currentClinic?.country as Locale) || 'PT-BR'
   }, [currentClinic])
 
-  // Obter tradução
-  const t = (key: TranslationKey): string => {
+  // Obter tradução - memoizada para evitar problemas de escopo na minificação
+  const t = useCallback((key: TranslationKey): string => {
     const keys = key.split('.')
     let value: any = translations[locale]
     
@@ -52,7 +52,7 @@ export function useTranslation() {
     }
     
     return value || key
-  }
+  }, [locale])
 
   // Formatação de números
   const formatNumber = (value: number): string => {
