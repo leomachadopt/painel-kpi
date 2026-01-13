@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { EditFinancialDialog } from './EditFinancialDialog'
 import { exportFinancialToExcel } from '@/lib/excelExport'
+import { exportFinancialToPDF } from '@/lib/pdfExport'
 import { useTranslation } from '@/hooks/useTranslation'
 
 export function FinancialTable({
@@ -65,7 +66,7 @@ export function FinancialTable({
     onDelete?.() // Recarregar dados
   }
 
-  const handleExport = () => {
+  const handleExportExcel = () => {
     if (!startDate || !endDate) {
       toast.error('Período não definido para exportação')
       return
@@ -77,7 +78,25 @@ export function FinancialTable({
         endDate,
         reportType: 'financial',
       })
-      toast.success('Relatório exportado com sucesso!')
+      toast.success('Relatório exportado para Excel com sucesso!')
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao exportar relatório')
+    }
+  }
+
+  const handleExportPDF = () => {
+    if (!startDate || !endDate) {
+      toast.error('Período não definido para exportação')
+      return
+    }
+    try {
+      exportFinancialToPDF(data, {
+        clinic,
+        startDate,
+        endDate,
+        reportType: 'financial',
+      })
+      toast.success('Relatório exportado para PDF com sucesso!')
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao exportar relatório')
     }
@@ -85,14 +104,22 @@ export function FinancialTable({
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
         <Button
           variant="outline"
-          onClick={handleExport}
+          onClick={handleExportExcel}
           disabled={data.length === 0 || !startDate || !endDate}
         >
           <Download className="h-4 w-4 mr-2" />
           Exportar para Excel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleExportPDF}
+          disabled={data.length === 0 || !startDate || !endDate}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exportar para PDF
         </Button>
       </div>
       <div className="rounded-md border">

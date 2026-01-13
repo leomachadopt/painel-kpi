@@ -61,6 +61,7 @@ export default function AccountsPayable() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { user } = useAuthStore()
   const { canView, canEdit } = usePermissions()
+  const { formatCurrency } = useTranslation()
   const { accountsPayableEntries, updateAccountsPayableEntry, deleteAccountsPayableEntry } = useDataStore()
   const canViewAccountsPayable = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
   const canEditAccountsPayable = canEdit('canEditAccountsPayable')

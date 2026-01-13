@@ -35,6 +35,7 @@ export function ViewOrderDialog({
   orderId,
   clinicId,
 }: ViewOrderDialogProps) {
+  const { formatCurrency } = useTranslation()
   const [order, setOrder] = useState<DailyOrderEntry | null>(null)
   const [loading, setLoading] = useState(false)
 
