@@ -467,7 +467,7 @@ export function OwnerAgendaChart({ data }: { data: MonthlyData }) {
 
 // --- Revenue per Cabinet Chart ---
 export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
-  const { formatCurrency, locale, formatNumber } = useTranslation()
+  const { t, formatCurrency, locale, formatNumber } = useTranslation()
   const currencySymbol = locale === 'PT-BR' ? 'R$' : '€'
   const localeString = locale === 'PT-BR' ? 'pt-BR' : 'pt-PT'
   
