@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -28,7 +29,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
   const { t } = useTranslation()
   const { addFinancialEntry } = useDataStore()
   
-  const schema = z.object({
+  const schema = useMemo(() => z.object({
     date: z.string(),
     patientName: z.string().min(1, 'Nome obrigatório'),
     code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
@@ -37,7 +38,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
     cabinetId: z.string().min(1, t('cabinet.required')),
     doctorId: z.string().optional(),
     paymentSourceId: z.string().optional(),
-  })
+  }), [t])
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

@@ -71,3 +71,4 @@ CREATE INDEX IF NOT EXISTS idx_procedure_base_periciable
 
 
 
+

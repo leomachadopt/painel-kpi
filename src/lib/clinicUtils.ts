@@ -14,3 +14,4 @@ export function isPortugalClinic(clinic: Clinic | undefined | null): boolean {
   return clinic?.country === 'PT-PT'
 }
 
+

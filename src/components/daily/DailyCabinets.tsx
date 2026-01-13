@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,11 +27,11 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
   const { t } = useTranslation()
   const { addCabinetUsageEntry } = useDataStore()
   
-  const schema = z.object({
+  const schema = useMemo(() => z.object({
     date: z.string(),
     cabinetId: z.string().min(1, t('cabinet.selectCabinet')),
     hoursUsed: z.coerce.number().min(0),
-  })
+  }), [t])
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {

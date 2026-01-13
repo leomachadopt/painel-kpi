@@ -36,3 +36,4 @@ COMMENT ON COLUMN procedure_patterns.description_normalized IS 'Normalized descr
 COMMENT ON COLUMN procedure_patterns.confidence IS 'Confidence score (0.0-1.0) based on how many times this pattern was confirmed';
 COMMENT ON COLUMN procedure_patterns.match_count IS 'Number of times this pattern has been successfully matched';
 
+

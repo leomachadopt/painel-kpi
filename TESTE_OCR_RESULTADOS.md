@@ -97,3 +97,4 @@ O sistema de extração com OCR está **funcionando corretamente** do ponto de v
 3. Adicionar métricas de qualidade do OCR
 4. Considerar fallback para Vision API quando OCR falhar
 
+
