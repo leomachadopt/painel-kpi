@@ -40,6 +40,7 @@ const ListEditor = ({
   onUpdate: (items: any[]) => void
   readOnly?: boolean
 }) => {
+  const { t } = useTranslation()
   const [newItem, setNewItem] = useState('')
   const [newHours, setNewHours] = useState('8')
   const [editingId, setEditingId] = useState<string | null>(null)
