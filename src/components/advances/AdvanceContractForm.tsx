@@ -42,8 +42,8 @@ const createSchema = (isEdit: boolean) => z.object({
   patientName: z.string().min(1, 'Nome obrigatório'),
   insuranceProviderId: z.string().min(1, 'Operadora é obrigatória'),
   contractNumber: z.string().optional(),
-  advanceAmount: isEdit 
-    ? z.coerce.number().min(0.01, 'Valor deve ser maior que zero').optional()
+  advanceAmount: isEdit
+    ? z.coerce.number().min(0, 'Valor deve ser maior ou igual a zero').optional()
     : z.coerce.number().min(0.01, 'Valor da fatura de adiantamento é obrigatório'),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CANCELLED', 'EXPIRED']),
   notes: z.string().optional(),
@@ -76,7 +76,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
       patientName: contract?.patientName || '',
       insuranceProviderId: contract?.insuranceProviderId || '',
       contractNumber: contract?.contractNumber || '',
-      advanceAmount: undefined,
+      advanceAmount: contract?.totalAdvanced || undefined,
       status: (contract?.status as any) || 'ACTIVE',
       notes: contract?.notes || '',
     },
@@ -312,6 +312,28 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         // Update existing contract
         savedContract = await advancesApi.contracts.update(clinicId, contract.id, contractData)
         toast.success('Contrato atualizado com sucesso!')
+
+        // Se um valor de adiantamento foi fornecido e é diferente do atual, atualizar
+        if (data.advanceAmount !== undefined && data.advanceAmount !== null) {
+          const currentTotal = contract.totalAdvanced || 0
+          const newTotal = data.advanceAmount
+
+          if (newTotal !== currentTotal) {
+            try {
+              console.log('Atualizando valor total de adiantamento:', {
+                contractId: contract.id,
+                currentTotal,
+                newTotal,
+                clinicId,
+              })
+              await advancesApi.contracts.updateTotalAdvanced(clinicId, contract.id, newTotal)
+              toast.success(`Valor atualizado para ${formatCurrency(newTotal)}`)
+            } catch (paymentErr: any) {
+              console.error('Erro ao atualizar valor:', paymentErr)
+              toast.error(`Contrato atualizado, mas erro ao atualizar valor: ${paymentErr.message || 'Erro desconhecido'}`)
+            }
+          }
+        }
       } else {
         // Create new contract - validar que o valor foi fornecido
         if (!data.advanceAmount || data.advanceAmount <= 0) {
@@ -325,7 +347,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         savedContract = await advancesApi.contracts.create(clinicId, contractData)
         console.log('Contrato criado:', savedContract)
         toast.success('Contrato criado com sucesso!')
-        
+
         // Criar o pagamento de adiantamento
         try {
           console.log('Criando pagamento:', {
@@ -500,30 +522,35 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                 )}
               />
 
-              {!contract && (
-                <FormField
-                  control={form.control}
-                  name="advanceAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Valor da Fatura de Adiantamento *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          {...field}
-                          placeholder="0.00"
-                          disabled={saving}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <FormField
+                control={form.control}
+                name="advanceAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm">
+                      {contract ? 'Valor Total Adiantado' : 'Valor da Fatura de Adiantamento *'}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...field}
+                        placeholder="0.00"
+                        disabled={saving}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {contract && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Edite o valor total do contrato
+                      </p>
+                    )}
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div>

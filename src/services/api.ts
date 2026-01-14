@@ -682,6 +682,12 @@ export const advancesApi = {
         body: JSON.stringify(payment),
       }),
 
+    updateTotalAdvanced: (clinicId: string, contractId: string, amount: number) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/total-advanced`, {
+        method: 'PUT',
+        body: JSON.stringify({ amount }),
+      }),
+
     getEligibleProcedures: (clinicId: string, contractId: string) =>
       apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/eligible-procedures`),
 

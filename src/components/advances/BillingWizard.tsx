@@ -367,6 +367,48 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     // Don't reset creating flag on success to prevent any potential race conditions
   }
 
+  const handleCreateEmptyBatch = async () => {
+    if (!targetAmount || parseFloat(targetAmount) <= 0) {
+      toast.error('Valor alvo do lote é obrigatório para emitir lote vazio')
+      return
+    }
+
+    if (!doctorId) {
+      toast.error('Selecione o médico para emitir o lote')
+      return
+    }
+
+    // Prevent double submission
+    if (creating) {
+      console.log('[BillingWizard] Already creating batch, ignoring duplicate request')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const amount = parseFloat(targetAmount)
+      console.log('[BillingWizard] Creating empty batch (no procedures) with target amount:', amount)
+
+      const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
+        items: [],
+        targetAmount: amount,
+        serviceDate: new Date().toISOString().split('T')[0],
+        doctorId: doctorId,
+      })
+
+      console.log('[BillingWizard] Empty batch created successfully:', result.batchNumber)
+      toast.success(`Lote ${result.batchNumber} emitido sem procedimentos no valor de ${formatCurrency(amount)}`)
+
+      // Close dialog and trigger parent refresh via callback
+      onClose()
+    } catch (err: any) {
+      console.error('[BillingWizard] Error creating empty batch:', err)
+      toast.error(err.message || 'Erro ao criar lote vazio')
+      setCreating(false) // Only reset on error
+    }
+    // Don't reset creating flag on success to prevent any potential race conditions
+  }
+
   const { t, formatCurrency } = useTranslation()
 
   // Calculate totals in real-time
@@ -529,7 +571,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
             </div>
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Label>Valor Alvo do Lote (€) - Opcional</Label>
+                <Label>Valor Alvo do Lote (€)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -537,8 +579,11 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder="0.00"
-                  disabled={calculating || creating || !selectedPerson}
+                  disabled={calculating || creating}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Para seleção automática ou lote vazio
+                </p>
               </div>
               <Button
                 type="button"
@@ -830,28 +875,48 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
           </Card>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex justify-between">
           <Button type="button" variant="outline" onClick={onClose} disabled={creating}>
             Cancelar
           </Button>
-          <Button
-            type="button"
-            onClick={handleCreateBatch}
-            disabled={selectedItems.length === 0 || creating || !doctorId}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {creating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Emitir Lote ({formatCurrency(selectedTotal)})
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={handleCreateEmptyBatch}
+              disabled={creating || !doctorId || !targetAmount || parseFloat(targetAmount) <= 0}
+              variant="secondary"
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Emitir Lote Vazio ({targetAmount ? formatCurrency(parseFloat(targetAmount)) : '€0.00'})
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateBatch}
+              disabled={selectedItems.length === 0 || creating || !doctorId}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Emitir Lote ({formatCurrency(selectedTotal)})
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

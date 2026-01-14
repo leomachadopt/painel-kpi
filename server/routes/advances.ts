@@ -887,6 +887,66 @@ router.post('/contracts/:clinicId/:contractId/payments', async (req, res) => {
   }
 })
 
+// Update total advanced amount (replaces all payments with a single payment)
+router.put('/contracts/:clinicId/:contractId/total-advanced', async (req, res) => {
+  const { clinicId, contractId } = req.params
+  const hasPermission = await canEditAdvances(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { amount } = req.body
+
+    if (amount === undefined || amount === null || amount < 0) {
+      return res.status(400).json({ error: 'Amount is required and must be >= 0' })
+    }
+
+    // Verify contract exists
+    const contractCheck = await query(
+      `SELECT id FROM advance_contracts WHERE id = $1 AND clinic_id = $2`,
+      [contractId, clinicId]
+    )
+
+    if (contractCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Contract not found' })
+    }
+
+    // Delete all existing payments for this contract
+    await query(
+      `DELETE FROM advance_payments WHERE contract_id = $1`,
+      [contractId]
+    )
+
+    // Create new payment with the specified amount
+    if (amount > 0) {
+      const paymentId = `payment-${contractId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      const userId = req.user?.sub || null
+
+      await query(
+        `INSERT INTO advance_payments (id, contract_id, payment_date, amount, payment_method, reference_number, notes, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          paymentId,
+          contractId,
+          new Date().toISOString().split('T')[0],
+          amount,
+          null,
+          null,
+          'Valor total do contrato',
+          userId,
+        ]
+      )
+    }
+
+    res.json({ message: 'Total advanced amount updated successfully', amount })
+  } catch (error) {
+    console.error('Update total advanced error:', error)
+    res.status(500).json({ error: 'Failed to update total advanced amount' })
+  }
+})
+
 // Delete contract
 router.delete('/contracts/:clinicId/:contractId', async (req, res) => {
   const { clinicId, contractId } = req.params
@@ -2350,12 +2410,12 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
   }
 
   try {
-    const { items, serviceDate, doctorId } = req.body
+    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount } = req.body
 
     console.log(`[Billing Manual] Received request for contract ${contractId} with ${items?.length || 0} items`)
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Items are required' })
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ error: 'Items must be an array (can be empty)' })
     }
 
     if (!doctorId) {
@@ -2377,35 +2437,51 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
     }
 
     // Calculate totals - ensure we use the same calculation logic as when inserting items
-    const totalAmount = items.reduce((sum: number, item: any) => {
-      // Use totalValue if provided, otherwise calculate from unitValue * quantity
-      const itemTotal = item.totalValue !== undefined && item.totalValue !== null
-        ? item.totalValue
-        : (item.unitValue || 0) * (item.quantity || 1)
-      return sum + itemTotal
-    }, 0)
-    const totalPericiable = items
-      .filter((item: any) => item.isPericiable)
-      .reduce((sum: number, item: any) => {
+    // If targetAmount is provided and items is empty, use targetAmount as totalAmount
+    let totalAmount: number
+    let totalPericiable: number
+
+    if (items.length === 0 && providedTargetAmount !== undefined && providedTargetAmount !== null) {
+      // Empty batch with explicit target amount
+      totalAmount = providedTargetAmount
+      totalPericiable = 0
+      console.log(`[Billing Manual] Empty batch with target amount: €${totalAmount.toFixed(2)}`)
+    } else {
+      // Calculate from items
+      totalAmount = items.reduce((sum: number, item: any) => {
+        // Use totalValue if provided, otherwise calculate from unitValue * quantity
         const itemTotal = item.totalValue !== undefined && item.totalValue !== null
           ? item.totalValue
           : (item.unitValue || 0) * (item.quantity || 1)
         return sum + itemTotal
       }, 0)
+      totalPericiable = items
+        .filter((item: any) => item.isPericiable)
+        .reduce((sum: number, item: any) => {
+          const itemTotal = item.totalValue !== undefined && item.totalValue !== null
+            ? item.totalValue
+            : (item.unitValue || 0) * (item.quantity || 1)
+          return sum + itemTotal
+        }, 0)
+    }
 
     // Idempotency check: prevent duplicate batches with same amount within 5 seconds
-    const recentDuplicateCheck = await query(
-      `SELECT id, batch_number
-       FROM billing_batches
-       WHERE contract_id = $1
-         AND total_amount = $2
-         AND created_at > NOW() - INTERVAL '5 seconds'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [contractId, totalAmount]
-    )
+    // Skip this check for empty batches (items.length === 0) to allow multiple empty batches
+    let recentDuplicateCheck = { rows: [] }
+    if (items.length > 0 && totalAmount > 0) {
+      recentDuplicateCheck = await query(
+        `SELECT id, batch_number
+         FROM billing_batches
+         WHERE contract_id = $1
+           AND total_amount = $2
+           AND created_at > NOW() - INTERVAL '5 seconds'
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [contractId, totalAmount]
+      )
+    }
 
-    if (recentDuplicateCheck.rows.length > 0) {
+    if (recentDuplicateCheck.rows.length > 0 && items.length > 0 && totalAmount > 0) {
       const existingBatch = recentDuplicateCheck.rows[0]
       console.log(`[Billing Manual] Duplicate prevented - returning existing batch ${existingBatch.batch_number}`)
 
@@ -2452,7 +2528,11 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
     const batchNumber = `LOTE-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
     const userId = req.user?.sub || null
 
-    console.log(`[Billing Manual] Creating new batch ${batchNumber} for contract ${contractId} with total €${totalAmount.toFixed(2)}`)
+    if (items.length === 0) {
+      console.log(`[Billing Manual] Creating empty batch ${batchNumber} for contract ${contractId} with target amount €${totalAmount.toFixed(2)}`)
+    } else {
+      console.log(`[Billing Manual] Creating new batch ${batchNumber} for contract ${contractId} with ${items.length} items and total €${totalAmount.toFixed(2)}`)
+    }
 
     await query(
       `INSERT INTO billing_batches (

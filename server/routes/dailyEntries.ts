@@ -4094,31 +4094,30 @@ router.get('/advance-invoice/:clinicId', async (req, res) => {
 
     // Get billing batches (lotes) issued/paid for this clinic
     // Group items by person (dependent_id) within each batch
-    // IMPORTANT: Only returns batches that exist in billing_batches table
-    // If a batch is deleted, it won't appear here due to INNER JOIN
+    // IMPORTANT: Uses LEFT JOIN on billing_items to include empty batches (batches with no items)
     const batchesResult = await query(
-      `SELECT 
+      `SELECT
         bb.id as batch_id,
         bb.batch_number,
         bb.doctor_id,
         bb.issued_at,
         bb.contract_id,
+        bb.total_amount,
         ac.patient_id,
         p.code as patient_code,
         p.name as patient_name,
         bi.dependent_id,
         cd.name as dependent_name,
-        SUM(bi.total_value) as total_value
+        COALESCE(SUM(bi.total_value), bb.total_amount) as total_value
        FROM billing_batches bb
        INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
        INNER JOIN patients p ON ac.patient_id = p.id
-       INNER JOIN billing_items bi ON bb.id = bi.batch_id
+       LEFT JOIN billing_items bi ON bb.id = bi.batch_id AND bi.status != 'REMOVED'
        LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
        WHERE ac.clinic_id = $1
          AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')
-         AND bi.status != 'REMOVED'
-       GROUP BY bb.id, bb.batch_number, bb.doctor_id, bb.issued_at, bb.contract_id, 
-                ac.patient_id, p.code, p.name, bi.dependent_id, cd.name
+       GROUP BY bb.id, bb.batch_number, bb.doctor_id, bb.issued_at, bb.contract_id,
+                bb.total_amount, ac.patient_id, p.code, p.name, bi.dependent_id, cd.name
        ORDER BY bb.issued_at DESC`,
       [clinicId]
     )
