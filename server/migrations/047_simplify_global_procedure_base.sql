@@ -31,3 +31,4 @@ COMMENT ON INDEX idx_procedure_base_global_description IS 'Unique index on norma
 COMMENT ON INDEX idx_procedure_base_clinic_code IS 'Unique index on code for clinic-specific procedures';
 
 
+

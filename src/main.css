@@ -985,3 +985,21 @@ button.hover\:bg-primary\/10,
 button.hover\:bg-destructive\/10 {
   background: transparent !important;
 }
+
+/* Fix para botões + e - que ficam piscando no hover (prospecção e controle) */
+/* Solução específica: botões dentro de CounterRow nas abas de prospecção e controle */
+div.flex.items-center.justify-between.p-3.border.rounded-lg button.h-10.w-10 {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+  will-change: auto !important;
+}
+
+div.flex.items-center.justify-between.p-3.border.rounded-lg button.h-10.w-10:hover {
+  transform: none !important;
+  will-change: auto !important;
+}
+
+div.flex.items-center.justify-between.p-3.border.rounded-lg button.h-10.w-10:active {
+  transform: scale(0.95) !important;
+  transition: transform 0.1s ease !important;
+  will-change: transform !important;
+}

@@ -98,3 +98,4 @@ O sistema de extração com OCR está **funcionando corretamente** do ponto de v
 4. Considerar fallback para Vision API quando OCR falhar
 
 
+

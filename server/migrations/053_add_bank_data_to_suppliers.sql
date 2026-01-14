@@ -14,3 +14,4 @@ COMMENT ON COLUMN suppliers.nib IS 'Número de Identificação Bancária (NIB)';
 COMMENT ON COLUMN suppliers.swift_bic IS 'Código SWIFT/BIC do banco';
 
 
+

@@ -15,3 +15,4 @@ export function isPortugalClinic(clinic: Clinic | undefined | null): boolean {
 }
 
 
+
