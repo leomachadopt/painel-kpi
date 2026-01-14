@@ -205,13 +205,35 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       return
     }
 
+    // Check if target amount exceeds available balance
+    const targetValue = parseFloat(targetAmount)
+    const availableBalance = contract?.balanceToBill || 0
+    if (targetValue > availableBalance) {
+      toast.error(`Valor alvo (${formatCurrency(targetValue)}) excede o saldo disponível (${formatCurrency(availableBalance)})`)
+      return
+    }
+
+    // Calculate already selected total
+    const alreadySelected = selectedItems.reduce((sum, item) => sum + item.totalValue, 0)
+
+    // Check if already reached or exceeded target
+    if (alreadySelected >= targetValue) {
+      toast.warning(`Valor alvo já atingido! Total selecionado: ${formatCurrency(alreadySelected)}`)
+      return
+    }
+
+    // Calculate remaining amount to reach target
+    const remainingAmount = targetValue - alreadySelected
+
+    console.log(`[BillingWizard] Already selected: €${alreadySelected.toFixed(2)}, Remaining: €${remainingAmount.toFixed(2)}`)
+
     setCalculating(true)
     try {
-      console.log('[BillingWizard] Calculating automatic selection for target amount:', targetAmount)
+      console.log('[BillingWizard] Calculating automatic selection for remaining amount:', remainingAmount)
 
-      // Call the calculation endpoint (should NOT create batch, only calculate items)
+      // Call the calculation endpoint with REMAINING amount (not total target)
       const result = await advancesApi.contracts.calculateBillingItems(clinicId, contractId, {
-        targetAmount: parseFloat(targetAmount),
+        targetAmount: remainingAmount,
         serviceDate: new Date().toISOString().split('T')[0],
       })
 
@@ -229,17 +251,19 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       }))
 
       console.log('[BillingWizard] Automatic selection calculated:', items.length, 'items')
-      
+
       // Adiciona a pessoa selecionada às pessoas ativas se não estiver
       if (selectedPerson && !activePeople.has(selectedPerson.id)) {
         const newActive = new Set(activePeople)
         newActive.add(selectedPerson.id)
         setActivePeople(newActive)
       }
-      
+
       // Adiciona os itens ao lote (não substitui, adiciona aos existentes)
       setSelectedItems([...selectedItems, ...items])
-      toast.success(`Seleção automática concluída: ${items.length} procedimentos adicionados`)
+
+      const newTotal = alreadySelected + items.reduce((sum, item) => sum + item.totalValue, 0)
+      toast.success(`${items.length} procedimentos adicionados. Total: ${formatCurrency(newTotal)}`)
     } catch (err: any) {
       console.error('[BillingWizard] Error calculating selection:', err)
       toast.error(err.message || 'Erro ao calcular seleção automática')
@@ -370,6 +394,14 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
   const handleCreateEmptyBatch = async () => {
     if (!targetAmount || parseFloat(targetAmount) <= 0) {
       toast.error('Valor alvo do lote é obrigatório para emitir lote vazio')
+      return
+    }
+
+    // Check if target amount exceeds available balance
+    const targetValue = parseFloat(targetAmount)
+    const availableBalance = contract?.balanceToBill || 0
+    if (targetValue > availableBalance) {
+      toast.error(`Valor alvo (${formatCurrency(targetValue)}) excede o saldo disponível (${formatCurrency(availableBalance)})`)
       return
     }
 
@@ -576,13 +608,19 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                   type="number"
                   step="0.01"
                   min="0"
+                  max={contract?.balanceToBill || undefined}
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder="0.00"
                   disabled={calculating || creating}
+                  className={
+                    targetAmount && parseFloat(targetAmount) > (contract?.balanceToBill || 0)
+                      ? 'border-red-500'
+                      : ''
+                  }
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Para seleção automática ou lote vazio
+                  Saldo disponível: {formatCurrency(contract?.balanceToBill || 0)}
                 </p>
               </div>
               <Button

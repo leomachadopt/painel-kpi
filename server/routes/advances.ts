@@ -1760,11 +1760,20 @@ router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (r
 
     console.log(`[Calculate Items] Calculating items for contract ${contractId}, target: €${finalTargetAmount}`)
 
-    // Verify contract exists and get insurance provider
+    // Verify contract exists and get balance
     const contractResult = await query(
-      `SELECT ac.insurance_provider_id, ac.patient_id
+      `SELECT
+        ac.insurance_provider_id,
+        ac.patient_id,
+        COALESCE(SUM(ap.amount), 0) as total_advanced,
+        COALESCE((SELECT SUM(bb.total_amount)
+                  FROM billing_batches bb
+                  WHERE bb.contract_id = ac.id
+                  AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')), 0) as total_billed
        FROM advance_contracts ac
-       WHERE ac.id = $1 AND ac.clinic_id = $2`,
+       LEFT JOIN advance_payments ap ON ac.id = ap.contract_id
+       WHERE ac.id = $1 AND ac.clinic_id = $2
+       GROUP BY ac.id`,
       [contractId, clinicId]
     )
 
@@ -1773,6 +1782,18 @@ router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (r
     }
 
     const contract = contractResult.rows[0]
+    const totalAdvanced = parseFloat(contract.total_advanced || '0')
+    const totalBilled = parseFloat(contract.total_billed || '0')
+    const balanceToBill = totalAdvanced - totalBilled
+
+    console.log(`[Calculate Items] Contract balance: Advanced €${totalAdvanced.toFixed(2)}, Billed €${totalBilled.toFixed(2)}, Available €${balanceToBill.toFixed(2)}`)
+
+    // Check if target amount exceeds available balance
+    if (finalTargetAmount > balanceToBill) {
+      return res.status(400).json({
+        error: `Valor alvo (€${finalTargetAmount.toFixed(2)}) excede o saldo disponível (€${balanceToBill.toFixed(2)})`
+      })
+    }
 
     // Get eligible procedures (only non-periciable)
     const eligibleResult = await query(
@@ -1910,7 +1931,8 @@ router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (r
         const selectedPerson = eligiblePeople[Math.floor(Math.random() * eligiblePeople.length)]
         const itemValue = proc.value
 
-        if (currentTotal + itemValue <= finalTargetAmount * 1.05) {
+        // Don't exceed target amount
+        if (currentTotal + itemValue <= finalTargetAmount) {
           const alreadySelected = selectedItems.some(
             item => item.procedureId === proc.id && item.dependentId === selectedPerson.id
           )
@@ -1933,7 +1955,8 @@ router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (r
         }
       }
 
-      if (attempts >= maxAttempts || (selectedItems.length > 0 && currentTotal >= finalTargetAmount * 0.95)) {
+      // Stop if we've reached max attempts or exhausted all available procedures
+      if (attempts >= maxAttempts || selectedItems.length >= availableProcedures.length) {
         break
       }
     }
@@ -1946,7 +1969,7 @@ router.post('/contracts/:clinicId/:contractId/billing-items/calculate', async (r
 
     const totalAmount = selectedItems.reduce((sum, item) => sum + item.totalValue, 0)
 
-    console.log(`[Calculate Items] Calculated ${selectedItems.length} items, total: €${totalAmount.toFixed(2)}`)
+    console.log(`[Calculate Items] Calculated ${selectedItems.length} items, total: €${totalAmount.toFixed(2)} (target: €${finalTargetAmount.toFixed(2)})`)
 
     // Return items WITHOUT creating the batch
     res.status(200).json({
