@@ -32,6 +32,7 @@ export interface UserPermissions {
   canEditConsultationControl: boolean
   canEditAligners: boolean
   canEditOrders: boolean
+  canEditAdvanceInvoice: boolean
   canEditAccountsPayable: boolean
   canViewAccountsPayable: boolean
   canEditPatients: boolean
@@ -94,6 +95,7 @@ export async function getUserPermissions(
       canEditConsultationControl: true,
       canEditAligners: true,
       canEditOrders: true,
+      canEditAdvanceInvoice: true,
       canEditAccountsPayable: true,
       canViewAccountsPayable: true,
       canEditPatients: true,
@@ -152,6 +154,7 @@ export async function getUserPermissions(
       can_edit_consultation_control,
       can_edit_aligners,
       can_edit_orders,
+      can_edit_advance_invoice,
       can_edit_accounts_payable,
       can_view_accounts_payable,
       can_edit_patients,
@@ -211,6 +214,7 @@ export async function getUserPermissions(
     canEditConsultationControl: perms.can_edit_consultation_control || false,
     canEditAligners: perms.can_edit_aligners || false,
     canEditOrders: perms.can_edit_orders || false,
+    canEditAdvanceInvoice: perms.can_edit_advance_invoice || false,
     canEditAccountsPayable: perms.can_edit_accounts_payable || false,
     canViewAccountsPayable: perms.can_view_accounts_payable || false,
     canEditPatients: perms.can_edit_patients || false,
@@ -279,6 +283,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditConsultationControl: false,
     canEditAligners: false,
     canEditOrders: false,
+    canEditAdvanceInvoice: false,
     canEditAccountsPayable: false,
     canViewAccountsPayable: false,
     canEditPatients: false,
