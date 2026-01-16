@@ -232,7 +232,7 @@ export default function Patients() {
             Gerir e visualizar todos os pacientes cadastrados
           </p>
         </div>
-        {user?.role === 'GESTOR_CLINICA' && (
+        {canEditPatient && (
           <Button onClick={handleNewPatientClick}>
             <UserPlus className="mr-2 h-4 w-4" />
             Novo Paciente
