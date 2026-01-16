@@ -286,9 +286,22 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
 
     setSaving(true)
     try {
-      // First, we need to get the patient ID from the code
-      // For now, we'll assume the patient exists or create a simplified version
-      const patientId = `patient-${clinicId}-${data.patientCode}`
+      // Get the real patient ID from the code
+      let patientId: string
+      try {
+        const patient = await patientsApi.getByCode(clinicId, data.patientCode)
+        if (!patient || !patient.id) {
+          toast.error('Paciente não encontrado. Por favor, verifique o código do paciente.')
+          setSaving(false)
+          return
+        }
+        patientId = patient.id
+      } catch (err: any) {
+        console.error('erro ao buscar paciente:', err)
+        toast.error('Paciente não encontrado. Por favor, cadastre o paciente antes de criar o contrato.')
+        setSaving(false)
+        return
+      }
 
       const contractData = {
         patientId,

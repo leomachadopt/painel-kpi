@@ -724,8 +724,18 @@ router.post('/contracts/:clinicId', async (req, res) => {
       updatedAt: contract.updated_at,
     })
   } catch (error: any) {
-    console.error('Create contract error:', error)
-    res.status(500).json({ error: 'Failed to create contract' })
+    console.error('[Create Contract] Error:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      stack: error.stack
+    })
+    res.status(500).json({
+      error: 'Failed to create contract',
+      details: error.message,
+      code: error.code
+    })
   }
 })
 
