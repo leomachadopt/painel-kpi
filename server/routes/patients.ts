@@ -68,49 +68,76 @@ router.get('/:clinicId', async (req, res) => {
     }))
 
     // Buscar pacientes que existem apenas em entradas diárias
-    let dailyQuery = `
-      SELECT DISTINCT code, patient_name as name
-      FROM (
-        SELECT code, patient_name FROM daily_consultation_entries WHERE clinic_id = $1 AND code IS NOT NULL
-        UNION
-        SELECT code, patient_name FROM daily_financial_entries WHERE clinic_id = $1 AND code IS NOT NULL
-        UNION
-        SELECT code, patient_name FROM daily_service_time_entries WHERE clinic_id = $1 AND code IS NOT NULL
-        UNION
-        SELECT code, patient_name FROM daily_source_entries WHERE clinic_id = $1 AND code IS NOT NULL
-      ) daily_patients
-      WHERE code NOT IN (SELECT code FROM patients WHERE clinic_id = $1)
-    `
-    const dailyParams: any[] = [clinicId]
+    let dailyPatients: any[] = []
+    try {
+      // Get existing patient codes to exclude
+      const existingCodes = patients.map(p => p.code)
 
-    if (search && typeof search === 'string') {
-      dailyQuery += ` AND (LOWER(name) LIKE $2 OR code LIKE $2)`
-      dailyParams.push(`%${search.toLowerCase()}%`)
+      let dailyQuery = `
+        SELECT DISTINCT code, patient_name as name
+        FROM (
+          SELECT code, patient_name FROM daily_consultation_entries WHERE clinic_id = $1 AND code IS NOT NULL AND patient_name IS NOT NULL
+          UNION
+          SELECT code, patient_name FROM daily_financial_entries WHERE clinic_id = $1 AND code IS NOT NULL AND patient_name IS NOT NULL
+          UNION
+          SELECT code, patient_name FROM daily_service_time_entries WHERE clinic_id = $1 AND code IS NOT NULL AND patient_name IS NOT NULL
+          UNION
+          SELECT code, patient_name FROM daily_source_entries WHERE clinic_id = $1 AND code IS NOT NULL AND patient_name IS NOT NULL
+        ) daily_patients
+      `
+      const dailyParams: any[] = [clinicId]
+
+      // Add search filter
+      if (search && typeof search === 'string') {
+        dailyQuery += ` WHERE (LOWER(patient_name) LIKE $2 OR code LIKE $2)`
+        dailyParams.push(`%${search.toLowerCase()}%`)
+      }
+
+      dailyQuery += ` ORDER BY patient_name ASC`
+
+      const dailyResult = await query(dailyQuery, dailyParams)
+
+      // Filter out patients that already exist in the patients table
+      dailyPatients = dailyResult.rows
+        .filter((row) => !existingCodes.includes(row.code))
+        .map((row) => ({
+          id: `temp-${clinicId}-${row.code}`,
+          code: row.code,
+          name: row.name,
+          email: null,
+          phone: null,
+          birthDate: null,
+          notes: null,
+          createdAt: null,
+        }))
+    } catch (dailyError: any) {
+      console.error('Error fetching daily patients:', dailyError)
+      console.error('Daily error details:', {
+        message: dailyError.message,
+        code: dailyError.code,
+        detail: dailyError.detail
+      })
+      // Continue sem os pacientes diários se houver erro
     }
 
-    dailyQuery += ` ORDER BY name ASC`
-
-    const dailyResult = await query(dailyQuery, dailyParams)
-    const dailyPatients = dailyResult.rows.map((row) => ({
-      id: `temp-${clinicId}-${row.code}`,
-      code: row.code,
-      name: row.name,
-      email: null,
-      phone: null,
-      birthDate: null,
-      notes: null,
-      createdAt: null,
-    }))
-
     // Combinar e ordenar
-    const allPatients = [...patients, ...dailyPatients].sort((a, b) => 
+    const allPatients = [...patients, ...dailyPatients].sort((a, b) =>
       a.name.localeCompare(b.name)
     )
 
     res.json(allPatients)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get patients error:', error)
-    res.status(500).json({ error: 'Failed to fetch patients' })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack
+    })
+    res.status(500).json({
+      error: 'Failed to fetch patients',
+      details: error.message
+    })
   }
 })
 
