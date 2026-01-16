@@ -286,21 +286,63 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
 
     setSaving(true)
     try {
-      // Get the real patient ID from the code
+      // Get or create patient
       let patientId: string
       try {
+        // Try to find existing patient
         const patient = await patientsApi.getByCode(clinicId, data.patientCode)
-        if (!patient || !patient.id) {
-          toast.error('Paciente não encontrado. Por favor, verifique o código do paciente.')
+
+        // Se o paciente é "temporário" (existe apenas em daily entries), criar o registro real
+        if (patient.id.startsWith('temp-')) {
+          try {
+            const newPatient = await patientsApi.create(clinicId, {
+              code: data.patientCode,
+              name: data.patientName,
+            })
+            patientId = newPatient.id
+          } catch (createErr: any) {
+            // Se falhou porque já existe (409), buscar novamente
+            if (createErr?.status === 409) {
+              const existingPatient = await patientsApi.getByCode(clinicId, data.patientCode)
+              patientId = existingPatient.id
+            } else {
+              console.error('Erro ao criar paciente permanente:', createErr)
+              toast.error('Erro ao criar paciente: ' + (createErr.message || 'Erro desconhecido'))
+              setSaving(false)
+              return
+            }
+          }
+        } else {
+          patientId = patient.id
+        }
+      } catch (err: any) {
+        // Patient doesn't exist, create it
+        if (err?.status === 404) {
+          try {
+            const newPatient = await patientsApi.create(clinicId, {
+              code: data.patientCode,
+              name: data.patientName,
+            })
+            patientId = newPatient.id
+          } catch (createErr: any) {
+            // Se falhou porque já existe (409), buscar novamente
+            if (createErr?.status === 409) {
+              const existingPatient = await patientsApi.getByCode(clinicId, data.patientCode)
+              patientId = existingPatient.id
+            } else {
+              console.error('Erro ao criar paciente:', createErr)
+              toast.error('Erro ao criar paciente: ' + (createErr.message || 'Erro desconhecido'))
+              setSaving(false)
+              return
+            }
+          }
+        } else {
+          // Other error
+          console.error('Erro ao buscar paciente:', err)
+          toast.error('Erro ao buscar paciente: ' + (err.message || 'Erro desconhecido'))
           setSaving(false)
           return
         }
-        patientId = patient.id
-      } catch (err: any) {
-        console.error('erro ao buscar paciente:', err)
-        toast.error('Paciente não encontrado. Por favor, cadastre o paciente antes de criar o contrato.')
-        setSaving(false)
-        return
       }
 
       const contractData = {
@@ -333,12 +375,6 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
 
           if (newTotal !== currentTotal) {
             try {
-              console.log('Atualizando valor total de adiantamento:', {
-                contractId: contract.id,
-                currentTotal,
-                newTotal,
-                clinicId,
-              })
               await advancesApi.contracts.updateTotalAdvanced(clinicId, contract.id, newTotal)
               toast.success(`Valor atualizado para ${formatCurrency(newTotal)}`)
             } catch (paymentErr: any) {
@@ -358,24 +394,17 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         }
 
         savedContract = await advancesApi.contracts.create(clinicId, contractData)
-        console.log('Contrato criado:', savedContract)
         toast.success('Contrato criado com sucesso!')
 
         // Criar o pagamento de adiantamento
         try {
-          console.log('Criando pagamento:', {
-            contractId: savedContract.id,
-            amount: data.advanceAmount,
-            clinicId,
-          })
-          const payment = await advancesApi.contracts.addPayment(clinicId, savedContract.id, {
+          await advancesApi.contracts.addPayment(clinicId, savedContract.id, {
             paymentDate: new Date().toISOString().split('T')[0],
             amount: data.advanceAmount,
             paymentMethod: null,
             referenceNumber: null,
             notes: 'Pagamento inicial do contrato',
           })
-          console.log('Pagamento criado com sucesso:', payment)
           toast.success(`Valor de adiantamento de ${formatCurrency(data.advanceAmount)} registrado!`)
         } catch (paymentErr: any) {
           console.error('Erro ao criar pagamento:', paymentErr)
