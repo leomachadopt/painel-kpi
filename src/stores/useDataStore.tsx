@@ -2550,6 +2550,34 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       target: targets.targetFollowUpRate,
     })
 
+    // Calculate plans not eligible from consultation entries
+    const allConsultationEntries = consultationEntries[clinicId] || []
+    const currentMonthStart = new Date(year, month - 1, 1)
+    const currentMonthEnd = new Date(year, month, 0, 23, 59, 59)
+    const plansNotEligibleCount = allConsultationEntries.filter((e) => {
+      if (!e.planNotEligible || !e.planNotEligibleAt) return false
+      const entryDate = new Date(e.planNotEligibleAt)
+      return entryDate >= currentMonthStart && entryDate <= currentMonthEnd
+    }).length
+
+    const prevMonthStart = new Date(month === 1 ? year - 1 : year, month === 1 ? 11 : month - 2, 1)
+    const prevMonthEnd = new Date(month === 1 ? year - 1 : year, month === 1 ? 11 : month - 2, new Date(month === 1 ? year - 1 : year, month === 1 ? 0 : month - 1, 0).getDate(), 23, 59, 59)
+    const prevPlansNotEligibleCount = allConsultationEntries.filter((e) => {
+      if (!e.planNotEligible || !e.planNotEligibleAt) return false
+      const entryDate = new Date(e.planNotEligibleAt)
+      return entryDate >= prevMonthStart && entryDate <= prevMonthEnd
+    }).length
+
+    kpis.push({
+      id: 'plans_not_eligible',
+      name: 'Planos Não-Elegíveis',
+      value: plansNotEligibleCount,
+      unit: 'number',
+      change: calcChange(plansNotEligibleCount, prevPlansNotEligibleCount),
+      status: plansNotEligibleCount === 0 ? 'success' : plansNotEligibleCount <= 2 ? 'warning' : 'danger',
+      description: 'Pacientes marcados como não-elegíveis',
+    })
+
     // ===== OPERACIONAL (4 KPIs) =====
     const totalOccupied = current.cabinets.reduce((sum, c) => sum + c.hoursOccupied, 0)
     const totalAvailable = current.cabinets.reduce((sum, c) => sum + c.hoursAvailable, 0)

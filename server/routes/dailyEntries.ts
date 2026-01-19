@@ -527,6 +527,9 @@ router.get('/consultation/:clinicId', async (req, res) => {
         referralCode: row.referral_code || null,
         campaignId: row.campaign_id || null,
         doctorId: row.doctor_id || null,
+        planNotEligible: row.plan_not_eligible || false,
+        planNotEligibleAt: row.plan_not_eligible_at || null,
+        planNotEligibleReason: row.plan_not_eligible_reason || null,
       }))
     )
   } catch (error) {
@@ -573,6 +576,9 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       referralCode: row.referral_code || null,
       campaignId: row.campaign_id || null,
       doctorId: row.doctor_id || null,
+      planNotEligible: row.plan_not_eligible || false,
+      planNotEligibleAt: row.plan_not_eligible_at || null,
+      planNotEligibleReason: row.plan_not_eligible_reason || null,
     })
   } catch (error) {
     console.error('Get consultation by code error:', error)
@@ -601,6 +607,9 @@ router.post('/consultation/:clinicId', async (req, res) => {
       referralCode,
       campaignId,
       doctorId,
+      planNotEligible,
+      planNotEligibleAt,
+      planNotEligibleReason,
     } = req.body
 
     if (!code || !/^\d{1,6}$/.test(code)) {
@@ -616,13 +625,15 @@ router.post('/consultation/:clinicId', async (req, res) => {
         plan_presented, plan_presented_at, plan_presented_value,
         plan_accepted, plan_accepted_at,
         plan_value,
-        source_id, is_referral, referral_name, referral_code, campaign_id, doctor_id)
+        source_id, is_referral, referral_name, referral_code, campaign_id, doctor_id,
+        plan_not_eligible, plan_not_eligible_at, plan_not_eligible_reason)
        VALUES ($1, $2, $3, $4, $5,
         $6, $7,
         $8, $9, $10,
         $11, $12,
         $13,
-        $14, $15, $16, $17, $18, $19)
+        $14, $15, $16, $17, $18, $19,
+        $20, $21, $22)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
@@ -639,7 +650,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
         referral_name = EXCLUDED.referral_name,
         referral_code = EXCLUDED.referral_code,
         campaign_id = EXCLUDED.campaign_id,
-        doctor_id = EXCLUDED.doctor_id
+        doctor_id = EXCLUDED.doctor_id,
+        plan_not_eligible = EXCLUDED.plan_not_eligible,
+        plan_not_eligible_at = EXCLUDED.plan_not_eligible_at,
+        plan_not_eligible_reason = EXCLUDED.plan_not_eligible_reason
        RETURNING *`,
       [
         entryId,
@@ -661,6 +675,9 @@ router.post('/consultation/:clinicId', async (req, res) => {
         referralCode || null,
         campaignId || null,
         doctorId || null,
+        planNotEligible || false,
+        planNotEligibleAt || null,
+        planNotEligibleReason || null,
       ]
     )
 
@@ -683,6 +700,9 @@ router.post('/consultation/:clinicId', async (req, res) => {
       referralCode: result.rows[0].referral_code || null,
       campaignId: result.rows[0].campaign_id || null,
       doctorId: result.rows[0].doctor_id || null,
+      planNotEligible: result.rows[0].plan_not_eligible || false,
+      planNotEligibleAt: result.rows[0].plan_not_eligible_at || null,
+      planNotEligibleReason: result.rows[0].plan_not_eligible_reason || null,
     })
   } catch (error: any) {
     console.error('Create consultation entry error:', error)
@@ -723,6 +743,9 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
       referralCode,
       campaignId,
       doctorId,
+      planNotEligible,
+      planNotEligibleAt,
+      planNotEligibleReason,
     } = req.body
 
     // Validate required fields
@@ -749,8 +772,9 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
            plan_accepted = $9, plan_accepted_at = $10,
            plan_value = $11,
            source_id = $12, is_referral = $13, referral_name = $14, referral_code = $15, campaign_id = $16,
-           doctor_id = $17
-       WHERE id = $18 AND clinic_id = $19
+           doctor_id = $17,
+           plan_not_eligible = $18, plan_not_eligible_at = $19, plan_not_eligible_reason = $20
+       WHERE id = $21 AND clinic_id = $22
        RETURNING *`,
       [
         date,
@@ -770,6 +794,9 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
         referralCode || null,
         campaignId || null,
         doctorId || null,
+        planNotEligible || false,
+        planNotEligibleAt || null,
+        planNotEligibleReason || null,
         entryId,
         clinicId,
       ]
@@ -794,6 +821,9 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
       referralCode: result.rows[0].referral_code || null,
       campaignId: result.rows[0].campaign_id || null,
       doctorId: result.rows[0].doctor_id || null,
+      planNotEligible: result.rows[0].plan_not_eligible || false,
+      planNotEligibleAt: result.rows[0].plan_not_eligible_at || null,
+      planNotEligibleReason: result.rows[0].plan_not_eligible_reason || null,
     })
   } catch (error: any) {
     console.error('Update consultation entry error:', error)

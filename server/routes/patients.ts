@@ -312,8 +312,9 @@ router.get('/:clinicId/:patientId/history', async (req, res) => {
         [clinicId, code]
       ),
       query(
-        `SELECT id, date, patient_name, code, plan_created, plan_created_at, plan_presented, 
-                plan_presented_at, plan_accepted, plan_accepted_at, plan_value, created_at
+        `SELECT id, date, patient_name, code, plan_created, plan_created_at, plan_presented,
+                plan_presented_at, plan_accepted, plan_accepted_at, plan_value,
+                plan_not_eligible, plan_not_eligible_at, plan_not_eligible_reason, created_at
          FROM daily_consultation_entries
          WHERE clinic_id = $1 AND code = $2
          ORDER BY date DESC`,

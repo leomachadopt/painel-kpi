@@ -303,7 +303,7 @@ export default function Dashboard() {
             <div className="mb-8 animate-slide-up">
               <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Comercial & Vendas</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate'].includes(k.id)).map((kpi) => (
+                {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate', 'plans_not_eligible'].includes(k.id)).map((kpi) => (
                   <KPICard key={kpi.id} kpi={kpi} />
                 ))}
               </div>

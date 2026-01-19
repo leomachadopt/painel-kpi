@@ -5,6 +5,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -50,6 +51,9 @@ const schema = z.object({
   referralCode: z.string().optional(),
   campaignId: z.string().optional(),
   doctorId: z.string().optional(),
+  planNotEligible: z.boolean(),
+  planNotEligibleAt: z.string().optional(),
+  planNotEligibleReason: z.string().optional(),
 })
 
 interface EditConsultationDialogProps {
@@ -90,6 +94,9 @@ export function EditConsultationDialog({
       referralCode: '',
       campaignId: '',
       doctorId: '',
+      planNotEligible: false,
+      planNotEligibleAt: '',
+      planNotEligibleReason: '',
     },
   })
 
@@ -109,24 +116,54 @@ export function EditConsultationDialog({
         return isoDate.split('T')[0]
       }
 
+      // Pequeno delay para garantir que o modal está completamente montado
+      setTimeout(() => {
+        form.reset({
+          date: toDateInput(entry.date),
+          patientName: entry.patientName,
+          code: entry.code,
+          planCreated: !!entry.planCreated,
+          planCreatedAt: toDateInput(entry.planCreatedAt),
+          planPresented: !!entry.planPresented,
+          planPresentedAt: toDateInput(entry.planPresentedAt),
+          planPresentedValue: entry.planPresentedValue ?? 0,
+          planAccepted: !!entry.planAccepted,
+          planAcceptedAt: toDateInput(entry.planAcceptedAt),
+          planValue: entry.planValue ?? 0,
+          sourceId: entry.sourceId || '',
+          isReferral: entry.isReferral || false,
+          referralName: entry.referralName || '',
+          referralCode: entry.referralCode || '',
+          campaignId: entry.campaignId || '',
+          doctorId: entry.doctorId || '',
+          planNotEligible: !!entry.planNotEligible,
+          planNotEligibleAt: toDateInput(entry.planNotEligibleAt),
+          planNotEligibleReason: entry.planNotEligibleReason || '',
+        })
+      }, 0)
+    } else if (!open) {
+      // Limpar formulário quando modal fecha
       form.reset({
-        date: toDateInput(entry.date),
-        patientName: entry.patientName,
-        code: entry.code,
-        planCreated: !!entry.planCreated,
-        planCreatedAt: toDateInput(entry.planCreatedAt),
-        planPresented: !!entry.planPresented,
-        planPresentedAt: toDateInput(entry.planPresentedAt),
-        planPresentedValue: entry.planPresentedValue ?? 0,
-        planAccepted: !!entry.planAccepted,
-        planAcceptedAt: toDateInput(entry.planAcceptedAt),
-        planValue: entry.planValue ?? 0,
-        sourceId: entry.sourceId || '',
-        isReferral: entry.isReferral || false,
-        referralName: entry.referralName || '',
-        referralCode: entry.referralCode || '',
-        campaignId: entry.campaignId || '',
-        doctorId: entry.doctorId || '',
+        date: '',
+        patientName: '',
+        code: '',
+        planCreated: false,
+        planCreatedAt: '',
+        planPresented: false,
+        planPresentedAt: '',
+        planPresentedValue: 0,
+        planAccepted: false,
+        planAcceptedAt: '',
+        planValue: 0,
+        sourceId: '',
+        isReferral: false,
+        referralName: '',
+        referralCode: '',
+        campaignId: '',
+        doctorId: '',
+        planNotEligible: false,
+        planNotEligibleAt: '',
+        planNotEligibleReason: '',
       })
     }
   }, [entry, open, form])
@@ -178,6 +215,14 @@ export function EditConsultationDialog({
       return
     }
 
+    // Validate plan not eligible reason
+    if (data.planNotEligible && (!data.planNotEligibleReason || data.planNotEligibleReason.trim() === '')) {
+      form.setError('planNotEligibleReason', {
+        message: 'Justificativa obrigatória quando plano não-elegível',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       await updateConsultationEntry(clinic.id, entry.id, {
@@ -199,6 +244,9 @@ export function EditConsultationDialog({
         referralCode: data.referralCode || null,
         campaignId: data.campaignId || null,
         doctorId: data.doctorId || null,
+        planNotEligible: data.planNotEligible,
+        planNotEligibleAt: data.planNotEligible ? data.planNotEligibleAt || null : null,
+        planNotEligibleReason: data.planNotEligible ? data.planNotEligibleReason || null : null,
       })
       onOpenChange(false)
       onSuccess?.()
@@ -487,6 +535,73 @@ export function EditConsultationDialog({
                                   step="0.01"
                                   {...field}
                                   onFocus={(e) => e.target.select()}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* Plan Not Eligible Section - Outside the plan stages box */}
+            <div className="flex flex-col gap-4 p-4 border rounded-md bg-amber-50/50">
+              <FormField
+                control={form.control}
+                name="planNotEligible"
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <FormLabel className="font-semibold">Plano Não-Elegível</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(v) => {
+                            field.onChange(v)
+                            if (v) {
+                              const current = form.getValues('planNotEligibleAt')
+                              form.setValue('planNotEligibleAt', current || today, { shouldValidate: true })
+                            } else {
+                              form.setValue('planNotEligibleAt', '', { shouldValidate: true })
+                              form.setValue('planNotEligibleReason', '', { shouldValidate: true })
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                    {form.watch('planNotEligible') && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="planNotEligibleAt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs text-muted-foreground">
+                                Data de marcação como não-elegível
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="planNotEligibleReason"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs text-muted-foreground">
+                                Justificativa <span className="text-destructive">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  placeholder="Descreva o motivo pelo qual o paciente não é elegível..."
+                                  className="min-h-[80px]"
                                 />
                               </FormControl>
                               <FormMessage />

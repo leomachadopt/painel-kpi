@@ -73,30 +73,33 @@ export function ConsultationKanban({
     return clinic.configuration.doctors.find((d) => d.id === doctorId)?.name || null
   }
 
+  // Filter out non-eligible plans from kanban
+  const eligibleData = data.filter((e) => !e.planNotEligible)
+
   // Organize entries by stage
   const columns: KanbanColumn[] = [
     {
       title: 'Sem Plano',
       description: 'Aguardando criação do plano',
-      entries: data.filter((e) => !e.planCreated),
+      entries: eligibleData.filter((e) => !e.planCreated),
       color: 'bg-slate-100 border-slate-300',
     },
     {
       title: 'Plano Criado',
       description: 'Aguardando apresentação',
-      entries: data.filter((e) => e.planCreated && !e.planPresented),
+      entries: eligibleData.filter((e) => e.planCreated && !e.planPresented),
       color: 'bg-blue-50 border-blue-300',
     },
     {
       title: 'Plano Apresentado',
       description: 'Aguardando decisão',
-      entries: data.filter((e) => e.planPresented && !e.planAccepted),
+      entries: eligibleData.filter((e) => e.planPresented && !e.planAccepted),
       color: 'bg-amber-50 border-amber-300',
     },
     {
       title: 'Plano Aceito',
       description: 'Convertido em paciente',
-      entries: data.filter((e) => e.planAccepted),
+      entries: eligibleData.filter((e) => e.planAccepted),
       color: 'bg-emerald-50 border-emerald-300',
     },
   ]

@@ -201,6 +201,10 @@ export interface DailyConsultationEntry {
   campaignId?: string | null
   // Doctor field (optional - for tracking responsible doctor)
   doctorId?: string | null
+  // Plan not eligible (optional - for tracking non-eligible patients)
+  planNotEligible?: boolean
+  planNotEligibleAt?: string | null
+  planNotEligibleReason?: string | null
 }
 
 export interface DailyProspectingEntry {
