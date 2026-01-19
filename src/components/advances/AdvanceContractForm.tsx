@@ -63,6 +63,7 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   const [loadingPatientCodes, setLoadingPatientCodes] = useState<Set<number>>(new Set())
   const [loadingPatient, setLoadingPatient] = useState(false)
   const [patientFound, setPatientFound] = useState(false)
+  const [patientNotFound, setPatientNotFound] = useState(false)
 
   const isEdit = !!contract
   const schema = createSchema(isEdit)
@@ -90,10 +91,12 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
     if (contract?.id) {
       loadContractDetails()
       setPatientFound(false)
+      setPatientNotFound(false)
     } else {
       // Se não há contrato (criação), limpa os dependentes
       setDependents([])
       setPatientFound(false)
+      setPatientNotFound(false)
     }
   }, [contract?.id])
 
@@ -152,28 +155,35 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
   const handlePatientCodeChange = async (code: string) => {
     const cleanCode = code.replace(/\D/g, '').slice(0, 6)
     form.setValue('patientCode', cleanCode)
-    
+
     if (cleanCode.length >= 1 && cleanCode.length <= 6) {
       setLoadingPatient(true)
       setPatientFound(false)
+      setPatientNotFound(false)
       try {
         const patient = await patientsApi.getByCode(clinicId, cleanCode)
         if (patient) {
           form.setValue('patientName', patient.name || '')
           setPatientFound(true)
+          setPatientNotFound(false)
           toast.success(`Paciente encontrado: ${patient.name}`)
         }
       } catch (err: any) {
-        if (err?.status !== 404) {
+        if (err?.status === 404) {
+          setPatientFound(false)
+          setPatientNotFound(true)
+        } else {
           console.error('Erro ao buscar paciente:', err)
+          setPatientFound(false)
+          setPatientNotFound(false)
         }
-        setPatientFound(false)
       } finally {
         setLoadingPatient(false)
       }
     } else if (cleanCode.length === 0) {
       form.setValue('patientName', '')
       setPatientFound(false)
+      setPatientNotFound(false)
     }
   }
 
@@ -490,6 +500,11 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                     <FormMessage />
                     {patientFound && (
                       <p className="text-xs text-green-600 mt-1">✓ Paciente encontrado</p>
+                    )}
+                    {patientNotFound && !loadingPatient && (
+                      <p className="text-xs text-amber-700 mt-1">
+                        Paciente não encontrado. Preencha o nome para cadastrar automaticamente.
+                      </p>
                     )}
                   </FormItem>
                 )}
