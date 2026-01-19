@@ -2,7 +2,7 @@ import { DailyConsultationEntry, Clinic } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, User, Hash, Euro, DollarSign, Pencil, Trash2, MoreVertical } from 'lucide-react'
+import { Calendar, User, Hash, Euro, DollarSign, Pencil, Trash2, MoreVertical, Stethoscope } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
@@ -67,6 +67,12 @@ export function ConsultationKanban({
   const handleEditSuccess = () => {
     onDelete?.() // Recarregar dados
   }
+
+  const getDoctorName = (doctorId: string | null | undefined) => {
+    if (!doctorId || !clinic) return null
+    return clinic.configuration.doctors.find((d) => d.id === doctorId)?.name || null
+  }
+
   // Organize entries by stage
   const columns: KanbanColumn[] = [
     {
@@ -172,6 +178,16 @@ export function ConsultationKanban({
                         {entry.patientName}
                       </span>
                     </div>
+
+                    {/* Doctor Name */}
+                    {getDoctorName(entry.doctorId) && (
+                      <div className="flex items-center gap-2">
+                        <Stethoscope className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground">
+                          {getDoctorName(entry.doctorId)}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Code and Date */}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
