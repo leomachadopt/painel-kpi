@@ -150,15 +150,27 @@ export function AdvanceInvoiceTable({
 
   const handleEdit = (entryId: string) => {
     const entry = entryMap.get(entryId)
-    if (entry) {
-      setEditingEntry(entry)
-      setIsEditDialogOpen(true)
+    if (!entry) return
+
+    // Verificar se é uma entrada de lote (não editável)
+    if (entry.batchId || entry.id.startsWith('batch-')) {
+      toast.error('Não é possível editar faturas geradas por lotes. Para editar, acesse o lote de faturamento no módulo de Adiantamentos.')
+      return
     }
+
+    setEditingEntry(entry)
+    setIsEditDialogOpen(true)
   }
 
   const handleDelete = async (entryId: string) => {
     const entry = entryMap.get(entryId)
     if (!entry) return
+
+    // Verificar se é uma entrada de lote (não deletável)
+    if (entry.batchId || entry.id.startsWith('batch-')) {
+      toast.error('Não é possível excluir faturas geradas por lotes. Para excluir, acesse o lote de faturamento no módulo de Adiantamentos.')
+      return
+    }
 
     if (!confirm(`Excluir fatura de adiantamento de ${formatCurrency(entry.value)} de ${entry.billedToThirdParty && entry.thirdPartyName ? entry.thirdPartyName : entry.patientName}?`)) {
       return
@@ -304,25 +316,50 @@ export function AdvanceInvoiceTable({
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEdit(row.entryId)}
-                                    className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-                                    title="Editar"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDelete(row.entryId)}
-                                    disabled={deleting === row.entryId}
-                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    title="Excluir"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {row.batchId || row.entryId.startsWith('batch-') ? (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        disabled
+                                        className="h-8 w-8 text-muted-foreground cursor-not-allowed opacity-40"
+                                        title="Fatura gerada por lote - não editável"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        disabled
+                                        className="h-8 w-8 text-muted-foreground cursor-not-allowed opacity-40"
+                                        title="Fatura gerada por lote - não deletável"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleEdit(row.entryId)}
+                                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                                        title="Editar"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDelete(row.entryId)}
+                                        disabled={deleting === row.entryId}
+                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        title="Excluir"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
