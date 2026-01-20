@@ -149,11 +149,17 @@ export function AdvanceInvoiceTable({
   }
 
   const handleEdit = (entryId: string) => {
+    // Verificar PRIMEIRO se é uma entrada de lote pelo ID (mais confiável)
+    if (entryId.startsWith('batch-')) {
+      toast.error('Não é possível editar faturas geradas por lotes. Para editar, acesse o lote de faturamento no módulo de Adiantamentos.')
+      return
+    }
+
     const entry = entryMap.get(entryId)
     if (!entry) return
 
-    // Verificar se é uma entrada de lote (não editável)
-    if (entry.batchId || entry.id.startsWith('batch-')) {
+    // Verificação adicional por batchId
+    if (entry.batchId || entry.batchNumber) {
       toast.error('Não é possível editar faturas geradas por lotes. Para editar, acesse o lote de faturamento no módulo de Adiantamentos.')
       return
     }
@@ -163,11 +169,17 @@ export function AdvanceInvoiceTable({
   }
 
   const handleDelete = async (entryId: string) => {
+    // Verificar PRIMEIRO se é uma entrada de lote pelo ID (mais confiável)
+    if (entryId.startsWith('batch-')) {
+      toast.error('Não é possível excluir faturas geradas por lotes. Para excluir, acesse o lote de faturamento no módulo de Adiantamentos.')
+      return
+    }
+
     const entry = entryMap.get(entryId)
     if (!entry) return
 
-    // Verificar se é uma entrada de lote (não deletável)
-    if (entry.batchId || entry.id.startsWith('batch-')) {
+    // Verificação adicional por batchId
+    if (entry.batchId || entry.batchNumber) {
       toast.error('Não é possível excluir faturas geradas por lotes. Para excluir, acesse o lote de faturamento no módulo de Adiantamentos.')
       return
     }

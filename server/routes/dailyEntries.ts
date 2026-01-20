@@ -4254,22 +4254,29 @@ router.post('/advance-invoice/:clinicId', async (req, res) => {
 })
 
 router.put('/advance-invoice/:clinicId/:entryId', async (req, res) => {
-  const { clinicId } = req.params
+  const { clinicId, entryId } = req.params
+
+  // IMPORTANT: Reject attempts to edit batch-generated entries
+  if (entryId.startsWith('batch-')) {
+    return res.status(400).json({
+      error: 'Não é possível editar faturas geradas por lotes. Acesse o módulo de Adiantamentos para gerenciar lotes.'
+    })
+  }
+
   const hasPermission = await canEditAdvanceInvoice(req, clinicId)
-  
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
-    const { entryId } = req.params
     const { date, patientName, code, doctorId, billedToThirdParty, thirdPartyCode, thirdPartyName, value } = req.body
 
     // Validate required fields
     if (!date || !patientName || !code || value === undefined) {
       return res.status(400).json({ error: 'Missing required fields' })
     }
-    
+
     // Validate: if billedToThirdParty is true, thirdPartyName is required
     if (billedToThirdParty && !thirdPartyName) {
       return res.status(400).json({ error: 'Nome do terceiro é obrigatório quando faturado para terceiros' })
@@ -4328,15 +4335,22 @@ router.put('/advance-invoice/:clinicId/:entryId', async (req, res) => {
 })
 
 router.delete('/advance-invoice/:clinicId/:entryId', async (req, res) => {
-  const { clinicId } = req.params
+  const { clinicId, entryId } = req.params
+
+  // IMPORTANT: Reject attempts to delete batch-generated entries
+  if (entryId.startsWith('batch-')) {
+    return res.status(400).json({
+      error: 'Não é possível excluir faturas geradas por lotes. Acesse o módulo de Adiantamentos para gerenciar lotes.'
+    })
+  }
+
   const hasPermission = await canEditAdvanceInvoice(req, clinicId)
-  
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
-    const { entryId } = req.params
     const result = await query(
       `DELETE FROM daily_advance_invoice_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
       [entryId, clinicId]
