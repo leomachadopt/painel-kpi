@@ -1040,6 +1040,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         referralName: updatedEntry.referralName || null,
         referralCode: updatedEntry.referralCode || null,
         campaignId: updatedEntry.campaignId || null,
+        doctorId: updatedEntry.doctorId || null,
+        planNotEligible: updatedEntry.planNotEligible,
+        planNotEligibleAt: updatedEntry.planNotEligibleAt || null,
+        planNotEligibleReason: updatedEntry.planNotEligibleReason || null,
       })
     } catch (error: any) {
       // Rollback otimista
