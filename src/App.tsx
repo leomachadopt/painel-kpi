@@ -22,6 +22,8 @@ import TicketDetail from '@/pages/TicketDetail'
 import Advances from '@/pages/Advances'
 import InsuranceProviders from '@/pages/InsuranceProviders'
 import ProcedureBaseGlobal from '@/pages/ProcedureBaseGlobal'
+import Privacy from '@/pages/Privacy'
+import Terms from '@/pages/Terms'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -39,8 +41,10 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
 
-            {/* Public NPS Survey Route (no authentication) */}
+            {/* Public Routes (no authentication) */}
             <Route path="/survey/:token" element={<NPSSurvey />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
 
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/login" replace />} />
