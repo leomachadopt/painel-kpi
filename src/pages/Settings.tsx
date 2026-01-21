@@ -25,6 +25,7 @@ import { Trash2, Plus, Save, Edit2, Check, X, Loader2, ArrowUp, ArrowDown } from
 import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
+import { FirstConsultationTypesSettings } from '@/components/settings/FirstConsultationTypesSettings'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -711,6 +712,7 @@ export default function Settings() {
             <TabsTrigger value="paymentSources" className="text-xs sm:text-sm whitespace-nowrap">Fontes de Recebimento</TabsTrigger>
             <TabsTrigger value="alignerBrands" className="text-xs sm:text-sm whitespace-nowrap">Marcas de Alinhadores</TabsTrigger>
             <TabsTrigger value="orderItems" className="text-xs sm:text-sm whitespace-nowrap">Itens</TabsTrigger>
+            <TabsTrigger value="consultationTypes" className="text-xs sm:text-sm whitespace-nowrap">Tipos de 1ª Consulta</TabsTrigger>
             <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap">{t('sidebar.cabinets')}</TabsTrigger>
             <TabsTrigger value="doctors" className="text-xs sm:text-sm whitespace-nowrap">Médicos</TabsTrigger>
             <TabsTrigger value="targets" className="text-xs sm:text-sm whitespace-nowrap">Metas</TabsTrigger>
@@ -1274,6 +1276,10 @@ export default function Settings() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="consultationTypes" className="space-y-6">
+          <FirstConsultationTypesSettings clinicId={clinic.id} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db.js'
-import { requirePermission } from '../middleware/permissions.js'
+import { requirePermission, getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
 
@@ -236,6 +236,342 @@ router.put('/:clinicId', requirePermission('canEditClinicConfig'), async (req, r
       message: error.message,
       detail: error.detail || error.toString()
     })
+  }
+})
+
+// ========================
+// First Consultation Types
+// ========================
+
+// Get all consultation types for a clinic
+// Accessible by anyone who can edit consultations (GESTOR_CLINICA, MENTOR, or COLABORADOR with permission)
+router.get('/:clinicId/consultation-types', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const userId = (req as any).user?.sub || (req as any).auth?.sub
+    const userRole = (req as any).user?.role || (req as any).auth?.role
+    const userClinicId = (req as any).user?.clinicId || (req as any).auth?.clinicId
+
+    // Must belong to the clinic
+    if (userClinicId !== clinicId) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    // GESTOR_CLINICA and MENTOR always can read
+    let canRead = userRole === 'GESTOR_CLINICA' || userRole === 'MENTOR'
+
+    // COLABORADOR needs canEditConsultations permission
+    if (!canRead && userRole === 'COLABORADOR') {
+      const permissions = await getUserPermissions(userId, userRole, clinicId)
+      canRead = permissions.canEditConsultations === true
+    }
+
+    if (!canRead) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const result = await query(
+      `SELECT * FROM first_consultation_types
+       WHERE clinic_id = $1
+       ORDER BY name ASC`,
+      [clinicId]
+    )
+
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description,
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })))
+  } catch (error: any) {
+    console.error('Get consultation types error:', error)
+    res.status(500).json({ error: 'Failed to fetch consultation types' })
+  }
+})
+
+// Create a new consultation type
+router.post('/:clinicId/consultation-types', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { name, description } = req.body
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+
+    const result = await query(
+      `INSERT INTO first_consultation_types (clinic_id, name, description)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [clinicId, name, description || null]
+    )
+
+    const row = result.rows[0]
+    res.status(201).json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description,
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Create consultation type error:', error)
+    if (error.constraint === 'first_consultation_types_clinic_id_name_key') {
+      return res.status(409).json({ error: 'Um tipo de consulta com este nome já existe' })
+    }
+    res.status(500).json({ error: 'Failed to create consultation type' })
+  }
+})
+
+// Update a consultation type
+router.put('/:clinicId/consultation-types/:typeId', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId, typeId } = req.params
+    const { name, description, active } = req.body
+
+    const result = await query(
+      `UPDATE first_consultation_types
+       SET name = COALESCE($1, name),
+           description = COALESCE($2, description),
+           active = COALESCE($3, active)
+       WHERE id = $4 AND clinic_id = $5
+       RETURNING *`,
+      [name, description, active, typeId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      clinicId: row.clinic_id,
+      name: row.name,
+      description: row.description,
+      active: row.active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Update consultation type error:', error)
+    if (error.constraint === 'first_consultation_types_clinic_id_name_key') {
+      return res.status(409).json({ error: 'Um tipo de consulta com este nome já existe' })
+    }
+    res.status(500).json({ error: 'Failed to update consultation type' })
+  }
+})
+
+// Delete a consultation type
+router.delete('/:clinicId/consultation-types/:typeId', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId, typeId } = req.params
+
+    const result = await query(
+      `DELETE FROM first_consultation_types
+       WHERE id = $1 AND clinic_id = $2
+       RETURNING id`,
+      [typeId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    res.json({ message: 'Consultation type deleted successfully' })
+  } catch (error: any) {
+    console.error('Delete consultation type error:', error)
+    res.status(500).json({ error: 'Failed to delete consultation type' })
+  }
+})
+
+// ========================
+// Consultation Type Procedures
+// ========================
+
+// Get all procedures for a consultation type
+// Accessible by anyone who can edit consultations
+router.get('/:clinicId/consultation-types/:typeId/procedures', async (req, res) => {
+  try {
+    const { clinicId, typeId } = req.params
+    const userId = (req as any).user?.sub || (req as any).auth?.sub
+    const userRole = (req as any).user?.role || (req as any).auth?.role
+    const userClinicId = (req as any).user?.clinicId || (req as any).auth?.clinicId
+
+    // Must belong to the clinic
+    if (userClinicId !== clinicId) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    // GESTOR_CLINICA and MENTOR always can read
+    let canRead = userRole === 'GESTOR_CLINICA' || userRole === 'MENTOR'
+
+    // COLABORADOR needs canEditConsultations permission
+    if (!canRead && userRole === 'COLABORADOR') {
+      const permissions = await getUserPermissions(userId, userRole, clinicId)
+      canRead = permissions.canEditConsultations === true
+    }
+
+    if (!canRead) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    // Verify that the consultation type belongs to this clinic
+    const typeCheck = await query(
+      `SELECT id FROM first_consultation_types WHERE id = $1 AND clinic_id = $2`,
+      [typeId, clinicId]
+    )
+
+    if (typeCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    const result = await query(
+      `SELECT * FROM first_consultation_type_procedures
+       WHERE consultation_type_id = $1
+       ORDER BY display_order ASC, name ASC`,
+      [typeId]
+    )
+
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      consultationTypeId: row.consultation_type_id,
+      name: row.name,
+      description: row.description,
+      displayOrder: row.display_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })))
+  } catch (error: any) {
+    console.error('Get procedures error:', error)
+    res.status(500).json({ error: 'Failed to fetch procedures' })
+  }
+})
+
+// Create a new procedure for a consultation type
+router.post('/:clinicId/consultation-types/:typeId/procedures', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId, typeId } = req.params
+    const { name, description, displayOrder } = req.body
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' })
+    }
+
+    // Verify that the consultation type belongs to this clinic
+    const typeCheck = await query(
+      `SELECT id FROM first_consultation_types WHERE id = $1 AND clinic_id = $2`,
+      [typeId, clinicId]
+    )
+
+    if (typeCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    const result = await query(
+      `INSERT INTO first_consultation_type_procedures (consultation_type_id, name, description, display_order)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [typeId, name, description || null, displayOrder || 0]
+    )
+
+    const row = result.rows[0]
+    res.status(201).json({
+      id: row.id,
+      consultationTypeId: row.consultation_type_id,
+      name: row.name,
+      description: row.description,
+      displayOrder: row.display_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Create procedure error:', error)
+    res.status(500).json({ error: 'Failed to create procedure' })
+  }
+})
+
+// Update a procedure
+router.put('/:clinicId/consultation-types/:typeId/procedures/:procedureId', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId, typeId, procedureId } = req.params
+    const { name, description, displayOrder } = req.body
+
+    // Verify that the consultation type belongs to this clinic
+    const typeCheck = await query(
+      `SELECT id FROM first_consultation_types WHERE id = $1 AND clinic_id = $2`,
+      [typeId, clinicId]
+    )
+
+    if (typeCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    const result = await query(
+      `UPDATE first_consultation_type_procedures
+       SET name = COALESCE($1, name),
+           description = COALESCE($2, description),
+           display_order = COALESCE($3, display_order)
+       WHERE id = $4 AND consultation_type_id = $5
+       RETURNING *`,
+      [name, description, displayOrder, procedureId, typeId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Procedure not found' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      id: row.id,
+      consultationTypeId: row.consultation_type_id,
+      name: row.name,
+      description: row.description,
+      displayOrder: row.display_order,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Update procedure error:', error)
+    res.status(500).json({ error: 'Failed to update procedure' })
+  }
+})
+
+// Delete a procedure
+router.delete('/:clinicId/consultation-types/:typeId/procedures/:procedureId', requirePermission('canEditClinicConfig'), async (req, res) => {
+  try {
+    const { clinicId, typeId, procedureId } = req.params
+
+    // Verify that the consultation type belongs to this clinic
+    const typeCheck = await query(
+      `SELECT id FROM first_consultation_types WHERE id = $1 AND clinic_id = $2`,
+      [typeId, clinicId]
+    )
+
+    if (typeCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation type not found' })
+    }
+
+    const result = await query(
+      `DELETE FROM first_consultation_type_procedures
+       WHERE id = $1 AND consultation_type_id = $2
+       RETURNING id`,
+      [procedureId, typeId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Procedure not found' })
+    }
+
+    res.json({ message: 'Procedure deleted successfully' })
+  } catch (error: any) {
+    console.error('Delete procedure error:', error)
+    res.status(500).json({ error: 'Failed to delete procedure' })
   }
 })
 

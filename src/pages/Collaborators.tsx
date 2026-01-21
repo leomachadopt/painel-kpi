@@ -40,7 +40,7 @@ import useDataStore from '@/stores/useDataStore'
 
 export default function Collaborators() {
   const { isGestor } = usePermissions()
-  const { user } = useAuthStore()
+  const { user, refreshPermissions } = useAuthStore()
   const { getClinic } = useDataStore()
   const clinic = user?.clinicId ? getClinic(user.clinicId) : undefined
   const shouldShowAdvances = !isBrazilClinic(clinic)
@@ -191,11 +191,9 @@ export default function Collaborators() {
       setShowPermissionsModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
-      
+
       // If the updated collaborator is the current user, refresh their permissions
-      const currentUser = useAuthStore.getState().user
-      const refreshPermissions = useAuthStore.getState().refreshPermissions
-      if (currentUser && currentUser.id === selectedCollaborator.id && refreshPermissions) {
+      if (user && user.id === selectedCollaborator.id && refreshPermissions) {
         await refreshPermissions()
       }
     } catch (error: any) {

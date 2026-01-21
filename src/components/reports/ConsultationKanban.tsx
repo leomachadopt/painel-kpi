@@ -2,7 +2,7 @@ import { DailyConsultationEntry, Clinic } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, User, Hash, Euro, DollarSign, Pencil, Trash2, MoreVertical, Stethoscope } from 'lucide-react'
+import { Calendar, User, Hash, Euro, DollarSign, Pencil, Trash2, MoreVertical, Stethoscope, ClipboardCheck } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
@@ -73,6 +73,18 @@ export function ConsultationKanban({
     return clinic.configuration.doctors.find((d) => d.id === doctorId)?.name || null
   }
 
+  const getProceduresStatus = (entry: DailyConsultationEntry) => {
+    if (!entry.consultationCompleted || !entry.completedProcedures) {
+      return null
+    }
+
+    const procedures = Object.values(entry.completedProcedures)
+    const completed = procedures.filter((p: any) => p.completed).length
+    const total = procedures.length
+
+    return { completed, total }
+  }
+
   // Filter out non-eligible plans from kanban
   const eligibleData = data.filter((e) => !e.planNotEligible)
 
@@ -80,9 +92,15 @@ export function ConsultationKanban({
   const columns: KanbanColumn[] = [
     {
       title: 'Sem Plano',
-      description: 'Aguardando criação do plano',
-      entries: eligibleData.filter((e) => !e.planCreated),
+      description: 'Aguardando consulta/criação do plano',
+      entries: eligibleData.filter((e) => !e.consultationCompleted && !e.planCreated),
       color: 'bg-slate-100 border-slate-300',
+    },
+    {
+      title: 'Consulta Realizada',
+      description: 'Aguardando criação do plano',
+      entries: eligibleData.filter((e) => e.consultationCompleted && !e.planCreated),
+      color: 'bg-green-50 border-green-300',
     },
     {
       title: 'Plano Criado',
@@ -111,7 +129,7 @@ export function ConsultationKanban({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {columns.map((column) => (
         <div key={column.title} className="flex flex-col gap-3">
           {/* Column Header */}
@@ -181,6 +199,30 @@ export function ConsultationKanban({
                         {entry.patientName}
                       </span>
                     </div>
+
+                    {/* Consultation Completed Badge - Only show in other columns */}
+                    {entry.consultationCompleted && entry.planCreated && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700 text-xs">
+                          <ClipboardCheck className="h-3 w-3 mr-1" />
+                          {getProceduresStatus(entry) && (
+                            <span>
+                              {getProceduresStatus(entry)!.completed}/{getProceduresStatus(entry)!.total}
+                            </span>
+                          )}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Show procedures count in Consulta Realizada column */}
+                    {entry.consultationCompleted && !entry.planCreated && getProceduresStatus(entry) && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-white border-green-300 text-green-700 text-xs">
+                          <ClipboardCheck className="h-3 w-3 mr-1" />
+                          Procedimentos: {getProceduresStatus(entry)!.completed}/{getProceduresStatus(entry)!.total}
+                        </Badge>
+                      </div>
+                    )}
 
                     {/* Doctor Name */}
                     {getDoctorName(entry.doctorId) && (

@@ -6,6 +6,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { AlertCircle, XCircle } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -23,14 +36,21 @@ import {
 } from '@/components/ui/form'
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
-import { Clinic } from '@/lib/types'
+import { Clinic, FirstConsultationType, FirstConsultationTypeProcedure } from '@/lib/types'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
-import { dailyEntriesApi } from '@/services/api'
+import { dailyEntriesApi, configApi } from '@/services/api'
 
 const schema = z.object({
   date: z.string(),
   patientName: z.string().min(1, 'Nome obrigatório'),
   code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
+  consultationTypeId: z.string().optional(),
+  consultationCompleted: z.boolean(),
+  consultationCompletedAt: z.string().optional(),
+  completedProcedures: z.record(z.object({
+    completed: z.boolean(),
+    justification: z.string().optional(),
+  })).optional(),
   planCreated: z.boolean(),
   planCreatedAt: z.string().optional(),
   planPresented: z.boolean(),
@@ -57,6 +77,16 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
   const { addConsultationEntry } = useDataStore()
   const [lookupLoading, setLookupLoading] = useState(false)
   const [loadedCode, setLoadedCode] = useState<string | null>(null)
+  const [consultationTypes, setConsultationTypes] = useState<FirstConsultationType[]>([])
+  const [procedures, setProcedures] = useState<FirstConsultationTypeProcedure[]>([])
+  const [proceduresLoading, setProceduresLoading] = useState(false)
+  const [showValidationErrors, setShowValidationErrors] = useState(false)
+  const [showValidationDialog, setShowValidationDialog] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<{
+    incompleteProcedures: string[]
+    proceduresWithoutJustification: string[]
+  }>({ incompleteProcedures: [], proceduresWithoutJustification: [] })
+
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -64,6 +94,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       date: new Date().toISOString().split('T')[0],
       patientName: '',
       code: '',
+      consultationTypeId: '',
+      consultationCompleted: false,
+      consultationCompletedAt: '',
+      completedProcedures: {},
       planCreated: false,
       planCreatedAt: '',
       planPresented: false,
@@ -86,12 +120,61 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
 
   const code = form.watch('code')
   const watchedSourceId = form.watch('sourceId')
+  const watchedConsultationTypeId = form.watch('consultationTypeId')
+  const watchedConsultationCompleted = form.watch('consultationCompleted')
   const selectedSource = clinic.configuration.sources.find(
     (s) => s.id === watchedSourceId,
   )
   const isReferralSource = selectedSource?.name === 'Referência'
   const isPaidAds =
     selectedSource?.name === 'Google Ads' || selectedSource?.name === 'Meta Ads'
+
+  // Load consultation types on component mount
+  useEffect(() => {
+    configApi.consultationTypes
+      .getAll(clinic.id)
+      .then((types) => {
+        setConsultationTypes(types.filter((t) => t.active))
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar tipos de consulta:', err)
+        toast.error('Erro ao carregar tipos de consulta')
+      })
+  }, [clinic.id])
+
+  // Load procedures when consultation type changes
+  useEffect(() => {
+    if (!watchedConsultationTypeId) {
+      setProcedures([])
+      return
+    }
+
+    setProceduresLoading(true)
+    configApi.procedures
+      .getAll(clinic.id, watchedConsultationTypeId)
+      .then((procs) => {
+        setProcedures(procs.sort((a, b) => a.displayOrder - b.displayOrder))
+
+        // Keep existing completedProcedures but don't initialize new ones
+        // This ensures radio buttons start unselected for new procedures
+        const currentCompleted = form.getValues('completedProcedures') || {}
+        const newCompleted: any = {}
+        procs.forEach((proc) => {
+          // Only keep if already has a selection
+          if (currentCompleted[proc.id]) {
+            newCompleted[proc.id] = currentCompleted[proc.id]
+          }
+        })
+        form.setValue('completedProcedures', newCompleted)
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar procedimentos:', err)
+        toast.error('Erro ao carregar procedimentos')
+      })
+      .finally(() => {
+        setProceduresLoading(false)
+      })
+  }, [watchedConsultationTypeId, clinic.id, form])
 
   useEffect(() => {
     // Auto-check referral if source is "Referência"
@@ -125,6 +208,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             date: toDateInput(entry.date),
             patientName: entry.patientName,
             code: entry.code,
+            consultationTypeId: entry.consultationTypeId || '',
+            consultationCompleted: !!entry.consultationCompleted,
+            consultationCompletedAt: toDateInput(entry.consultationCompletedAt),
+            completedProcedures: entry.completedProcedures || {},
             planCreated: !!entry.planCreated,
             planCreatedAt: toDateInput(entry.planCreatedAt),
             planPresented: !!entry.planPresented,
@@ -150,6 +237,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           if (err?.message?.includes('404') || err?.message?.includes('not found')) {
             const today = new Date().toISOString().split('T')[0]
             form.setValue('date', today, { shouldValidate: true })
+            form.setValue('consultationTypeId', '')
+            form.setValue('consultationCompleted', false)
+            form.setValue('consultationCompletedAt', '')
+            form.setValue('completedProcedures', {})
             form.setValue('planCreated', false)
             form.setValue('planCreatedAt', '')
             form.setValue('planPresented', false)
@@ -191,6 +282,49 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
       }
     }
 
+    // Validate consultation completed
+    if (data.consultationCompleted) {
+      if (!data.consultationTypeId) {
+        toast.error('Selecione o tipo de consulta antes de marcar como realizada')
+        return
+      }
+
+      // Validate that all procedures are filled
+      const completedProcs = data.completedProcedures || {}
+      const incompleteProcedures: string[] = []
+      const proceduresWithoutJustification: string[] = []
+
+      procedures.forEach((proc) => {
+        const procData = completedProcs[proc.id] as { completed: boolean; justification?: string } | undefined
+
+        // Check if procedure was not filled at all
+        if (!procData || typeof procData.completed !== 'boolean') {
+          incompleteProcedures.push(proc.name)
+          return
+        }
+
+        // If marked as not completed, must have justification
+        if (!procData.completed && (!procData.justification || procData.justification.trim() === '')) {
+          proceduresWithoutJustification.push(proc.name)
+        }
+      })
+
+      if (incompleteProcedures.length > 0 || proceduresWithoutJustification.length > 0) {
+        setShowValidationErrors(true)
+        setValidationErrors({
+          incompleteProcedures,
+          proceduresWithoutJustification,
+        })
+        setShowValidationDialog(true)
+
+        return
+      }
+    }
+
+    // Clear validation errors if we got past all validations
+    setShowValidationErrors(false)
+    setValidationErrors({ incompleteProcedures: [], proceduresWithoutJustification: [] })
+
     // Validate plan not eligible reason
     if (data.planNotEligible && (!data.planNotEligibleReason || data.planNotEligibleReason.trim() === '')) {
       form.setError('planNotEligibleReason', {
@@ -201,11 +335,21 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
 
     try {
       const id = `consultation-${clinic.id}-${data.code}`
+
+      // Set consultationCompletedAt if marking as completed
+      const consultationCompletedAt = data.consultationCompleted
+        ? data.consultationCompletedAt || new Date().toISOString()
+        : null
+
       await addConsultationEntry(clinic.id, {
         id,
         date: data.date,
         patientName: data.patientName,
         code: data.code,
+        consultationTypeId: data.consultationTypeId || null,
+        consultationCompleted: data.consultationCompleted,
+        consultationCompletedAt,
+        completedProcedures: data.consultationCompleted ? data.completedProcedures || null : null,
         planCreated: data.planCreated,
         planCreatedAt: data.planCreated ? data.planCreatedAt || null : null,
         planPresented: data.planPresented,
@@ -230,6 +374,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         date: data.date,
         patientName: '',
         code: '',
+        consultationTypeId: '',
+        consultationCompleted: false,
+        consultationCompletedAt: '',
+        completedProcedures: {},
         planCreated: false,
         planCreatedAt: '',
         planPresented: false,
@@ -270,12 +418,13 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
   }
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        noValidate
-        className="space-y-4 max-w-lg"
-      >
+    <>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          noValidate
+          className="space-y-4 max-w-lg"
+        >
         <FormField
           control={form.control}
           name="date"
@@ -408,6 +557,202 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             />
           </div>
         )}
+
+        {/* Consultation Completed Section */}
+        <div className="flex flex-col gap-4 p-4 border rounded-md bg-green-50/50">
+          <FormField
+            control={form.control}
+            name="consultationTypeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Consulta</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo (opcional)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {consultationTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="consultationCompleted"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between space-y-0">
+                <FormLabel>Consulta Realizada?</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(v) => {
+                      field.onChange(v)
+                      if (v && !form.getValues('consultationCompletedAt')) {
+                        form.setValue('consultationCompletedAt', today, { shouldValidate: true })
+                      } else if (!v) {
+                        form.setValue('consultationCompletedAt', '', { shouldValidate: true })
+                      }
+                    }}
+                    disabled={!watchedConsultationTypeId}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {watchedConsultationCompleted && watchedConsultationTypeId && (
+            <div className="space-y-3 mt-2 animate-fade-in">
+              {proceduresLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando procedimentos...</p>
+              ) : procedures.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum procedimento configurado para este tipo de consulta.</p>
+              ) : (
+                <>
+                  {(() => {
+                    const completedProcedures = form.watch('completedProcedures') || {}
+                    const totalProcedures = procedures.length
+                    const filledProcedures = procedures.filter(proc => {
+                      const procData = completedProcedures[proc.id]
+                      return procData !== undefined && typeof procData.completed === 'boolean'
+                    }).length
+                    const hasIncomplete = filledProcedures < totalProcedures
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-green-800">Procedimentos</h4>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            hasIncomplete
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {filledProcedures}/{totalProcedures}
+                          </span>
+                        </div>
+                        {hasIncomplete && (
+                          <Alert variant="default" className="bg-yellow-50 border-yellow-200">
+                            <AlertCircle className="h-4 w-4 text-yellow-600" />
+                            <AlertDescription className="text-yellow-800 text-sm">
+                              Preencha todos os procedimentos antes de salvar a consulta
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
+                    )
+                  })()}
+                  {procedures.map((procedure) => {
+                    const procedureData = form.watch('completedProcedures')?.[procedure.id]
+                    const isCompleted = procedureData?.completed === true
+                    const hasSelection = procedureData !== undefined && typeof procedureData.completed === 'boolean'
+                    const isIncomplete = showValidationErrors && !hasSelection
+                    const needsJustification = showValidationErrors && hasSelection && !isCompleted && (!procedureData?.justification || procedureData.justification.trim() === '')
+
+                    return (
+                      <div
+                        key={procedure.id}
+                        className={`space-y-3 p-3 border rounded-md bg-white transition-all ${
+                          isIncomplete || needsJustification
+                            ? 'border-red-400 bg-red-50 shadow-md'
+                            : ''
+                        }`}
+                      >
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className={`text-sm font-medium ${isIncomplete || needsJustification ? 'text-red-700' : ''}`}>
+                                {procedure.name}
+                              </p>
+                              {procedure.description && (
+                                <p className="text-xs text-muted-foreground">{procedure.description}</p>
+                              )}
+                            </div>
+                            {(isIncomplete || needsJustification) && (
+                              <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                            )}
+                          </div>
+                          {isIncomplete && (
+                            <p className="text-xs text-red-600 font-medium">
+                              ⚠️ Selecione "Realizado" ou "Não Realizado"
+                            </p>
+                          )}
+                          {needsJustification && (
+                            <p className="text-xs text-red-600 font-medium">
+                              ⚠️ Preencha a justificativa
+                            </p>
+                          )}
+                          <RadioGroup
+                            value={hasSelection ? (isCompleted ? 'completed' : 'not-completed') : ''}
+                            onValueChange={(value) => {
+                              // Clear validation errors when user interacts
+                              if (showValidationErrors) {
+                                setShowValidationErrors(false)
+                                setValidationErrors({ incompleteProcedures: [], proceduresWithoutJustification: [] })
+                              }
+                              const current = form.getValues('completedProcedures') || {}
+                              const completed = value === 'completed'
+                              form.setValue('completedProcedures', {
+                                ...current,
+                                [procedure.id]: {
+                                  completed,
+                                  justification: completed ? '' : (current[procedure.id]?.justification || ''),
+                                },
+                              })
+                            }}
+                            className="flex gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="completed" id={`${procedure.id}-completed`} />
+                              <Label htmlFor={`${procedure.id}-completed`} className="cursor-pointer text-sm font-normal">
+                                Realizado
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="not-completed" id={`${procedure.id}-not-completed`} />
+                              <Label htmlFor={`${procedure.id}-not-completed`} className="cursor-pointer text-sm font-normal">
+                                Não Realizado
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        {hasSelection && !isCompleted && (
+                          <Textarea
+                            placeholder="Justificativa para procedimento não realizado..."
+                            value={procedureData?.justification || ''}
+                            onChange={(e) => {
+                              // Clear validation errors when user types
+                              if (showValidationErrors) {
+                                setShowValidationErrors(false)
+                                setValidationErrors({ incompleteProcedures: [], proceduresWithoutJustification: [] })
+                              }
+                              const current = form.getValues('completedProcedures') || {}
+                              form.setValue('completedProcedures', {
+                                ...current,
+                                [procedure.id]: {
+                                  completed: false,
+                                  justification: e.target.value,
+                                },
+                              })
+                            }}
+                            className={`min-h-[60px] text-sm ${needsJustification ? 'border-red-400 focus:border-red-500' : ''}`}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
           <FormField
@@ -622,10 +967,159 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           />
         </div>
 
-        <Button type="submit" className="w-full">
+        {showValidationErrors && (validationErrors.incompleteProcedures.length > 0 || validationErrors.proceduresWithoutJustification.length > 0) && (
+          <Alert
+            id="consultation-validation-errors"
+            variant="destructive"
+            className="bg-red-50 border-red-300 border-2 shadow-lg animate-pulse"
+          >
+            <AlertCircle className="h-5 w-5" />
+            <AlertDescription className="space-y-3">
+              <p className="font-bold text-base text-red-900">
+                ⚠️ Não é possível salvar a consulta!
+              </p>
+              {validationErrors.incompleteProcedures.length > 0 && (
+                <div>
+                  <p className="font-semibold text-red-800 mb-1">
+                    Procedimentos não preenchidos:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {validationErrors.incompleteProcedures.map((name) => (
+                      <li key={name} className="text-red-700">{name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {validationErrors.proceduresWithoutJustification.length > 0 && (
+                <div>
+                  <p className="font-semibold text-red-800 mb-1">
+                    Procedimentos sem justificativa:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {validationErrors.proceduresWithoutJustification.map((name) => (
+                      <li key={name} className="text-red-700">{name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-sm text-red-700 font-medium pt-2 border-t border-red-200">
+                Por favor, preencha todos os procedimentos antes de continuar.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() => {
+            // Check consultation completed validation BEFORE form submit
+            const consultationCompleted = form.getValues('consultationCompleted')
+            const consultationTypeId = form.getValues('consultationTypeId')
+            const completedProcedures = form.getValues('completedProcedures')
+
+            if (consultationCompleted && procedures.length > 0) {
+              if (!consultationTypeId) {
+                toast.error('Selecione o tipo de consulta antes de marcar como realizada')
+                return
+              }
+
+              const completedProcs = completedProcedures || {}
+              const incompleteProcedures: string[] = []
+              const proceduresWithoutJustification: string[] = []
+
+              procedures.forEach((proc) => {
+                const procData = completedProcs[proc.id] as { completed: boolean; justification?: string } | undefined
+
+                if (!procData || typeof procData.completed !== 'boolean') {
+                  incompleteProcedures.push(proc.name)
+                  return
+                }
+
+                if (!procData.completed && (!procData.justification || procData.justification.trim() === '')) {
+                  proceduresWithoutJustification.push(proc.name)
+                }
+              })
+
+              if (incompleteProcedures.length > 0 || proceduresWithoutJustification.length > 0) {
+                setShowValidationErrors(true)
+                setValidationErrors({
+                  incompleteProcedures,
+                  proceduresWithoutJustification,
+                })
+                setShowValidationDialog(true)
+                return
+              }
+            }
+
+            // If validation passes, trigger form submit
+            form.handleSubmit(onSubmit)()
+          }}
+        >
           Lançar Consulta
         </Button>
-      </form>
-    </Form>
+        </form>
+      </Form>
+
+      {/* Validation Error Dialog */}
+      <AlertDialog
+        open={showValidationDialog}
+        onOpenChange={setShowValidationDialog}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="rounded-full bg-red-100 p-2">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-xl text-red-900">
+                Consulta Incompleta
+              </AlertDialogTitle>
+            </div>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 text-base text-gray-700 px-6">
+            <span className="block">
+              Não é possível salvar a consulta. Por favor, preencha todos os procedimentos.
+            </span>
+
+            {validationErrors.incompleteProcedures.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <span className="block font-semibold text-red-900 mb-2">
+                  📋 Procedimentos não selecionados:
+                </span>
+                <ul className="list-disc list-inside space-y-1">
+                  {validationErrors.incompleteProcedures.map((name) => (
+                    <li key={name} className="text-red-800 text-sm">{name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {validationErrors.proceduresWithoutJustification.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <span className="block font-semibold text-orange-900 mb-2">
+                  ✏️ Procedimentos sem justificativa:
+                </span>
+                <ul className="list-disc list-inside space-y-1">
+                  {validationErrors.proceduresWithoutJustification.map((name) => (
+                    <li key={name} className="text-orange-800 text-sm">{name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => setShowValidationDialog(false)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Entendi, vou corrigir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

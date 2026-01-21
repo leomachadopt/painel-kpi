@@ -180,11 +180,44 @@ export interface DailyFinancialEntry {
   paymentSourceId?: string | null
 }
 
+export interface FirstConsultationType {
+  id: string
+  clinicId: string
+  name: string
+  description?: string | null
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FirstConsultationTypeProcedure {
+  id: string
+  consultationTypeId: string
+  name: string
+  description?: string | null
+  displayOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CompletedProcedure {
+  completed: boolean
+  justification?: string
+}
+
+export interface CompletedProcedures {
+  [procedureId: string]: CompletedProcedure
+}
+
 export interface DailyConsultationEntry {
   id: string
   date: string
   patientName: string
   code: string
+  consultationTypeId?: string | null
+  consultationCompleted: boolean
+  consultationCompletedAt?: string | null
+  completedProcedures?: CompletedProcedures | null
   planCreated: boolean
   planCreatedAt?: string | null
   planPresented: boolean

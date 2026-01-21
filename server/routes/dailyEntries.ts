@@ -502,10 +502,58 @@ router.delete('/financial/:clinicId/:entryId', async (req, res) => {
 router.get('/consultation/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
-    const result = await query(
-      `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 ORDER BY date DESC`,
-      [clinicId]
-    )
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const userRole = (req as any).auth?.role || (req as any).user?.role
+
+    console.log('🔍 GET /consultation/:clinicId - User Info:', {
+      userId,
+      userRole,
+      clinicId,
+      authPresent: !!(req as any).auth,
+      userPresent: !!(req as any).user
+    })
+
+    let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1`
+    let params: any[] = [clinicId]
+
+    // If user is COLABORADOR, filter by their doctor_id
+    if (userRole === 'COLABORADOR' && userId) {
+      // Get user email to find their doctor_id
+      const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+      console.log('📧 User email lookup:', userResult.rows[0])
+
+      if (userResult.rows.length > 0) {
+        const userEmail = userResult.rows[0].email
+
+        // Find doctor_id by email
+        const doctorResult = await query(
+          `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+          [clinicId, userEmail]
+        )
+        console.log('👨‍⚕️ Doctor lookup:', doctorResult.rows[0])
+
+        if (doctorResult.rows.length > 0) {
+          const doctorId = doctorResult.rows[0].id
+          sqlQuery += ` AND doctor_id = $2`
+          params.push(doctorId)
+          console.log('✅ Applying doctor filter:', doctorId)
+        } else {
+          // Doctor not found, return empty array
+          console.log('⚠️ Doctor not found for email:', userEmail)
+          return res.json([])
+        }
+      } else {
+        console.log('⚠️ User not found:', userId)
+        return res.json([])
+      }
+    } else {
+      console.log('ℹ️ No COLABORADOR filter - showing all consultations')
+    }
+
+    sqlQuery += ` ORDER BY date DESC`
+
+    const result = await query(sqlQuery, params)
+    console.log(`📊 Returning ${result.rows.length} consultation entries`)
 
     res.json(
       result.rows.map((row) => ({
@@ -513,6 +561,10 @@ router.get('/consultation/:clinicId', async (req, res) => {
         date: row.date,
         patientName: row.patient_name,
         code: row.code,
+        consultationTypeId: row.consultation_type_id || null,
+        consultationCompleted: row.consultation_completed || false,
+        consultationCompletedAt: row.consultation_completed_at || null,
+        completedProcedures: row.completed_procedures || null,
         planCreated: row.plan_created,
         planCreatedAt: row.plan_created_at,
         planPresented: row.plan_presented,
@@ -542,15 +594,40 @@ router.get('/consultation/:clinicId', async (req, res) => {
 router.get('/consultation/:clinicId/code/:code', async (req, res) => {
   try {
     const { clinicId, code } = req.params
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const userRole = (req as any).auth?.role || (req as any).user?.role
 
     if (!/^\d{1,6}$/.test(code)) {
       return res.status(400).json({ error: 'Code must be 1-6 digits' })
     }
 
-    const result = await query(
-      `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2`,
-      [clinicId, code]
-    )
+    let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2`
+    let params: any[] = [clinicId, code]
+
+    // If user is COLABORADOR, filter by their doctor_id
+    if (userRole === 'COLABORADOR' && userId) {
+      const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+
+      if (userResult.rows.length > 0) {
+        const userEmail = userResult.rows[0].email
+        const doctorResult = await query(
+          `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+          [clinicId, userEmail]
+        )
+
+        if (doctorResult.rows.length > 0) {
+          const doctorId = doctorResult.rows[0].id
+          sqlQuery += ` AND doctor_id = $3`
+          params.push(doctorId)
+        } else {
+          return res.status(404).json({ error: 'Consultation entry not found' })
+        }
+      } else {
+        return res.status(404).json({ error: 'Consultation entry not found' })
+      }
+    }
+
+    const result = await query(sqlQuery, params)
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Consultation entry not found' })
@@ -562,6 +639,10 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       date: row.date,
       patientName: row.patient_name,
       code: row.code,
+      consultationTypeId: row.consultation_type_id || null,
+      consultationCompleted: row.consultation_completed || false,
+      consultationCompletedAt: row.consultation_completed_at || null,
+      completedProcedures: row.completed_procedures || null,
       planCreated: row.plan_created,
       planCreatedAt: row.plan_created_at,
       planPresented: row.plan_presented,
@@ -593,6 +674,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
       date,
       patientName,
       code,
+      consultationTypeId,
+      consultationCompleted,
+      consultationCompletedAt,
+      completedProcedures,
       planCreated,
       planCreatedAt,
       planPresented,
@@ -621,6 +706,7 @@ router.post('/consultation/:clinicId', async (req, res) => {
     const result = await query(
       `INSERT INTO daily_consultation_entries
        (id, clinic_id, date, patient_name, code,
+        consultation_type_id, consultation_completed, consultation_completed_at, completed_procedures,
         plan_created, plan_created_at,
         plan_presented, plan_presented_at, plan_presented_value,
         plan_accepted, plan_accepted_at,
@@ -628,15 +714,20 @@ router.post('/consultation/:clinicId', async (req, res) => {
         source_id, is_referral, referral_name, referral_code, campaign_id, doctor_id,
         plan_not_eligible, plan_not_eligible_at, plan_not_eligible_reason)
        VALUES ($1, $2, $3, $4, $5,
-        $6, $7,
-        $8, $9, $10,
-        $11, $12,
-        $13,
-        $14, $15, $16, $17, $18, $19,
-        $20, $21, $22)
+        $6, $7, $8, $9,
+        $10, $11,
+        $12, $13, $14,
+        $15, $16,
+        $17,
+        $18, $19, $20, $21, $22, $23,
+        $24, $25, $26)
        ON CONFLICT (clinic_id, code) DO UPDATE SET
         date = EXCLUDED.date,
         patient_name = EXCLUDED.patient_name,
+        consultation_type_id = EXCLUDED.consultation_type_id,
+        consultation_completed = EXCLUDED.consultation_completed,
+        consultation_completed_at = EXCLUDED.consultation_completed_at,
+        completed_procedures = EXCLUDED.completed_procedures,
         plan_created = EXCLUDED.plan_created,
         plan_created_at = EXCLUDED.plan_created_at,
         plan_presented = EXCLUDED.plan_presented,
@@ -661,6 +752,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
         date,
         patientName,
         code,
+        consultationTypeId || null,
+        consultationCompleted || false,
+        consultationCompletedAt || null,
+        completedProcedures ? JSON.stringify(completedProcedures) : null,
         planCreated,
         planCreatedAt || null,
         planPresented,
@@ -686,6 +781,10 @@ router.post('/consultation/:clinicId', async (req, res) => {
       date: result.rows[0].date,
       patientName: result.rows[0].patient_name,
       code: result.rows[0].code,
+      consultationTypeId: result.rows[0].consultation_type_id || null,
+      consultationCompleted: result.rows[0].consultation_completed || false,
+      consultationCompletedAt: result.rows[0].consultation_completed_at || null,
+      completedProcedures: result.rows[0].completed_procedures || null,
       planCreated: result.rows[0].plan_created,
       planCreatedAt: result.rows[0].plan_created_at,
       planPresented: result.rows[0].plan_presented,

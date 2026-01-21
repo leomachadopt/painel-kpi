@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DailyConsultationEntry, Clinic } from '@/lib/types'
-import { Check, X, Pencil, Trash2 } from 'lucide-react'
+import { Check, X, Pencil, Trash2, ClipboardCheck } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
@@ -112,6 +112,18 @@ export function ConsultationTable({
     onDelete?.() // Recarregar dados
   }
 
+  const getProceduresStatus = (entry: DailyConsultationEntry) => {
+    if (!entry.consultationCompleted || !entry.completedProcedures) {
+      return null
+    }
+
+    const procedures = Object.values(entry.completedProcedures)
+    const completed = procedures.filter((p: any) => p.completed).length
+    const total = procedures.length
+
+    return { completed, total }
+  }
+
   return (
     <>
       {/* Filter */}
@@ -140,6 +152,7 @@ export function ConsultationTable({
               <TableHead>Paciente</TableHead>
               <TableHead>Código</TableHead>
               <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Consulta Realizada</TableHead>
               <TableHead className="text-center">Plano Criado</TableHead>
               <TableHead className="text-center">Apresentado</TableHead>
               <TableHead className="text-center">Aceite</TableHead>
@@ -162,6 +175,24 @@ export function ConsultationTable({
                   <TableCell className="text-center">
                     <div className="flex justify-center">
                       {getStatusBadge(getStatus(entry))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex justify-center">
+                      {entry.consultationCompleted ? (
+                        <Badge variant="outline" className="bg-green-50 border-green-300 text-green-700">
+                          <ClipboardCheck className="h-3 w-3 mr-1" />
+                          {getProceduresStatus(entry) ? (
+                            <span>
+                              {getProceduresStatus(entry)!.completed}/{getProceduresStatus(entry)!.total}
+                            </span>
+                          ) : (
+                            <span>Sim</span>
+                          )}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">Não</Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
@@ -222,7 +253,7 @@ export function ConsultationTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={clinic ? 10 : 9} className="h-24 text-center">
+                <TableCell colSpan={clinic ? 11 : 10} className="h-24 text-center">
                   Nenhuma consulta registada no período.
                 </TableCell>
               </TableRow>

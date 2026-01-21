@@ -220,6 +220,52 @@ export const configApi = {
       method: 'PUT',
       body: JSON.stringify(config),
     }),
+
+  // First Consultation Types
+  consultationTypes: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/config/${clinicId}/consultation-types`),
+
+    create: (clinicId: string, data: { name: string; description?: string }) =>
+      apiCall<any>(`/config/${clinicId}/consultation-types`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    update: (clinicId: string, typeId: string, data: { name?: string; description?: string; active?: boolean }) =>
+      apiCall<any>(`/config/${clinicId}/consultation-types/${typeId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    delete: (clinicId: string, typeId: string) =>
+      apiCall<{ message: string }>(`/config/${clinicId}/consultation-types/${typeId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  // Consultation Type Procedures
+  procedures: {
+    getAll: (clinicId: string, typeId: string) =>
+      apiCall<any[]>(`/config/${clinicId}/consultation-types/${typeId}/procedures`),
+
+    create: (clinicId: string, typeId: string, data: { name: string; description?: string; displayOrder?: number }) =>
+      apiCall<any>(`/config/${clinicId}/consultation-types/${typeId}/procedures`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    update: (clinicId: string, typeId: string, procedureId: string, data: { name?: string; description?: string; displayOrder?: number }) =>
+      apiCall<any>(`/config/${clinicId}/consultation-types/${typeId}/procedures/${procedureId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    delete: (clinicId: string, typeId: string, procedureId: string) =>
+      apiCall<{ message: string }>(`/config/${clinicId}/consultation-types/${typeId}/procedures/${procedureId}`, {
+        method: 'DELETE',
+      }),
+  },
 }
 
 // ================================
