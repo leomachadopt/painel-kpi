@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Loader2, File, Download, Eye } from 'lucide-react'
+import { Loader2, File, Download, Eye, Copy, Check } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AccountsPayableEntry } from '@/lib/types'
@@ -31,11 +31,13 @@ export function ViewAccountsPayableDialog({
   clinicId,
   refreshTrigger,
 }: ViewAccountsPayableDialogProps) {
-  const { formatCurrency } = useTranslation()
+  const { formatCurrency, locale } = useTranslation()
   const [entry, setEntry] = useState<AccountsPayableEntry | null>(null)
   const [loading, setLoading] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
   const [loadingDoc, setLoadingDoc] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const isBrazil = locale === 'PT-BR'
 
   useEffect(() => {
     if (open && entryId && clinicId) {
@@ -145,6 +147,17 @@ export function ViewAccountsPayableDialog({
     }
   }
 
+  const handleCopyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField(fieldName)
+      toast.success('Copiado para a área de transferência')
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch (error) {
+      toast.error('Erro ao copiar')
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -231,6 +244,171 @@ export function ViewAccountsPayableDialog({
             {!entry.notes && (
               <div className="text-center py-4 text-muted-foreground">
                 <p>Nenhuma observação registrada</p>
+              </div>
+            )}
+
+            {/* Seção de Dados Bancários do Fornecedor */}
+            {entry.supplierName && (
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                  Dados Bancários do Fornecedor
+                </label>
+                {isBrazil ? (
+                  // Dados bancários para Brasil
+                  <>
+                    {(entry.supplierBankName || entry.supplierBankCode || entry.supplierBankAgency ||
+                      entry.supplierBankAccount || entry.supplierPixKey) ? (
+                      <div className="space-y-3">
+                        {entry.supplierBankName && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Banco</p>
+                              <p className="text-sm font-medium">{entry.supplierBankName}</p>
+                            </div>
+                          </div>
+                        )}
+                        {entry.supplierBankCode && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Código do Banco</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierBankCode}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierBankCode!, 'bankCode')}
+                            >
+                              {copiedField === 'bankCode' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                        {entry.supplierBankAgency && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Agência</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierBankAgency}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierBankAgency!, 'bankAgency')}
+                            >
+                              {copiedField === 'bankAgency' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                        {entry.supplierBankAccount && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Conta</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierBankAccount}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierBankAccount!, 'bankAccount')}
+                            >
+                              {copiedField === 'bankAccount' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                        {entry.supplierPixKey && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Chave PIX</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierPixKey}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierPixKey!, 'pixKey')}
+                            >
+                              {copiedField === 'pixKey' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p>Nenhum dado bancário cadastrado</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Dados bancários para Portugal
+                  <>
+                    {(entry.supplierBankName || entry.supplierIban || entry.supplierNib) ? (
+                      <div className="space-y-3">
+                        {entry.supplierBankName && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Banco</p>
+                              <p className="text-sm font-medium">{entry.supplierBankName}</p>
+                            </div>
+                          </div>
+                        )}
+                        {entry.supplierIban && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div className="flex-1">
+                              <p className="text-xs text-muted-foreground">IBAN</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierIban}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierIban!, 'iban')}
+                            >
+                              {copiedField === 'iban' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                        {entry.supplierNib && (
+                          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
+                            <div>
+                              <p className="text-xs text-muted-foreground">NIB</p>
+                              <p className="text-sm font-medium font-mono">{entry.supplierNib}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToClipboard(entry.supplierNib!, 'nib')}
+                            >
+                              {copiedField === 'nib' ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p>Nenhum dado bancário cadastrado</p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

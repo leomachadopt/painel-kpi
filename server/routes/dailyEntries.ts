@@ -4392,12 +4392,19 @@ router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPaya
     }
 
     const result = await query(
-      `SELECT 
+      `SELECT
         ap.*,
-        s.name as supplier_name
+        s.name as supplier_name,
+        s.iban as supplier_iban,
+        s.nib as supplier_nib,
+        s.bank_name as supplier_bank_name,
+        s.bank_account as supplier_bank_account,
+        s.bank_agency as supplier_bank_agency,
+        s.bank_code as supplier_bank_code,
+        s.pix_key as supplier_pix_key
       FROM accounts_payable ap
       LEFT JOIN suppliers s ON ap.supplier_id = s.id
-      WHERE ap.clinic_id = $1 
+      WHERE ap.clinic_id = $1
       ORDER BY ap.due_date ASC, ap.created_at DESC`,
       [clinicId]
     )
@@ -4409,6 +4416,13 @@ router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPaya
         description: row.description,
         supplierId: row.supplier_id || null,
         supplierName: row.supplier_name || null,
+        supplierIban: row.supplier_iban || null,
+        supplierNib: row.supplier_nib || null,
+        supplierBankName: row.supplier_bank_name || null,
+        supplierBankAccount: row.supplier_bank_account || null,
+        supplierBankAgency: row.supplier_bank_agency || null,
+        supplierBankCode: row.supplier_bank_code || null,
+        supplierPixKey: row.supplier_pix_key || null,
         amount: parseFloat(row.amount),
         dueDate: row.due_date,
         paid: row.paid || false,

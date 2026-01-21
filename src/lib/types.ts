@@ -278,6 +278,13 @@ export interface AccountsPayableEntry {
   description: string
   supplierId?: string | null
   supplierName?: string | null
+  supplierIban?: string | null
+  supplierNib?: string | null
+  supplierBankName?: string | null
+  supplierBankAccount?: string | null
+  supplierBankAgency?: string | null
+  supplierBankCode?: string | null
+  supplierPixKey?: string | null
   amount: number
   dueDate: string
   paid: boolean
