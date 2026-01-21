@@ -777,13 +777,17 @@ router.post('/run/:clinicId', requirePermission('canEditMarketing'), async (req:
     if (!canManageClinic(req, clinicId)) {
       return res.status(403).json({ error: 'Forbidden' })
     }
-    const date = new Date().toISOString().split('T')[0]
-    await runMarketingJobForClinic(clinicId, date, 'stub')
+    const { date: requestDate, mode = 'real' } = req.body || {}
+    const date = requestDate || new Date().toISOString().split('T')[0]
+
+    await runMarketingJobForClinic(clinicId, date, mode as 'real' | 'stub')
 
     res.json({
-      message:
-        'Run executed (stub). Configure providers/tokens to fetch real data.',
+      message: mode === 'real'
+        ? 'Dados coletados com sucesso do Google Business Profile'
+        : 'Run executed (stub mode)',
       date,
+      mode,
     })
   } catch (error) {
     console.error('Run marketing job error:', error)
