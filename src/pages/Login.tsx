@@ -188,19 +188,19 @@ export default function Login() {
         {/* Footer Links */}
         <div className="z-10 space-y-3">
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-            <a href="/privacy" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+            <a href="/privacy" className="!text-white opacity-70 hover:opacity-100 hover:underline transition-opacity">
               Política de Privacidade
             </a>
-            <span className="opacity-40">•</span>
-            <a href="/terms" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+            <span className="!text-white opacity-40">•</span>
+            <a href="/terms" className="!text-white opacity-70 hover:opacity-100 hover:underline transition-opacity">
               Termos de Serviço
             </a>
-            <span className="opacity-40">•</span>
-            <a href="/about" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+            <span className="!text-white opacity-40">•</span>
+            <a href="/about" className="!text-white opacity-70 hover:opacity-100 hover:underline transition-opacity">
               Sobre a empresa
             </a>
           </div>
-          <div className="text-xs opacity-60">
+          <div className="text-xs !text-white opacity-60">
             © 2024 Dental KPI. Todos os direitos reservados.
           </div>
         </div>
