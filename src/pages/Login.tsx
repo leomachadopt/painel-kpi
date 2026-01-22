@@ -114,25 +114,95 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Left Side - Visual */}
+      {/* Left Side - Institutional Landing Page */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/login.png')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
-        <div className="z-10">
-          {/* Logo removida - agora está no lado direito */}
-        </div>
-        <div className="z-10 max-w-md space-y-4">
-          <blockquote className="space-y-2">
-            <p className="text-2xl font-medium leading-snug">
-              "Transforme dados em decisões estratégicas. Otimize a performance
-              das suas clínicas com inteligência."
+
+        {/* Main Content */}
+        <div className="z-10 max-w-lg space-y-8">
+          {/* Headline */}
+          <div className="space-y-3">
+            <h1 className="text-4xl font-bold leading-tight">
+              Uma plataforma de indicadores e performance para clínicas.
+            </h1>
+            <p className="text-lg opacity-90 leading-relaxed">
+              Centralize métricas, acompanhe resultados e tome decisões estratégicas com base em dados reais.
             </p>
-            <footer className="text-sm opacity-80">
-              — Equipa de Sucesso do Cliente
-            </footer>
-          </blockquote>
+          </div>
+
+          {/* Features List */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider opacity-80">
+              Principais Funcionalidades
+            </h2>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Painel de indicadores de performance da clínica
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Acompanhamento de métricas operacionais e de marketing
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Integração com Google Business Profile via OAuth (opcional)
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Monitoramento de reputação e avaliações
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Gestão financeira integrada e controle de fornecedores
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-foreground flex-shrink-0"></div>
+                <span className="text-sm leading-relaxed">
+                  Sistema NPS para medição de satisfação de pacientes
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Trust Section */}
+          <div className="pt-4 border-t border-primary-foreground/20">
+            <p className="text-sm opacity-80 leading-relaxed">
+              A plataforma apenas acessa dados de serviços externos mediante autorização explícita do usuário.
+              Todas as integrações seguem os protocolos de segurança OAuth 2.0 e suas permissões podem ser
+              revogadas a qualquer momento.
+            </p>
+          </div>
         </div>
-        <div className="z-10 text-xs opacity-60">
-          © 2024 Dental KPI. Todos os direitos reservados.
+
+        {/* Footer Links */}
+        <div className="z-10 space-y-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+            <a href="/privacy" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+              Política de Privacidade
+            </a>
+            <span className="opacity-40">•</span>
+            <a href="/terms" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+              Termos de Serviço
+            </a>
+            <span className="opacity-40">•</span>
+            <a href="/about" className="opacity-70 hover:opacity-100 hover:underline transition-opacity">
+              Sobre a empresa
+            </a>
+          </div>
+          <div className="text-xs opacity-60">
+            © 2024 Dental KPI. Todos os direitos reservados.
+          </div>
         </div>
       </div>
 

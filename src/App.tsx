@@ -24,6 +24,7 @@ import InsuranceProviders from '@/pages/InsuranceProviders'
 import ProcedureBaseGlobal from '@/pages/ProcedureBaseGlobal'
 import Privacy from '@/pages/Privacy'
 import Terms from '@/pages/Terms'
+import About from '@/pages/About'
 import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/survey/:token" element={<NPSSurvey />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/about" element={<About />} />
 
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/login" replace />} />
