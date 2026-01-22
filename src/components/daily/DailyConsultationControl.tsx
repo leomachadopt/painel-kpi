@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,45 @@ import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
 import { useTranslation } from '@/hooks/useTranslation'
+
+// Mover CounterRow para fora do componente para evitar re-criação
+const CounterRow = memo(({
+  label,
+  value,
+  onIncrement,
+  onDecrement,
+}: {
+  label: string
+  value: number
+  onIncrement: () => void
+  onDecrement: () => void
+}) => (
+  <div className="flex items-center justify-between p-3 border rounded-lg">
+    <span className="font-medium">{label}</span>
+    <div className="flex items-center gap-4">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onDecrement}
+        onMouseDown={(e) => e.preventDefault()} // Previne focus flicker
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+      <span className="w-8 text-center text-lg font-bold">
+        {value}
+      </span>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onIncrement}
+        onMouseDown={(e) => e.preventDefault()} // Previne focus flicker
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+  </div>
+))
+CounterRow.displayName = 'CounterRow'
 
 export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
   const { saveConsultationControlEntry, getConsultationControlEntry } = useDataStore()
@@ -64,8 +103,29 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
     loadEntry()
   }, [date, clinic.id])
 
-  const adjust = (key: keyof typeof counters, delta: number) => {
+  // useCallback para evitar re-criação das funções
+  const adjust = useCallback((key: keyof typeof counters, delta: number) => {
     setCounters((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }))
+  }, [])
+
+  // Criar handlers específicos para cada campo usando useCallback
+  const handlers = {
+    noShow: {
+      increment: useCallback(() => adjust('noShow', 1), [adjust]),
+      decrement: useCallback(() => adjust('noShow', -1), [adjust]),
+    },
+    rescheduled: {
+      increment: useCallback(() => adjust('rescheduled', 1), [adjust]),
+      decrement: useCallback(() => adjust('rescheduled', -1), [adjust]),
+    },
+    cancelled: {
+      increment: useCallback(() => adjust('cancelled', 1), [adjust]),
+      decrement: useCallback(() => adjust('cancelled', -1), [adjust]),
+    },
+    oldPatientBooking: {
+      increment: useCallback(() => adjust('oldPatientBooking', 1), [adjust]),
+      decrement: useCallback(() => adjust('oldPatientBooking', -1), [adjust]),
+    },
   }
 
   const handleSave = async () => {
@@ -81,29 +141,6 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
       console.error('Failed to save consultation control entry:', error)
     }
   }
-
-  const CounterRow = ({
-    label,
-    field,
-  }: {
-    label: string
-    field: keyof typeof counters
-  }) => (
-    <div className="flex items-center justify-between p-3 border rounded-lg">
-      <span className="font-medium">{label}</span>
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => adjust(field, -1)}>
-          <Minus className="h-4 w-4" />
-        </Button>
-        <span className="w-8 text-center text-lg font-bold">
-          {counters[field]}
-        </span>
-        <Button variant="outline" size="icon" onClick={() => adjust(field, 1)}>
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  )
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -127,10 +164,30 @@ export function DailyConsultationControl({ clinic }: { clinic: Clinic }) {
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
               {t('consultation.control')}
             </h3>
-            <CounterRow label={t('consultation.noShow')} field="noShow" />
-            <CounterRow label={t('consultation.rescheduled')} field="rescheduled" />
-            <CounterRow label={t('consultation.cancelled')} field="cancelled" />
-            <CounterRow label={t('consultation.oldPatientBooking')} field="oldPatientBooking" />
+            <CounterRow
+              label={t('consultation.noShow')}
+              value={counters.noShow}
+              onIncrement={handlers.noShow.increment}
+              onDecrement={handlers.noShow.decrement}
+            />
+            <CounterRow
+              label={t('consultation.rescheduled')}
+              value={counters.rescheduled}
+              onIncrement={handlers.rescheduled.increment}
+              onDecrement={handlers.rescheduled.decrement}
+            />
+            <CounterRow
+              label={t('consultation.cancelled')}
+              value={counters.cancelled}
+              onIncrement={handlers.cancelled.increment}
+              onDecrement={handlers.cancelled.decrement}
+            />
+            <CounterRow
+              label={t('consultation.oldPatientBooking')}
+              value={counters.oldPatientBooking}
+              onIncrement={handlers.oldPatientBooking.increment}
+              onDecrement={handlers.oldPatientBooking.decrement}
+            />
           </div>
 
           <Button onClick={handleSave} className="w-full">

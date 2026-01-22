@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw, Edit2 } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw, Edit2, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Select,
@@ -94,6 +94,7 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
   
   // Estado para filtros
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     loadMappings()
@@ -675,7 +676,7 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
     const unparied = mappings.filter(m => m.status === 'UNPAIRED' || m.is_unpaired).length
     const pending = mappings.filter(m => (m.status === 'PENDING' || m.status === 'MANUAL') && !m.is_unpaired).length
     const approved = mappings.filter(m => m.status === 'APPROVED').length
-    
+
     // Filtrar mappings baseado no filtro de status
     let filtered = mappings
     if (statusFilter === 'approved') {
@@ -683,24 +684,36 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
     } else if (statusFilter === 'pending') {
       filtered = mappings.filter(m => m.status !== 'APPROVED' && m.status !== 'REJECTED')
     }
-    
-    console.log('[ProcedureMappingReview] Recalculando contagens:', { 
-      unparied, 
-      pending, 
-      approved, 
+
+    // Aplicar filtro de busca por texto
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter(m =>
+        m.extracted_procedure_code.toLowerCase().includes(lowerSearch) ||
+        m.extracted_description.toLowerCase().includes(lowerSearch) ||
+        (m.base_code && m.base_code.toLowerCase().includes(lowerSearch)) ||
+        (m.base_description && m.base_description.toLowerCase().includes(lowerSearch))
+      )
+    }
+
+    console.log('[ProcedureMappingReview] Recalculando contagens:', {
+      unparied,
+      pending,
+      approved,
       total: mappings.length,
       filtered: filtered.length,
       filter: statusFilter,
+      searchTerm,
       sampleStatuses: mappings.slice(0, 5).map(m => ({ code: m.extracted_procedure_code, status: m.status, is_unpaired: m.is_unpaired }))
     })
-    
-    return { 
-      unpariedCount: unparied, 
-      pendingCount: pending, 
+
+    return {
+      unpariedCount: unparied,
+      pendingCount: pending,
       approvedCount: approved,
       filteredMappings: filtered
     }
-  }, [mappings, statusFilter])
+  }, [mappings, statusFilter, searchTerm])
 
   if (loading) {
     return (
@@ -759,34 +772,63 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
           </Card>
         </div>
 
-        {/* Filtros de status */}
-        <div className="mb-4 flex items-center gap-4">
-          <Label className="text-sm font-medium">Filtrar por status:</Label>
+        {/* Filtros de status e busca */}
+        <div className="mb-4 space-y-3">
+          <div className="flex items-center gap-4">
+            <Label className="text-sm font-medium">Filtrar por status:</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={statusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('all')}
+                className="h-8"
+              >
+                Todos ({mappings.length})
+              </Button>
+              <Button
+                variant={statusFilter === 'pending' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('pending')}
+                className="h-8"
+              >
+                Pendentes ({unpariedCount + pendingCount})
+              </Button>
+              <Button
+                variant={statusFilter === 'approved' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter('approved')}
+                className="h-8"
+              >
+                Aprovados ({approvedCount})
+              </Button>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
-            <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('all')}
-              className="h-8"
-            >
-              Todos ({mappings.length})
-            </Button>
-            <Button
-              variant={statusFilter === 'pending' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('pending')}
-              className="h-8"
-            >
-              Pendentes ({unpariedCount + pendingCount})
-            </Button>
-            <Button
-              variant={statusFilter === 'approved' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('approved')}
-              className="h-8"
-            >
-              Aprovados ({approvedCount})
-            </Button>
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1 max-w-md">
+              <Input
+                placeholder="Buscar por código ou descrição do procedimento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-8"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            {searchTerm && (
+              <span className="text-xs text-muted-foreground">
+                {filteredMappings.length} resultado(s)
+              </span>
+            )}
           </div>
         </div>
 
@@ -959,9 +1001,11 @@ export function ProcedureMappingReview({ documentId, providerId, clinicId, onClo
               {filteredMappings.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    {mappings.length === 0 
+                    {mappings.length === 0
                       ? 'Nenhum procedimento encontrado'
-                      : `Nenhum procedimento encontrado com o filtro "${statusFilter === 'approved' ? 'Aprovados' : statusFilter === 'pending' ? 'Pendentes' : 'Todos'}"`
+                      : searchTerm
+                        ? `Nenhum procedimento encontrado com a busca "${searchTerm}"`
+                        : `Nenhum procedimento encontrado com o filtro "${statusFilter === 'approved' ? 'Aprovados' : statusFilter === 'pending' ? 'Pendentes' : 'Todos'}"`
                     }
                   </TableCell>
                 </TableRow>

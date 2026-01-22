@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -7,6 +7,45 @@ import useDataStore from '@/stores/useDataStore'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
+
+// Mover CounterRow para fora do componente para evitar re-criação
+const CounterRow = memo(({
+  label,
+  value,
+  onIncrement,
+  onDecrement,
+}: {
+  label: string
+  value: number
+  onIncrement: () => void
+  onDecrement: () => void
+}) => (
+  <div className="flex items-center justify-between p-3 border rounded-lg">
+    <span className="font-medium">{label}</span>
+    <div className="flex items-center gap-4">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onDecrement}
+        onMouseDown={(e) => e.preventDefault()} // Previne focus flicker
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+      <span className="w-8 text-center text-lg font-bold">
+        {value}
+      </span>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onIncrement}
+        onMouseDown={(e) => e.preventDefault()} // Previne focus flicker
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+  </div>
+))
+CounterRow.displayName = 'CounterRow'
 
 export function DailyProspecting({ clinic }: { clinic: Clinic }) {
   const { saveProspectingEntry, getProspectingEntry } = useDataStore()
@@ -68,8 +107,37 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
     loadEntry()
   }, [date, clinic.id])
 
-  const adjust = (key: keyof typeof counters, delta: number) => {
+  // useCallback para evitar re-criação das funções
+  const adjust = useCallback((key: keyof typeof counters, delta: number) => {
     setCounters((prev) => ({ ...prev, [key]: Math.max(0, prev[key] + delta) }))
+  }, [])
+
+  // Criar handlers específicos para cada campo usando useCallback
+  const handlers = {
+    scheduled: {
+      increment: useCallback(() => adjust('scheduled', 1), [adjust]),
+      decrement: useCallback(() => adjust('scheduled', -1), [adjust]),
+    },
+    email: {
+      increment: useCallback(() => adjust('email', 1), [adjust]),
+      decrement: useCallback(() => adjust('email', -1), [adjust]),
+    },
+    sms: {
+      increment: useCallback(() => adjust('sms', 1), [adjust]),
+      decrement: useCallback(() => adjust('sms', -1), [adjust]),
+    },
+    whatsapp: {
+      increment: useCallback(() => adjust('whatsapp', 1), [adjust]),
+      decrement: useCallback(() => adjust('whatsapp', -1), [adjust]),
+    },
+    instagram: {
+      increment: useCallback(() => adjust('instagram', 1), [adjust]),
+      decrement: useCallback(() => adjust('instagram', -1), [adjust]),
+    },
+    phone: {
+      increment: useCallback(() => adjust('phone', 1), [adjust]),
+      decrement: useCallback(() => adjust('phone', -1), [adjust]),
+    },
   }
 
   const handleSave = async () => {
@@ -85,29 +153,6 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
       console.error('Failed to save prospecting entry:', error)
     }
   }
-
-  const CounterRow = ({
-    label,
-    field,
-  }: {
-    label: string
-    field: keyof typeof counters
-  }) => (
-    <div className="flex items-center justify-between p-3 border rounded-lg">
-      <span className="font-medium">{label}</span>
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => adjust(field, -1)}>
-          <Minus className="h-4 w-4" />
-        </Button>
-        <span className="w-8 text-center text-lg font-bold">
-          {counters[field]}
-        </span>
-        <Button variant="outline" size="icon" onClick={() => adjust(field, 1)}>
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  )
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -131,18 +176,48 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
               Canais (Leads Recebidos)
             </h3>
-            <CounterRow label="Emails" field="email" />
-            <CounterRow label="SMS" field="sms" />
-            <CounterRow label="WhatsApp" field="whatsapp" />
-            <CounterRow label="Instagram" field="instagram" />
-            <CounterRow label="Ligação telefônica" field="phone" />
+            <CounterRow
+              label="Emails"
+              value={counters.email}
+              onIncrement={handlers.email.increment}
+              onDecrement={handlers.email.decrement}
+            />
+            <CounterRow
+              label="SMS"
+              value={counters.sms}
+              onIncrement={handlers.sms.increment}
+              onDecrement={handlers.sms.decrement}
+            />
+            <CounterRow
+              label="WhatsApp"
+              value={counters.whatsapp}
+              onIncrement={handlers.whatsapp.increment}
+              onDecrement={handlers.whatsapp.decrement}
+            />
+            <CounterRow
+              label="Instagram"
+              value={counters.instagram}
+              onIncrement={handlers.instagram.increment}
+              onDecrement={handlers.instagram.decrement}
+            />
+            <CounterRow
+              label="Ligação telefônica"
+              value={counters.phone}
+              onIncrement={handlers.phone.increment}
+              onDecrement={handlers.phone.decrement}
+            />
           </div>
 
           <div className="space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
               Conversão
             </h3>
-            <CounterRow label="1.ªs Consultas Agendadas" field="scheduled" />
+            <CounterRow
+              label="1.ªs Consultas Agendadas"
+              value={counters.scheduled}
+              onIncrement={handlers.scheduled.increment}
+              onDecrement={handlers.scheduled.decrement}
+            />
           </div>
 
           <Button onClick={handleSave} className="w-full">
