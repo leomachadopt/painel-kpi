@@ -35,6 +35,7 @@ export interface UserPermissions {
   canEditAdvanceInvoice: boolean
   canEditAccountsPayable: boolean
   canViewAccountsPayable: boolean
+  canEditBilling: boolean
   canEditPatients: boolean
   canEditClinicConfig: boolean
   canEditTargets: boolean
@@ -98,6 +99,7 @@ export async function getUserPermissions(
       canEditAdvanceInvoice: true,
       canEditAccountsPayable: true,
       canViewAccountsPayable: true,
+      canEditBilling: true,
       canEditPatients: true,
       canEditClinicConfig: true,
       canEditTargets: true,
@@ -157,6 +159,7 @@ export async function getUserPermissions(
       can_edit_advance_invoice,
       can_edit_accounts_payable,
       can_view_accounts_payable,
+      can_edit_billing,
       can_edit_patients,
       can_edit_clinic_config,
       can_edit_targets,
@@ -217,6 +220,7 @@ export async function getUserPermissions(
     canEditAdvanceInvoice: perms.can_edit_advance_invoice || false,
     canEditAccountsPayable: perms.can_edit_accounts_payable || false,
     canViewAccountsPayable: perms.can_view_accounts_payable || false,
+    canEditBilling: perms.can_edit_billing || false,
     canEditPatients: perms.can_edit_patients || false,
     canEditClinicConfig: perms.can_edit_clinic_config || false,
     canEditTargets: perms.can_edit_targets || false,
@@ -286,6 +290,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditAdvanceInvoice: false,
     canEditAccountsPayable: false,
     canViewAccountsPayable: false,
+    canEditBilling: false,
     canEditPatients: false,
     canEditClinicConfig: false,
     canEditTargets: false,

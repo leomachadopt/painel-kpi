@@ -22,9 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import useDataStore from '@/stores/useDataStore'
 import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { FinancialTable } from '@/components/reports/FinancialTable'
-import { BillingTable } from '@/components/reports/BillingTable'
-import { AdvanceInvoiceTable } from '@/components/reports/AdvanceInvoiceTable'
+import { FinancialGroupedTable } from '@/components/reports/FinancialGroupedTable'
+import { UnifiedBillingTable } from '@/components/reports/UnifiedBillingTable'
 import { ConsultationTable } from '@/components/reports/ConsultationTable'
 import { ConsultationKanban } from '@/components/reports/ConsultationKanban'
 import { ProspectingTable } from '@/components/reports/ProspectingTable'
@@ -157,8 +156,7 @@ export default function Reports() {
   // Determine first available tab based on permissions
   const getFirstAvailableTab = (): string => {
     if (canViewReport('canViewReportFinancial')) return 'financial'
-    if (canViewReport('canViewReportBilling')) return 'billing'
-    if (shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice')) return 'advanceInvoice'
+    if (shouldShowAdvanceInvoice && canViewReport('canViewReportBilling')) return 'billing'
     if (canViewReport('canViewReportConsultations')) return 'consultations'
     if (canViewReport('canViewReportAligners')) return 'aligners'
     if (canViewReport('canViewReportProspecting')) return 'prospecting'
@@ -270,14 +268,9 @@ export default function Reports() {
                 Financeiro
               </TabsTrigger>
             )}
-            {canViewReport('canViewReportBilling') && (
+            {shouldShowAdvanceInvoice && canViewReport('canViewReportBilling') && (
               <TabsTrigger value="billing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                {t('financial.billing')}
-              </TabsTrigger>
-            )}
-            {shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice') && (
-              <TabsTrigger value="advanceInvoice" className="text-[10px] sm:text-xs whitespace-nowrap min-w-[100px]">
-                Fatura de Adiantamento
+                Faturação
               </TabsTrigger>
             )}
             {canViewReport('canViewReportConsultations') && (
@@ -326,7 +319,7 @@ export default function Reports() {
         <div className="mt-6">
           {canViewReport('canViewReportFinancial') && (
             <TabsContent value="financial">
-              <FinancialTable
+              <FinancialGroupedTable
                 data={filterByDate(financialEntries[clinic.id])}
                 clinic={clinic}
                 onDelete={handleDataChange}
@@ -335,24 +328,15 @@ export default function Reports() {
               />
             </TabsContent>
           )}
-          {canViewReport('canViewReportBilling') && (
+          {shouldShowAdvanceInvoice && canViewReport('canViewReportBilling') && (
             <TabsContent value="billing">
-              <BillingTable
-                data={filterByDate(financialEntries[clinic.id])}
+              <UnifiedBillingTable
+                advanceData={filterByDate(advanceInvoiceEntries[clinic.id] || [])}
+                billingData={filterByDate(financialEntries[clinic.id])}
                 clinic={clinic}
                 startDate={startDate}
                 endDate={endDate}
-              />
-            </TabsContent>
-          )}
-          {shouldShowAdvanceInvoice && canViewReport('canViewReportAdvanceInvoice') && (
-            <TabsContent value="advanceInvoice">
-              <AdvanceInvoiceTable
-                data={filterByDate(advanceInvoiceEntries[clinic.id] || [])}
-                clinic={clinic}
                 onDelete={handleDataChange}
-                startDate={startDate}
-                endDate={endDate}
               />
             </TabsContent>
           )}

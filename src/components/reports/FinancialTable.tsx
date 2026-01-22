@@ -35,6 +35,9 @@ export function FinancialTable({
   const [editingEntry, setEditingEntry] = useState<DailyFinancialEntry | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
+  // Filter out billing entries (they should only appear in Billing report)
+  const financialData = data.filter(entry => !entry.isBillingEntry)
+
   const getCategoryName = (id: string) =>
     clinic.configuration.categories.find((c) => c.id === id)?.name || id
   const getCabinetName = (id: string) =>
@@ -72,7 +75,7 @@ export function FinancialTable({
       return
     }
     try {
-      exportFinancialToExcel(data, {
+      exportFinancialToExcel(financialData, {
         clinic,
         startDate,
         endDate,
@@ -90,7 +93,7 @@ export function FinancialTable({
       return
     }
     try {
-      exportFinancialToPDF(data, {
+      exportFinancialToPDF(financialData, {
         clinic,
         startDate,
         endDate,
@@ -108,7 +111,7 @@ export function FinancialTable({
         <Button
           variant="outline"
           onClick={handleExportExcel}
-          disabled={data.length === 0 || !startDate || !endDate}
+          disabled={financialData.length === 0 || !startDate || !endDate}
         >
           <Download className="h-4 w-4 mr-2" />
           Exportar para Excel
@@ -116,7 +119,7 @@ export function FinancialTable({
         <Button
           variant="outline"
           onClick={handleExportPDF}
-          disabled={data.length === 0 || !startDate || !endDate}
+          disabled={financialData.length === 0 || !startDate || !endDate}
         >
           <Download className="h-4 w-4 mr-2" />
           Exportar para PDF
@@ -136,8 +139,8 @@ export function FinancialTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length > 0 ? (
-              data.map((entry) => (
+            {financialData.length > 0 ? (
+              financialData.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>{entry.date.split('T')[0]}</TableCell>
                   <TableCell>{entry.patientName}</TableCell>

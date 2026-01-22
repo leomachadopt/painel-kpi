@@ -178,6 +178,7 @@ export interface DailyFinancialEntry {
   cabinetId: string
   doctorId?: string | null
   paymentSourceId?: string | null
+  isBillingEntry?: boolean
 }
 
 export interface FirstConsultationType {
@@ -522,6 +523,7 @@ export interface UserPermissions {
   canViewSuppliers: boolean
   canViewAccountsPayable: boolean
   canEditFinancial: boolean
+  canEditBilling: boolean
   canEditConsultations: boolean
   canEditProspecting: boolean
   canEditCabinets: boolean

@@ -356,6 +356,7 @@ router.get('/financial/:clinicId', async (req, res) => {
         cabinetId: row.cabinet_id,
         doctorId: row.doctor_id || null,
         paymentSourceId: row.payment_source_id || null,
+        isBillingEntry: row.is_billing_entry || false,
       }))
     )
   } catch (error) {
@@ -375,16 +376,16 @@ router.post('/financial/:clinicId', async (req, res) => {
   }
   
   try {
-    const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
+    const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId, isBillingEntry } = req.body
     const entryId =
       id || `financial-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
     const result = await query(
       `INSERT INTO daily_financial_entries
-       (id, clinic_id, date, patient_name, code, category_id, value, cabinet_id, doctor_id, payment_source_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (id, clinic_id, date, patient_name, code, category_id, value, cabinet_id, doctor_id, payment_source_id, is_billing_entry)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [entryId, clinicId, date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null]
+      [entryId, clinicId, date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null, isBillingEntry || false]
     )
 
     res.status(201).json({
@@ -397,6 +398,7 @@ router.post('/financial/:clinicId', async (req, res) => {
       cabinetId: result.rows[0].cabinet_id,
       doctorId: result.rows[0].doctor_id || null,
       paymentSourceId: result.rows[0].payment_source_id || null,
+      isBillingEntry: result.rows[0].is_billing_entry || false,
     })
   } catch (error: any) {
     console.error('Create financial entry error:', error)
@@ -437,10 +439,10 @@ router.put('/financial/:clinicId/:entryId', async (req, res) => {
       return res.status(404).json({ error: 'Entry not found' })
     }
 
-    // Update entry
+    // Update entry (keep is_billing_entry as is, don't change it)
     const result = await query(
       `UPDATE daily_financial_entries
-       SET date = $1, patient_name = $2, code = $3, category_id = $4, value = $5, 
+       SET date = $1, patient_name = $2, code = $3, category_id = $4, value = $5,
            cabinet_id = $6, doctor_id = $7, payment_source_id = $8
        WHERE id = $9 AND clinic_id = $10
        RETURNING *`,
@@ -457,6 +459,7 @@ router.put('/financial/:clinicId/:entryId', async (req, res) => {
       cabinetId: result.rows[0].cabinet_id,
       doctorId: result.rows[0].doctor_id || null,
       paymentSourceId: result.rows[0].payment_source_id || null,
+      isBillingEntry: result.rows[0].is_billing_entry || false,
     })
   } catch (error: any) {
     console.error('Update financial entry error:', error)

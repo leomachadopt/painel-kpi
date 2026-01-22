@@ -11,6 +11,7 @@ import {
   Smile,
   Package,
   CreditCard,
+  Receipt,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -26,6 +27,7 @@ import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useTranslation } from '@/hooks/useTranslation'
 import { DailyFinancials } from '@/components/daily/DailyFinancials'
+import { DailyBilling } from '@/components/daily/DailyBilling'
 import { DailyConsultations } from '@/components/daily/DailyConsultations'
 import { DailyProspecting } from '@/components/daily/DailyProspecting'
 import { DailyCabinets } from '@/components/daily/DailyCabinets'
@@ -59,6 +61,7 @@ export default function Inputs() {
 
   // Verificar permissões
   const hasFinancial = canEdit('canEditFinancial')
+  const hasBilling = canEdit('canEditBilling')
   const hasConsultations = canEdit('canEditConsultations')
   const hasProspecting = canEdit('canEditProspecting')
   const hasCabinets = canEdit('canEditCabinets')
@@ -71,6 +74,7 @@ export default function Inputs() {
   // Determinar primeira aba disponível
   const firstAvailableTab =
     hasFinancial ? 'financial' :
+    hasBilling ? 'billing' :
     hasConsultations ? 'consultations' :
     hasProspecting ? 'prospecting' :
     hasCabinets ? 'cabinets' :
@@ -81,7 +85,7 @@ export default function Inputs() {
     hasAccountsPayable ? 'accountsPayable' : 'financial'
 
   // Determinar aba inicial (priorizar parâmetro da URL)
-  const validTabs = ['financial', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders', 'accountsPayable']
+  const validTabs = ['financial', 'billing', 'consultations', 'prospecting', 'cabinets', 'serviceTime', 'consultationControl', 'aligners', 'orders', 'accountsPayable']
   const initialTab = tabParam && validTabs.includes(tabParam)
     ? tabParam
     : firstAvailableTab
@@ -132,6 +136,15 @@ export default function Inputs() {
               >
                 <FileText className="h-4 w-4" />
                 <span className="whitespace-nowrap">Financeiro</span>
+              </TabsTrigger>
+            )}
+            {hasBilling && (
+              <TabsTrigger
+                value="billing"
+                className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
+              >
+                <Receipt className="h-4 w-4" />
+                <span className="whitespace-nowrap">Faturação</span>
               </TabsTrigger>
             )}
             {hasConsultations && (
@@ -221,6 +234,22 @@ export default function Inputs() {
                 </CardHeader>
                 <CardContent>
                   <DailyFinancials clinic={clinic} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {hasBilling && (
+            <TabsContent value="billing">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Faturação</CardTitle>
+                  <CardDescription>
+                    Lançamento de faturas em nome de terceiros
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DailyBilling clinic={clinic} />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -15,7 +15,7 @@ import { exportFinancialToPDF } from '@/lib/pdfExport'
 import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
 import useDataStore from '@/stores/useDataStore'
-import { EditBillingDialog } from './EditBillingDialog'
+import { EditFinancialDialog } from './EditFinancialDialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-interface BillingRow {
+interface FinancialRow {
   id: string
   doctorId: string | null
   doctorName: string
@@ -36,10 +36,9 @@ interface BillingRow {
   value: number
   date: string
   paymentSources: Record<string, number>
-  isBillingEntry: boolean
 }
 
-export function BillingTable({
+export function FinancialGroupedTable({
   data,
   clinic,
   startDate,
@@ -85,12 +84,12 @@ export function BillingTable({
 
     try {
       await deleteFinancialEntry(clinic.id, entryToDelete)
-      toast.success('Fatura excluída com sucesso!')
+      toast.success('Lançamento excluído com sucesso!')
       setDeleteDialogOpen(false)
       setEntryToDelete(null)
       if (onDelete) onDelete()
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao excluir fatura')
+      toast.error(error?.message || 'Erro ao excluir lançamento')
     }
   }
 
@@ -104,8 +103,11 @@ export function BillingTable({
     .map((ps) => ps.name)
     .sort()
 
-  // Convert entries to rows (show all entries, but only allow delete on billing entries)
-  const rows: BillingRow[] = data.map((entry) => {
+  // Filter only financial entries (not billing entries)
+  const financialData = data.filter(entry => !entry.isBillingEntry)
+
+  // Convert entries to rows
+  const rows: FinancialRow[] = financialData.map((entry) => {
     const paymentSourceName = getPaymentSourceName(entry.paymentSourceId)
     const paymentSources: Record<string, number> = {}
 
@@ -123,12 +125,11 @@ export function BillingTable({
       value: entry.value,
       date: entry.date,
       paymentSources,
-      isBillingEntry: entry.isBillingEntry || false,
     }
   })
 
   // Group rows by doctor
-  const rowsByDoctor = new Map<string, BillingRow[]>()
+  const rowsByDoctor = new Map<string, FinancialRow[]>()
   rows.forEach((row) => {
     const doctorKey = row.doctorId || 'no-doctor'
     if (!rowsByDoctor.has(doctorKey)) {
@@ -170,11 +171,11 @@ export function BillingTable({
       return
     }
     try {
-      exportFinancialToExcel(data, {
+      exportFinancialToExcel(financialData, {
         clinic,
         startDate,
         endDate,
-        reportType: 'billing',
+        reportType: 'financial',
       })
       toast.success('Relatório exportado para Excel com sucesso!')
     } catch (error: any) {
@@ -188,11 +189,11 @@ export function BillingTable({
       return
     }
     try {
-      exportFinancialToPDF(data, {
+      exportFinancialToPDF(financialData, {
         clinic,
         startDate,
         endDate,
-        reportType: 'billing',
+        reportType: 'financial',
       })
       toast.success('Relatório exportado para PDF com sucesso!')
     } catch (error: any) {
@@ -274,28 +275,26 @@ export function BillingTable({
                       </TableCell>
                     ))}
                     <TableCell className="text-center">
-                      {row.isBillingEntry && (
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(row.id)}
-                            className="h-7 w-7 p-0"
-                            title="Editar fatura"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(row.id)}
-                            className="h-7 w-7 p-0"
-                            title="Excluir fatura"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditClick(row.id)}
+                          className="h-7 w-7 p-0"
+                          title="Editar lançamento"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(row.id)}
+                          className="h-7 w-7 p-0"
+                          title="Excluir lançamento"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -344,7 +343,7 @@ export function BillingTable({
       </Table>
     </div>
 
-    <EditBillingDialog
+    <EditFinancialDialog
       entry={entryToEdit}
       clinic={clinic}
       open={editDialogOpen}
@@ -355,9 +354,9 @@ export function BillingTable({
     <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Excluir Fatura</AlertDialogTitle>
+          <AlertDialogTitle>Excluir Lançamento</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir esta fatura? Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -371,4 +370,3 @@ export function BillingTable({
     </>
   )
 }
-

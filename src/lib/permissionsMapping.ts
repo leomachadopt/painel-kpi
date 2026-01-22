@@ -45,6 +45,16 @@ export const RESOURCE_PERMISSIONS: ResourceConfig[] = [
     },
   },
   {
+    id: 'billing',
+    name: 'Faturação',
+    description: 'Lançamento de faturas',
+    actions: 'Visualização + Edição',
+    mapsTo: {
+      view: ['canViewReportBilling'],
+      edit: ['canEditBilling'],
+    },
+  },
+  {
     id: 'consultations',
     name: '1.ªs Consultas',
     description: 'Consultas e planos',
@@ -287,6 +297,7 @@ export function mapResourcePermissionsToLegacy(
     canViewOrders: false,
     canViewSuppliers: false,
     canEditFinancial: false,
+    canEditBilling: false,
     canEditConsultations: false,
     canEditProspecting: false,
     canEditCabinets: false,
