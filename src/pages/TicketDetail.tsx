@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, Lock, LockOpen, Trash2, User } from 'lucide-react'
+import { ArrowLeft, Send, Lock, LockOpen, Trash2, User, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -41,6 +41,8 @@ export default function TicketDetail() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [deleteTicketId, setDeleteTicketId] = useState<string | null>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (ticketId && clinicId) {
@@ -48,6 +50,13 @@ export default function TicketDetail() {
       loadComments()
     }
   }, [ticketId, clinicId])
+
+  // Auto-scroll para o final ao carregar comentários inicialmente
+  useEffect(() => {
+    if (comments.length > 0) {
+      scrollToBottom()
+    }
+  }, [comments.length > 0]) // Apenas no carregamento inicial
 
   const loadTicket = async () => {
     if (!ticketId) return
@@ -75,18 +84,48 @@ export default function TicketDetail() {
     }
   }
 
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+
   const handleAddComment = async () => {
     if (!ticketId || !newComment.trim()) return
 
+    const commentText = newComment.trim()
+    const tempId = `temp-${Date.now()}`
+
+    // Atualização otimista: adicionar comentário localmente imediatamente
+    const optimisticComment = {
+      id: tempId,
+      user_id: user?.id,
+      user_name: user?.name || 'Você',
+      user_avatar: user?.avatarUrl,
+      comment: commentText,
+      created_at: new Date().toISOString(),
+      ticket_id: ticketId,
+    }
+
+    setComments((prev) => [...prev, optimisticComment])
+    setNewComment('')
     setSubmitting(true)
+    scrollToBottom()
+
     try {
-      await ticketsApi.addComment(ticketId, newComment)
-      toast.success('Comentário adicionado')
-      setNewComment('')
-      loadComments()
-      loadTicket() // Atualizar ticket para pegar contagem de comentários
+      const result = await ticketsApi.addComment(ticketId, commentText)
+
+      // Substituir comentário temporário pelo real
+      setComments((prev) =>
+        prev.map((c) => (c.id === tempId ? result.comment : c))
+      )
+
+      toast.success('Mensagem enviada')
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao adicionar comentário')
+      // Remover comentário otimista em caso de erro
+      setComments((prev) => prev.filter((c) => c.id !== tempId))
+      setNewComment(commentText) // Restaurar texto
+      toast.error(error.message || 'Erro ao enviar mensagem')
     } finally {
       setSubmitting(false)
     }
@@ -292,14 +331,15 @@ export default function TicketDetail() {
       {/* Conversa */}
       <Card className="mb-4">
         <CardContent className="p-0">
-          <ScrollArea className="h-[calc(100vh-300px)] p-6">
+          <ScrollArea className="h-[calc(100vh-300px)] p-6" ref={scrollAreaRef}>
             <div className="space-y-4">
               {allMessages.map((message) => {
                 const isCurrentUser = message.user.id === user?.id
+                const isPending = typeof message.id === 'string' && message.id.startsWith('temp-')
                 return (
                   <div
                     key={message.id}
-                    className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
+                    className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''} ${isPending ? 'opacity-70' : ''}`}
                   >
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={message.user.avatar} />
@@ -325,6 +365,7 @@ export default function TicketDetail() {
                   </div>
                 )
               })}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
         </CardContent>
@@ -345,7 +386,11 @@ export default function TicketDetail() {
             }}
           />
           <Button onClick={handleAddComment} disabled={!newComment.trim() || submitting}>
-            <Send className="h-4 w-4" />
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       )}
