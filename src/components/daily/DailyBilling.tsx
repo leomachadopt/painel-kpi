@@ -295,7 +295,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
 
         {/* Campos condicionais quando "Faturar em nome de 3os" está marcado */}
         {billToThirdParty && (
-          <>
+          <div className="grid grid-cols-2 gap-3">
             {/* Código do Terceiro (opcional) */}
             <FormField
               control={form.control}
@@ -354,7 +354,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                 </FormItem>
               )}
             />
-          </>
+          </div>
         )}
 
         <Separator />

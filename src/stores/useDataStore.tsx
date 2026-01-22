@@ -2194,9 +2194,10 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     
     const alerts: Alert[] = []
 
-    // 1. Faturação Crítica
-    if (current.revenueTotal < clinic.targetRevenue * 0.9) {
-      const percent = (current.revenueTotal / clinic.targetRevenue * 100).toFixed(0)
+    // 1. Faturação Crítica - usar targets.targetRevenue para consistência com KPI
+    const targetRevenue = targets.targetRevenue || clinic.targetRevenue
+    if (current.revenueTotal < targetRevenue * 0.9) {
+      const percent = (current.revenueTotal / targetRevenue * 100).toFixed(0)
       alerts.push({
         id: 'billing',
         rule: t.financial.billing,

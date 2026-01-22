@@ -365,12 +365,17 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
 
 // --- Revenue Evolution Chart (6 months) ---
 export function RevenueEvolutionChart({ monthlyDataList }: { monthlyDataList: MonthlyData[] }) {
-  const { t } = useTranslation()
+  const { t, formatCurrency, locale } = useTranslation()
+  const currencySymbol = locale === 'PT-BR' ? 'R$' : '€'
+
   // Expect last 6 months in chronological order
   const chartData = monthlyDataList.slice(-6).map((m) => ({
     month: `${m.month}/${m.year.toString().slice(-2)}`,
-    revenue: m.revenueTotal,
+    revenue: m.revenueTotal || 0,
   }))
+
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0)
+  const hasData = totalRevenue > 0 && chartData.length > 0
 
   const chartConfig = {
     revenue: {
@@ -379,33 +384,60 @@ export function RevenueEvolutionChart({ monthlyDataList }: { monthlyDataList: Mo
     },
   } satisfies ChartConfig
 
+  // Format tick based on value size
+  const formatTick = (value: number) => {
+    if (value >= 1000) {
+      return `${currencySymbol}${(value / 1000).toFixed(0)}k`
+    }
+    return `${currencySymbol}${value.toFixed(0)}`
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Evolução Mensal de Receita</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-            />
-            <YAxis hide />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line
-              type="monotone"
-              dataKey="revenue"
-              stroke="var(--color-revenue)"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ChartContainer>
+        {hasData ? (
+          <ChartContainer config={chartConfig} className="w-full h-[250px]">
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis
+                tickFormatter={(value) => formatTick(value)}
+                tick={{ fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent
+                  formatter={(value) => formatCurrency(Number(value))}
+                />}
+              />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="var(--color-revenue)"
+                strokeWidth={3}
+                dot={{ r: 5, fill: 'var(--color-revenue)' }}
+                activeDot={{ r: 7 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Nenhuma receita registada nos últimos 6 meses</p>
+              <p className="text-xs mt-2">Lance faturas para ver a evolução aqui</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -467,47 +499,86 @@ export function OwnerAgendaChart({ data }: { data: MonthlyData }) {
 
 // --- Revenue per Cabinet Chart ---
 export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
-  const { t, formatCurrency, locale, formatNumber } = useTranslation()
+  const { t, formatCurrency, locale } = useTranslation()
   const currencySymbol = locale === 'PT-BR' ? 'R$' : '€'
-  const localeString = locale === 'PT-BR' ? 'pt-BR' : 'pt-PT'
-  
-  const chartData = data.cabinets
-    .map(c => ({
-      name: c.name,
-      revenue: c.revenue,
-    }))
-    .sort((a, b) => b.revenue - a.revenue)
 
-  const chartConfig = {
-    revenue: {
-      label: 'Receita',
-      color: 'hsl(var(--chart-2))',
-    },
-  } satisfies ChartConfig
+  const chartData = data.cabinets
+    .filter(c => (c.revenue || 0) > 0) // Only cabinets with revenue
+    .map(c => ({
+      gabinete: c.name,
+      valor: Number(c.revenue) || 0,
+    }))
+    .sort((a, b) => b.valor - a.valor)
+
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.valor, 0)
+  const hasData = chartData.length > 0
+
+  // Format tick based on value size
+  const formatTick = (value: number) => {
+    if (value >= 1000) {
+      return `${currencySymbol}${(value / 1000).toFixed(0)}k`
+    }
+    return `${currencySymbol}${value}`
+  }
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <CardTitle>{t('financial.revenuePerCabinet')}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-[4/3] max-h-[300px] w-full"
-        >
-          <BarChart data={chartData} layout="horizontal">
-            <CartesianGrid vertical={false} />
-            <XAxis type="number" dataKey="revenue" tickFormatter={(value) => `${currencySymbol}${(value / 1000).toFixed(0)}k`} />
-            <YAxis type="category" dataKey="name" width={100} />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent 
-                formatter={(value) => formatCurrency(Number(value))}
-              />}
-            />
-            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ChartContainer>
+      <CardContent className="flex-1 py-6 px-4">
+        {hasData ? (
+          <>
+            <div className="text-sm text-muted-foreground mb-6">
+              Total: <span className="font-semibold text-foreground">{formatCurrency(totalRevenue)}</span>
+            </div>
+            <div style={{ width: '100%', height: '320px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  layout="vertical"
+                  margin={{ top: 10, right: 60, left: 10, bottom: 10 }}
+                  barCategoryGap="10%"
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tickFormatter={formatTick}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="gabinete"
+                    width={140}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Receita']}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      padding: '8px 12px'
+                    }}
+                  />
+                  <Bar
+                    dataKey="valor"
+                    fill="#10b981"
+                    radius={[0, 4, 4, 0]}
+                    barSize={24}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Nenhuma receita registada por gabinete neste mês</p>
+              <p className="text-xs mt-2">Lance faturas para ver os dados aqui</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
