@@ -275,6 +275,38 @@ async function canEditAdvanceInvoice(req: any, clinicId: string): Promise<boolea
 }
 
 /**
+ * Helper function to check if user can create/edit billing entries (faturação)
+ * GESTOR_CLINICA always can, COLABORADOR needs canEditBilling or canEditAdvances or canEditAdvanceInvoice permission
+ */
+async function canEditBilling(req: any, clinicId: string): Promise<boolean> {
+  if (!req.user || !req.user.sub) {
+    return false
+  }
+
+  const { sub: userId, role, clinicId: userClinicId } = req.user
+
+  // Must belong to the clinic
+  if (userClinicId !== clinicId) {
+    return false
+  }
+
+  // GESTOR_CLINICA and MENTOR always can
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // COLABORADOR needs one of the billing-related permissions
+  if (role === 'COLABORADOR') {
+    const permissions = await getUserPermissions(userId, role, clinicId)
+    return permissions.canEditBilling === true ||
+           permissions.canEditAdvances === true ||
+           permissions.canEditAdvanceInvoice === true
+  }
+
+  return false
+}
+
+/**
  * Helper function to check if user can create/edit accounts payable entries
  * GESTOR_CLINICA always can, COLABORADOR needs canEditAccountsPayable permission
  */
@@ -367,16 +399,21 @@ router.get('/financial/:clinicId', async (req, res) => {
 
 router.post('/financial/:clinicId', async (req, res) => {
   // Check if user can create financial entries
-  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
+  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial or canEditBilling (depending on isBillingEntry)
   const { clinicId } = req.params
-  const hasPermission = await canEditFinancial(req, clinicId)
-  
+  const { isBillingEntry } = req.body
+
+  // Use different permission check depending on entry type
+  const hasPermission = isBillingEntry
+    ? await canEditBilling(req, clinicId)
+    : await canEditFinancial(req, clinicId)
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
-    const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId, isBillingEntry } = req.body
+    const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
     const entryId =
       id || `financial-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
@@ -411,15 +448,6 @@ router.post('/financial/:clinicId', async (req, res) => {
 })
 
 router.put('/financial/:clinicId/:entryId', async (req, res) => {
-  // Check if user can edit financial entries
-  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
-  const { clinicId } = req.params
-  const hasPermission = await canEditFinancial(req, clinicId)
-  
-  if (!hasPermission) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-  
   try {
     const { clinicId, entryId } = req.params
     const { date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
@@ -429,14 +457,26 @@ router.put('/financial/:clinicId/:entryId', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
-    // Check if entry exists
+    // Check if entry exists and get its type
     const checkResult = await query(
-      `SELECT id FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2`,
+      `SELECT id, is_billing_entry FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2`,
       [entryId, clinicId]
     )
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    const isBillingEntry = checkResult.rows[0].is_billing_entry || false
+
+    // Check if user can edit this type of entry
+    // GESTOR_CLINICA always can, COLABORADOR needs appropriate permission
+    const hasPermission = isBillingEntry
+      ? await canEditBilling(req, clinicId)
+      : await canEditFinancial(req, clinicId)
+
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Forbidden' })
     }
 
     // Update entry (keep is_billing_entry as is, don't change it)
@@ -472,25 +512,36 @@ router.put('/financial/:clinicId/:entryId', async (req, res) => {
 })
 
 router.delete('/financial/:clinicId/:entryId', async (req, res) => {
-  // Check if user can delete financial entries
-  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
-  const { clinicId } = req.params
-  const hasPermission = await canEditFinancial(req, clinicId)
-  
-  if (!hasPermission) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-  
   try {
     const { clinicId, entryId } = req.params
-    const result = await query(
-      `DELETE FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
+
+    // Check if entry exists and get its type
+    const checkResult = await query(
+      `SELECT id, is_billing_entry FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2`,
       [entryId, clinicId]
     )
 
-    if (result.rows.length === 0) {
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({ error: 'Entry not found' })
     }
+
+    const isBillingEntry = checkResult.rows[0].is_billing_entry || false
+
+    // Check if user can delete this type of entry
+    // GESTOR_CLINICA always can, COLABORADOR needs appropriate permission
+    const hasPermission = isBillingEntry
+      ? await canEditBilling(req, clinicId)
+      : await canEditFinancial(req, clinicId)
+
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    // Delete the entry
+    await query(
+      `DELETE FROM daily_financial_entries WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
 
     res.json({ message: 'Entry deleted successfully' })
   } catch (error) {
