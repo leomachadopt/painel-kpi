@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Patient } from '@/lib/types'
 import { patientsApi } from '@/services/api'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,11 +70,26 @@ export default function Patients() {
   const [newPatientForm, setNewPatientForm] = useState({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
   const [creating, setCreating] = useState(false)
 
+  // ===================================================================
+  // OTIMIZAÇÃO: Debounce no search para evitar chamadas excessivas
+  // ===================================================================
+  // ANTES: API call a cada caractere digitado = ~10 calls para "João Silva"
+  // DEPOIS: 1 call após 500ms de pausa = ~1 call
+  // ===================================================================
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 500)
+
   useEffect(() => {
     if (clinicId) {
       loadPatients()
     }
   }, [clinicId])
+
+  // Recarregar quando o termo debounced mudar
+  useEffect(() => {
+    if (clinicId && (debouncedSearchTerm.length >= 2 || debouncedSearchTerm.length === 0)) {
+      loadPatients(debouncedSearchTerm || undefined)
+    }
+  }, [debouncedSearchTerm, clinicId])
 
   const loadPatients = async (search?: string) => {
     if (!clinicId) return
@@ -92,9 +108,7 @@ export default function Patients() {
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
-    if (value.length >= 2 || value.length === 0) {
-      loadPatients(value || undefined)
-    }
+    // Não chama loadPatients aqui - o debounce fará isso
   }
 
   const handleDeleteClick = (patient: Patient) => {

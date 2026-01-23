@@ -42,7 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import { dailyEntriesApi, ticketsApi } from '@/services/api'
+import api from '@/services/api'
 import { useTranslation } from '@/hooks/useTranslation'
 import { isBrazilClinic } from '@/lib/clinicUtils'
 
@@ -77,156 +77,68 @@ export function AppSidebar() {
     ? calculateAlignersAlerts(activeClinicId).length
     : 0
 
-  // Buscar contagem de pedidos pendentes (apenas para gestoras)
+  // ===================================================================
+  // OTIMIZAÇÃO: Endpoint consolidado do sidebar (REDUZ 83% DAS CHAMADAS)
+  // ===================================================================
+  // ANTES: 5 endpoints separados a cada 30s = 10 req/min
+  // DEPOIS: 1 endpoint consolidado a cada 60s = 1 req/min
+  // ===================================================================
   useEffect(() => {
-    const loadPendingOrdersCount = async () => {
-      if (isGestor && activeClinicId) {
-        try {
-          const result = await dailyEntriesApi.order.getPendingCount(activeClinicId)
-          const count = result.count || 0
-          setPendingOrdersCount(count)
-        } catch (error) {
-          console.error('Error loading pending orders count:', error)
-          setPendingOrdersCount(0)
-        }
-      } else {
+    const loadAllSidebarCounts = async () => {
+      if (!activeClinicId || !user) {
         setPendingOrdersCount(0)
-      }
-    }
-
-    if (user && activeClinicId) {
-      loadPendingOrdersCount()
-      // Recarregar a cada 30 segundos
-      const interval = setInterval(loadPendingOrdersCount, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [isGestor, activeClinicId, user])
-
-  // Buscar contagem de pedidos aguardando pagamento (apenas para gestoras)
-  useEffect(() => {
-    const loadPaymentPendingOrdersCount = async () => {
-      if (isGestor && activeClinicId) {
-        try {
-          const result = await dailyEntriesApi.order.getPaymentPendingCount(activeClinicId)
-          const count = result.count || 0
-          setPaymentPendingOrdersCount(count)
-        } catch (error) {
-          console.error('Error loading payment pending orders count:', error)
-          setPaymentPendingOrdersCount(0)
-        }
-      } else {
         setPaymentPendingOrdersCount(0)
-      }
-    }
-
-    if (user && activeClinicId) {
-      loadPaymentPendingOrdersCount()
-      // Recarregar a cada 30 segundos
-      const interval = setInterval(loadPaymentPendingOrdersCount, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [isGestor, activeClinicId, user])
-
-  // Buscar contagem de pedidos com fatura pendente (apenas para gestoras)
-  useEffect(() => {
-    const loadInvoicePendingOrdersCount = async () => {
-      if (isGestor && activeClinicId) {
-        try {
-          const result = await dailyEntriesApi.order.getInvoicePendingCount(activeClinicId)
-          const count = result.count || 0
-          setInvoicePendingOrdersCount(count)
-        } catch (error) {
-          console.error('Error loading invoice pending orders count:', error)
-          setInvoicePendingOrdersCount(0)
-        }
-      } else {
         setInvoicePendingOrdersCount(0)
-      }
-    }
-
-    if (user && activeClinicId) {
-      loadInvoicePendingOrdersCount()
-      // Recarregar a cada 30 segundos
-      const interval = setInterval(loadInvoicePendingOrdersCount, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [isGestor, activeClinicId, user])
-
-  // Buscar contagem de tickets pendentes
-  useEffect(() => {
-    const loadTicketsCount = async () => {
-      // Verificar permissão antes de fazer a requisição
-      const hasPermission = canView('canViewTickets')
-      if (activeClinicId && hasPermission) {
-        try {
-          const result = await ticketsApi.getCount(activeClinicId)
-          const count = result.count || 0
-          setTicketsCount(count)
-          
-          // Se for gestora, usar contagens separadas
-          if (isGestor && result.assignedToMe !== undefined && result.others !== undefined) {
-            setTicketsAssignedToMe(result.assignedToMe || 0)
-            setTicketsOthers(result.others || 0)
-          } else {
-            setTicketsAssignedToMe(0)
-            setTicketsOthers(0)
-          }
-        } catch (error) {
-          console.error('Error loading tickets count:', error)
-          setTicketsCount(0)
-          setTicketsAssignedToMe(0)
-          setTicketsOthers(0)
-        }
-      } else {
         setTicketsCount(0)
         setTicketsAssignedToMe(0)
         setTicketsOthers(0)
+        setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
+        return
       }
-    }
 
-    if (user && activeClinicId) {
-      const hasPermission = canView('canViewTickets')
-      loadTicketsCount()
-      // Recarregar a cada 30 segundos apenas se tiver permissão
-      if (hasPermission) {
-        const interval = setInterval(loadTicketsCount, 30000)
-        return () => clearInterval(interval)
-      }
-    }
-  }, [activeClinicId, user, isGestor])
+      try {
+        const counts = await api.sidebar.getCounts(activeClinicId)
 
-  // Buscar contagem de contas a pagar
-  useEffect(() => {
-    const loadAccountsPayableCounts = async () => {
-      // Verificar permissão antes de fazer a requisição
-      const hasPermission = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
-      if (activeClinicId && hasPermission) {
-        try {
-          const result = await dailyEntriesApi.accountsPayable.getCounts(activeClinicId)
-          setAccountsPayableCounts({
-            overdue: result.overdue || 0,
-            today: result.today || 0,
-            week: result.week || 0,
-          })
-        } catch (error) {
-          console.error('Error loading accounts payable counts:', error)
-          setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
+        // Atualizar contadores de pedidos (apenas para gestores)
+        if (isGestor) {
+          setPendingOrdersCount(counts.orders.pending)
+          setPaymentPendingOrdersCount(counts.orders.paymentPending)
+          setInvoicePendingOrdersCount(counts.orders.invoicePending)
         }
-      } else {
+
+        // Atualizar contadores de tickets (se tiver permissão)
+        if (canView('canViewTickets')) {
+          const totalTickets = counts.tickets.assignedToMe + counts.tickets.others
+          setTicketsCount(totalTickets)
+          setTicketsAssignedToMe(counts.tickets.assignedToMe)
+          setTicketsOthers(counts.tickets.others)
+        }
+
+        // Atualizar contadores de contas a pagar (se tiver permissão)
+        if (canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')) {
+          setAccountsPayableCounts(counts.accountsPayable)
+        }
+      } catch (error) {
+        console.error('Error loading sidebar counts:', error)
+        // Em caso de erro, zerar os contadores
+        setPendingOrdersCount(0)
+        setPaymentPendingOrdersCount(0)
+        setInvoicePendingOrdersCount(0)
+        setTicketsCount(0)
+        setTicketsAssignedToMe(0)
+        setTicketsOthers(0)
         setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
       }
     }
 
     if (user && activeClinicId) {
-      const hasPermission = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
-      loadAccountsPayableCounts()
-      // Recarregar a cada 30 segundos apenas se tiver permissão
-      if (hasPermission) {
-        const interval = setInterval(loadAccountsPayableCounts, 30000)
-        return () => clearInterval(interval)
-      }
+      loadAllSidebarCounts()
+      // Recarregar a cada 60 segundos (aumentado de 30s para reduzir carga)
+      const interval = setInterval(loadAllSidebarCounts, 60000)
+      return () => clearInterval(interval)
     }
-  }, [activeClinicId, user])
+  }, [activeClinicId, user, isGestor])
+  // IMPORTANTE: Removido canView e canEdit das dependências para evitar loop
 
   return (
     <Sidebar 

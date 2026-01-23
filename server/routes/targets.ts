@@ -26,6 +26,8 @@ router.get('/:clinicId/:year/:month', requirePermission('canViewTargets'), async
 
     const row = result.rows[0]
 
+    // Cache: 1 hora (metas mensais mudam raramente)
+    res.setHeader('Cache-Control', 'max-age=3600, s-maxage=3600, stale-while-revalidate=300')
     res.json({
       id: row.id,
       clinicId: row.clinic_id,
@@ -116,6 +118,8 @@ router.get('/:clinicId', requirePermission('canViewTargets'), async (req, res) =
       }
     }))
 
+    // Cache: 1 hora (lista de metas muda raramente)
+    res.setHeader('Cache-Control', 'max-age=3600, s-maxage=3600, stale-while-revalidate=300')
     res.json(targets)
   } catch (error: any) {
     console.error('Get all targets error:', error)

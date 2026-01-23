@@ -29,6 +29,9 @@ router.get('/:clinicId/:year/:month', async (req, res) => {
       [data.id]
     )
 
+    // Cache: 24 horas (dados históricos mensais não mudam)
+    // immutable: dados de meses passados nunca mudam
+    res.setHeader('Cache-Control', 'max-age=86400, s-maxage=86400, immutable')
     res.json({
       id: data.id,
       clinicId: data.clinic_id,
@@ -158,6 +161,8 @@ router.get('/:clinicId/:year', async (req, res) => {
       })
     )
 
+    // Cache: 24 horas (dados históricos anuais não mudam)
+    res.setHeader('Cache-Control', 'max-age=86400, s-maxage=86400, immutable')
     res.json(monthlyData)
   } catch (error) {
     console.error('Get monthly data error:', error)

@@ -189,6 +189,10 @@ router.get('/', async (req, res) => {
       })
     )
 
+    // Cache: 1 hora (configuração de clínicas muda raramente)
+    // s-maxage=3600: CDN/Edge pode cachear por 1 hora
+    // stale-while-revalidate=300: Pode servir cache stale por mais 5min enquanto revalida
+    res.setHeader('Cache-Control', 'max-age=3600, s-maxage=3600, stale-while-revalidate=300')
     res.json(clinics)
   } catch (error: any) {
     console.error('Get clinics error:', error)
@@ -304,6 +308,8 @@ router.get('/:id', async (req, res) => {
       // Column doesn't exist or query failed - use default
     }
 
+    // Cache: 1 hora (configuração de clínica específica muda raramente)
+    res.setHeader('Cache-Control', 'max-age=3600, s-maxage=3600, stale-while-revalidate=300')
     res.json({
       id: clinic.id,
       name: clinic.name,

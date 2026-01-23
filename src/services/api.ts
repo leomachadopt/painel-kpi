@@ -1060,6 +1060,35 @@ export const ticketsApi = {
     apiCall<{ users: any[] }>(`/tickets/${clinicId}/users`),
 }
 
+// ================================
+// SIDEBAR API
+// ================================
+export interface SidebarCounts {
+  orders: {
+    pending: number
+    paymentPending: number
+    invoicePending: number
+  }
+  tickets: {
+    assignedToMe: number
+    others: number
+  }
+  accountsPayable: {
+    overdue: number
+    today: number
+    week: number
+  }
+}
+
+export const sidebarApi = {
+  /**
+   * Busca TODOS os contadores do sidebar em uma única requisição
+   * Substitui 5 endpoints separados (83% de redução)
+   */
+  getCounts: (clinicId: string) =>
+    apiCall<SidebarCounts>(`/sidebar/counts/${clinicId}`),
+}
+
 export default {
   auth: authApi,
   clinics: clinicsApi,
@@ -1072,4 +1101,5 @@ export default {
   collaborators: collaboratorsApi,
   auditLogs: auditLogsApi,
   tickets: ticketsApi,
+  sidebar: sidebarApi,
 }
