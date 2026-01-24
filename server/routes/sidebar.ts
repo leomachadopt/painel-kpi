@@ -17,61 +17,43 @@ router.get('/counts/:clinicId', authRequired, async (req: AuthedRequest, res) =>
     const { clinicId } = req.params
     const userId = req.auth?.sub
 
+    console.log('🔐 Sidebar auth debug:', {
+      clinicId,
+      userId,
+      hasAuth: !!req.auth,
+      authKeys: req.auth ? Object.keys(req.auth) : 'no auth',
+      headers: req.headers.authorization ? 'present' : 'missing'
+    })
+
     if (!userId) {
+      console.error('❌ No userId found in req.auth:', req.auth)
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
     // Executar queries com fallback individual para evitar quebrar tudo se uma tabela não existir
     const getOrdersCounts = async () => {
-      try {
-        const result = await query(
-          `SELECT
-            COUNT(*) FILTER (WHERE status = 'PENDING') as pending,
-            COUNT(*) FILTER (WHERE status = 'PAYMENT_PENDING') as payment_pending,
-            COUNT(*) FILTER (WHERE status = 'INVOICE_PENDING') as invoice_pending
-          FROM orders
-          WHERE clinic_id = $1 AND deleted_at IS NULL`,
-          [clinicId]
-        )
-        return {
-          pending: parseInt(result.rows[0]?.pending || '0'),
-          paymentPending: parseInt(result.rows[0]?.payment_pending || '0'),
-          invoicePending: parseInt(result.rows[0]?.invoice_pending || '0'),
-        }
-      } catch (error) {
-        console.error('Error fetching orders counts:', error)
-        return { pending: 0, paymentPending: 0, invoicePending: 0 }
-      }
+      // Tabela orders não existe - retornar 0 sempre
+      return { pending: 0, paymentPending: 0, invoicePending: 0 }
     }
 
     const getTicketsCounts = async () => {
       try {
+        console.log('🎫 Fetching tickets counts for:', { clinicId, userId })
         const result = await query(
           `SELECT
-            COUNT(*) FILTER (
-              WHERE EXISTS (
-                SELECT 1 FROM ticket_assignees
-                WHERE ticket_assignees.ticket_id = tickets.id
-                AND ticket_assignees.user_id = $2
-              )
-            ) as assigned_to_me,
-            COUNT(*) FILTER (
-              WHERE NOT EXISTS (
-                SELECT 1 FROM ticket_assignees
-                WHERE ticket_assignees.ticket_id = tickets.id
-                AND ticket_assignees.user_id = $2
-              )
-            ) as others
+            COUNT(*) FILTER (WHERE assigned_to = $2) as assigned_to_me,
+            COUNT(*) FILTER (WHERE assigned_to IS NULL OR assigned_to != $2) as others
           FROM tickets
           WHERE clinic_id = $1
-            AND status IN ('OPEN', 'IN_PROGRESS')
-            AND deleted_at IS NULL`,
+            AND status IN ('PENDING', 'IN_PROGRESS')`,
           [clinicId, userId]
         )
-        return {
+        const counts = {
           assignedToMe: parseInt(result.rows[0]?.assigned_to_me || '0'),
           others: parseInt(result.rows[0]?.others || '0'),
         }
+        console.log('🎫 Tickets counts result:', counts)
+        return counts
       } catch (error) {
         console.error('Error fetching tickets counts:', error)
         return { assignedToMe: 0, others: 0 }
@@ -82,13 +64,11 @@ router.get('/counts/:clinicId', authRequired, async (req: AuthedRequest, res) =>
       try {
         const result = await query(
           `SELECT
-            COUNT(*) FILTER (WHERE due_date < CURRENT_DATE) as overdue,
-            COUNT(*) FILTER (WHERE due_date = CURRENT_DATE) as today,
-            COUNT(*) FILTER (WHERE due_date > CURRENT_DATE AND due_date <= CURRENT_DATE + INTERVAL '7 days') as week
-          FROM accounts_payable_documents
-          WHERE clinic_id = $1
-            AND status = 'PENDING'
-            AND deleted_at IS NULL`,
+            COUNT(*) FILTER (WHERE due_date < CURRENT_DATE AND paid = false) as overdue,
+            COUNT(*) FILTER (WHERE due_date = CURRENT_DATE AND paid = false) as today,
+            COUNT(*) FILTER (WHERE due_date > CURRENT_DATE AND due_date <= CURRENT_DATE + INTERVAL '7 days' AND paid = false) as week
+          FROM accounts_payable
+          WHERE clinic_id = $1`,
           [clinicId]
         )
         return {

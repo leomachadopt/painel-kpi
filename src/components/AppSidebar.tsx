@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   Building2,
@@ -42,7 +41,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
-import api from '@/services/api'
+import { useSidebarCounts } from '@/hooks/useSidebarCounts'
 import { useTranslation } from '@/hooks/useTranslation'
 import { isBrazilClinic } from '@/lib/clinicUtils'
 
@@ -53,17 +52,6 @@ export function AppSidebar() {
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit, canView } = usePermissions()
   const { t } = useTranslation()
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
-  const [paymentPendingOrdersCount, setPaymentPendingOrdersCount] = useState(0)
-  const [invoicePendingOrdersCount, setInvoicePendingOrdersCount] = useState(0)
-  const [ticketsCount, setTicketsCount] = useState(0)
-  const [ticketsAssignedToMe, setTicketsAssignedToMe] = useState(0)
-  const [ticketsOthers, setTicketsOthers] = useState(0)
-  const [accountsPayableCounts, setAccountsPayableCounts] = useState({
-    overdue: 0,
-    today: 0,
-    week: 0,
-  })
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -72,73 +60,56 @@ export function AppSidebar() {
   const isGestor = user?.role === 'GESTOR_CLINICA'
   const activeClinicId = currentClinic?.id || user?.clinicId
 
+  // ===================================================================
+  // OTIMIZAÇÃO FASE 2: React Query com cache automático e refetch inteligente
+  // ===================================================================
+  // ANTES: setInterval manual, sem cache, sem deduplicate
+  // DEPOIS: React Query gerencia polling, cache, retry automático
+  // BENEFÍCIOS:
+  // - Cache de 60s (não refaz request se já tem dados fresh)
+  // - Deduplicate (múltiplos componentes = 1 única request)
+  // - Refetch automático a cada 60s (substituindo setInterval)
+  // - Retry inteligente em caso de erro
+  // ===================================================================
+  const { data: counts, error: countsError, isLoading: countsLoading } = useSidebarCounts(activeClinicId, !!user && !!activeClinicId)
+
+  // DEBUG: Log para identificar problema
+  console.log('🔍 DEBUG Sidebar:', {
+    user: user?.email,
+    role: user?.role,
+    activeClinicId,
+    countsLoading,
+    countsError: countsError ? String(countsError) : null,
+    counts: counts || 'null'
+  })
+
+  if (countsError) {
+    console.error('❌ Erro ao buscar sidebar counts:', countsError)
+  }
+  if (!counts && !countsLoading && user && activeClinicId) {
+    console.warn('⚠️ Sidebar counts não retornou dados:', { user: user?.email, activeClinicId, countsError })
+  }
+
   // Calcular número de alertas ativos (apenas se tiver permissão para editar alinhadores)
   const alertsCount = activeClinicId && canEdit('canEditAligners')
     ? calculateAlignersAlerts(activeClinicId).length
     : 0
 
-  // ===================================================================
-  // OTIMIZAÇÃO: Endpoint consolidado do sidebar (REDUZ 83% DAS CHAMADAS)
-  // ===================================================================
-  // ANTES: 5 endpoints separados a cada 30s = 10 req/min
-  // DEPOIS: 1 endpoint consolidado a cada 60s = 1 req/min
-  // ===================================================================
-  useEffect(() => {
-    const loadAllSidebarCounts = async () => {
-      if (!activeClinicId || !user) {
-        setPendingOrdersCount(0)
-        setPaymentPendingOrdersCount(0)
-        setInvoicePendingOrdersCount(0)
-        setTicketsCount(0)
-        setTicketsAssignedToMe(0)
-        setTicketsOthers(0)
-        setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
-        return
-      }
+  // Extrair contadores com fallback para 0
+  const pendingOrdersCount = counts?.orders.pending ?? 0
+  const paymentPendingOrdersCount = counts?.orders.paymentPending ?? 0
+  const invoicePendingOrdersCount = counts?.orders.invoicePending ?? 0
+  const ticketsAssignedToMe = counts?.tickets.assignedToMe ?? 0
+  const ticketsOthers = counts?.tickets.others ?? 0
+  const ticketsCount = ticketsAssignedToMe + ticketsOthers
+  const accountsPayableCounts = counts?.accountsPayable ?? { overdue: 0, today: 0, week: 0 }
 
-      try {
-        const counts = await api.sidebar.getCounts(activeClinicId)
-
-        // Atualizar contadores de pedidos (apenas para gestores)
-        if (isGestor) {
-          setPendingOrdersCount(counts.orders.pending)
-          setPaymentPendingOrdersCount(counts.orders.paymentPending)
-          setInvoicePendingOrdersCount(counts.orders.invoicePending)
-        }
-
-        // Atualizar contadores de tickets (se tiver permissão)
-        if (canView('canViewTickets')) {
-          const totalTickets = counts.tickets.assignedToMe + counts.tickets.others
-          setTicketsCount(totalTickets)
-          setTicketsAssignedToMe(counts.tickets.assignedToMe)
-          setTicketsOthers(counts.tickets.others)
-        }
-
-        // Atualizar contadores de contas a pagar (se tiver permissão)
-        if (canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')) {
-          setAccountsPayableCounts(counts.accountsPayable)
-        }
-      } catch (error) {
-        console.error('Error loading sidebar counts:', error)
-        // Em caso de erro, zerar os contadores
-        setPendingOrdersCount(0)
-        setPaymentPendingOrdersCount(0)
-        setInvoicePendingOrdersCount(0)
-        setTicketsCount(0)
-        setTicketsAssignedToMe(0)
-        setTicketsOthers(0)
-        setAccountsPayableCounts({ overdue: 0, today: 0, week: 0 })
-      }
-    }
-
-    if (user && activeClinicId) {
-      loadAllSidebarCounts()
-      // Recarregar a cada 60 segundos (aumentado de 30s para reduzir carga)
-      const interval = setInterval(loadAllSidebarCounts, 60000)
-      return () => clearInterval(interval)
-    }
-  }, [activeClinicId, user, isGestor])
-  // IMPORTANTE: Removido canView e canEdit das dependências para evitar loop
+  // DEBUG: Log dos contadores
+  console.log('📊 Contadores extraídos:', {
+    tickets: { assignedToMe: ticketsAssignedToMe, others: ticketsOthers, total: ticketsCount },
+    accountsPayable: accountsPayableCounts,
+    orders: { pending: pendingOrdersCount, paymentPending: paymentPendingOrdersCount }
+  })
 
   return (
     <Sidebar 

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Patient } from '@/lib/types'
 import { patientsApi } from '@/services/api'
-import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { usePatients } from '@/hooks/usePatients'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -51,10 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 export default function Patients() {
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -71,44 +68,26 @@ export default function Patients() {
   const [creating, setCreating] = useState(false)
 
   // ===================================================================
-  // OTIMIZAÇÃO: Debounce no search para evitar chamadas excessivas
+  // OTIMIZAÇÃO FASE 2: React Query + Debounce integrado
   // ===================================================================
-  // ANTES: API call a cada caractere digitado = ~10 calls para "João Silva"
-  // DEPOIS: 1 call após 500ms de pausa = ~1 call
+  // ANTES: useEffect manual + useState + debounce separado
+  // DEPOIS: Hook usePatients com cache, debounce e deduplicate automático
+  // BENEFÍCIOS:
+  // - Cache de 5 min (não refaz request se já tem dados fresh)
+  // - Debounce de 500ms integrado no hook
+  // - Deduplica requests idênticos
+  // - Retry automático em caso de erro
   // ===================================================================
-  const debouncedSearchTerm = useDebouncedValue(searchTerm, 500)
+  const { data: patients = [], isLoading: loading, error: queryError, refetch } = usePatients(
+    clinicId,
+    searchTerm
+  )
 
-  useEffect(() => {
-    if (clinicId) {
-      loadPatients()
-    }
-  }, [clinicId])
-
-  // Recarregar quando o termo debounced mudar
-  useEffect(() => {
-    if (clinicId && (debouncedSearchTerm.length >= 2 || debouncedSearchTerm.length === 0)) {
-      loadPatients(debouncedSearchTerm || undefined)
-    }
-  }, [debouncedSearchTerm, clinicId])
-
-  const loadPatients = async (search?: string) => {
-    if (!clinicId) return
-
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await patientsApi.getAll(clinicId, search)
-      setPatients(data)
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar pacientes')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const error = queryError ? (queryError as Error).message : null
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
-    // Não chama loadPatients aqui - o debounce fará isso
+    // React Query automaticamente refetch quando searchTerm mudar (após debounce)
   }
 
   const handleDeleteClick = (patient: Patient) => {
@@ -126,7 +105,7 @@ export default function Patients() {
       setShowDeleteDialog(false)
       setPatientToDelete(null)
       // Recarregar a lista de pacientes
-      await loadPatients(searchTerm || undefined)
+      await refetch()
     } catch (err: any) {
       toast.error(err.message || 'Erro ao excluir paciente')
     } finally {
@@ -185,7 +164,7 @@ export default function Patients() {
       toast.success('Paciente atualizado com sucesso')
       setShowEditDialog(false)
       setEditingPatient(null)
-      await loadPatients(searchTerm || undefined)
+      await refetch()
     } catch (err: any) {
       toast.error(err.message || 'Erro ao atualizar paciente')
     } finally {
@@ -226,7 +205,7 @@ export default function Patients() {
       toast.success('Paciente criado com sucesso')
       setShowNewPatientDialog(false)
       setNewPatientForm({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
-      await loadPatients(searchTerm || undefined)
+      await refetch()
     } catch (err: any) {
       toast.error(err.message || 'Erro ao criar paciente')
     } finally {

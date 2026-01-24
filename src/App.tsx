@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -29,17 +31,19 @@ import NotFound from '@/pages/NotFound'
 import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
 import { DataProvider } from '@/stores/useDataStore'
+import { queryClient } from '@/lib/queryClient'
 
 const App = () => (
-  <AuthProvider>
-    <DataProvider>
-      <BrowserRouter
-        future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <DataProvider>
+        <BrowserRouter
+          future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
+        >
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
             <Route path="/login" element={<Login />} />
 
             {/* Public Routes (no authentication) */}
@@ -74,8 +78,10 @@ const App = () => (
           </Routes>
         </TooltipProvider>
       </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
     </DataProvider>
   </AuthProvider>
+  </QueryClientProvider>
 )
 
 export default App
