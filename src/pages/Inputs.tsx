@@ -107,22 +107,22 @@ export default function Inputs() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
         <Lock className="h-12 w-12 text-destructive opacity-50" />
-        <h1 className="text-2xl font-bold">Acesso Negado</h1>
+        <h1 className="text-2xl font-bold">{t('daily.accessDenied')}</h1>
         <Button onClick={() => navigate(`/dashboard/${user.clinicId}`)}>
-          Voltar ao meu Dashboard
+          {t('daily.backToDashboard')}
         </Button>
       </div>
     )
   }
 
-  if (!clinic) return <div className="p-8">Clínica não encontrada.</div>
+  if (!clinic) return <div className="p-8">{t('errors.notFound')}</div>
 
   return (
     <div className="flex flex-col gap-8 p-8 max-w-6xl mx-auto w-full">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Diário Clínico</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('daily.title')}</h1>
         <p className="text-muted-foreground">
-          {clinic.name} • Registos operacionais diários.
+          {clinic.name} • {t('daily.subtitle')}.
         </p>
       </div>
 
@@ -135,7 +135,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <FileText className="h-4 w-4" />
-                <span className="whitespace-nowrap">Financeiro</span>
+                <span className="whitespace-nowrap">{t('daily.financial')}</span>
               </TabsTrigger>
             )}
             {hasBilling && (
@@ -144,7 +144,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Receipt className="h-4 w-4" />
-                <span className="whitespace-nowrap">Faturação</span>
+                <span className="whitespace-nowrap">{t('daily.billing')}</span>
               </TabsTrigger>
             )}
             {hasConsultations && (
@@ -153,7 +153,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <UserPlus className="h-4 w-4" />
-                <span className="whitespace-nowrap">1.ªs Consultas</span>
+                <span className="whitespace-nowrap">{t('daily.consultations')}</span>
               </TabsTrigger>
             )}
             {hasProspecting && (
@@ -162,7 +162,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Megaphone className="h-4 w-4" />
-                <span className="whitespace-nowrap">Prospecção</span>
+                <span className="whitespace-nowrap">{t('daily.prospecting')}</span>
               </TabsTrigger>
             )}
             {hasCabinets && (
@@ -180,7 +180,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Clock className="h-4 w-4" />
-                <span className="whitespace-nowrap">Tempos</span>
+                <span className="whitespace-nowrap">{t('daily.serviceTime')}</span>
               </TabsTrigger>
             )}
             {hasConsultationControl && (
@@ -189,7 +189,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <CalendarCheck className="h-4 w-4" />
-                <span className="whitespace-nowrap">Controle</span>
+                <span className="whitespace-nowrap">{t('daily.consultationControl')}</span>
               </TabsTrigger>
             )}
             {hasAligners && (
@@ -198,7 +198,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Smile className="h-4 w-4" />
-                <span className="whitespace-nowrap">Alinhadores</span>
+                <span className="whitespace-nowrap">{t('daily.aligners')}</span>
               </TabsTrigger>
             )}
             {hasOrders && (
@@ -207,7 +207,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <Package className="h-4 w-4" />
-                <span className="whitespace-nowrap">Pedidos</span>
+                <span className="whitespace-nowrap">{t('daily.orders')}</span>
               </TabsTrigger>
             )}
             {hasAccountsPayable && (
@@ -216,7 +216,7 @@ export default function Inputs() {
                 className="flex flex-col gap-1 py-2 h-auto min-w-[80px] text-xs sm:text-sm"
               >
                 <CreditCard className="h-4 w-4" />
-                <span className="whitespace-nowrap">Contas a Pagar</span>
+                <span className="whitespace-nowrap">{t('accountsPayable.title')}</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -227,7 +227,7 @@ export default function Inputs() {
             <TabsContent value="financial">
               <Card>
                 <CardHeader>
-                  <CardTitle>Lançamento Financeiro</CardTitle>
+                  <CardTitle>{t('daily.financialTitle')}</CardTitle>
                   <CardDescription>
                     {t('cabinet.registerRevenue')}
                   </CardDescription>
@@ -243,9 +243,9 @@ export default function Inputs() {
             <TabsContent value="billing">
               <Card>
                 <CardHeader>
-                  <CardTitle>Faturação</CardTitle>
+                  <CardTitle>{t('daily.billingTitle')}</CardTitle>
                   <CardDescription>
-                    Lançamento de faturas em nome de terceiros
+                    {t('daily.billingDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -259,9 +259,9 @@ export default function Inputs() {
             <TabsContent value="consultations">
               <Card>
                 <CardHeader>
-                  <CardTitle>1.ªs Consultas</CardTitle>
+                  <CardTitle>{t('daily.consultationsTitle')}</CardTitle>
                   <CardDescription>
-                    Acompanhe o desfecho das primeiras consultas.
+                    {t('daily.consultationsDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -275,9 +275,9 @@ export default function Inputs() {
             <TabsContent value="prospecting">
               <Card>
                 <CardHeader>
-                  <CardTitle>Dashboard de Prospecção</CardTitle>
+                  <CardTitle>{t('daily.prospectingTitle')}</CardTitle>
                   <CardDescription>
-                    Contadores diários de leads e agendamentos.
+                    {t('daily.prospectingDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -307,9 +307,9 @@ export default function Inputs() {
             <TabsContent value="serviceTime">
               <Card>
                 <CardHeader>
-                  <CardTitle>Tempo de Atendimento</CardTitle>
+                  <CardTitle>{t('daily.serviceTimeTitle')}</CardTitle>
                   <CardDescription>
-                    Monitorize a pontualidade e motivos de atraso.
+                    {t('daily.serviceTimeDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -323,9 +323,9 @@ export default function Inputs() {
             <TabsContent value="consultationControl">
               <Card>
                 <CardHeader>
-                  <CardTitle>Controle de Consultas</CardTitle>
+                  <CardTitle>{t('daily.consultationControlTitle')}</CardTitle>
                   <CardDescription>
-                    Acompanhe não comparecimentos, remarcações, cancelamentos e marcações de pacientes antigos.
+                    {t('daily.consultationControlDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -339,9 +339,9 @@ export default function Inputs() {
             <TabsContent value="aligners">
               <Card>
                 <CardHeader>
-                  <CardTitle>Alinhadores</CardTitle>
+                  <CardTitle>{t('daily.alignersTitle')}</CardTitle>
                   <CardDescription>
-                    Acompanhe o processo de tratamento com alinhadores.
+                    {t('daily.alignersDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -355,9 +355,9 @@ export default function Inputs() {
             <TabsContent value="orders">
               <Card>
                 <CardHeader>
-                  <CardTitle>Pedidos</CardTitle>
+                  <CardTitle>{t('daily.ordersTitle')}</CardTitle>
                   <CardDescription>
-                    Registre e acompanhe os pedidos aos fornecedores.
+                    {t('daily.ordersDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -371,9 +371,9 @@ export default function Inputs() {
             <TabsContent value="accountsPayable">
               <Card>
                 <CardHeader>
-                  <CardTitle>Contas a Pagar</CardTitle>
+                  <CardTitle>{t('daily.accountsPayableTitle')}</CardTitle>
                   <CardDescription>
-                    Registre as contas a pagar da clínica.
+                    {t('daily.accountsPayableDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

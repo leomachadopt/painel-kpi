@@ -37,8 +37,10 @@ import { ResourcePermissionsGrid } from '@/components/permissions/ResourcePermis
 import { mapLegacyPermissionsToResources, mapResourcePermissionsToLegacy, RESOURCE_PERMISSIONS } from '@/lib/permissionsMapping'
 import { isBrazilClinic } from '@/lib/clinicUtils'
 import useDataStore from '@/stores/useDataStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function Collaborators() {
+  const { t } = useTranslation()
   const { isGestor } = usePermissions()
   const { user, refreshPermissions } = useAuthStore()
   const { getClinic } = useDataStore()
@@ -92,7 +94,7 @@ export default function Collaborators() {
       setCollaborators(data)
     } catch (error) {
       console.error('Failed to load collaborators:', error)
-      toast.error('Erro ao carregar colaboradores')
+      toast.error(t('collaborators.errorLoadingCollaborators'))
     } finally {
       setLoading(false)
     }
@@ -100,19 +102,19 @@ export default function Collaborators() {
 
   const handleCreateCollaborator = async () => {
     if (!createForm.name || !createForm.email || !createForm.password) {
-      toast.error('Preencha todos os campos')
+      toast.error(t('collaborators.fillAllFields'))
       return
     }
 
     try {
       setSubmitting(true)
       await collaboratorsApi.create(createForm)
-      toast.success('Colaborador criado com sucesso')
+      toast.success(t('collaborators.collaboratorCreated'))
       setShowCreateModal(false)
       setCreateForm({ name: '', email: '', password: '' })
       loadCollaborators()
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar colaborador')
+      toast.error(error.message || t('collaborators.errorCreatingCollaborator'))
     } finally {
       setSubmitting(false)
     }
@@ -144,7 +146,7 @@ export default function Collaborators() {
     if (!selectedCollaborator) return
 
     if (!editForm.name || !editForm.email) {
-      toast.error('Preencha todos os campos obrigatórios')
+      toast.error(t('collaborators.fillRequiredFields'))
       return
     }
 
@@ -156,19 +158,19 @@ export default function Collaborators() {
         email: editForm.email,
         active: editForm.active,
       }
-      
+
       if (editForm.password && editForm.password.trim() !== '') {
         updateData.password = editForm.password
       }
-      
+
       await collaboratorsApi.update(selectedCollaborator.id, updateData)
-      toast.success('Colaborador atualizado com sucesso')
+      toast.success(t('collaborators.collaboratorUpdated'))
       setShowEditModal(false)
       setSelectedCollaborator(null)
       setEditForm({ name: '', email: '', active: true, password: '' })
       loadCollaborators()
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao atualizar colaborador')
+      toast.error(error.message || t('collaborators.errorUpdatingCollaborator'))
     } finally {
       setSubmitting(false)
     }
@@ -187,7 +189,7 @@ export default function Collaborators() {
         hasSpecialAccountsPayableAccess,
       } as UserPermissions
       await collaboratorsApi.updatePermissions(selectedCollaborator.id, permissionsWithSpecial)
-      toast.success('Permissões atualizadas com sucesso')
+      toast.success(t('collaborators.permissionsUpdated'))
       setShowPermissionsModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
@@ -197,7 +199,7 @@ export default function Collaborators() {
         await refreshPermissions()
       }
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao atualizar permissões')
+      toast.error(error.message || t('collaborators.errorUpdatingPermissions'))
     } finally {
       setSubmitting(false)
     }
@@ -216,12 +218,12 @@ export default function Collaborators() {
     try {
       setSubmitting(true)
       await collaboratorsApi.delete(selectedCollaborator.id)
-      toast.success('Colaborador removido com sucesso')
+      toast.success(t('collaborators.collaboratorRemoved'))
       setShowDeleteModal(false)
       setSelectedCollaborator(null)
       loadCollaborators()
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao remover colaborador')
+      toast.error(error.message || t('collaborators.errorRemovingCollaborator'))
     } finally {
       setSubmitting(false)
     }
@@ -232,9 +234,9 @@ export default function Collaborators() {
       <div className="p-8">
         <Card>
           <CardHeader>
-            <CardTitle>Acesso Negado</CardTitle>
+            <CardTitle>{t('collaborators.accessDenied')}</CardTitle>
             <CardDescription>
-              Apenas gestores de clínica podem acessar esta página
+              {t('collaborators.onlyManagersAccess')}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -246,22 +248,22 @@ export default function Collaborators() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Colaboradores</h1>
+          <h1 className="text-3xl font-bold">{t('collaborators.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie os colaboradores da clínica e suas permissões
+            {t('collaborators.subtitle')}
           </p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Novo Colaborador
+          {t('collaborators.newCollaborator')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Colaboradores</CardTitle>
+          <CardTitle>{t('collaborators.collaboratorsList')}</CardTitle>
           <CardDescription>
-            Colaboradores com acesso ao sistema
+            {t('collaborators.collaboratorsWithAccess')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -271,16 +273,16 @@ export default function Collaborators() {
             </div>
           ) : collaborators.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
-              Nenhum colaborador cadastrado
+              {t('collaborators.noCollaboratorsRegistered')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>{t('collaborators.name')}</TableHead>
+                  <TableHead>{t('collaborators.email')}</TableHead>
+                  <TableHead>{t('collaborators.status')}</TableHead>
+                  <TableHead className="text-right">{t('collaborators.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -290,7 +292,7 @@ export default function Collaborators() {
                     <TableCell>{collaborator.email}</TableCell>
                     <TableCell>
                       <Badge variant={collaborator.active ? 'default' : 'secondary'}>
-                        {collaborator.active ? 'Ativo' : 'Inativo'}
+                        {collaborator.active ? t('collaborators.active') : t('collaborators.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
@@ -300,7 +302,7 @@ export default function Collaborators() {
                         onClick={() => handleOpenEdit(collaborator)}
                       >
                         <Pencil className="h-4 w-4 mr-1" />
-                        Editar
+                        {t('collaborators.edit')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -308,7 +310,7 @@ export default function Collaborators() {
                         onClick={() => handleOpenPermissions(collaborator)}
                       >
                         <Shield className="h-4 w-4 mr-1" />
-                        Permissões
+                        {t('collaborators.permissions')}
                       </Button>
                       <Button
                         variant="ghost"
@@ -319,7 +321,7 @@ export default function Collaborators() {
                         }}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
-                        Remover
+                        {t('collaborators.remove')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -334,49 +336,49 @@ export default function Collaborators() {
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo Colaborador</DialogTitle>
+            <DialogTitle>{t('collaborators.newCollaborator')}</DialogTitle>
             <DialogDescription>
-              Crie um novo colaborador. Configure as permissões depois.
+              {t('collaborators.createNewCollaboratorDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name">{t('collaborators.name')}</Label>
               <Input
                 id="name"
                 value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                placeholder="Nome completo"
+                placeholder={t('collaborators.fullNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('collaborators.email')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={createForm.email}
                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                placeholder="email@exemplo.com"
+                placeholder={t('collaborators.emailPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">{t('collaborators.password')}</Label>
               <Input
                 id="password"
                 type="password"
                 value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                placeholder="Senha temporária"
+                placeholder={t('collaborators.temporaryPasswordPlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              Cancelar
+              {t('collaborators.cancel')}
             </Button>
             <Button onClick={handleCreateCollaborator} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar
+              {t('collaborators.create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -387,10 +389,10 @@ export default function Collaborators() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>
-              Permissões de {selectedCollaborator?.name}
+              {t('collaborators.permissionsOf')} {selectedCollaborator?.name}
             </DialogTitle>
             <DialogDescription>
-              Configure o que este colaborador pode visualizar e editar. Clique nos sliders para alternar entre Permitido e Negado.
+              {t('collaborators.permissionsDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto pr-2 py-4 space-y-6">
@@ -400,24 +402,24 @@ export default function Collaborators() {
               disabled={submitting}
               resources={filteredResources}
             />
-            
+
             {/* Permissões Especiais */}
             <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold mb-3">Permissões Especiais</h3>
+              <h3 className="text-sm font-semibold mb-3">{t('collaborators.specialPermissions')}</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-2 p-3 rounded-md border bg-muted/30">
                   <Checkbox
                     id="special-accounts-payable"
                     checked={hasSpecialAccountsPayableAccess}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       setHasSpecialAccountsPayableAccess(checked === true)
                     }
                     disabled={submitting}
                   />
                   <Label htmlFor="special-accounts-payable" className="cursor-pointer flex-1">
-                    <div className="font-medium">Acesso Especial a Contas a Pagar</div>
+                    <div className="font-medium">{t('collaborators.specialAccountsPayableAccess')}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Permite acesso exclusivo à visualização e edição de contas a pagar, além da gestora da clínica
+                      {t('collaborators.specialAccountsPayableDescription')}
                     </div>
                   </Label>
                 </div>
@@ -426,11 +428,11 @@ export default function Collaborators() {
           </div>
           <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
             <Button variant="outline" onClick={() => setShowPermissionsModal(false)}>
-              Cancelar
+              {t('collaborators.cancel')}
             </Button>
             <Button onClick={handleSavePermissions} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Permissões
+              {t('collaborators.savePermissions')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -440,64 +442,64 @@ export default function Collaborators() {
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Colaborador</DialogTitle>
+            <DialogTitle>{t('collaborators.editCollaborator')}</DialogTitle>
             <DialogDescription>
-              Atualize as informações do colaborador
+              {t('collaborators.updateCollaboratorInformation')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Nome</Label>
+              <Label htmlFor="edit-name">{t('collaborators.name')}</Label>
               <Input
                 id="edit-name"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder="Nome completo"
+                placeholder={t('collaborators.fullNamePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
+              <Label htmlFor="edit-email">{t('collaborators.email')}</Label>
               <Input
                 id="edit-email"
                 type="email"
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                placeholder="email@exemplo.com"
+                placeholder={t('collaborators.emailPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-password">Nova Senha (opcional)</Label>
+              <Label htmlFor="edit-password">{t('collaborators.newPasswordOptional')}</Label>
               <Input
                 id="edit-password"
                 type="password"
                 value={editForm.password}
                 onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                placeholder="Deixe em branco para manter a senha atual"
+                placeholder={t('collaborators.leaveBlankToKeepCurrentPassword')}
               />
               <p className="text-xs text-muted-foreground">
-                Deixe em branco se não deseja alterar a senha
+                {t('collaborators.leaveBlankIfNotChangingPassword')}
               </p>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="edit-active"
                 checked={editForm.active}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setEditForm({ ...editForm, active: checked === true })
                 }
               />
               <Label htmlFor="edit-active" className="cursor-pointer">
-                Colaborador ativo
+                {t('collaborators.activeCollaborator')}
               </Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditModal(false)}>
-              Cancelar
+              {t('collaborators.cancel')}
             </Button>
             <Button onClick={handleUpdateCollaborator} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Alterações
+              {t('collaborators.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -507,19 +509,19 @@ export default function Collaborators() {
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover Colaborador</DialogTitle>
+            <DialogTitle>{t('collaborators.removeCollaborator')}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja remover <strong>{selectedCollaborator?.name}</strong>?
-              Esta ação não pode ser desfeita.
+              {t('collaborators.confirmRemove')} <strong>{selectedCollaborator?.name}</strong>?
+              {' '}{t('collaborators.actionCannotBeUndone')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              Cancelar
+              {t('collaborators.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteCollaborator} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Remover
+              {t('collaborators.remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean
   login: (email: string, password: string) => Promise<User>
   logout: () => void
+  updateUser: (user: User) => void
   refreshPermissions?: () => Promise<void>
 }
 
@@ -55,6 +56,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser)
+    localStorage.setItem('kpi_user', JSON.stringify(updatedUser))
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('kpi_user')
@@ -70,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         login,
         logout,
+        updateUser,
         refreshPermissions,
       },
     },
@@ -103,6 +110,9 @@ const useAuthStore = () => {
           // Se a API falhar, lançar o erro original
           throw apiError
         }
+      },
+      updateUser: (user: User) => {
+        localStorage.setItem('kpi_user', JSON.stringify(user))
       },
       logout: () => {
         localStorage.removeItem('kpi_user')

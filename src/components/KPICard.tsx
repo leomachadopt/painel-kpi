@@ -17,7 +17,7 @@ interface KPICardProps {
 }
 
 export function KPICard({ kpi }: KPICardProps) {
-  const { formatCurrency, formatNumber } = useTranslation()
+  const { t, formatCurrency, formatNumber } = useTranslation()
   const isPositive = kpi.change > 0
   const isNegative = kpi.change < 0
 
@@ -111,12 +111,12 @@ export function KPICard({ kpi }: KPICardProps) {
             >
               {Math.abs(kpi.change).toFixed(1)}%
             </span>
-            <span className="ml-1">vs mês anterior</span>
+            <span className="ml-1">{t('kpi.vsPreviousMonth')}</span>
           </p>
           {kpi.target !== undefined && (
             <p className="flex items-center text-xs text-muted-foreground mt-0.5">
               <Target className="mr-1.5 h-3 w-3 opacity-60" />
-              Meta:{' '}
+              {t('kpi.target')}{' '}
               <span className="font-medium ml-1">
                 {typeof kpi.target === 'number'
                   ? formatValue(kpi.target, kpi.unit)

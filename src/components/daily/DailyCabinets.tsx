@@ -55,14 +55,14 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
         hoursAvailable: selectedGab?.standardHours || 0,
         ...data,
       })
-      toast.success('Ocupação lançada!')
+      toast.success(t('forms.usagePosted'))
       form.reset({
         date: data.date,
         cabinetId: '',
         hoursUsed: 0,
       })
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao guardar ocupação')
+      toast.error(err?.message || t('forms.errorPostingUsage'))
     }
   }
 
@@ -77,7 +77,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data</FormLabel>
+              <FormLabel>{t('forms.date')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -94,7 +94,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={t('forms.select')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -111,7 +111,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
 
         {selectedGab && (
           <div className="text-sm text-muted-foreground p-2 bg-secondary/20 rounded">
-            Horas Disponíveis Padrão:{' '}
+            {t('forms.standardHoursAvailable')}{' '}
             <strong>{selectedGab.standardHours}h</strong>
           </div>
         )}
@@ -121,7 +121,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
           name="hoursUsed"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Horas Utilizadas (Ocupadas)</FormLabel>
+              <FormLabel>{t('forms.hoursUsed')}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -135,7 +135,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
         />
 
         <Button type="submit" className="w-full">
-          Lançar Utilização
+          {t('forms.submitUsage')}
         </Button>
       </form>
     </Form>

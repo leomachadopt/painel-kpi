@@ -17,7 +17,7 @@ router.post('/login', async (req, res) => {
 
     // In production, use proper password hashing (bcrypt)
     const result = await query(
-      `SELECT id, name, email, role, clinic_id, avatar_url, active
+      `SELECT id, name, email, role, clinic_id, avatar_url, active, language
        FROM users
        WHERE email = $1 AND password_hash = $2`,
       [email, password]
@@ -51,6 +51,7 @@ router.post('/login', async (req, res) => {
         clinicId: user.clinic_id,
         avatarUrl: user.avatar_url,
         active: user.active,
+        language: user.language,
         permissions,
       },
       token,
@@ -74,10 +75,16 @@ router.put('/profile', authMiddleware, async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
-    const { name, email, avatarUrl } = req.body
+    const { name, email, avatarUrl, language } = req.body
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' })
+    }
+
+    // Validate language if provided
+    const validLanguages = ['pt-BR', 'pt-PT', 'it', 'es', 'en', 'fr']
+    if (language !== undefined && language !== null && !validLanguages.includes(language)) {
+      return res.status(400).json({ error: 'Invalid language' })
     }
 
     // Check if email is already in use by another user
@@ -92,14 +99,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
     // Update user
     await query(
       `UPDATE users
-       SET name = $1, email = $2, avatar_url = $3, updated_at = NOW()
-       WHERE id = $4`,
-      [name, email, avatarUrl || null, userId]
+       SET name = $1, email = $2, avatar_url = $3, language = $4, updated_at = NOW()
+       WHERE id = $5`,
+      [name, email, avatarUrl || null, language || null, userId]
     )
 
     // Get updated user
     const result = await query(
-      'SELECT id, name, email, role, clinic_id, avatar_url FROM users WHERE id = $1',
+      'SELECT id, name, email, role, clinic_id, avatar_url, language FROM users WHERE id = $1',
       [userId]
     )
 
@@ -114,6 +121,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
         role: user.role,
         clinicId: user.clinic_id,
         avatarUrl: user.avatar_url,
+        language: user.language,
       },
     })
   } catch (error) {
@@ -204,7 +212,7 @@ router.post('/avatar', authMiddleware, async (req, res) => {
 
     // Get updated user
     const result = await query(
-      'SELECT id, name, email, role, clinic_id, avatar_url FROM users WHERE id = $1',
+      'SELECT id, name, email, role, clinic_id, avatar_url, language FROM users WHERE id = $1',
       [userId]
     )
 
@@ -220,6 +228,7 @@ router.post('/avatar', authMiddleware, async (req, res) => {
         role: user.role,
         clinicId: user.clinic_id,
         avatarUrl: user.avatar_url,
+        language: user.language,
       },
     })
   } catch (error: any) {
@@ -228,10 +237,58 @@ router.post('/avatar', authMiddleware, async (req, res) => {
       message: error.message,
       stack: error.stack,
     })
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to upload avatar',
-      message: error.message 
+      message: error.message
     })
+  }
+})
+
+// Update user language preference
+router.put('/language', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.sub
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    const { language } = req.body
+
+    // Validate language (null is allowed to reset to clinic default)
+    const validLanguages = ['pt-BR', 'pt-PT', 'it', 'es', 'en', 'fr']
+    if (language !== null && !validLanguages.includes(language)) {
+      return res.status(400).json({ error: 'Invalid language' })
+    }
+
+    // Update user language
+    await query(
+      'UPDATE users SET language = $1, updated_at = NOW() WHERE id = $2',
+      [language, userId]
+    )
+
+    // Get updated user
+    const result = await query(
+      'SELECT id, name, email, role, clinic_id, avatar_url, language FROM users WHERE id = $1',
+      [userId]
+    )
+
+    const user = result.rows[0]
+
+    res.json({
+      message: 'Language preference updated successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        clinicId: user.clinic_id,
+        avatarUrl: user.avatar_url,
+        language: user.language,
+      },
+    })
+  } catch (error) {
+    console.error('Update language error:', error)
+    res.status(500).json({ error: 'Failed to update language preference' })
   }
 })
 

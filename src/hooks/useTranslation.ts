@@ -1,22 +1,22 @@
+import { useTranslation as useI18nTranslation } from 'react-i18next'
+import { useLanguage } from './useLanguage'
 import { useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuthStore from '@/stores/useAuthStore'
 import useDataStore from '@/stores/useDataStore'
-import { ptBR } from '@/lib/translations/pt-BR'
-import { ptPT } from '@/lib/translations/pt-PT'
-import type { Clinic } from '@/lib/types'
 
-type Locale = 'PT-BR' | 'PT-PT'
+type Locale = 'PT-BR' | 'PT-PT' | 'pt-BR' | 'pt-PT' | 'es' | 'en' | 'it' | 'fr'
 type TranslationKey = string
 
-const translations = {
-  'PT-BR': ptBR,
-  'PT-PT': ptPT,
-}
-
+/**
+ * Hook de tradução que mantém compatibilidade com a interface antiga
+ * mas usa i18next internamente para suportar multi-idioma
+ */
 export function useTranslation() {
+  const { t: i18nT, i18n } = useI18nTranslation('common')
+  const { language, effectiveLanguage } = useLanguage()
   const { user } = useAuthStore()
-  const { clinics, getClinic } = useDataStore()
+  const { getClinic } = useDataStore()
   const location = useLocation()
 
   // Detectar clínica atual
@@ -31,51 +31,73 @@ export function useTranslation() {
       return getClinic(user.clinicId)
     }
     return null
-  }, [user, location, clinics, getClinic])
+  }, [user, location, getClinic])
 
-  // Detectar locale baseado no país da clínica
+  // Usar o idioma efetivo selecionado pelo usuário em vez do país da clínica
   const locale: Locale = useMemo(() => {
-    return (currentClinic?.country as Locale) || 'PT-BR'
-  }, [currentClinic])
-
-  // Obter tradução
-  const t = (key: TranslationKey): string => {
-    const keys = key.split('.')
-    let value: any = translations[locale]
-
-    for (const k of keys) {
-      value = value?.[k]
-      if (value === undefined) {
-        console.warn(`Translation key "${key}" not found for locale "${locale}"`)
-        return key
-      }
+    // Mapear effectiveLanguage para o formato esperado
+    const languageToLocale: Record<string, Locale> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'es': 'es',
+      'en': 'en',
+      'it': 'it',
+      'fr': 'fr',
     }
+    return languageToLocale[effectiveLanguage] || 'pt-BR'
+  }, [effectiveLanguage])
 
-    return value || key
+  // Wrapper da função t() do i18next
+  const t = (key: TranslationKey): string => {
+    return i18nT(key) || key
   }
 
-  // Formatação de números
+  // Formatação de números baseada no idioma efetivo
   const formatNumber = (value: number): string => {
-    return value.toLocaleString(locale === 'PT-BR' ? 'pt-BR' : 'pt-PT')
+    const localeMap: Record<string, string> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'it': 'it-IT',
+      'es': 'es-ES',
+      'en': 'en-US',
+      'fr': 'fr-FR'
+    }
+    return value.toLocaleString(localeMap[effectiveLanguage] || 'pt-BR')
   }
 
-  // Formatação de moeda
+  // Formatação de moeda baseada no idioma efetivo
   const formatCurrency = (value: number): string => {
-    const currency = locale === 'PT-BR' ? 'BRL' : 'EUR'
-    return new Intl.NumberFormat(
-      locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
-      { style: 'currency', currency }
-    ).format(value)
+    const currencyMap: Record<string, { locale: string; currency: string }> = {
+      'pt-BR': { locale: 'pt-BR', currency: 'BRL' },
+      'pt-PT': { locale: 'pt-PT', currency: 'EUR' },
+      'it': { locale: 'it-IT', currency: 'EUR' },
+      'es': { locale: 'es-ES', currency: 'EUR' },
+      'en': { locale: 'en-US', currency: 'USD' },
+      'fr': { locale: 'fr-FR', currency: 'EUR' }
+    }
+    const config = currencyMap[effectiveLanguage] || currencyMap['pt-BR']
+    return new Intl.NumberFormat(config.locale, {
+      style: 'currency',
+      currency: config.currency
+    }).format(value)
   }
 
-  // Formatação de data
+  // Formatação de data baseada no idioma efetivo
   const formatDate = (date: Date | string, options?: Intl.DateTimeFormatOptions): string => {
     const dateObj = typeof date === 'string' ? new Date(date) : date
     if (isNaN(dateObj.getTime())) {
       return ''
     }
+    const localeMap: Record<string, string> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'it': 'it-IT',
+      'es': 'es-ES',
+      'en': 'en-US',
+      'fr': 'fr-FR'
+    }
     return dateObj.toLocaleDateString(
-      locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
+      localeMap[effectiveLanguage] || 'pt-BR',
       options || { day: '2-digit', month: '2-digit', year: 'numeric' }
     )
   }
@@ -86,8 +108,16 @@ export function useTranslation() {
     if (isNaN(dateObj.getTime())) {
       return ''
     }
+    const localeMap: Record<string, string> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'it': 'it-IT',
+      'es': 'es-ES',
+      'en': 'en-US',
+      'fr': 'fr-FR'
+    }
     return dateObj.toLocaleString(
-      locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
+      localeMap[effectiveLanguage] || 'pt-BR',
       { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
     )
   }
@@ -98,13 +128,21 @@ export function useTranslation() {
     if (isNaN(dateObj.getTime())) {
       return ''
     }
+    const localeMap: Record<string, string> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'it': 'it-IT',
+      'es': 'es-ES',
+      'en': 'en-US',
+      'fr': 'fr-FR'
+    }
     return dateObj.toLocaleString(
-      locale === 'PT-BR' ? 'pt-BR' : 'pt-PT',
-      { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
-        hour: '2-digit', 
+      localeMap[effectiveLanguage] || 'pt-BR',
+      {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
         minute: '2-digit',
         ...(includeSeconds && { second: '2-digit' })
       }
@@ -113,7 +151,15 @@ export function useTranslation() {
 
   // Obter locale string para formatação
   const getLocaleString = (): string => {
-    return locale === 'PT-BR' ? 'pt-BR' : 'pt-PT'
+    const localeMap: Record<string, string> = {
+      'pt-BR': 'pt-BR',
+      'pt-PT': 'pt-PT',
+      'it': 'it-IT',
+      'es': 'es-ES',
+      'en': 'en-US',
+      'fr': 'fr-FR'
+    }
+    return localeMap[effectiveLanguage] || 'pt-BR'
   }
 
   return {
@@ -126,6 +172,8 @@ export function useTranslation() {
     formatDateWithTime,
     getLocaleString,
     currentClinic,
+    // Também retornar o i18n para compatibilidade
+    i18n,
+    language: effectiveLanguage,
   }
 }
-

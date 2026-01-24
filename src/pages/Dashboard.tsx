@@ -248,7 +248,7 @@ export default function Dashboard() {
         <div className="animate-slide-up">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Alertas Críticos ({alerts.length})
+            {t('dashboard.criticalAlerts')} ({alerts.length})
           </h2>
           <div className="grid gap-3">
             {alerts.map((alert) => (
@@ -273,14 +273,14 @@ export default function Dashboard() {
       {canViewAnyDashboardSection && (
         <div>
           <div className="mb-4 flex items-center gap-2">
-            <h2 className="text-xl font-semibold">Indicadores-Chave</h2>
+            <h2 className="text-xl font-semibold">{t('dashboard.keyIndicators')}</h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Monitorização completa dos indicadores de performance da clínica.</p>
+                  <p>{t('dashboard.keyIndicatorsTooltip')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -289,7 +289,7 @@ export default function Dashboard() {
           {/* Financeiro - apenas se tiver permissão */}
           {canViewFinancial && (
             <div className="mb-8 animate-slide-up">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Financeiro</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">{t('dashboard.financial')}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {kpis.filter(k => ['revenue_monthly', 'avg_ticket', 'revenue_per_cabinet', 'aligners_started'].includes(k.id)).map((kpi) => (
                   <KPICard key={kpi.id} kpi={kpi} />
@@ -301,7 +301,7 @@ export default function Dashboard() {
           {/* Comercial - apenas se tiver permissão */}
           {canViewCommercial && (
             <div className="mb-8 animate-slide-up">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Comercial & Vendas</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">{t('dashboard.commercialSales')}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {kpis.filter(k => ['acceptance_rate', 'plans_presented', 'avg_ticket_created', 'avg_ticket_accepted', 'conversion_rate', 'follow_up_rate', 'plans_not_eligible'].includes(k.id)).map((kpi) => (
                   <KPICard key={kpi.id} kpi={kpi} />
@@ -314,7 +314,7 @@ export default function Dashboard() {
           {canViewOperational && (
             <>
               <div className="mb-8 animate-slide-up">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Operacional</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">{t('dashboard.operational')}</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {kpis.filter(k => ['occupancy_rate', 'attendance_rate', 'avg_wait_time', 'integration_rate'].includes(k.id)).map((kpi) => (
                     <KPICard key={kpi.id} kpi={kpi} />
@@ -324,7 +324,7 @@ export default function Dashboard() {
 
               {/* Controle de Consultas - parte do operacional */}
               <div className="mb-8 animate-slide-up">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Controle de Consultas</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">{t('dashboard.consultationControl')}</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {kpis.filter(k => ['no_show', 'rescheduled', 'cancelled', 'old_patient_booking'].includes(k.id)).map((kpi) => (
                     <KPICard key={kpi.id} kpi={kpi} />
@@ -337,7 +337,7 @@ export default function Dashboard() {
           {/* Experiência & Marketing - apenas se tiver permissão */}
           {canViewMarketing && (
             <div className="mb-8 animate-slide-up">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Experiência & Marketing</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">{t('dashboard.experienceMarketing')}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {kpis.filter(k => ['nps', 'referrals', 'leads_total'].includes(k.id)).map((kpi) => (
                   <KPICard key={kpi.id} kpi={kpi} />
@@ -351,7 +351,7 @@ export default function Dashboard() {
       {/* Advanced Charts Section - apenas se tiver permissão para ver pelo menos uma seção */}
       {canViewAnyDashboardSection && monthlyData && (
         <div className="space-y-6 animate-slide-up">
-          <h2 className="text-xl font-semibold">Análise Operacional Detalhada</h2>
+          <h2 className="text-xl font-semibold">{t('dashboard.detailedOperationalAnalysis')}</h2>
           
           {/* Row 1: Financial Overview */}
           {(canViewFinancial || canViewCommercial) && (

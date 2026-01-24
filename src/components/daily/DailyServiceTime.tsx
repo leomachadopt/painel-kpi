@@ -21,6 +21,7 @@ import {
 import useDataStore from '@/stores/useDataStore'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const schema = z.object({
   date: z.string(),
@@ -33,6 +34,7 @@ const schema = z.object({
 })
 
 export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { addServiceTimeEntry } = useDataStore()
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -78,7 +80,7 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data</FormLabel>
+              <FormLabel>{t('forms.date')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -104,11 +106,11 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
           name="doctorId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Médico</FormLabel>
+              <FormLabel>{t('forms.doctor')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={t('forms.select')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -129,7 +131,7 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
             name="scheduledTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Hora Agendada</FormLabel>
+                <FormLabel>{t('forms.scheduledTime')}</FormLabel>
                 <FormControl>
                   <Input type="time" {...field} />
                 </FormControl>
@@ -141,7 +143,7 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
             name="actualStartTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Início Real</FormLabel>
+                <FormLabel>{t('forms.actualStartTime')}</FormLabel>
                 <FormControl>
                   <Input type="time" {...field} />
                 </FormControl>
@@ -155,16 +157,16 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
           name="delayReason"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Motivo Atraso (Se houver)</FormLabel>
+              <FormLabel>{t('forms.delayReason')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Nenhum" />
+                    <SelectValue placeholder={t('forms.delayReasonNone')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="paciente">Paciente</SelectItem>
-                  <SelectItem value="medico">Médico</SelectItem>
+                  <SelectItem value="paciente">{t('forms.delayReasonPatient')}</SelectItem>
+                  <SelectItem value="medico">{t('forms.delayReasonDoctor')}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -172,7 +174,7 @@ export function DailyServiceTime({ clinic }: { clinic: Clinic }) {
         />
 
         <Button type="submit" className="w-full">
-          Lançar Atendimento
+          {t('forms.submitServiceTime')}
         </Button>
       </form>
     </Form>

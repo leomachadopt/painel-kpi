@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Check } from 'lucide-react'
 import { usePatientLookup } from '@/hooks/usePatientLookup'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface PatientCodeInputProps {
   clinicId: string
@@ -24,12 +25,15 @@ export function PatientCodeInput({
   onCodeChange,
   patientName,
   onPatientNameChange,
-  label = 'Código do Paciente',
+  label,
   required = true,
   codeError,
   patientNameError,
-  codeHint = '1 a 6 dígitos',
+  codeHint,
 }: PatientCodeInputProps) {
+  const { t } = useTranslation()
+  const defaultLabel = label || t('forms.patientCode')
+  const defaultCodeHint = codeHint || t('forms.codeHelp')
   const [code, setCode] = useState(value)
   const [patientNotFound, setPatientNotFound] = useState(false)
   const [canAutoCreate, setCanAutoCreate] = useState(true)
@@ -79,7 +83,7 @@ export function PatientCodeInput({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="patient-code">
-            {label} {required && <span className="text-destructive">*</span>}
+            {defaultLabel} {required && <span className="text-destructive">*</span>}
           </Label>
           <div className="relative">
             <Input
@@ -90,7 +94,7 @@ export function PatientCodeInput({
               maxLength={6}
               value={code}
               onChange={handleCodeChange}
-              placeholder="Ex: 1234"
+              placeholder={t('forms.codePlaceholder')}
               className="font-mono text-lg"
               required={required}
               aria-invalid={!!codeError}
@@ -109,12 +113,12 @@ export function PatientCodeInput({
           {codeError ? (
             <p className="text-xs text-destructive mt-1">{codeError}</p>
           ) : (
-            <p className="text-xs text-muted-foreground mt-1">{codeHint}</p>
+            <p className="text-xs text-muted-foreground mt-1">{defaultCodeHint}</p>
           )}
           {patientNotFound && code.length > 0 && !loading && (
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="text-xs text-amber-700">
-                Paciente não encontrado. Preencha o nome para cadastrar automaticamente.
+                {t('forms.patientNotFound')}
               </p>
             </div>
           )}
@@ -122,7 +126,7 @@ export function PatientCodeInput({
 
         <div>
           <Label htmlFor="patient-name">
-            Nome do Paciente {required && <span className="text-destructive">*</span>}
+            {t('forms.patientName')} {required && <span className="text-destructive">*</span>}
           </Label>
           <Input
             id="patient-name"
@@ -136,14 +140,14 @@ export function PatientCodeInput({
               setPatientNotFound(false)
               setCanAutoCreate(true)
             }}
-            placeholder="Nome completo"
+            placeholder={t('forms.patientNamePlaceholder')}
             required={required}
             disabled={patient !== null || loading}
             className={patient ? 'bg-muted' : ''}
             aria-invalid={!!patientNameError}
           />
           {patient && (
-            <p className="text-xs text-green-600 mt-1">✓ Paciente encontrado</p>
+            <p className="text-xs text-green-600 mt-1">{t('forms.patientFound')}</p>
           )}
           {!patient && !loading && patientNameError && (
             <p className="text-xs text-destructive mt-1">{patientNameError}</p>

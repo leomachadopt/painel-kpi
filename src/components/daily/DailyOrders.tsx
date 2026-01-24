@@ -53,7 +53,7 @@ const schema = z.object({
 })
 
 export function DailyOrders({ clinic }: { clinic: Clinic }) {
-  const { formatCurrency } = useTranslation()
+  const { t, formatCurrency } = useTranslation()
   const [lookupLoading, setLookupLoading] = useState(false)
   const [supplierName, setSupplierName] = useState('')
   const [itemNames, setItemNames] = useState<Record<number, string>>({})
@@ -151,8 +151,9 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         requiresPrepayment: data.requiresPrepayment || false,
         invoicePending: data.invoicePending || false,
       })
-      
-      toast.success('Pedido guardado!')
+
+
+      toast.success(t('forms.orderSaved'))
       form.reset({
         date: data.date,
         supplierId: '',
@@ -184,7 +185,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
       setSupplierName('')
       setItemNames({})
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao guardar pedido')
+      toast.error(err?.message || t('forms.errorSavingOrder'))
     }
   }
 
@@ -214,7 +215,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data do Pedido</FormLabel>
+              <FormLabel>{t('forms.orderDate')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -229,7 +230,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             onValueChange={(id) => form.setValue('supplierId', id, { shouldValidate: true })}
             supplierName={supplierName}
             onSupplierNameChange={setSupplierName}
-            label="Fornecedor"
+            label={t('forms.supplier')}
             required
             error={form.formState.errors.supplierId?.message}
           />
@@ -240,11 +241,11 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           name="orderNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número do Pedido (opcional)</FormLabel>
+              <FormLabel>{t('forms.orderNumber')}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="Ex: PO-2024-001"
+                  placeholder={t('forms.orderNumberPlaceholder')}
                 />
               </FormControl>
               <FormMessage />
@@ -255,7 +256,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         {/* Total do Pedido - Visível durante preenchimento */}
         {total > 0 && (
           <div className="flex items-center justify-between p-4 border-2 border-primary/30 rounded-md bg-primary/10 shadow-sm">
-            <span className="text-base font-semibold">Total do Pedido:</span>
+            <span className="text-base font-semibold">{t('forms.orderTotal')}</span>
             <span className="text-2xl font-bold text-primary">
               {formatCurrency(total)}
             </span>
@@ -265,7 +266,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         {/* Itens do Pedido */}
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Itens do Pedido</h3>
+            <h3 className="text-sm font-semibold">{t('forms.orderItems')}</h3>
             <Button
               type="button"
               variant="outline"
@@ -273,7 +274,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
               onClick={() => append({ itemId: '', quantity: 1, unitPrice: null, notes: '' })}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Item
+              {t('forms.addItem')}
             </Button>
           </div>
           
@@ -302,7 +303,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                           onItemNameChange={(name) => {
                             setItemNames((prev) => ({ ...prev, [index]: name }))
                           }}
-                          label="Item"
+                          label={t('forms.item')}
                           required
                           error={form.formState.errors.items?.[index]?.itemId?.message}
                         />
@@ -316,7 +317,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                       name={`items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Quantidade</FormLabel>
+                          <FormLabel>{t('forms.quantity')}</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -337,13 +338,13 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name={`items.${index}.unitPrice`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Preço Unitário (€) - Opcional</FormLabel>
+                          <FormLabel>{t('forms.unitPrice')}</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -366,11 +367,11 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     name={`items.${index}.notes`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Observações do Item (opcional)</FormLabel>
+                        <FormLabel>{t('forms.itemNotes')}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Observações específicas deste item..."
+                            placeholder={t('forms.itemNotesPlaceholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -411,7 +412,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           
           {form.formState.errors.items && (
             <p className="text-xs text-destructive">
-              {form.formState.errors.items.message || 'Pelo menos um item é obrigatório'}
+              {form.formState.errors.items.message || t('forms.atLeastOneItemRequired')}
             </p>
           )}
         </div>
@@ -419,9 +420,9 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         {/* Fases do Pedido - Desabilitadas até aprovação */}
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Fases do Pedido</h3>
+            <h3 className="text-sm font-semibold">{t('forms.orderPhases')}</h3>
             <span className="text-xs text-muted-foreground italic">
-              (Será liberado após aprovação pela gestora)
+              {t('forms.orderPhasesDescription')}
             </span>
           </div>
           
@@ -432,7 +433,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Pedido Solicitado</FormLabel>
+                  <FormLabel>{t('forms.orderRequested')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -448,7 +449,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de solicitação
+                          {t('forms.requestDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -467,7 +468,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Pedido Confirmado</FormLabel>
+                  <FormLabel>{t('forms.orderConfirmed')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -482,7 +483,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de confirmação
+                          {t('forms.confirmationDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -501,7 +502,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Em Produção</FormLabel>
+                  <FormLabel>{t('forms.orderInProduction')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -516,7 +517,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de início de produção
+                          {t('forms.productionStartDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -535,7 +536,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Pronto para Retirada</FormLabel>
+                  <FormLabel>{t('forms.orderReadyForPickup')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -550,7 +551,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de prontidão
+                          {t('forms.readyDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -569,7 +570,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Entregue</FormLabel>
+                  <FormLabel>{t('forms.orderDelivered')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -584,7 +585,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de entrega
+                          {t('forms.deliveryDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -603,7 +604,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Cancelado</FormLabel>
+                  <FormLabel>{t('forms.orderCancelled')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -618,7 +619,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs text-muted-foreground">
-                          Data de cancelamento
+                          {t('forms.cancellationDate')}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
@@ -635,17 +636,17 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
 
         {/* Pagamento Prévio */}
         <div className="flex flex-col gap-4 p-4 border rounded-md bg-muted/20">
-          <h3 className="text-sm font-semibold">Pagamento Prévio</h3>
-          
+          <h3 className="text-sm font-semibold">{t('forms.prepayment')}</h3>
+
           <FormField
             control={form.control}
             name="requiresPrepayment"
             render={({ field }) => (
               <FormItem className="flex items-center justify-between space-y-0">
                 <div className="space-y-0.5">
-                  <FormLabel>Pagamento Prévio Necessário</FormLabel>
+                  <FormLabel>{t('forms.prepaymentRequired')}</FormLabel>
                   <p className="text-xs text-muted-foreground">
-                    Marque se este pedido requer pagamento antes de prosseguir com as fases
+                    {t('forms.prepaymentRequiredDescription')}
                   </p>
                 </div>
                 <FormControl>
@@ -666,9 +667,9 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           render={({ field }) => (
             <FormItem className="flex items-center justify-between space-y-0 p-4 border rounded-md bg-muted/20">
               <div className="space-y-0.5">
-                <FormLabel>Fatura Pendente</FormLabel>
+                <FormLabel>{t('forms.invoicePending')}</FormLabel>
                 <p className="text-xs text-muted-foreground">
-                  Marque se a fatura deste pedido está pendente
+                  {t('forms.invoicePendingDescription')}
                 </p>
               </div>
               <FormControl>
@@ -686,12 +687,12 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
           name="observations"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Observações</FormLabel>
+              <FormLabel>{t('forms.orderObservations')}</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   rows={4}
-                  placeholder="Adicione observações sobre este pedido..."
+                  placeholder={t('forms.orderObservationsPlaceholder')}
                 />
               </FormControl>
               <FormMessage />
@@ -700,7 +701,7 @@ export function DailyOrders({ clinic }: { clinic: Clinic }) {
         />
 
         <Button type="submit" className="w-full">
-          Lançar Pedido
+          {t('forms.submitOrder')}
         </Button>
       </form>
     </Form>

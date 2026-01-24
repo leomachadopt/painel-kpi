@@ -90,7 +90,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data</FormLabel>
+              <FormLabel>{t('forms.date')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -118,11 +118,11 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
             name="categoryId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Categoria</FormLabel>
+                <FormLabel>{t('forms.category')}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
+                      <SelectValue placeholder={t('forms.select')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -169,11 +169,11 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
             name="doctorId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Médico</FormLabel>
+                <FormLabel>{t('forms.doctor')}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione (opcional)" />
+                      <SelectValue placeholder={t('forms.selectOptional')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -193,11 +193,11 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
             name="paymentSourceId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Fonte de Recebimento</FormLabel>
+                <FormLabel>{t('forms.paymentSource')}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione (opcional)" />
+                      <SelectValue placeholder={t('forms.selectOptional')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -234,7 +234,7 @@ export function DailyFinancials({ clinic }: { clinic: Clinic }) {
         />
 
         <Button type="submit" className="w-full">
-          Lançar Receita
+          {t('forms.submitRevenue')}
         </Button>
       </form>
     </Form>

@@ -28,6 +28,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 // --- Revenue Breakdown Chart ---
 export function RevenueChart({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = Object.entries(data.revenueByCategory || {}).map(
     ([name, value]) => ({ name, value }),
   )
@@ -42,7 +43,7 @@ export function RevenueChart({ data }: { data: MonthlyData }) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Receita por Categoria</CardTitle>
+        <CardTitle>{t('charts.revenueByCategory')}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -107,6 +108,7 @@ export function RevenueChart({ data }: { data: MonthlyData }) {
 
 // --- Consultation Funnel Chart (COMPLETE) ---
 export function ConsultationFunnel({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = [
     { name: 'Agendadas', value: data.firstConsultationsScheduled },
     { name: 'Compareceram', value: data.firstConsultationsAttended },
@@ -129,7 +131,7 @@ export function ConsultationFunnel({ data }: { data: MonthlyData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Funil de Vendas Completo</CardTitle>
+        <CardTitle>{t('charts.completeSalesFunnel')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
@@ -164,6 +166,7 @@ export function ConsultationFunnel({ data }: { data: MonthlyData }) {
 
 // --- Prospecting Leads Chart ---
 export function ProspectingChart({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = Object.entries(data.leadsByChannel || {}).map(
     ([channel, count]) => ({ channel, count }),
   )
@@ -178,7 +181,7 @@ export function ProspectingChart({ data }: { data: MonthlyData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Leads por Canal</CardTitle>
+        <CardTitle>{t('charts.leadsByChannel')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
@@ -263,6 +266,7 @@ export function CabinetChart({ data }: { data: MonthlyData }) {
 
 // --- Delays Chart ---
 export function DelaysChart({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = [
     { name: 'Paciente', value: data.delayReasons?.patient || 0 },
     { name: 'Médico', value: data.delayReasons?.doctor || 0 },
@@ -278,7 +282,7 @@ export function DelaysChart({ data }: { data: MonthlyData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Motivos de Atraso</CardTitle>
+        <CardTitle>{t('charts.delayReasons')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-4">
@@ -311,6 +315,7 @@ export function DelaysChart({ data }: { data: MonthlyData }) {
 
 // --- Sources Chart ---
 export function SourcesChart({ data }: { data: MonthlyData }) {
+  const { t } = useTranslation()
   const chartData = Object.entries(data.sourceDistribution || {})
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
@@ -322,7 +327,7 @@ export function SourcesChart({ data }: { data: MonthlyData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Fontes</CardTitle>
+        <CardTitle>{t('charts.topSources')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-sm font-medium text-muted-foreground mb-4">
@@ -395,7 +400,7 @@ export function RevenueEvolutionChart({ monthlyDataList }: { monthlyDataList: Mo
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Evolução Mensal de Receita</CardTitle>
+        <CardTitle>{t('charts.monthlyRevenueEvolution')}</CardTitle>
       </CardHeader>
       <CardContent>
         {hasData ? (
@@ -586,6 +591,7 @@ export function RevenuePerCabinetChart({ data }: { data: MonthlyData }) {
 
 // --- Top Referrers Chart (Ranking de Pacientes que Mais Indicaram) ---
 export function TopReferrersChart({ sourceEntries }: { sourceEntries: any[] }) {
+  const { t } = useTranslation()
   // Count referrals by patient
   const referralCounts: Record<string, { name: string; code: string; count: number }> = {}
 
@@ -613,7 +619,7 @@ export function TopReferrersChart({ sourceEntries }: { sourceEntries: any[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Referenciadores</CardTitle>
+        <CardTitle>{t('charts.topReferrers')}</CardTitle>
         <CardDescription>Pacientes que mais indicaram novos pacientes</CardDescription>
       </CardHeader>
       <CardContent>

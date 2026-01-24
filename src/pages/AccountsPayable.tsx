@@ -61,7 +61,7 @@ export default function AccountsPayable() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { user } = useAuthStore()
   const { canView, canEdit } = usePermissions()
-  const { formatCurrency } = useTranslation()
+  const { formatCurrency, t } = useTranslation()
   const { accountsPayableEntries, updateAccountsPayableEntry, deleteAccountsPayableEntry } = useDataStore()
   const canViewAccountsPayable = canView('canViewAccountsPayable') || canEdit('canEditAccountsPayable')
   const canEditAccountsPayable = canEdit('canEditAccountsPayable')
@@ -90,7 +90,7 @@ export default function AccountsPayable() {
       const data = await dailyEntriesApi.accountsPayable.getAll(clinicId)
       setEntries(data)
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao carregar contas a pagar')
+      toast.error(err.message || t('accountsPayable.errorLoading'))
     } finally {
       setLoading(false)
     }
@@ -98,7 +98,7 @@ export default function AccountsPayable() {
 
   const getStatusBadge = (entry: AccountsPayableEntry) => {
     if (entry.paid) {
-      return { label: 'Paga', variant: 'default' as const, color: 'bg-green-500' }
+      return { label: t('accountsPayable.statusPaid'), variant: 'default' as const, color: 'bg-green-500' }
     }
 
     const today = new Date()
@@ -108,13 +108,13 @@ export default function AccountsPayable() {
     const diffDays = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) {
-      return { label: 'Vencida', variant: 'destructive' as const, color: 'bg-purple-500' }
+      return { label: t('accountsPayable.statusOverdue'), variant: 'destructive' as const, color: 'bg-purple-500' }
     } else if (diffDays === 0) {
-      return { label: 'Vence Hoje', variant: 'destructive' as const, color: 'bg-red-500' }
+      return { label: t('accountsPayable.dueToday'), variant: 'destructive' as const, color: 'bg-red-500' }
     } else if (diffDays <= 7) {
-      return { label: 'Vence em ' + diffDays + ' dias', variant: 'secondary' as const, color: 'bg-yellow-500' }
+      return { label: t('accountsPayable.statusDueInDays').replace('{days}', diffDays.toString()), variant: 'secondary' as const, color: 'bg-yellow-500' }
     } else {
-      return { label: 'Pendente', variant: 'outline' as const, color: 'bg-gray-500' }
+      return { label: t('accountsPayable.statusPending'), variant: 'outline' as const, color: 'bg-gray-500' }
     }
   }
 
@@ -171,7 +171,7 @@ export default function AccountsPayable() {
       setDeleteEntryId(null)
       loadEntries()
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao excluir conta a pagar')
+      toast.error(err?.message || t('accountsPayable.errorDeleting'))
     } finally {
       setDeleting(false)
     }
@@ -189,7 +189,7 @@ export default function AccountsPayable() {
       })
       loadEntries()
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao marcar como paga')
+      toast.error(err?.message || t('accountsPayable.errorMarkingPaid'))
     } finally {
       setMarkingPaidId(null)
     }
@@ -207,14 +207,14 @@ export default function AccountsPayable() {
       })
       loadEntries()
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao marcar como não paga')
+      toast.error(err?.message || t('accountsPayable.errorMarkingUnpaid'))
     } finally {
       setMarkingPaidId(null)
     }
   }
 
   if (!clinicId) {
-    return <div className="p-8">Clínica não encontrada</div>
+    return <div className="p-8">{t('errors.notFound')}</div>
   }
 
   if (!canViewAccountsPayable) {
@@ -222,9 +222,9 @@ export default function AccountsPayable() {
       <div className="flex flex-col gap-6 p-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Contas a Pagar</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('accountsPayable.title')}</h1>
             <p className="text-muted-foreground">
-              Você não tem permissão para visualizar contas a pagar
+              {t('accountsPayable.noPermission')}
             </p>
           </div>
         </div>
@@ -236,18 +236,18 @@ export default function AccountsPayable() {
     <div className="flex flex-col gap-6 p-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Contas a Pagar</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('accountsPayable.title')}</h1>
           <p className="text-muted-foreground">
-            Gerencie as contas a pagar da clínica
+            {t('accountsPayable.manage')}
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Contas a Pagar</CardTitle>
+          <CardTitle>{t('accountsPayable.list')}</CardTitle>
           <CardDescription>
-            {filteredEntries.length} conta{filteredEntries.length !== 1 ? 's' : ''} encontrada{filteredEntries.length !== 1 ? 's' : ''}
+            {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -256,7 +256,7 @@ export default function AccountsPayable() {
               <div className="relative flex-1">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por descrição, fornecedor ou categoria..."
+                  placeholder={t('accountsPayable.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -264,15 +264,15 @@ export default function AccountsPayable() {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filtrar por status" />
+                  <SelectValue placeholder={t('accountsPayable.filterByStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="overdue">Vencidas</SelectItem>
-                  <SelectItem value="today">Vence Hoje</SelectItem>
-                  <SelectItem value="week">Próximos 7 dias</SelectItem>
-                  <SelectItem value="paid">Pagas</SelectItem>
+                  <SelectItem value="all">{t('accountsPayable.all')}</SelectItem>
+                  <SelectItem value="pending">{t('accountsPayable.pending')}</SelectItem>
+                  <SelectItem value="overdue">{t('accountsPayable.overdue')}</SelectItem>
+                  <SelectItem value="today">{t('accountsPayable.dueToday')}</SelectItem>
+                  <SelectItem value="week">{t('accountsPayable.next7Days')}</SelectItem>
+                  <SelectItem value="paid">{t('accountsPayable.paid')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -285,20 +285,20 @@ export default function AccountsPayable() {
           ) : filteredEntries.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma conta a pagar encontrada</p>
+              <p>{t('accountsPayable.noneFound')}</p>
             </div>
           ) : (
             <div className="border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead>{t('accountsPayable.description')}</TableHead>
+                    <TableHead>{t('accountsPayable.supplier')}</TableHead>
+                    <TableHead>{t('accountsPayable.category')}</TableHead>
+                    <TableHead>{t('accountsPayable.amount')}</TableHead>
+                    <TableHead>{t('accountsPayable.dueDate')}</TableHead>
+                    <TableHead>{t('accountsPayable.status')}</TableHead>
+                    <TableHead className="text-right">{t('accountsPayable.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -328,7 +328,7 @@ export default function AccountsPayable() {
                               variant="ghost"
                               size="icon"
                               onClick={() => setViewEntryId(entry.id)}
-                              title="Visualizar Detalhes"
+                              title={t('accountsPayable.viewDetails')}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -338,7 +338,7 @@ export default function AccountsPayable() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => setEditEntryId(entry.id)}
-                                  title="Editar"
+                                  title={t('accountsPayable.edit')}
                                 >
                                   <Edit2 className="h-4 w-4" />
                                 </Button>
@@ -355,7 +355,7 @@ export default function AccountsPayable() {
                                     ) : (
                                       <>
                                         <CheckCircle2 className="h-4 w-4 mr-2" />
-                                        Marcar como Paga
+                                        {t('accountsPayable.markAsPaid')}
                                       </>
                                     )}
                                   </Button>
@@ -372,7 +372,7 @@ export default function AccountsPayable() {
                                     ) : (
                                       <>
                                         <XCircle className="h-4 w-4 mr-2" />
-                                        Marcar como Não Paga
+                                        {t('accountsPayable.markAsUnpaid')}
                                       </>
                                     )}
                                   </Button>
@@ -381,7 +381,7 @@ export default function AccountsPayable() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => setDeleteEntryId(entry.id)}
-                                  title="Excluir"
+                                  title={t('accountsPayable.delete')}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -402,13 +402,13 @@ export default function AccountsPayable() {
       <AlertDialog open={deleteEntryId !== null} onOpenChange={(open) => !open && setDeleteEntryId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>{t('accountsPayable.confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta conta a pagar? Esta ação não pode ser desfeita.
+              {t('accountsPayable.confirmDeleteMessage')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t('accountsPayable.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
@@ -417,10 +417,10 @@ export default function AccountsPayable() {
               {deleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
+                  {t('accountsPayable.deleting')}
                 </>
               ) : (
-                'Excluir'
+                t('accountsPayable.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -32,6 +32,7 @@ import Layout from '@/components/Layout'
 import { AuthProvider } from '@/stores/useAuthStore'
 import { DataProvider } from '@/stores/useDataStore'
 import { queryClient } from '@/lib/queryClient'
+import '@/lib/i18n'
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

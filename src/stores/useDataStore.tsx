@@ -23,7 +23,7 @@ import { getMonth, getYear, parseISO } from 'date-fns'
 import { clinicsApi, dailyEntriesApi, patientsApi, targetsApi } from '@/services/api'
 import { toast } from 'sonner'
 import { useAuth } from './useAuthStore'
-import { ptBR, ptPT } from '@/lib/translations'
+import { ptBR, ptPT, es, en, it, fr } from '@/lib/translations'
 import { isBrazilClinic } from '@/lib/clinicUtils'
 
 interface DataState {
@@ -43,8 +43,8 @@ interface DataState {
     year: number,
   ) => MonthlyData | undefined
   addMonthlyData: (data: MonthlyData) => void
-  calculateKPIs: (clinicId: string, month: number, year: number, locale?: 'PT-BR' | 'PT-PT') => KPI[]
-  calculateAlerts: (clinicId: string, month: number, year: number, locale?: 'PT-BR' | 'PT-PT') => Alert[]
+  calculateKPIs: (clinicId: string, month: number, year: number, locale?: string) => KPI[]
+  calculateAlerts: (clinicId: string, month: number, year: number, locale?: string) => Alert[]
   calculateAlignersAlerts: (clinicId: string) => Alert[]
 
   // Daily Entries Actions
@@ -2181,17 +2181,27 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     month: number,
     year: number,
-    locale: 'PT-BR' | 'PT-PT' = 'PT-BR',
+    locale: string = 'pt-BR',
   ): Alert[] => {
     const current = getMonthlyData(clinicId, month, year)
     const clinic = getClinic(clinicId)
     const targets = getMonthlyTargets(clinicId, month, year)
     if (!current || !clinic) return []
-    
-    // Use clinic country if available, otherwise use passed locale
-    const effectiveLocale = clinic.country || locale
-    const t = effectiveLocale === 'PT-BR' ? ptBR : ptPT
-    
+
+    // Use passed locale (user's selected language) instead of clinic country
+    const effectiveLocale = locale || clinic.country || 'pt-BR'
+    const localeMap: Record<string, typeof ptBR> = {
+      'pt-BR': ptBR,
+      'PT-BR': ptBR,
+      'pt-PT': ptPT,
+      'PT-PT': ptPT,
+      'es': es,
+      'en': en,
+      'it': it,
+      'fr': fr,
+    }
+    const t = localeMap[effectiveLocale] || ptBR
+
     const alerts: Alert[] = []
 
     // 1. Faturação Crítica - usar targets.targetRevenue para consistência com KPI
@@ -2210,8 +2220,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.alignersStarted < clinic.targetAlignersRange.min) {
       alerts.push({
         id: 'aligners',
-        rule: 'Alinhadores',
-        message: `Apenas ${current.alignersStarted} alinhadores iniciados (meta: ${clinic.targetAlignersRange.min}-${clinic.targetAlignersRange.max}). Focar em campanhas de alinhadores.`,
+        rule: t.alerts.aligners,
+        message: t.alerts.alignersMessage(current.alignersStarted, clinic.targetAlignersRange.min, clinic.targetAlignersRange.max),
         severity: 'destructive',
       })
     }
@@ -2224,8 +2234,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (acceptanceRate < targets.targetAcceptanceRate - 10) {
       alerts.push({
         id: 'acceptance_rate',
-        rule: 'Taxa de Aceitação',
-        message: `Taxa de aceitação em ${acceptanceRate.toFixed(0)}% (meta: ${targets.targetAcceptanceRate}%). Agendar treino de apresentação de planos.`,
+        rule: t.alerts.acceptanceRate,
+        message: t.alerts.acceptanceRateMessage(Math.round(acceptanceRate), targets.targetAcceptanceRate),
         severity: 'warning',
       })
     }
@@ -2234,8 +2244,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.leads < targets.targetLeadsRange.min) {
       alerts.push({
         id: 'leads',
-        rule: 'Leads',
-        message: `Apenas ${current.leads} leads no mês (meta: ${targets.targetLeadsRange.min}-${targets.targetLeadsRange.max}). Aumentar investimento em marketing.`,
+        rule: t.alerts.leads,
+        message: t.alerts.leadsMessage(current.leads, targets.targetLeadsRange.min, targets.targetLeadsRange.max),
         severity: 'destructive',
       })
     }
@@ -2248,7 +2258,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       alerts.push({
         id: 'occupancy',
         rule: t.financial.cabinetOccupation,
-        message: `${t.financial.cabinetOccupation} em ${occupancyRate.toFixed(0)}% (meta: ${targets.targetOccupancyRate}%). Otimizar agenda e confirmar presenças.`,
+        message: t.alerts.occupancyMessage(Math.round(occupancyRate), targets.targetOccupancyRate),
         severity: 'warning',
       })
     }
@@ -2257,8 +2267,8 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.nps < targets.targetNPS - 10) {
       alerts.push({
         id: 'nps',
-        rule: 'NPS',
-        message: `NPS em ${current.nps} (meta: ${targets.targetNPS}). Realizar inquérito de satisfação detalhado.`,
+        rule: t.alerts.nps,
+        message: t.alerts.npsMessage(current.nps, targets.targetNPS),
         severity: 'warning',
       })
     }
@@ -2267,7 +2277,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.avgWaitTime > targets.targetWaitTime + 5) {
       alerts.push({
         id: 'wait_time',
-        rule: 'Tempo de Espera',
+        rule: t.alerts.waitTime,
         message: `Tempo médio de ${current.avgWaitTime} min (meta: ≤${targets.targetWaitTime} min). Revisar pontualidade da equipa.`,
         severity: 'warning',
       })
@@ -2277,7 +2287,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     if (current.complaints > targets.targetComplaints) {
       alerts.push({
         id: 'complaints',
-        rule: 'Reclamações',
+        rule: t.alerts.complaints,
         message: `${current.complaints} reclamações no mês (meta: ≤${targets.targetComplaints}). Gestão imediata necessária.`,
         severity: 'destructive',
       })
@@ -2364,7 +2374,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     clinicId: string,
     month: number,
     year: number,
-    locale: 'PT-BR' | 'PT-PT' = 'PT-BR',
+    locale: string = 'pt-BR',
   ): KPI[] => {
     const current = getMonthlyData(clinicId, month, year)
     const previous = getMonthlyData(
@@ -2375,11 +2385,21 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     const clinic = getClinic(clinicId)
     const targets = getMonthlyTargets(clinicId, month, year)
     if (!current || !clinic) return []
-    
-    // Use clinic country if available, otherwise use passed locale
-    const effectiveLocale = clinic.country || locale
-    const t = effectiveLocale === 'PT-BR' ? ptBR : ptPT
-    
+
+    // Use passed locale (user's selected language) instead of clinic country
+    const effectiveLocale = locale || clinic.country || 'pt-BR'
+    const localeMap: Record<string, typeof ptBR> = {
+      'pt-BR': ptBR,
+      'PT-BR': ptBR,
+      'pt-PT': ptPT,
+      'PT-PT': ptPT,
+      'es': es,
+      'en': en,
+      'it': it,
+      'fr': fr,
+    }
+    const t = localeMap[effectiveLocale] || ptBR
+
     const getStatus = (
       v: number,
       t: number,
@@ -2415,7 +2435,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'avg_ticket',
-      name: 'Ticket Médio',
+      name: t.kpis.avgTicket,
       value: avgTicket,
       unit: 'currency',
       change: calcChange(avgTicket, prevAvgTicket),
@@ -2441,7 +2461,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'aligners_started',
-      name: 'Alinhadores Iniciados',
+      name: t.kpis.alignersStarted,
       value: current.alignersStarted,
       unit: 'number',
       change: calcChange(current.alignersStarted, previous?.alignersStarted),
@@ -2467,7 +2487,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'acceptance_rate',
-      name: 'Taxa de Aceitação',
+      name: t.kpis.acceptanceRate,
       value: acceptanceRate,
       unit: 'percent',
       change: acceptanceRate - prevAcceptanceRate,
@@ -2477,7 +2497,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'plans_presented',
-      name: 'Planos Apresentados',
+      name: t.kpis.plansPresented,
       value: plansPresentedTotal,
       unit: 'number',
       change: calcChange(plansPresentedTotal, prevPlansPresentedTotal),
@@ -2499,7 +2519,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'avg_ticket_created',
-      name: 'Ticket Médio - Planos Criados',
+      name: t.kpis.avgTicketPlansCreated,
       value: avgTicketCreated,
       unit: 'currency',
       change: calcChange(avgTicketCreated, prevAvgTicketCreated),
@@ -2515,7 +2535,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'avg_ticket_accepted',
-      name: 'Ticket Médio - Planos Aceites',
+      name: t.kpis.avgTicketPlansAccepted,
       value: avgTicketAccepted,
       unit: 'currency',
       change: calcChange(avgTicketAccepted, prevAvgTicketAccepted),
@@ -2531,7 +2551,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'conversion_rate',
-      name: 'Taxa Conversão Lead→Consulta',
+      name: t.kpis.leadConversionRate,
       value: conversionRate,
       unit: 'percent',
       change: conversionRate - prevConversionRate,
@@ -2547,7 +2567,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'follow_up_rate',
-      name: 'Follow-up Não Aceites',
+      name: t.kpis.followUpNotAccepted,
       value: followUpRate,
       unit: 'percent',
       change: followUpRate - prevFollowUpRate,
@@ -2575,7 +2595,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'plans_not_eligible',
-      name: 'Planos Não-Elegíveis',
+      name: t.kpis.plansNotEligible,
       value: plansNotEligibleCount,
       unit: 'number',
       change: calcChange(plansNotEligibleCount, prevPlansNotEligibleCount),
@@ -2598,7 +2618,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'occupancy_rate',
-      name: 'Taxa de Ocupação',
+      name: t.kpis.occupancyRate,
       value: occupancyRate,
       unit: 'percent',
       change: occupancyRate - prevOccupancyRate,
@@ -2614,7 +2634,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'attendance_rate',
-      name: 'Taxa de Comparência',
+      name: t.kpis.attendanceRate,
       value: attendanceRate,
       unit: 'percent',
       change: attendanceRate - prevAttendanceRate,
@@ -2624,7 +2644,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'avg_wait_time',
-      name: 'Tempo Médio Espera',
+      name: t.kpis.avgWaitTime,
       value: current.avgWaitTime,
       unit: 'time',
       change: calcChange(current.avgWaitTime, previous?.avgWaitTime),
@@ -2640,7 +2660,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       : 0
     kpis.push({
       id: 'integration_rate',
-      name: 'Taxa de Integração',
+      name: t.kpis.integrationRate,
       value: integrationRate,
       unit: 'percent',
       change: integrationRate - prevIntegrationRate,
@@ -2651,7 +2671,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // ===== EXPERIÊNCIA (2 KPIs) =====
     kpis.push({
       id: 'nps',
-      name: 'NPS',
+      name: t.kpis.nps,
       value: current.nps,
       unit: 'number',
       change: current.nps - (previous?.nps || 0),
@@ -2661,7 +2681,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'referrals',
-      name: 'Indicações Espontâneas',
+      name: t.kpis.spontaneousReferrals,
       value: current.referralsSpontaneous,
       unit: 'number',
       change: calcChange(current.referralsSpontaneous, previous?.referralsSpontaneous),
@@ -2675,7 +2695,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     // ===== MARKETING (1 KPI) =====
     kpis.push({
       id: 'leads_total',
-      name: 'Leads Mensais',
+      name: t.kpis.monthlyLeads,
       value: current.leads,
       unit: 'number',
       change: calcChange(current.leads, previous?.leads),
@@ -2694,7 +2714,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
     
     kpis.push({
       id: 'no_show',
-      name: 'Não Comparecimento',
+      name: t.kpis.noShow,
       value: consultationControl.noShow,
       unit: 'number',
       change: calcChange(consultationControl.noShow, prevConsultationControl.noShow),
@@ -2707,7 +2727,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'rescheduled',
-      name: 'Remarcações',
+      name: t.kpis.rescheduled,
       value: consultationControl.rescheduled,
       unit: 'number',
       change: calcChange(consultationControl.rescheduled, prevConsultationControl.rescheduled),
@@ -2720,7 +2740,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'cancelled',
-      name: 'Cancelamentos',
+      name: t.kpis.cancelled,
       value: consultationControl.cancelled,
       unit: 'number',
       change: calcChange(consultationControl.cancelled, prevConsultationControl.cancelled),
@@ -2733,7 +2753,7 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
 
     kpis.push({
       id: 'old_patient_booking',
-      name: 'Marcações (Paciente Antigo)',
+      name: t.kpis.oldPatientBookings,
       value: consultationControl.oldPatientBooking,
       unit: 'number',
       change: calcChange(consultationControl.oldPatientBooking, prevConsultationControl.oldPatientBooking),

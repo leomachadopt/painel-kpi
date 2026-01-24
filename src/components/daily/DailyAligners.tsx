@@ -28,6 +28,7 @@ import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import { dailyEntriesApi } from '@/services/api'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const schema = z.object({
   date: z.string(),
@@ -62,13 +63,14 @@ const schema = z.object({
   observations: z.string().optional(),
 })
 
-export function DailyAligners({ 
-  clinic, 
-  initialCode 
-}: { 
+export function DailyAligners({
+  clinic,
+  initialCode
+}: {
   clinic: Clinic
-  initialCode?: string 
+  initialCode?: string
 }) {
+  const { t } = useTranslation()
   const { addAlignersEntry } = useDataStore()
   const [lookupLoading, setLookupLoading] = useState(false)
   const [loadedCode, setLoadedCode] = useState<string | null>(null)
@@ -305,7 +307,7 @@ export function DailyAligners({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data</FormLabel>
+              <FormLabel>{t('forms.date')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -333,11 +335,11 @@ export function DailyAligners({
           name="alignerBrandId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tipo de Alinhador <span className="text-destructive">*</span></FormLabel>
+              <FormLabel>{t('forms.alignerType')} <span className="text-destructive">*</span></FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de alinhador" />
+                    <SelectValue placeholder={t('forms.selectAlignerType')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -805,12 +807,12 @@ export function DailyAligners({
           name="observations"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Observações</FormLabel>
+              <FormLabel>{t('forms.observations')}</FormLabel>
               <FormControl>
                 <Textarea
                   {...field}
                   rows={4}
-                  placeholder="Adicione observações sobre este alinhador..."
+                  placeholder={t('forms.observationsPlaceholder')}
                 />
               </FormControl>
               <FormMessage />
@@ -819,7 +821,7 @@ export function DailyAligners({
         />
 
         <Button type="submit" className="w-full">
-          Lançar Alinhador
+          {t('forms.submitAligner')}
         </Button>
       </form>
     </Form>

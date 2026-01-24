@@ -43,15 +43,21 @@ import useDataStore from '@/stores/useDataStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useSidebarCounts } from '@/hooks/useSidebarCounts'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useLanguage } from '@/hooks/useLanguage'
 import { isBrazilClinic } from '@/lib/clinicUtils'
+import { Globe } from 'lucide-react'
+import { LANGUAGES, type Language } from '@/lib/i18n'
+import { toast } from 'sonner'
+import { authApi } from '@/services/api'
 
 export function AppSidebar() {
-  const { user, logout } = useAuthStore()
+  const { user, logout, updateUser } = useAuthStore()
   const { clinics, calculateAlignersAlerts } = useDataStore()
   const location = useLocation()
   const { isMobile } = useSidebar()
   const { canEditAnyData, canEdit, canView } = usePermissions()
   const { t } = useTranslation()
+  const { language, userLanguage, clinicLanguage } = useLanguage()
 
   const clinicId = location.pathname.split('/')[2]
   const currentClinic = clinics.find((c) => c.id === clinicId)
@@ -71,24 +77,7 @@ export function AppSidebar() {
   // - Refetch automático a cada 60s (substituindo setInterval)
   // - Retry inteligente em caso de erro
   // ===================================================================
-  const { data: counts, error: countsError, isLoading: countsLoading } = useSidebarCounts(activeClinicId, !!user && !!activeClinicId)
-
-  // DEBUG: Log para identificar problema
-  console.log('🔍 DEBUG Sidebar:', {
-    user: user?.email,
-    role: user?.role,
-    activeClinicId,
-    countsLoading,
-    countsError: countsError ? String(countsError) : null,
-    counts: counts || 'null'
-  })
-
-  if (countsError) {
-    console.error('❌ Erro ao buscar sidebar counts:', countsError)
-  }
-  if (!counts && !countsLoading && user && activeClinicId) {
-    console.warn('⚠️ Sidebar counts não retornou dados:', { user: user?.email, activeClinicId, countsError })
-  }
+  const { data: counts } = useSidebarCounts(activeClinicId, !!user && !!activeClinicId)
 
   // Calcular número de alertas ativos (apenas se tiver permissão para editar alinhadores)
   const alertsCount = activeClinicId && canEdit('canEditAligners')
@@ -104,12 +93,31 @@ export function AppSidebar() {
   const ticketsCount = ticketsAssignedToMe + ticketsOthers
   const accountsPayableCounts = counts?.accountsPayable ?? { overdue: 0, today: 0, week: 0 }
 
-  // DEBUG: Log dos contadores
-  console.log('📊 Contadores extraídos:', {
-    tickets: { assignedToMe: ticketsAssignedToMe, others: ticketsOthers, total: ticketsCount },
-    accountsPayable: accountsPayableCounts,
-    orders: { pending: pendingOrdersCount, paymentPending: paymentPendingOrdersCount }
-  })
+  // Função para mudar idioma
+  const handleLanguageChange = async (newLanguage: Language) => {
+    try {
+      const data = await authApi.updateLanguage(newLanguage)
+      updateUser(data.user)
+      toast.success(t('success.updated'))
+
+      // Recarregar página para aplicar mudanças
+      setTimeout(() => window.location.reload(), 500)
+    } catch (error) {
+      toast.error(t('errors.generic'))
+    }
+  }
+
+  const getLanguageLabel = (lang: Language) => {
+    const labels: Record<Language, string> = {
+      'pt-BR': '🇧🇷 PT',
+      'pt-PT': '🇵🇹 PT',
+      'it': '🇮🇹 IT',
+      'es': '🇪🇸 ES',
+      'en': '🇬🇧 EN',
+      'fr': '🇫🇷 FR'
+    }
+    return labels[lang]
+  }
 
   return (
     <Sidebar 
@@ -490,6 +498,45 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-border/50 bg-white/50 backdrop-blur-sm">
         <SidebarMenu>
+          {/* Language Selector */}
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground transition-all hover:bg-accent/50"
+                >
+                  <Globe className="h-5 w-5" />
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{getLanguageLabel(language)}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {userLanguage ? 'Pessoal' : clinicLanguage ? 'Clínica' : 'Padrão'}
+                    </span>
+                  </div>
+                  <ChevronDown className="ml-auto size-4 opacity-50" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl border-border/50"
+                side={isMobile ? 'bottom' : 'right'}
+                align="end"
+                sideOffset={4}
+              >
+                {LANGUAGES.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang}
+                    onClick={() => handleLanguageChange(lang)}
+                    className={`rounded-lg ${language === lang ? 'bg-accent' : ''}`}
+                  >
+                    <span className="mr-2">{getLanguageLabel(lang)}</span>
+                    {language === lang && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+
+          {/* User Menu */}
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

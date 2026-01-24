@@ -70,6 +70,7 @@ export interface Clinic {
   active: boolean
   lastUpdate?: string
   country?: 'PT-BR' | 'PT-PT'
+  language?: 'pt-BR' | 'pt-PT' | 'it' | 'es' | 'en' | 'fr'
   configuration: ClinicConfiguration
 
   // Deprecated - mantido para compatibilidade, use MonthlyTargets
@@ -558,8 +559,10 @@ export interface User {
   email: string
   role: Role
   clinicId?: string
+  clinic_id?: string
   avatarUrl?: string
   active?: boolean
+  language?: 'pt-BR' | 'pt-PT' | 'it' | 'es' | 'en' | 'fr'
   permissions?: UserPermissions
 }
 

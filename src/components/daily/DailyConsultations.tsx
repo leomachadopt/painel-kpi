@@ -39,11 +39,12 @@ import { toast } from 'sonner'
 import { Clinic, FirstConsultationType, FirstConsultationTypeProcedure } from '@/lib/types'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import { dailyEntriesApi, configApi } from '@/services/api'
+import { useTranslation } from '@/hooks/useTranslation'
 
-const schema = z.object({
+const createSchema = (t: (key: string) => string) => z.object({
   date: z.string(),
-  patientName: z.string().min(1, 'Nome obrigatório'),
-  code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
+  patientName: z.string().min(1, t('forms.nameRequired')),
+  code: z.string().regex(/^\d{1,6}$/, t('forms.codeInvalid')),
   consultationTypeId: z.string().optional(),
   consultationCompleted: z.boolean(),
   consultationCompletedAt: z.string().optional(),
@@ -74,6 +75,7 @@ const schema = z.object({
 })
 
 export function DailyConsultations({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { addConsultationEntry } = useDataStore()
   const [lookupLoading, setLookupLoading] = useState(false)
   const [loadedCode, setLoadedCode] = useState<string | null>(null)
@@ -87,7 +89,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
     proceduresWithoutJustification: string[]
   }>({ incompleteProcedures: [], proceduresWithoutJustification: [] })
 
-
+  const schema = createSchema(t)
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -260,7 +262,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             form.setValue('planNotEligibleReason', '')
             return
           }
-          toast.error(err?.message || 'Erro ao carregar 1.ª consulta')
+          toast.error(err?.message || `${t('forms.errorLoading')} 1.ª consulta`)
         })
         .finally(() => setLookupLoading(false))
     }, 350)
@@ -273,10 +275,10 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
     if (isReferralSource) {
       if (!data.referralName || !data.referralCode) {
         form.setError('referralName', {
-          message: 'Obrigatório para referência',
+          message: t('forms.referralRequired'),
         })
         form.setError('referralCode', {
-          message: 'Obrigatório para referência',
+          message: t('forms.referralRequired'),
         })
         return
       }
@@ -285,7 +287,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
     // Validate consultation completed
     if (data.consultationCompleted) {
       if (!data.consultationTypeId) {
-        toast.error('Selecione o tipo de consulta antes de marcar como realizada')
+        toast.error(t('forms.selectConsultationTypeFirst'))
         return
       }
 
@@ -328,7 +330,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
     // Validate plan not eligible reason
     if (data.planNotEligible && (!data.planNotEligibleReason || data.planNotEligibleReason.trim() === '')) {
       form.setError('planNotEligibleReason', {
-        message: 'Justificativa obrigatória quando plano não-elegível',
+        message: t('forms.planNotEligibleReasonRequired'),
       })
       return
     }
@@ -368,7 +370,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planNotEligibleAt: data.planNotEligible ? data.planNotEligibleAt || null : null,
         planNotEligibleReason: data.planNotEligible ? data.planNotEligibleReason || null : null,
       })
-      toast.success('1.ª consulta guardada!')
+      toast.success(`1.ª consulta ${t('forms.successSaving')}`)
       setLoadedCode(null)
       form.reset({
         date: data.date,
@@ -397,7 +399,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         planNotEligibleReason: '',
       })
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao guardar 1.ª consulta')
+      toast.error(err?.message || `${t('forms.errorSaving')} 1.ª consulta`)
     }
   }
 
@@ -430,7 +432,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data (1.ª consulta)</FormLabel>
+              <FormLabel>{t('forms.dateFirstConsultation')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -447,7 +449,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             onPatientNameChange={(n) =>
               form.setValue('patientName', n, { shouldValidate: true })
             }
-            label="Código"
+            label={t('forms.code')}
             codeError={form.formState.errors.code?.message}
             patientNameError={form.formState.errors.patientName?.message}
           />
@@ -459,11 +461,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           name="sourceId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Fonte de Chegada</FormLabel>
+              <FormLabel>{t('forms.source')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a fonte (opcional)" />
+                    <SelectValue placeholder={t('forms.selectSource')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -485,11 +487,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           name="doctorId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Médico Responsável</FormLabel>
+              <FormLabel>{t('forms.doctor')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || ''}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o médico (opcional)" />
+                    <SelectValue placeholder={t('forms.selectDoctor')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -513,11 +515,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
               name="campaignId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Campanha (Ads)</FormLabel>
+                  <FormLabel>{t('forms.campaign')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a campanha" />
+                        <SelectValue placeholder={t('forms.selectCampaign')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -539,7 +541,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         {isReferralSource && (
           <div className="space-y-4 rounded-md border p-4 bg-blue-50/50 animate-fade-in">
             <h4 className="text-sm font-semibold text-blue-800">
-              Paciente que fez a referência
+              {t('forms.referralPatient')}
             </h4>
             <PatientCodeInput
               clinicId={clinic.id}
@@ -565,11 +567,11 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             name="consultationTypeId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo de Consulta</FormLabel>
+                <FormLabel>{t('forms.consultationType')}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo (opcional)" />
+                      <SelectValue placeholder={t('forms.selectTypeOptional')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -590,7 +592,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             name="consultationCompleted"
             render={({ field }) => (
               <FormItem className="flex items-center justify-between space-y-0">
-                <FormLabel>Consulta Realizada?</FormLabel>
+                <FormLabel>{t('forms.consultationCompleted')}</FormLabel>
                 <FormControl>
                   <Switch
                     checked={field.value}
@@ -761,7 +763,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Plano Criado?</FormLabel>
+                  <FormLabel>{t('forms.planCreated')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -815,7 +817,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Plano Apresentado?</FormLabel>
+                  <FormLabel>{t('forms.planPresented')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -850,7 +852,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel>Plano Aceite?</FormLabel>
+                  <FormLabel>{t('forms.planAccepted')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -908,7 +910,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             render={({ field }) => (
               <div className="space-y-2">
                 <FormItem className="flex items-center justify-between space-y-0">
-                  <FormLabel className="font-semibold">Plano Não-Elegível</FormLabel>
+                  <FormLabel className="font-semibold">{t('forms.planNotEligible')}</FormLabel>
                   <FormControl>
                     <Switch
                       checked={field.value}
@@ -1056,7 +1058,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             form.handleSubmit(onSubmit)()
           }}
         >
-          Lançar Consulta
+          {t('forms.submitConsultation')}
         </Button>
         </form>
       </Form>

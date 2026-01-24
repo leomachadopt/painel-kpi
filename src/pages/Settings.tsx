@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
 import { FirstConsultationTypesSettings } from '@/components/settings/FirstConsultationTypesSettings'
+import { LanguageSettings } from '@/components/settings/LanguageSettings'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -718,6 +719,7 @@ export default function Settings() {
             <TabsTrigger value="targets" className="text-xs sm:text-sm whitespace-nowrap">Metas</TabsTrigger>
             <TabsTrigger value="nps" className="text-xs sm:text-sm whitespace-nowrap">NPS</TabsTrigger>
             <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap">Marketing</TabsTrigger>
+            <TabsTrigger value="language" className="text-xs sm:text-sm whitespace-nowrap">Idioma</TabsTrigger>
           </TabsList>
         </div>
 
@@ -1280,6 +1282,10 @@ export default function Settings() {
 
         <TabsContent value="consultationTypes" className="space-y-6">
           <FirstConsultationTypesSettings clinicId={clinic.id} />
+        </TabsContent>
+
+        <TabsContent value="language" className="space-y-6">
+          <LanguageSettings clinicId={clinic.id} />
         </TabsContent>
       </Tabs>
     </div>

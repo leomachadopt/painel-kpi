@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     try {
       result = await query(`
         SELECT
-          id, name, owner_name, logo_url, active, last_update, country,
+          id, name, owner_name, logo_url, active, last_update, country, language,
           target_revenue, target_aligners_min, target_aligners_max,
           target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
           target_nps, target_integration_rate, target_attendance_rate,
@@ -104,6 +104,7 @@ router.get('/', async (req, res) => {
             active: clinic.active,
             lastUpdate: clinic.last_update,
             country: (clinic as any).country || 'PT-BR',
+            language: (clinic as any).language || 'pt-BR',
             targetRevenue: parseFloat(clinic.target_revenue || '0'),
             targetAlignersRange: {
               min: clinic.target_aligners_min || 0,
@@ -159,6 +160,7 @@ router.get('/', async (req, res) => {
             active: clinic.active,
             lastUpdate: clinic.last_update,
             country: (clinic as any).country || 'PT-BR',
+            language: (clinic as any).language || 'pt-BR',
             targetRevenue: parseFloat(clinic.target_revenue || '0'),
             targetAlignersRange: { min: 0, max: 0 },
             targetAvgTicket: 0,
@@ -623,11 +625,12 @@ router.delete('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { 
-      name, 
-      ownerName, 
+    const {
+      name,
+      ownerName,
       country,
-      npsQuestion 
+      language,
+      npsQuestion
     } = req.body
 
     // Verificar autenticação
@@ -690,6 +693,15 @@ router.put('/:id', async (req, res) => {
         updates.push(`country = $${paramIndex++}`)
         values.push(country)
       }
+    }
+
+    if (language !== undefined) {
+      const validLanguages = ['pt-BR', 'pt-PT', 'it', 'es', 'en', 'fr']
+      if (!validLanguages.includes(language)) {
+        return res.status(400).json({ error: 'Invalid language. Must be one of: pt-BR, pt-PT, it, es, en, fr' })
+      }
+      updates.push(`language = $${paramIndex++}`)
+      values.push(language)
     }
 
     if (npsQuestion !== undefined) {

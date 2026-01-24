@@ -25,33 +25,37 @@ import { usePatientLookup } from '@/hooks/usePatientLookup'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
 import { Separator } from '@/components/ui/separator'
+import { useTranslation } from '@/hooks/useTranslation'
+
+const createBillingSchema = (t: (key: string) => string, billToThirdParty: boolean) => z.object({
+  date: z.string().min(1, t('forms.dateRequired')),
+  patientCode: z.string().regex(/^\d{1,6}$/, t('forms.codeInvalid')),
+  patientName: z.string().min(1, t('forms.nameRequired')),
+  doctorId: z.string().min(1, t('forms.doctorRequired')),
+  value: z.coerce.number().min(0.01, t('forms.valuePositive')),
+  thirdPartyCode: z.string().optional(),
+  thirdPartyName: z.string().optional(),
+}).refine((data) => {
+  // Se "Faturar em nome de 3os" está marcado, validar nome do terceiro
+  if (billToThirdParty) {
+    if (!data.thirdPartyName || data.thirdPartyName.trim() === '') {
+      return false
+    }
+  }
+  return true
+}, {
+  message: t('forms.thirdPartyNameRequired'),
+  path: ['thirdPartyName'],
+})
 
 export function DailyBilling({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { addFinancialEntry } = useDataStore()
   const { patient: foundPatient, lookupByCode } = usePatientLookup()
   const { patient: foundThirdParty, lookupByCode: lookupThirdParty } = usePatientLookup()
   const [billToThirdParty, setBillToThirdParty] = useState(false)
 
-  const schema = z.object({
-    date: z.string().min(1, 'Data obrigatória'),
-    patientCode: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
-    patientName: z.string().min(1, 'Nome do paciente obrigatório'),
-    doctorId: z.string().min(1, 'Médico responsável obrigatório'),
-    value: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
-    thirdPartyCode: z.string().optional(),
-    thirdPartyName: z.string().optional(),
-  }).refine((data) => {
-    // Se "Faturar em nome de 3os" está marcado, validar nome do terceiro
-    if (billToThirdParty) {
-      if (!data.thirdPartyName || data.thirdPartyName.trim() === '') {
-        return false
-      }
-    }
-    return true
-  }, {
-    message: 'Quando faturar em nome de 3os, o nome é obrigatório',
-    path: ['thirdPartyName'],
-  })
+  const schema = createBillingSchema(t, billToThirdParty)
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -113,7 +117,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
     try {
       // Se paciente não existe, será criado automaticamente pelo backend
       if (!foundPatient) {
-        toast.info(`Paciente ${data.patientName} será criado automaticamente`)
+        toast.info(t('forms.patientWillBeCreatedInfo').replace('{name}', data.patientName))
       }
 
       // Usar valores padrão para campos obrigatórios que não são exibidos
@@ -145,7 +149,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
         isBillingEntry: true, // Identificar como fatura da aba de Faturação
       })
 
-      toast.success('Fatura lançada com sucesso!')
+      toast.success(t('forms.invoicePosted'))
 
       // Reset form mantendo data e médico
       form.reset({
@@ -159,7 +163,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
       })
       setBillToThirdParty(false)
     } catch (err: any) {
-      toast.error(err?.message || 'Erro ao lançar fatura')
+      toast.error(err?.message || t('forms.errorPostingInvoice'))
     }
   }
 
@@ -176,7 +180,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data</FormLabel>
+              <FormLabel>{t('forms.date')}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>
@@ -193,7 +197,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
             name="patientCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Código</FormLabel>
+                <FormLabel>{t('forms.code')}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -201,7 +205,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                     inputMode="numeric"
                     pattern="[0-9]{1,6}"
                     maxLength={6}
-                    placeholder="Ex: 1234"
+                    placeholder={t('forms.codePlaceholder')}
                     className="font-mono text-lg"
                     autoFocus
                     onFocus={(e) => e.target.select()}
@@ -212,7 +216,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                   />
                 </FormControl>
                 <FormMessage />
-                <p className="text-xs text-muted-foreground">1 a 6 dígitos</p>
+                <p className="text-xs text-muted-foreground">{t('forms.codeHelp')}</p>
               </FormItem>
             )}
           />
@@ -223,11 +227,11 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
             name="patientName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome do Paciente</FormLabel>
+                <FormLabel>{t('forms.patientName')}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="Nome completo"
+                    placeholder={t('forms.patientNamePlaceholder')}
                     className={foundPatient ? 'bg-muted' : ''}
                     readOnly={foundPatient ? true : false}
                   />
@@ -235,12 +239,12 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                 <FormMessage />
                 {patientCode && !foundPatient && (
                   <p className="text-xs text-amber-600">
-                    Paciente não encontrado. Será criado automaticamente.
+                    {t('forms.patientWillBeCreated')}
                   </p>
                 )}
                 {patientCode && foundPatient && (
                   <p className="text-xs text-green-600">
-                    ✓ Paciente encontrado
+                    {t('forms.patientFound')}
                   </p>
                 )}
               </FormItem>
@@ -256,11 +260,11 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
           name="doctorId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Médico Responsável</FormLabel>
+              <FormLabel>{t('forms.doctor')}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o médico" />
+                    <SelectValue placeholder={t('forms.selectDoctor')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -289,7 +293,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
             htmlFor="billToThirdParty"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            Faturar em nome de 3os?
+            {t('forms.billToThirdParty')}
           </label>
         </div>
 
@@ -302,7 +306,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
               name="thirdPartyCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Código (opcional)</FormLabel>
+                  <FormLabel>{t('forms.codeOptional')}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -310,7 +314,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                       inputMode="numeric"
                       pattern="[0-9]{1,6}"
                       maxLength={6}
-                      placeholder="Ex: 1234"
+                      placeholder={t('forms.codePlaceholder')}
                       className="font-mono text-lg"
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => {
@@ -320,7 +324,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                     />
                   </FormControl>
                   <FormMessage />
-                  <p className="text-xs text-muted-foreground">1 a 6 dígitos</p>
+                  <p className="text-xs text-muted-foreground">{t('forms.codeHelp')}</p>
                 </FormItem>
               )}
             />
@@ -331,11 +335,11 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
               name="thirdPartyName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>{t('forms.thirdPartyName')}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Nome do responsável pela fatura"
+                      placeholder={t('forms.thirdPartyNamePlaceholder')}
                       className={foundThirdParty ? 'bg-muted' : ''}
                       readOnly={foundThirdParty ? true : false}
                     />
@@ -343,12 +347,12 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
                   <FormMessage />
                   {thirdPartyCode && !foundThirdParty && (
                     <p className="text-xs text-amber-600">
-                      Paciente não encontrado. Digite o nome manualmente.
+                      {t('forms.patientNotFoundManual')}
                     </p>
                   )}
                   {thirdPartyCode && foundThirdParty && (
                     <p className="text-xs text-green-600">
-                      ✓ Paciente encontrado
+                      {t('forms.patientFound')}
                     </p>
                   )}
                 </FormItem>
@@ -365,7 +369,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
           name="value"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor (€)</FormLabel>
+              <FormLabel>{t('forms.valueEuro')}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -381,7 +385,7 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
         />
 
         <Button type="submit" className="w-full">
-          Lançar Fatura
+          {t('forms.submitInvoice')}
         </Button>
       </form>
     </Form>

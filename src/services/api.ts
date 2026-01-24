@@ -120,6 +120,12 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  updateLanguage: (language: string | null) =>
+    apiCall<{ message: string; user: any }>('/auth/language', {
+      method: 'PUT',
+      body: JSON.stringify({ language }),
+    }),
 }
 
 // ================================
@@ -154,6 +160,7 @@ export const clinicsApi = {
     ownerName?: string;
     country?: 'PT-BR' | 'PT-PT';
     npsQuestion?: string;
+    language?: 'pt-BR' | 'pt-PT' | 'it' | 'es' | 'en' | 'fr';
   }) =>
     apiCall<{ message: string }>(`/clinics/${clinicId}`, {
       method: 'PUT',

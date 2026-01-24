@@ -122,15 +122,15 @@ export default function Reports() {
 
   const hasAccess = mentorAccess || gestorAccess || colaboradorAccess
 
-  if (!clinic) return <div className="p-8">Clínica não encontrada.</div>
+  if (!clinic) return <div className="p-8">{t('errors.notFound')}</div>
 
   if (!hasAccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
         <Lock className="h-12 w-12 text-destructive opacity-50" />
-        <h1 className="text-2xl font-bold">Acesso Negado</h1>
+        <h1 className="text-2xl font-bold">{t('reports.accessDenied')}</h1>
         <Button onClick={() => navigate(`/relatorios/${user?.clinicId}`)}>
-          Voltar aos meus Relatórios
+          {t('reports.backToReports')}
         </Button>
       </div>
     )
@@ -175,10 +175,10 @@ export default function Reports() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FileText className="h-8 w-8 text-primary" />
-            Relatórios Detalhados
+            {t('reports.title')}
           </h1>
           <p className="text-muted-foreground">
-            Auditoria e conferência de lançamentos diários.
+            {t('reports.subtitle')}.
           </p>
         </div>
 
@@ -229,7 +229,7 @@ export default function Reports() {
                 onClick={setPeriodToday}
                 className="text-xs"
               >
-                Hoje
+                {t('reports.today')}
               </Button>
               <Button
                 variant="outline"
@@ -237,7 +237,7 @@ export default function Reports() {
                 onClick={setPeriodYesterday}
                 className="text-xs"
               >
-                Ontem
+                {t('reports.yesterday')}
               </Button>
               <Button
                 variant="outline"
@@ -245,7 +245,7 @@ export default function Reports() {
                 onClick={setPeriodLastWeek}
                 className="text-xs"
               >
-                Semana Passada
+                {t('reports.lastWeek')}
               </Button>
               <Button
                 variant="outline"
@@ -253,7 +253,7 @@ export default function Reports() {
                 onClick={setPeriodLastMonth}
                 className="text-xs"
               >
-                Mês Passado
+                {t('reports.lastMonth')}
               </Button>
             </div>
           </div>
@@ -265,27 +265,27 @@ export default function Reports() {
           <TabsList className="inline-flex w-full min-w-max flex-wrap gap-1 h-auto p-1">
             {canViewReport('canViewReportFinancial') && (
               <TabsTrigger value="financial" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Financeiro
+                {t('reports.financial')}
               </TabsTrigger>
             )}
             {shouldShowAdvanceInvoice && canViewReport('canViewReportBilling') && (
               <TabsTrigger value="billing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Faturação
+                {t('reports.billing')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportConsultations') && (
               <TabsTrigger value="consultations" className="text-xs sm:text-sm whitespace-nowrap min-w-[100px]">
-                1.ªs Consultas
+                {t('reports.consultations')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportAligners') && (
               <TabsTrigger value="aligners" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Alinhadores
+                {t('reports.aligners')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportProspecting') && (
               <TabsTrigger value="prospecting" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Prospecção
+                {t('reports.prospecting')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportCabinets') && (
@@ -295,22 +295,22 @@ export default function Reports() {
             )}
             {canViewReport('canViewReportServiceTime') && (
               <TabsTrigger value="serviceTime" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Tempos
+                {t('reports.serviceTime')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportSources') && (
               <TabsTrigger value="sources" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Fontes
+                {t('reports.sources')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportConsultationControl') && (
               <TabsTrigger value="consultationControl" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Controle
+                {t('reports.consultationControl')}
               </TabsTrigger>
             )}
             {canViewReport('canViewReportMarketing') && (
               <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
-                Marketing
+                {t('reports.marketing')}
               </TabsTrigger>
             )}
           </TabsList>
@@ -352,7 +352,7 @@ export default function Reports() {
                     className="rounded-r-none"
                   >
                     <LayoutGrid className="h-4 w-4 mr-2" />
-                    Kanban
+                    {t('reports.kanban')}
                   </Button>
                   <Button
                     variant={consultationView === 'table' ? 'default' : 'ghost'}
@@ -361,7 +361,7 @@ export default function Reports() {
                     className="rounded-l-none"
                   >
                     <List className="h-4 w-4 mr-2" />
-                    Tabela
+                    {t('reports.table')}
                   </Button>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function Reports() {
                     className="rounded-r-none"
                   >
                     <LayoutGrid className="h-4 w-4 mr-2" />
-                    Kanban
+                    {t('reports.kanban')}
                   </Button>
                   <Button
                     variant={alignersView === 'table' ? 'default' : 'ghost'}
@@ -402,7 +402,7 @@ export default function Reports() {
                     className="rounded-l-none"
                   >
                     <List className="h-4 w-4 mr-2" />
-                    Tabela
+                    {t('reports.table')}
                   </Button>
                 </div>
               </div>

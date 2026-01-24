@@ -7,6 +7,7 @@ import useDataStore from '@/stores/useDataStore'
 import { dailyEntriesApi } from '@/services/api'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // Mover CounterRow para fora do componente para evitar re-criação
 const CounterRow = memo(({
@@ -48,6 +49,7 @@ const CounterRow = memo(({
 CounterRow.displayName = 'CounterRow'
 
 export function DailyProspecting({ clinic }: { clinic: Clinic }) {
+  const { t } = useTranslation()
   const { saveProspectingEntry, getProspectingEntry } = useDataStore()
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
@@ -157,7 +159,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
   return (
     <div className="space-y-6 max-w-lg">
       <div className="grid gap-2">
-        <Label>Data de Referência</Label>
+        <Label>{t('prospecting.referenceDate')}</Label>
         <Input
           type="date"
           value={date}
@@ -168,40 +170,40 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
 
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">
-          Carregando dados...
+          {t('prospecting.loadingData')}
         </div>
       ) : (
         <>
           <div className="space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
-              Canais (Leads Recebidos)
+              {t('prospecting.channelsTitle')}
             </h3>
             <CounterRow
-              label="Emails"
+              label={t('prospecting.emails')}
               value={counters.email}
               onIncrement={handlers.email.increment}
               onDecrement={handlers.email.decrement}
             />
             <CounterRow
-              label="SMS"
+              label={t('prospecting.sms')}
               value={counters.sms}
               onIncrement={handlers.sms.increment}
               onDecrement={handlers.sms.decrement}
             />
             <CounterRow
-              label="WhatsApp"
+              label={t('prospecting.whatsapp')}
               value={counters.whatsapp}
               onIncrement={handlers.whatsapp.increment}
               onDecrement={handlers.whatsapp.decrement}
             />
             <CounterRow
-              label="Instagram"
+              label={t('prospecting.instagram')}
               value={counters.instagram}
               onIncrement={handlers.instagram.increment}
               onDecrement={handlers.instagram.decrement}
             />
             <CounterRow
-              label="Ligação telefônica"
+              label={t('prospecting.phoneCall')}
               value={counters.phone}
               onIncrement={handlers.phone.increment}
               onDecrement={handlers.phone.decrement}
@@ -210,10 +212,10 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
 
           <div className="space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase">
-              Conversão
+              {t('prospecting.conversionTitle')}
             </h3>
             <CounterRow
-              label="1.ªs Consultas Agendadas"
+              label={t('prospecting.scheduledConsultations')}
               value={counters.scheduled}
               onIncrement={handlers.scheduled.increment}
               onDecrement={handlers.scheduled.decrement}
@@ -221,7 +223,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
           </div>
 
           <Button onClick={handleSave} className="w-full">
-            <Save className="mr-2 h-4 w-4" /> Guardar Totais do Dia
+            <Save className="mr-2 h-4 w-4" /> {t('prospecting.saveDayTotals')}
           </Button>
         </>
       )}
