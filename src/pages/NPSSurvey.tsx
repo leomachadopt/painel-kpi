@@ -142,17 +142,10 @@ export default function NPSSurvey() {
         <Card className="w-full max-w-2xl mx-4">
           <CardContent className="py-20 text-center">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-2">Obrigado!</h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Sua avaliação foi registrada com sucesso.
+            <h2 className="text-3xl font-bold mb-4">Obrigado!</h2>
+            <p className="text-xl text-muted-foreground">
+              Agradecemos pela sua contribuição para que possamos melhorar cada dia mais!
             </p>
-            {selectedScore !== null && (
-              <div className="flex items-center justify-center">
-                <span className="text-5xl font-bold text-gray-800">
-                  {selectedScore}
-                </span>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

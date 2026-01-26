@@ -173,13 +173,37 @@ export function UnifiedBillingTable({
 
   const { formatCurrency } = useTranslation()
 
+  // Função auxiliar para combinar dados de advance e billing para exportação
+  const getAllDataForExport = (): DailyAdvanceInvoiceEntry[] => {
+    // Converter faturas standalone de billingData para o formato DailyAdvanceInvoiceEntry
+    const standaloneBillingEntries: DailyAdvanceInvoiceEntry[] = billingData
+      .filter(entry => entry.isBillingEntry)
+      .map((entry) => ({
+        id: entry.id,
+        date: entry.date,
+        patientName: entry.patientName,
+        code: entry.code,
+        doctorId: entry.doctorId || null,
+        billedToThirdParty: false,
+        thirdPartyCode: null,
+        thirdPartyName: null,
+        value: entry.value,
+        batchNumber: null,
+        batchId: null,
+      }))
+
+    // Combinar com advanceData
+    return [...advanceData, ...standaloneBillingEntries]
+  }
+
   const handleExportExcel = () => {
     if (!startDate || !endDate) {
       toast.error('Período não definido para exportação')
       return
     }
     try {
-      exportAdvanceInvoiceToExcel(advanceData, {
+      const allData = getAllDataForExport()
+      exportAdvanceInvoiceToExcel(allData, {
         clinic,
         startDate,
         endDate,
@@ -196,7 +220,8 @@ export function UnifiedBillingTable({
       return
     }
     try {
-      exportAdvanceInvoiceToPDF(advanceData, {
+      const allData = getAllDataForExport()
+      exportAdvanceInvoiceToPDF(allData, {
         clinic,
         startDate,
         endDate,

@@ -109,7 +109,8 @@ export function createApp() {
         return callback(new Error(`CORS bloqueado para origin: ${origin}`), false)
       },
       credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'authorization'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     }),
   )
 

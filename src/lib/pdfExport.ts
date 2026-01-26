@@ -47,6 +47,57 @@ export function exportFinancialToPDF(
   const doc = new jsPDF('landscape', 'mm', 'a4')
 
   if (reportType === 'financial') {
+    // Preparar dados para o relatório financeiro (agrupado por médico com fontes de pagamento)
+    const getDoctorName = (id: string | null | undefined) => {
+      if (!id) return 'Não especificado'
+      return clinic.configuration.doctors.find((d) => d.id === id)?.name || 'Desconhecido'
+    }
+
+    const getPaymentSourceName = (id: string | null | undefined) => {
+      if (!id) return null
+      return clinic.configuration.paymentSources?.find((ps) => ps.id === id)?.name || null
+    }
+
+    // Obter todas as fontes de pagamento
+    const paymentSourceNames = (clinic.configuration.paymentSources || [])
+      .map((ps) => ps.name)
+      .sort()
+
+    // Agrupar por médico
+    const rowsByDoctor = new Map<string, DailyFinancialEntry[]>()
+    data.forEach((entry) => {
+      const doctorKey = entry.doctorId || 'no-doctor'
+      if (!rowsByDoctor.has(doctorKey)) {
+        rowsByDoctor.set(doctorKey, [])
+      }
+      rowsByDoctor.get(doctorKey)!.push(entry)
+    })
+
+    // Calcular totais
+    const doctorTotals = new Map<string, { total: number; bySource: Record<string, number> }>()
+    rowsByDoctor.forEach((doctorRows, doctorId) => {
+      const total = doctorRows.reduce((sum, row) => sum + row.value, 0)
+      const bySource: Record<string, number> = {}
+      doctorRows.forEach((row) => {
+        const paymentSourceName = getPaymentSourceName(row.paymentSourceId)
+        if (paymentSourceName) {
+          bySource[paymentSourceName] = (bySource[paymentSourceName] || 0) + row.value
+        }
+      })
+      doctorTotals.set(doctorId, { total, bySource })
+    })
+
+    const grandTotal = Array.from(doctorTotals.values()).reduce(
+      (sum, doctorTotal) => sum + doctorTotal.total,
+      0
+    )
+    const grandTotalBySource: Record<string, number> = {}
+    doctorTotals.forEach((doctorTotal) => {
+      Object.entries(doctorTotal.bySource).forEach(([source, value]) => {
+        grandTotalBySource[source] = (grandTotalBySource[source] || 0) + value
+      })
+    })
+
     // Título
     doc.setFontSize(18)
     doc.setTextColor(COLORS.headerText[0], COLORS.headerText[1], COLORS.headerText[2])
@@ -56,77 +107,112 @@ export function exportFinancialToPDF(
 
     // Informações da clínica e período
     doc.setFontSize(10)
-    doc.setTextColor(107, 114, 128) // Cinza
+    doc.setTextColor(107, 114, 128)
     doc.setFillColor(255, 255, 255)
     doc.text(`Clínica: ${clinic.name}`, 14, 22)
     doc.text(`Período: ${formatDate(startDate)} a ${formatDate(endDate)}`, 14, 28)
 
     // Preparar dados da tabela
-    const tableData = data.map((entry) => {
-      const categoryName =
-        clinic.configuration.categories.find((c) => c.id === entry.categoryId)?.name || entry.categoryId
-      const cabinetName =
-        clinic.configuration.cabinets.find((c) => c.id === entry.cabinetId)?.name || entry.cabinetId
+    const tableData: (string | number)[][] = []
 
-      return [
-        entry.date.split('T')[0],
-        entry.patientName,
-        entry.code,
-        categoryName,
-        cabinetName,
-        formatCurrency(entry.value),
+    rowsByDoctor.forEach((doctorRows, doctorId) => {
+      const doctorName = getDoctorName(doctorId === 'no-doctor' ? null : doctorId)
+      const totals = doctorTotals.get(doctorId)!
+
+      doctorRows.forEach((row) => {
+        const paymentSourceName = getPaymentSourceName(row.paymentSourceId)
+        const rowData: (string | number)[] = [
+          doctorName,
+          row.code,
+          row.patientName,
+          formatCurrency(row.value),
+        ]
+
+        paymentSourceNames.forEach((source) => {
+          rowData.push(paymentSourceName === source ? formatCurrency(row.value) : '-')
+        })
+
+        tableData.push(rowData)
+      })
+
+      // Linha de total do médico
+      const totalRow: (string | number)[] = [
+        '',
+        `Total ${doctorName}:`,
+        '',
+        formatCurrency(totals.total),
       ]
+      paymentSourceNames.forEach((source) => {
+        totalRow.push(totals.bySource[source] ? formatCurrency(totals.bySource[source]) : '-')
+      })
+      tableData.push(totalRow)
+
+      // Linha vazia
+      tableData.push(['', '', '', '', ...paymentSourceNames.map(() => '')])
     })
 
-    // Calcular total
-    const total = data.reduce((sum, entry) => sum + entry.value, 0)
+    // Linha de total geral
+    const grandTotalRow: (string | number)[] = [
+      '',
+      'Total Geral:',
+      '',
+      formatCurrency(grandTotal),
+    ]
+    paymentSourceNames.forEach((source) => {
+      grandTotalRow.push(grandTotalBySource[source] ? formatCurrency(grandTotalBySource[source]) : '-')
+    })
+    tableData.push(grandTotalRow)
 
-    // Adicionar linha de total
-    tableData.push([
-      '',
-      '',
-      '',
-      '',
-      'Total:',
-      formatCurrency(total),
-    ])
+    // Criar cabeçalhos
+    const headers = ['Médico', 'Nº', 'Paciente', 'Valor', ...paymentSourceNames]
+
+    // Calcular larguras das colunas dinamicamente
+    const columnStyles: Record<number, any> = {
+      0: { cellWidth: 35 }, // Médico
+      1: { cellWidth: 20 }, // Nº
+      2: { cellWidth: 50 }, // Paciente
+      3: { cellWidth: 30, halign: 'right' }, // Valor
+    }
+
+    // Adicionar colunas de fontes de pagamento
+    const paymentSourceWidth = Math.max(25, (270 - 135) / paymentSourceNames.length) // Distribuir espaço restante
+    paymentSourceNames.forEach((_, index) => {
+      columnStyles[4 + index] = { cellWidth: paymentSourceWidth, halign: 'right' }
+    })
 
     // Criar tabela
     autoTable(doc, {
       startY: 35,
-      head: [['Data', 'Paciente', 'Código', 'Categoria', 'Gabinete', 'Valor']],
+      head: [headers],
       body: tableData,
       theme: 'striped',
       headStyles: {
         fillColor: COLORS.headerBg,
         textColor: COLORS.headerText,
         fontStyle: 'bold',
-        fontSize: 10,
+        fontSize: 9,
       },
       bodyStyles: {
-        fontSize: 9,
-        textColor: [31, 41, 55], // Texto escuro
+        fontSize: 8,
+        textColor: [31, 41, 55],
       },
       alternateRowStyles: {
         fillColor: COLORS.alternateBg,
       },
-      columnStyles: {
-        0: { cellWidth: 25 }, // Data
-        1: { cellWidth: 50 }, // Paciente
-        2: { cellWidth: 25 }, // Código
-        3: { cellWidth: 40 }, // Categoria
-        4: { cellWidth: 30 }, // Gabinete
-        5: { cellWidth: 35, halign: 'right' }, // Valor
-      },
+      columnStyles,
       didParseCell: (data) => {
-        // Estilizar linha de total
-        if (data.row.index === tableData.length - 1) {
-          data.cell.styles.fillColor = COLORS.grandTotalBg
-          data.cell.styles.textColor = COLORS.grandTotalText
-          data.cell.styles.fontStyle = 'bold'
-          if (data.column.index === 4 || data.column.index === 5) {
+        // Estilizar linhas de totais
+        const rowText = String(data.cell.text[0] || '')
+        if (rowText.includes('Total')) {
+          if (rowText.includes('Total Geral')) {
+            data.cell.styles.fillColor = COLORS.grandTotalBg
+            data.cell.styles.textColor = COLORS.grandTotalText
             data.cell.styles.fontSize = 10
+          } else {
+            data.cell.styles.fillColor = COLORS.totalBg
+            data.cell.styles.textColor = COLORS.totalText
           }
+          data.cell.styles.fontStyle = 'bold'
         }
       },
       margin: { top: 35, right: 14, bottom: 14, left: 14 },
