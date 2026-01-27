@@ -65,6 +65,7 @@ export default function Advances() {
   const [editingContract, setEditingContract] = useState<AdvanceContract | null>(null)
   const [showBillingWizard, setShowBillingWizard] = useState(false)
   const [billingContractId, setBillingContractId] = useState<string | null>(null)
+  const [batchToEdit, setBatchToEdit] = useState<any>(null)
   const [showBatchesDialog, setShowBatchesDialog] = useState(false)
   const [selectedContractBatches, setSelectedContractBatches] = useState<any[]>([])
   const [loadingBatches, setLoadingBatches] = useState(false)
@@ -159,6 +160,7 @@ export default function Advances() {
   const handleBillingClose = async () => {
     setShowBillingWizard(false)
     setBillingContractId(null)
+    setBatchToEdit(null)
     loadContracts()
     // Recarregar dados do relatório de fatura de adiantamento
     if (clinicId) {
@@ -196,6 +198,24 @@ export default function Advances() {
       setSelectedBatchDetails(null)
     } finally {
       setLoadingBatchDetails(false)
+    }
+  }
+
+  const handleEditBatch = async (batch: any) => {
+    if (!clinicId) return
+
+    try {
+      const batchDetails = await advancesApi.contracts.getBatchDetails(clinicId, batch.id)
+
+      // Close batches dialog first
+      setShowBatchesDialog(false)
+
+      // Set batch to edit and contract ID, then open wizard
+      setBatchToEdit(batchDetails)
+      setBillingContractId(batchDetails.contractId)
+      setShowBillingWizard(true)
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao carregar detalhes do lote para edição')
     }
   }
 
@@ -429,6 +449,7 @@ export default function Advances() {
           clinicId={clinicId}
           contractId={billingContractId}
           onClose={handleBillingClose}
+          batchToEdit={batchToEdit}
         />
       )}
 
@@ -530,14 +551,24 @@ export default function Advances() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {canBillAdvances && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteBatchClick(batch)}
-                              title="Excluir lote"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditBatch(batch)}
+                                title="Editar lote"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteBatchClick(batch)}
+                                title="Excluir lote"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

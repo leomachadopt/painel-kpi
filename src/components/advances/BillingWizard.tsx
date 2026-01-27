@@ -31,6 +31,24 @@ interface BillingWizardProps {
   clinicId: string
   contractId: string
   onClose: () => void
+  batchToEdit?: {
+    id: string
+    batchNumber: string
+    items: Array<{
+      id: string
+      procedureCode: string
+      procedureDescription: string
+      isPericiable: boolean
+      unitValue: number
+      quantity: number
+      totalValue: number
+      serviceDate: string
+      dependentId: string | null
+      dependentName: string
+    }>
+    dependentId?: string | null
+    dependentName?: string | null
+  }
 }
 
 interface EligibleProcedure {
@@ -78,7 +96,7 @@ interface Person {
   type: string
 }
 
-export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardProps) {
+export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: BillingWizardProps) {
   const [contract, setContract] = useState<AdvanceContract | null>(null)
   const [eligibleProcedures, setEligibleProcedures] = useState<EligibleProcedure[]>([])
   const [billedProcedures, setBilledProcedures] = useState<BilledProcedure[]>([])
@@ -97,6 +115,42 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
   useEffect(() => {
     loadData()
   }, [clinicId, contractId])
+
+  // Load batch items when editing
+  useEffect(() => {
+    if (batchToEdit) {
+      // Load items if batch has items
+      if (batchToEdit.items && batchToEdit.items.length > 0) {
+        const items: SelectedItem[] = batchToEdit.items.map(item => ({
+          procedureId: item.id,
+          procedureCode: item.procedureCode,
+          procedureDescription: item.procedureDescription,
+          isPericiable: item.isPericiable,
+          unitValue: item.unitValue,
+          quantity: item.quantity,
+          totalValue: item.totalValue,
+          dependentId: item.dependentId,
+          dependentName: item.dependentName,
+        }))
+        setSelectedItems(items)
+      }
+
+      // Load target amount (for empty batches)
+      if (batchToEdit.targetAmount) {
+        setTargetAmount(batchToEdit.targetAmount.toString())
+      }
+
+      // Set selected person if batch has dependent
+      if (batchToEdit.dependentId && batchToEdit.dependentName) {
+        setSelectedPerson({
+          id: batchToEdit.dependentId,
+          name: batchToEdit.dependentName,
+          age: null,
+          type: 'DEPENDENT',
+        })
+      }
+    }
+  }, [batchToEdit])
 
   const loadData = async () => {
     setLoading(true)
