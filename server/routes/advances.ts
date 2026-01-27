@@ -660,10 +660,15 @@ router.post('/contracts/:clinicId', async (req, res) => {
   }
 
   try {
-    const { patientId, insuranceProviderId, contractNumber, startDate, endDate, status, notes, dependents } = req.body
+    const { patientId, insuranceProviderId, contractNumber, startDate, endDate, status, notes, dependents, billedToThirdParty, thirdPartyCode, thirdPartyName } = req.body
 
     if (!patientId || !insuranceProviderId) {
       return res.status(400).json({ error: 'Patient and insurance provider are required' })
+    }
+
+    // Validate: if billedToThirdParty is true, thirdPartyName is required
+    if (billedToThirdParty && !thirdPartyName) {
+      return res.status(400).json({ error: 'Nome do terceiro é obrigatório quando faturado para terceiros' })
     }
 
     // Usar data atual se startDate não for fornecido
@@ -673,8 +678,8 @@ router.post('/contracts/:clinicId', async (req, res) => {
 
     // Create contract
     const contractResult = await query(
-      `INSERT INTO advance_contracts (id, clinic_id, patient_id, insurance_provider_id, contract_number, start_date, end_date, status, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO advance_contracts (id, clinic_id, patient_id, insurance_provider_id, contract_number, start_date, end_date, status, notes, billed_to_third_party, third_party_code, third_party_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         contractId,
@@ -686,6 +691,9 @@ router.post('/contracts/:clinicId', async (req, res) => {
         endDate || null,
         status || 'ACTIVE',
         notes?.trim() || null,
+        billedToThirdParty || false,
+        thirdPartyCode?.trim() || null,
+        thirdPartyName?.trim() || null,
       ]
     )
 
@@ -749,10 +757,15 @@ router.put('/contracts/:clinicId/:contractId', async (req, res) => {
   }
 
   try {
-    const { patientId, insuranceProviderId, contractNumber, startDate, endDate, status, notes, dependents } = req.body
+    const { patientId, insuranceProviderId, contractNumber, startDate, endDate, status, notes, dependents, billedToThirdParty, thirdPartyCode, thirdPartyName } = req.body
 
     if (!patientId || !insuranceProviderId) {
       return res.status(400).json({ error: 'Patient and insurance provider are required' })
+    }
+
+    // Validate: if billedToThirdParty is true, thirdPartyName is required
+    if (billedToThirdParty && !thirdPartyName) {
+      return res.status(400).json({ error: 'Nome do terceiro é obrigatório quando faturado para terceiros' })
     }
 
     // Verify contract exists
@@ -771,8 +784,8 @@ router.put('/contracts/:clinicId/:contractId', async (req, res) => {
     // Update contract
     const contractResult = await query(
       `UPDATE advance_contracts
-       SET patient_id = $1, insurance_provider_id = $2, contract_number = $3, start_date = $4, end_date = $5, status = $6, notes = $7
-       WHERE id = $8 AND clinic_id = $9
+       SET patient_id = $1, insurance_provider_id = $2, contract_number = $3, start_date = $4, end_date = $5, status = $6, notes = $7, billed_to_third_party = $8, third_party_code = $9, third_party_name = $10
+       WHERE id = $11 AND clinic_id = $12
        RETURNING *`,
       [
         patientId,
@@ -782,6 +795,9 @@ router.put('/contracts/:clinicId/:contractId', async (req, res) => {
         endDate || null,
         status || 'ACTIVE',
         notes?.trim() || null,
+        billedToThirdParty || false,
+        thirdPartyCode?.trim() || null,
+        thirdPartyName?.trim() || null,
         contractId,
         clinicId,
       ]
@@ -1615,33 +1631,87 @@ router.get('/batches/:clinicId/:batchId', async (req, res) => {
   try {
     const { clinicId, batchId } = req.params
 
-    // Get batch details
-    const batchResult = await query(
-      `SELECT
-        bb.id,
-        bb.batch_number,
-        bb.status,
-        bb.total_amount,
-        bb.target_amount,
-        bb.issued_at,
-        bb.created_at,
-        bb.contract_id,
-        ac.contract_number,
-        p.name as patient_name,
-        ip.name as insurance_provider_name
-       FROM billing_batches bb
-       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
-       INNER JOIN patients p ON ac.patient_id = p.id
-       INNER JOIN insurance_providers ip ON ac.insurance_provider_id = ip.id
-       WHERE bb.id = $1 AND ac.clinic_id = $2`,
-      [batchId, clinicId]
-    )
+    // Get batch details - with backward compatibility for new columns
+    let batchResult
+    try {
+      batchResult = await query(
+        `SELECT
+          bb.id,
+          bb.batch_number,
+          bb.status,
+          bb.total_amount,
+          bb.target_amount,
+          bb.issued_at,
+          bb.created_at,
+          bb.contract_id,
+          bb.dependent_id,
+          bb.dependent_name,
+          ac.contract_number,
+          ac.billed_to_third_party as contract_billed_to_third_party,
+          ac.third_party_code as contract_third_party_code,
+          ac.third_party_name as contract_third_party_name,
+          p.name as patient_name,
+          ip.name as insurance_provider_name
+         FROM billing_batches bb
+         INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+         INNER JOIN patients p ON ac.patient_id = p.id
+         INNER JOIN insurance_providers ip ON ac.insurance_provider_id = ip.id
+         WHERE bb.id = $1 AND ac.clinic_id = $2`,
+        [batchId, clinicId]
+      )
+    } catch (error: any) {
+      console.log('[Get Batch Details] Error with new columns, trying fallback query:', error.message)
+      // Fallback query without new columns
+      batchResult = await query(
+        `SELECT
+          bb.id,
+          bb.batch_number,
+          bb.status,
+          bb.total_amount,
+          bb.target_amount,
+          bb.issued_at,
+          bb.created_at,
+          bb.contract_id,
+          NULL as dependent_id,
+          NULL as dependent_name,
+          ac.contract_number,
+          false as contract_billed_to_third_party,
+          NULL as contract_third_party_code,
+          NULL as contract_third_party_name,
+          p.name as patient_name,
+          ip.name as insurance_provider_name
+         FROM billing_batches bb
+         INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+         INNER JOIN patients p ON ac.patient_id = p.id
+         INNER JOIN insurance_providers ip ON ac.insurance_provider_id = ip.id
+         WHERE bb.id = $1 AND ac.clinic_id = $2`,
+        [batchId, clinicId]
+      )
+    }
 
     if (batchResult.rows.length === 0) {
       return res.status(404).json({ error: 'Batch not found' })
     }
 
     const batch = batchResult.rows[0]
+
+    // Determine if this batch is for a third party
+    const isDependent = batch.dependent_id !== null
+    const contractBilledToThirdParty = batch.contract_billed_to_third_party || false
+    const billedToThirdParty = contractBilledToThirdParty || isDependent
+
+    let thirdPartyCode = null
+    let thirdPartyName = null
+
+    if (contractBilledToThirdParty) {
+      // Contract is billed to a third party (e.g., employer)
+      thirdPartyCode = batch.contract_third_party_code || 'TER'
+      thirdPartyName = batch.contract_third_party_name || null
+    } else if (isDependent) {
+      // Batch is for a dependent
+      thirdPartyCode = 'TER'
+      thirdPartyName = batch.dependent_name || 'Dependente'
+    }
 
     // Get batch items
     const itemsResult = await query(
@@ -1676,6 +1746,9 @@ router.get('/batches/:clinicId/:batchId', async (req, res) => {
       contractNumber: batch.contract_number,
       patientName: batch.patient_name,
       insuranceProviderName: batch.insurance_provider_name,
+      billedToThirdParty,
+      thirdPartyCode,
+      thirdPartyName,
       items: itemsResult.rows.map(item => ({
         id: item.id,
         procedureCode: item.procedure_code,
@@ -2443,9 +2516,12 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
   }
 
   try {
-    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount } = req.body
+    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName } = req.body
 
-    console.log(`[Billing Manual] Received request for contract ${contractId} with ${items?.length || 0} items`)
+    console.log(`[Billing Manual] Received request for contract ${contractId} with ${items?.length || 0} items`, {
+      dependentId,
+      dependentName,
+    })
 
     if (!items || !Array.isArray(items)) {
       return res.status(400).json({ error: 'Items must be an array (can be empty)' })
@@ -2570,8 +2646,9 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
     await query(
       `INSERT INTO billing_batches (
         id, contract_id, batch_number, target_amount, target_periciable_amount,
-        total_amount, total_periciable_amount, status, issued_at, created_by, doctor_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8, $9)`,
+        total_amount, total_periciable_amount, status, issued_at, created_by, doctor_id,
+        dependent_id, dependent_name
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8, $9, $10, $11)`,
       [
         batchId,
         contractId,
@@ -2582,13 +2659,24 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
         totalPericiable,
         userId,
         doctorId,
+        dependentId || null,
+        dependentName || null,
       ]
     )
 
     // Create billing items
     for (const item of items) {
       const itemId = `item-${batchId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-      
+
+      // Debug log
+      console.log(`[Billing Manual] Creating item:`, {
+        procedureCode: item.procedureCode,
+        dependentId: item.dependentId,
+        dependentIdType: typeof item.dependentId,
+        dependentIdIsNull: item.dependentId === null,
+        dependentIdIsUndefined: item.dependentId === undefined,
+      })
+
       // Get procedure details
       const procResult = await query(
         `SELECT provider_code, provider_description, is_periciable, max_value

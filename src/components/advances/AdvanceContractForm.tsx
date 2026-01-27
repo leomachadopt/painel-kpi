@@ -35,6 +35,7 @@ import { toast } from 'sonner'
 import { AdvanceContract, ContractDependent, DependentRelationship } from '@/lib/types'
 import { Plus, X, Loader2, Check } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Checkbox } from '@/components/ui/checkbox'
 
 // Schema dinâmico baseado se é criação ou edição
 const createSchema = (isEdit: boolean) => z.object({
@@ -46,7 +47,19 @@ const createSchema = (isEdit: boolean) => z.object({
     ? z.coerce.number().min(0, 'Valor deve ser maior ou igual a zero').optional()
     : z.coerce.number().min(0.01, 'Valor da fatura de adiantamento é obrigatório'),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CANCELLED', 'EXPIRED']),
+  billedToThirdParty: z.boolean().optional(),
+  thirdPartyCode: z.string().optional(),
+  thirdPartyName: z.string().optional(),
   notes: z.string().optional(),
+}).refine((data) => {
+  // Se billedToThirdParty for true, thirdPartyName é obrigatório
+  if (data.billedToThirdParty && !data.thirdPartyName) {
+    return false
+  }
+  return true
+}, {
+  message: 'Nome do terceiro é obrigatório quando faturado para terceiros',
+  path: ['thirdPartyName'],
 })
 
 interface AdvanceContractFormProps {
@@ -79,6 +92,9 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
       contractNumber: contract?.contractNumber || '',
       advanceAmount: contract?.totalAdvanced || undefined,
       status: (contract?.status as any) || 'ACTIVE',
+      billedToThirdParty: (contract as any)?.billedToThirdParty || false,
+      thirdPartyCode: (contract as any)?.thirdPartyCode || '',
+      thirdPartyName: (contract as any)?.thirdPartyName || '',
       notes: contract?.notes || '',
     },
   })
@@ -362,6 +378,9 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
         startDate: new Date().toISOString().split('T')[0], // Data atual como padrão
         endDate: null,
         status: data.status,
+        billedToThirdParty: data.billedToThirdParty || false,
+        thirdPartyCode: data.thirdPartyCode || null,
+        thirdPartyName: data.thirdPartyName || null,
         notes: data.notes || null,
         dependents: dependents
           .filter((d) => d.name && d.name.trim())
@@ -608,6 +627,64 @@ export function AdvanceContractForm({ clinicId, contract, onClose }: AdvanceCont
                   </FormItem>
                 )}
               />
+            </div>
+
+            <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+              <FormField
+                control={form.control}
+                name="billedToThirdParty"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={saving}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm">
+                        Faturado em nome de terceiros (empresa, entidade, etc.)
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Marque se o contrato será faturado para uma empresa ou entidade que não seja o paciente titular
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('billedToThirdParty') && (
+                <div className="grid grid-cols-2 gap-3 pl-7">
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Código do Terceiro</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ex: CNPJ, código interno" disabled={saving} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Nome do Terceiro *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ex: Empresa XPTO Ltda" disabled={saving} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
             <div>

@@ -325,8 +325,24 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       dependentName: person.name,
     }
 
+    console.error('[BillingWizard] Adding procedure:', {
+      procedure: procedure.procedureDescription,
+      personId,
+      personName: person.name,
+      personType: person.type,
+      dependentId: newItem.dependentId,
+      dependentName: newItem.dependentName,
+      isDependent: personId !== null,
+    })
+
     setSelectedItems([...selectedItems, newItem])
-    toast.success(`${procedure.procedureDescription} adicionado para ${person.name}`)
+
+    // Show different toast based on person type
+    if (personId === null) {
+      toast.success(`${procedure.procedureDescription} adicionado para TITULAR`)
+    } else {
+      toast.success(`${procedure.procedureDescription} adicionado para DEPENDENTE: ${person.name}`)
+    }
   }
 
   const handleRemoveItem = (index: number) => {
@@ -361,7 +377,15 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
 
     setCreating(true)
     try {
-      console.log('[BillingWizard] Creating batch with', selectedItems.length, 'items')
+      console.error('[BillingWizard] Creating batch with', selectedItems.length, 'items')
+      console.error('[BillingWizard] Items to send:', JSON.stringify(selectedItems.map(item => ({
+        procedure: item.procedureDescription,
+        dependentId: item.dependentId,
+        dependentName: item.dependentName,
+      })), null, 2))
+
+      // Alert para garantir que vemos
+      alert(`Criando lote com ${selectedItems.length} itens. Veja o console (F12) para detalhes.`)
 
       const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
         items: selectedItems.map(item => ({
@@ -397,6 +421,11 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
       return
     }
 
+    if (!selectedPerson) {
+      toast.error('Selecione para quem será o lote vazio')
+      return
+    }
+
     // Check if target amount exceeds available balance
     const targetValue = parseFloat(targetAmount)
     const availableBalance = contract?.balanceToBill || 0
@@ -419,13 +448,16 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
     setCreating(true)
     try {
       const amount = parseFloat(targetAmount)
-      console.log('[BillingWizard] Creating empty batch (no procedures) with target amount:', amount)
+
+      console.log('[BillingWizard] Creating empty batch (no procedures) with target amount:', amount, 'for person:', selectedPerson.name)
 
       const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
         items: [],
         targetAmount: amount,
         serviceDate: new Date().toISOString().split('T')[0],
         doctorId: doctorId,
+        dependentId: selectedPerson.id,
+        dependentName: selectedPerson.name,
       })
 
       console.log('[BillingWizard] Empty batch created successfully:', result.batchNumber)
@@ -601,6 +633,7 @@ export function BillingWizard({ clinicId, contractId, onClose }: BillingWizardPr
                 </SelectContent>
               </Select>
             </div>
+
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <Label>Valor Alvo do Lote (€)</Label>

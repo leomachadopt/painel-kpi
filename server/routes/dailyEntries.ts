@@ -4278,54 +4278,150 @@ router.get('/advance-invoice/:clinicId', async (req, res) => {
     // Get billing batches (lotes) issued/paid for this clinic
     // Group items by person (dependent_id) within each batch
     // IMPORTANT: Uses LEFT JOIN on billing_items to include empty batches (batches with no items)
-    const batchesResult = await query(
-      `SELECT
-        bb.id as batch_id,
-        bb.batch_number,
-        bb.doctor_id,
-        bb.issued_at,
-        bb.contract_id,
-        bb.total_amount,
-        ac.patient_id,
-        p.code as patient_code,
-        p.name as patient_name,
-        bi.dependent_id,
-        cd.name as dependent_name,
-        COALESCE(SUM(bi.total_value), bb.total_amount) as total_value
-       FROM billing_batches bb
-       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
-       INNER JOIN patients p ON ac.patient_id = p.id
-       LEFT JOIN billing_items bi ON bb.id = bi.batch_id AND bi.status != 'REMOVED'
-       LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
-       WHERE ac.clinic_id = $1
-         AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')
-       GROUP BY bb.id, bb.batch_number, bb.doctor_id, bb.issued_at, bb.contract_id,
-                bb.total_amount, ac.patient_id, p.code, p.name, bi.dependent_id, cd.name
-       ORDER BY bb.issued_at DESC`,
-      [clinicId]
-    )
+    // Check if third party columns exist (for backward compatibility)
+    let batchesResult
+    try {
+      batchesResult = await query(
+        `WITH batch_items_grouped AS (
+          SELECT
+            bi.batch_id,
+            bi.dependent_id,
+            cd.name as dependent_name,
+            cd.relationship as dependent_relationship,
+            SUM(bi.total_value) as total_value
+          FROM billing_items bi
+          LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
+          WHERE bi.status != 'REMOVED'
+          GROUP BY bi.batch_id, bi.dependent_id, cd.name, cd.relationship
+        )
+        SELECT
+          bb.id as batch_id,
+          bb.batch_number,
+          bb.doctor_id,
+          bb.issued_at,
+          bb.contract_id,
+          bb.total_amount,
+          ac.patient_id,
+          COALESCE(ac.billed_to_third_party, false) as contract_billed_to_third_party,
+          ac.third_party_code as contract_third_party_code,
+          ac.third_party_name as contract_third_party_name,
+          p.code as patient_code,
+          p.name as patient_name,
+          -- Se o lote tem dependent_id próprio (lote vazio), usa ele; senão usa dos itens
+          COALESCE(bb.dependent_id, big.dependent_id, NULL) as dependent_id,
+          COALESCE(bb.dependent_name, big.dependent_name, NULL) as dependent_name,
+          big.dependent_relationship,
+          COALESCE(big.total_value, bb.total_amount) as total_value
+         FROM billing_batches bb
+         INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+         INNER JOIN patients p ON ac.patient_id = p.id
+         LEFT JOIN batch_items_grouped big ON bb.id = big.batch_id
+         WHERE ac.clinic_id = $1
+           AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')
+         ORDER BY bb.issued_at DESC, big.dependent_id NULLS FIRST`,
+        [clinicId]
+      )
+    } catch (thirdPartyError) {
+      // If the query fails (likely because third party columns don't exist yet), try without them
+      console.log('[Advance Invoice Report] Third party columns not found, using fallback query')
+      batchesResult = await query(
+        `WITH batch_items_grouped AS (
+          SELECT
+            bi.batch_id,
+            bi.dependent_id,
+            cd.name as dependent_name,
+            cd.relationship as dependent_relationship,
+            SUM(bi.total_value) as total_value
+          FROM billing_items bi
+          LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
+          WHERE bi.status != 'REMOVED'
+          GROUP BY bi.batch_id, bi.dependent_id, cd.name, cd.relationship
+        )
+        SELECT
+          bb.id as batch_id,
+          bb.batch_number,
+          bb.doctor_id,
+          bb.issued_at,
+          bb.contract_id,
+          bb.total_amount,
+          ac.patient_id,
+          false as contract_billed_to_third_party,
+          NULL as contract_third_party_code,
+          NULL as contract_third_party_name,
+          p.code as patient_code,
+          p.name as patient_name,
+          -- Se o lote tem dependent_id próprio (lote vazio), usa ele; senão usa dos itens
+          COALESCE(bb.dependent_id, big.dependent_id, NULL) as dependent_id,
+          COALESCE(bb.dependent_name, big.dependent_name, NULL) as dependent_name,
+          big.dependent_relationship,
+          COALESCE(big.total_value, bb.total_amount) as total_value
+         FROM billing_batches bb
+         INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+         INNER JOIN patients p ON ac.patient_id = p.id
+         LEFT JOIN batch_items_grouped big ON bb.id = big.batch_id
+         WHERE ac.clinic_id = $1
+           AND bb.status IN ('ISSUED', 'PAID', 'PARTIALLY_PAID')
+         ORDER BY bb.issued_at DESC, big.dependent_id NULLS FIRST`,
+        [clinicId]
+      )
+    }
     
     console.log(`[Advance Invoice Report] Found ${batchesResult.rows.length} batch groups for clinic ${clinicId}`)
+
+    // Debug: Log all rows to see what's being returned
+    console.log('[Advance Invoice Report] Sample rows:', JSON.stringify(batchesResult.rows.slice(0, 3), null, 2))
 
     // Convert batches to DailyAdvanceInvoiceEntry format
     const batchEntries = batchesResult.rows.map((row) => {
       const isDependent = row.dependent_id !== null
+      const contractBilledToThirdParty = row.contract_billed_to_third_party || false
+
+      // Debug log - sempre logar para ver o que está vindo
+      console.log(`[Advance Invoice] Processing row:`, {
+        batch_id: row.batch_id,
+        dependent_id: row.dependent_id,
+        dependent_name: row.dependent_name,
+        patient_name: row.patient_name,
+        isDependent,
+      })
+
       // Convert issued_at timestamp to date string
       let dateStr = new Date().toISOString().split('T')[0]
       if (row.issued_at) {
         const issuedDate = new Date(row.issued_at)
         dateStr = issuedDate.toISOString().split('T')[0]
       }
-      
+
+      // Determine if this entry should be marked as billed to third party
+      // It's a third party if:
+      // 1. The contract itself is billed to a third party (e.g., employer), OR
+      // 2. It's a dependent (family member of the titular)
+      const billedToThirdParty = contractBilledToThirdParty || isDependent
+
+      // Determine the third party code and name
+      let thirdPartyCode = null
+      let thirdPartyName = null
+
+      if (contractBilledToThirdParty) {
+        // If contract is billed to third party, use contract's third party info
+        thirdPartyCode = row.contract_third_party_code || 'TER'
+        thirdPartyName = row.contract_third_party_name || null
+      } else if (isDependent) {
+        // If it's a dependent, show dependent name in third party name
+        // (so it appears in the "Nome" column, not as patient name)
+        thirdPartyCode = 'TER'
+        thirdPartyName = row.dependent_name || 'Dependente (nome não especificado)'
+      }
+
       return {
         id: `batch-${row.batch_id}-${row.dependent_id || 'titular'}`,
         date: dateStr,
-        patientName: isDependent ? row.dependent_name : row.patient_name,
-        code: row.patient_code, // Always use patient code
+        patientName: row.patient_name, // Always use titular's name as patient name
+        code: row.patient_code, // Always use patient code (titular's code)
         doctorId: row.doctor_id || null,
-        billedToThirdParty: isDependent, // True if it's a dependent
-        thirdPartyCode: isDependent ? null : null, // Dependents don't have separate codes
-        thirdPartyName: isDependent ? row.dependent_name : null,
+        billedToThirdParty,
+        thirdPartyCode,
+        thirdPartyName,
         value: parseFloat(row.total_value || '0'),
         batchNumber: row.batch_number || null, // Número do lote
         batchId: row.batch_id || null, // ID do lote
@@ -4366,6 +4462,9 @@ router.post('/advance-invoice/:clinicId', async (req, res) => {
     const entryId =
       id || `advance-invoice-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
+    // Se for faturado para terceiros e não tiver código, usar 'TER'
+    const finalThirdPartyCode = billedToThirdParty ? (thirdPartyCode || 'TER') : null
+
     const result = await query(
       `INSERT INTO daily_advance_invoice_entries
        (id, clinic_id, date, patient_name, code, doctor_id, billed_to_third_party, third_party_code, third_party_name, value)
@@ -4379,7 +4478,7 @@ router.post('/advance-invoice/:clinicId', async (req, res) => {
         code,
         doctorId || null,
         billedToThirdParty || false,
-        thirdPartyCode || null,
+        finalThirdPartyCode,
         thirdPartyName || null,
         value,
       ]
@@ -4445,10 +4544,13 @@ router.put('/advance-invoice/:clinicId/:entryId', async (req, res) => {
       return res.status(404).json({ error: 'Entry not found' })
     }
 
+    // Se for faturado para terceiros e não tiver código, usar 'TER'
+    const finalThirdPartyCode = billedToThirdParty ? (thirdPartyCode || 'TER') : null
+
     // Update entry
     const result = await query(
       `UPDATE daily_advance_invoice_entries
-       SET date = $1, patient_name = $2, code = $3, doctor_id = $4, 
+       SET date = $1, patient_name = $2, code = $3, doctor_id = $4,
            billed_to_third_party = $5, third_party_code = $6, third_party_name = $7, value = $8
        WHERE id = $9 AND clinic_id = $10
        RETURNING *`,
@@ -4458,7 +4560,7 @@ router.put('/advance-invoice/:clinicId/:entryId', async (req, res) => {
         code,
         doctorId || null,
         billedToThirdParty || false,
-        thirdPartyCode || null,
+        finalThirdPartyCode,
         thirdPartyName || null,
         value,
         entryId,

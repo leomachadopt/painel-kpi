@@ -596,6 +596,18 @@ export default function Advances() {
                   <p className="text-sm text-muted-foreground">Seguradora</p>
                   <p className="font-semibold truncate">{selectedBatchDetails.insuranceProviderName}</p>
                 </div>
+                {selectedBatchDetails.billedToThirdParty && (
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Código Terceiro</p>
+                      <p className="font-semibold">{selectedBatchDetails.thirdPartyCode || 'TER'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nome Terceiro</p>
+                      <p className="font-semibold truncate">{selectedBatchDetails.thirdPartyName || '-'}</p>
+                    </div>
+                  </>
+                )}
                 <div>
                   <p className="text-sm text-muted-foreground">Valor Total</p>
                   <p className="font-semibold text-lg">
