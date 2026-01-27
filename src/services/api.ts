@@ -799,6 +799,28 @@ export const advancesApi = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+
+    updateBillingBatch: (clinicId: string, contractId: string, batchId: string, data: {
+      items: Array<{
+        procedureId: string
+        procedureCode: string
+        procedureDescription: string
+        isPericiable: boolean
+        unitValue: number
+        quantity: number
+        totalValue: number
+        dependentId: string | null
+      }>
+      targetAmount?: number
+      serviceDate?: string
+      doctorId: string
+      dependentId?: string | null
+      dependentName?: string | null
+    }) =>
+      apiCall<any>(`/advances/contracts/${clinicId}/${contractId}/billing-batch/${batchId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
   },
 
   proceduresBase: {

@@ -607,6 +607,8 @@ router.get('/contracts/:clinicId/:contractId', async (req, res) => {
           age: d.age,
           relationship: d.relationship,
           notes: d.notes,
+          code: d.code,
+          patientId: d.patient_id,
           createdAt: d.created_at,
           updatedAt: d.updated_at,
         }
@@ -701,9 +703,38 @@ router.post('/contracts/:clinicId', async (req, res) => {
     if (dependents && Array.isArray(dependents)) {
       for (const dep of dependents) {
         const dependentId = `dependent-${contractId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+        // If dependent has a code, create/get patient record
+        let dependentPatientId = null
+        if (dep.code && dep.code.trim()) {
+          try {
+            // Try to find existing patient by code
+            const existingPatient = await query(
+              `SELECT id FROM patients WHERE clinic_id = $1 AND code = $2`,
+              [clinicId, dep.code.trim()]
+            )
+
+            if (existingPatient.rows.length > 0) {
+              dependentPatientId = existingPatient.rows[0].id
+            } else {
+              // Create new patient for dependent
+              const newPatientId = `patient-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+              await query(
+                `INSERT INTO patients (id, clinic_id, code, name)
+                 VALUES ($1, $2, $3, $4)`,
+                [newPatientId, clinicId, dep.code.trim(), dep.name]
+              )
+              dependentPatientId = newPatientId
+            }
+          } catch (patientErr) {
+            console.error('Error creating/finding patient for dependent:', patientErr)
+            // Continue without patient_id if there's an error
+          }
+        }
+
         await query(
-          `INSERT INTO contract_dependents (id, contract_id, name, birth_date, age, relationship, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          `INSERT INTO contract_dependents (id, contract_id, name, birth_date, age, relationship, notes, code, patient_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             dependentId,
             contractId,
@@ -712,6 +743,8 @@ router.post('/contracts/:clinicId', async (req, res) => {
             dep.age || null,
             dep.relationship || 'OUTRO',
             dep.notes || null,
+            dep.code?.trim() || null,
+            dependentPatientId,
           ]
         )
       }
@@ -814,9 +847,38 @@ router.put('/contracts/:clinicId/:contractId', async (req, res) => {
       // Create new dependents
       for (const dep of dependents) {
         const dependentId = `dependent-${contractId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+        // If dependent has a code, create/get patient record
+        let dependentPatientId = null
+        if (dep.code && dep.code.trim()) {
+          try {
+            // Try to find existing patient by code
+            const existingPatient = await query(
+              `SELECT id FROM patients WHERE clinic_id = $1 AND code = $2`,
+              [clinicId, dep.code.trim()]
+            )
+
+            if (existingPatient.rows.length > 0) {
+              dependentPatientId = existingPatient.rows[0].id
+            } else {
+              // Create new patient for dependent
+              const newPatientId = `patient-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+              await query(
+                `INSERT INTO patients (id, clinic_id, code, name)
+                 VALUES ($1, $2, $3, $4)`,
+                [newPatientId, clinicId, dep.code.trim(), dep.name]
+              )
+              dependentPatientId = newPatientId
+            }
+          } catch (patientErr) {
+            console.error('Error creating/finding patient for dependent:', patientErr)
+            // Continue without patient_id if there's an error
+          }
+        }
+
         await query(
-          `INSERT INTO contract_dependents (id, contract_id, name, birth_date, age, relationship, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          `INSERT INTO contract_dependents (id, contract_id, name, birth_date, age, relationship, notes, code, patient_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             dependentId,
             contractId,
@@ -825,6 +887,8 @@ router.put('/contracts/:clinicId/:contractId', async (req, res) => {
             dep.age || null,
             dep.relationship || 'OUTRO',
             dep.notes || null,
+            dep.code?.trim() || null,
+            dependentPatientId,
           ]
         )
       }
@@ -2762,6 +2826,117 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
   } catch (error) {
     console.error('Create billing batch manual error:', error)
     res.status(500).json({ error: 'Failed to create billing batch' })
+  }
+})
+
+// Update existing billing batch
+router.put('/contracts/:clinicId/:contractId/billing-batch/:batchId', async (req, res) => {
+  const { clinicId, contractId, batchId } = req.params
+  const hasPermission = await canBillAdvances(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName } = req.body
+
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ error: 'Items must be an array (can be empty)' })
+    }
+
+    if (!doctorId) {
+      return res.status(400).json({ error: 'Doctor ID is required' })
+    }
+
+    // Verify batch exists
+    const batchCheck = await query(
+      `SELECT bb.id FROM billing_batches bb
+       INNER JOIN advance_contracts ac ON bb.contract_id = ac.id
+       WHERE bb.id = $1 AND bb.contract_id = $2 AND ac.clinic_id = $3`,
+      [batchId, contractId, clinicId]
+    )
+
+    if (batchCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Batch not found' })
+    }
+
+    // Calculate totals
+    let totalAmount = 0
+    let totalPericiable = 0
+
+    if (items.length === 0 && providedTargetAmount) {
+      totalAmount = providedTargetAmount
+    } else {
+      totalAmount = items.reduce((sum: number, item: any) =>
+        sum + (item.totalValue || (item.unitValue || 0) * (item.quantity || 1)), 0)
+      totalPericiable = items.filter((item: any) => item.isPericiable)
+        .reduce((sum: number, item: any) =>
+          sum + (item.totalValue || (item.unitValue || 0) * (item.quantity || 1)), 0)
+    }
+
+    // Update batch
+    await query(
+      `UPDATE billing_batches
+       SET total_amount = $1, total_periciable_amount = $2, target_amount = $3,
+           doctor_id = $4, dependent_id = $5, dependent_name = $6
+       WHERE id = $7`,
+      [totalAmount, totalPericiable, providedTargetAmount || totalAmount,
+       doctorId, dependentId || null, dependentName || null, batchId]
+    )
+
+    // Delete and recreate items
+    await query(`DELETE FROM billing_items WHERE batch_id = $1`, [batchId])
+
+    if (items.length > 0) {
+      for (const item of items) {
+        const itemId = `item-${batchId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+        await query(
+          `INSERT INTO billing_items (
+            id, batch_id, procedure_code, procedure_description, is_periciable,
+            unit_value, quantity, total_value, service_date, dependent_id, status
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ACTIVE')`,
+          [itemId, batchId, item.procedureCode, item.procedureDescription,
+           item.isPericiable || false, item.unitValue || 0, item.quantity || 1,
+           item.totalValue || (item.unitValue || 0) * (item.quantity || 1),
+           serviceDate || new Date().toISOString().split('T')[0],
+           item.dependentId || null]
+        )
+      }
+    }
+
+    // Return updated batch
+    const batchResult = await query(`SELECT * FROM billing_batches WHERE id = $1`, [batchId])
+    const itemsResult = await query(
+      `SELECT bi.*, cd.name as dependent_name
+       FROM billing_items bi
+       LEFT JOIN contract_dependents cd ON bi.dependent_id = cd.id
+       WHERE bi.batch_id = $1`, [batchId]
+    )
+
+    res.json({
+      id: batchResult.rows[0].id,
+      batchNumber: batchResult.rows[0].batch_number,
+      status: batchResult.rows[0].status,
+      totalAmount: parseFloat(batchResult.rows[0].total_amount || '0'),
+      issuedAt: batchResult.rows[0].issued_at,
+      items: itemsResult.rows.map((item: any) => ({
+        id: item.id,
+        procedureCode: item.procedure_code,
+        procedureDescription: item.procedure_description,
+        isPericiable: item.is_periciable,
+        unitValue: parseFloat(item.unit_value || '0'),
+        quantity: item.quantity,
+        totalValue: parseFloat(item.total_value || '0'),
+        serviceDate: item.service_date,
+        dependentId: item.dependent_id,
+        dependentName: item.dependent_name || 'Titular',
+        status: item.status,
+      })),
+    })
+  } catch (error) {
+    console.error('Update billing batch error:', error)
+    res.status(500).json({ error: 'Failed to update billing batch' })
   }
 })
 

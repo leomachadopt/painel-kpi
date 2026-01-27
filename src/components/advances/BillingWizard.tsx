@@ -503,19 +503,35 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
     try {
       const amount = parseFloat(targetAmount)
 
-      console.log('[BillingWizard] Creating empty batch (no procedures) with target amount:', amount, 'for person:', selectedPerson.name)
+      // If editing, update the existing batch
+      if (batchToEdit) {
+        console.log('[BillingWizard] Updating empty batch:', batchToEdit.id)
 
-      const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
-        items: [],
-        targetAmount: amount,
-        serviceDate: new Date().toISOString().split('T')[0],
-        doctorId: doctorId,
-        dependentId: selectedPerson.id,
-        dependentName: selectedPerson.name,
-      })
+        const result = await advancesApi.contracts.updateBillingBatch(clinicId, contractId, batchToEdit.id, {
+          items: [],
+          targetAmount: amount,
+          serviceDate: new Date().toISOString().split('T')[0],
+          doctorId: doctorId,
+          dependentId: selectedPerson.id,
+          dependentName: selectedPerson.name,
+        })
 
-      console.log('[BillingWizard] Empty batch created successfully:', result.batchNumber)
-      toast.success(`Lote ${result.batchNumber} emitido sem procedimentos no valor de ${formatCurrency(amount)}`)
+        toast.success(`Lote ${result.batchNumber} atualizado com sucesso no valor de ${formatCurrency(amount)}!`)
+      } else {
+        // Creating new batch
+        console.log('[BillingWizard] Creating empty batch (no procedures) with target amount:', amount, 'for person:', selectedPerson.name)
+
+        const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
+          items: [],
+          targetAmount: amount,
+          serviceDate: new Date().toISOString().split('T')[0],
+          doctorId: doctorId,
+          dependentId: selectedPerson.id,
+          dependentName: selectedPerson.name,
+        })
+
+        toast.success(`Lote ${result.batchNumber} emitido sem procedimentos no valor de ${formatCurrency(amount)}`)
+      }
 
       // Close dialog and trigger parent refresh via callback
       onClose()
