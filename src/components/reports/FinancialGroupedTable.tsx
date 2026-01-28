@@ -299,7 +299,7 @@ export function FinancialGroupedTable({
                   </TableRow>
                 ))}
                 {/* Total row for doctor */}
-                <TableRow className="bg-muted/50 font-semibold border-t border-muted-foreground/20 h-10">
+                <TableRow className="bg-muted font-semibold border-t border-muted-foreground/20 h-10">
                   {/* Médico column is already occupied by rowSpan, so we skip it */}
                   <TableCell className="text-right">
                     Total {doctorName}:
