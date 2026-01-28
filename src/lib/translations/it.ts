@@ -278,4 +278,17 @@ export const it = {
     topSources: 'Fonti Principali',
     topReferrers: 'Top Referenti',
   },
+  collaborators: {
+    errorLoadingCollaborators: 'Errore nel caricamento dei collaboratori',
+    permissionsUpdated: 'Permessi aggiornati con successo',
+    errorUpdatingPermissions: 'Errore nell\'aggiornamento dei permessi',
+    cancel: 'Annulla',
+    savePermissions: 'Salva Permessi',
+    specialPermissions: 'Permessi Speciali',
+    specialAccountsPayableAccess: 'Accesso Speciale ai Conti da Pagare',
+    specialAccountsPayableDescription: 'Consente l\'accesso completo al modulo conti da pagare, ignorando altre restrizioni',
+    viewAllDoctorsConsultations: 'Visualizza 1.ª Consultazioni di Tutti i Professionisti',
+    viewAllDoctorsConsultationsDescription: 'Consente di visualizzare i report della prima consultazione di tutti i professionisti, non solo di quelli di cui l\'utente è responsabile',
+    editCollaborator: 'Modifica Collaboratore',
+  },
 }

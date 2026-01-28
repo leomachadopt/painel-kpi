@@ -278,4 +278,17 @@ export const en = {
     topSources: 'Top Sources',
     topReferrers: 'Top Referrers',
   },
+  collaborators: {
+    errorLoadingCollaborators: 'Error loading collaborators',
+    permissionsUpdated: 'Permissions updated successfully',
+    errorUpdatingPermissions: 'Error updating permissions',
+    cancel: 'Cancel',
+    savePermissions: 'Save Permissions',
+    specialPermissions: 'Special Permissions',
+    specialAccountsPayableAccess: 'Special Accounts Payable Access',
+    specialAccountsPayableDescription: 'Allows full access to the accounts payable module, bypassing other restrictions',
+    viewAllDoctorsConsultations: 'View All Doctors\' First Consultations',
+    viewAllDoctorsConsultationsDescription: 'Allows viewing first consultation reports for all professionals, not just those the user is responsible for',
+    editCollaborator: 'Edit Collaborator',
+  },
 }

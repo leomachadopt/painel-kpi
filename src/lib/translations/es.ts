@@ -278,4 +278,17 @@ export const es = {
     topSources: 'Fuentes Principales',
     topReferrers: 'Top Referentes',
   },
+  collaborators: {
+    errorLoadingCollaborators: 'Error al cargar colaboradores',
+    permissionsUpdated: 'Permisos actualizados con éxito',
+    errorUpdatingPermissions: 'Error al actualizar permisos',
+    cancel: 'Cancelar',
+    savePermissions: 'Guardar Permisos',
+    specialPermissions: 'Permisos Especiales',
+    specialAccountsPayableAccess: 'Acceso Especial a Cuentas por Pagar',
+    specialAccountsPayableDescription: 'Permite acceso completo al módulo de cuentas por pagar, ignorando otras restricciones',
+    viewAllDoctorsConsultations: 'Ver 1.ªs Consultas de Todos los Profesionales',
+    viewAllDoctorsConsultationsDescription: 'Permite visualizar informes de primera consulta de todos los profesionales, no solo de aquellos de los que el usuario es responsable',
+    editCollaborator: 'Editar Colaborador',
+  },
 }

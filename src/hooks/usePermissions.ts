@@ -273,6 +273,7 @@ function createEmptyPermissions(): UserPermissions {
     canEditAdvances: false,
     canBillAdvances: false,
     canManageInsuranceProviders: false,
+    canViewAllDoctorsConsultations: false,
   }
 }
 
@@ -326,5 +327,6 @@ function createFullPermissions(): UserPermissions {
     canEditAdvances: true,
     canBillAdvances: true,
     canManageInsuranceProviders: true,
+    canViewAllDoctorsConsultations: true,
   }
 }

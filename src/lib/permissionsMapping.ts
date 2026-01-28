@@ -324,6 +324,7 @@ export function mapResourcePermissionsToLegacy(
     canEditAdvances: false,
     canBillAdvances: false,
     canManageInsuranceProviders: false,
+    canViewAllDoctorsConsultations: false,
   }
 
   for (const [resourceId, level] of Object.entries(resourcePermissions)) {

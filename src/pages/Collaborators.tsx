@@ -81,6 +81,7 @@ export default function Collaborators() {
   
   // Special permissions state
   const [hasSpecialAccountsPayableAccess, setHasSpecialAccountsPayableAccess] = useState(false)
+  const [canViewAllDoctorsConsultations, setCanViewAllDoctorsConsultations] = useState(false)
 
   // Load collaborators
   useEffect(() => {
@@ -128,6 +129,7 @@ export default function Collaborators() {
     setResourcePermissions(resourcePerms)
     // Set special permissions
     setHasSpecialAccountsPayableAccess(legacyPerms.hasSpecialAccountsPayableAccess || false)
+    setCanViewAllDoctorsConsultations(legacyPerms.canViewAllDoctorsConsultations || false)
     setShowPermissionsModal(true)
   }
 
@@ -187,6 +189,7 @@ export default function Collaborators() {
       const permissionsWithSpecial: UserPermissions = {
         ...legacyPermissions,
         hasSpecialAccountsPayableAccess,
+        canViewAllDoctorsConsultations,
       } as UserPermissions
       await collaboratorsApi.updatePermissions(selectedCollaborator.id, permissionsWithSpecial)
       toast.success(t('collaborators.permissionsUpdated'))
@@ -420,6 +423,22 @@ export default function Collaborators() {
                     <div className="font-medium">{t('collaborators.specialAccountsPayableAccess')}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {t('collaborators.specialAccountsPayableDescription')}
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 rounded-md border bg-muted/30">
+                  <Checkbox
+                    id="view-all-doctors-consultations"
+                    checked={canViewAllDoctorsConsultations}
+                    onCheckedChange={(checked) =>
+                      setCanViewAllDoctorsConsultations(checked === true)
+                    }
+                    disabled={submitting}
+                  />
+                  <Label htmlFor="view-all-doctors-consultations" className="cursor-pointer flex-1">
+                    <div className="font-medium">{t('collaborators.viewAllDoctorsConsultations')}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {t('collaborators.viewAllDoctorsConsultationsDescription')}
                     </div>
                   </Label>
                 </div>

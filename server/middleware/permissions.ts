@@ -52,6 +52,7 @@ export interface UserPermissions {
   canBillAdvances: boolean
   canManageInsuranceProviders: boolean
   hasSpecialAccountsPayableAccess: boolean
+  canViewAllDoctorsConsultations: boolean
 }
 
 /**
@@ -116,6 +117,7 @@ export async function getUserPermissions(
       canBillAdvances: true,
       canManageInsuranceProviders: true,
       hasSpecialAccountsPayableAccess: true,
+      canViewAllDoctorsConsultations: true,
     }
   }
 
@@ -175,7 +177,8 @@ export async function getUserPermissions(
       can_edit_advances,
       can_bill_advances,
       can_manage_insurance_providers,
-      has_special_accounts_payable_access
+      has_special_accounts_payable_access,
+      can_view_all_doctors_consultations
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -237,6 +240,7 @@ export async function getUserPermissions(
     canBillAdvances: Boolean(perms.can_bill_advances),
     canManageInsuranceProviders: Boolean(perms.can_manage_insurance_providers),
     hasSpecialAccountsPayableAccess: Boolean(perms.has_special_accounts_payable_access),
+    canViewAllDoctorsConsultations: Boolean(perms.can_view_all_doctors_consultations),
   }
   
   // Para contas a pagar, apenas colaboradores com permissão especial têm acesso
@@ -307,6 +311,7 @@ function createEmptyPermissions(): UserPermissions {
     canBillAdvances: false,
     canManageInsuranceProviders: false,
     hasSpecialAccountsPayableAccess: false,
+    canViewAllDoctorsConsultations: false,
   }
 }
 
