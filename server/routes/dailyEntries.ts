@@ -570,35 +570,55 @@ router.get('/consultation/:clinicId', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1`
     let params: any[] = [clinicId]
 
-    // If user is COLABORADOR, filter by their doctor_id
+    // If user is COLABORADOR, check if they have special permission to view all doctors
     if (userRole === 'COLABORADOR' && userId) {
-      // Get user email to find their doctor_id
-      const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
-      console.log('📧 User email lookup:', userResult.rows[0])
+      // Check if user has permission to view all doctors' consultations
+      const permissionResult = await query(
+        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        [userId, clinicId]
+      )
 
-      if (userResult.rows.length > 0) {
-        const userEmail = userResult.rows[0].email
+      const canViewAllDoctors = permissionResult.rows.length > 0 &&
+                                permissionResult.rows[0].can_view_all_doctors_consultations === true
 
-        // Find doctor_id by email
-        const doctorResult = await query(
-          `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
-          [clinicId, userEmail]
-        )
-        console.log('👨‍⚕️ Doctor lookup:', doctorResult.rows[0])
+      console.log('🔐 Permission check:', {
+        userId,
+        canViewAllDoctors,
+        permissionFound: permissionResult.rows.length > 0
+      })
 
-        if (doctorResult.rows.length > 0) {
-          const doctorId = doctorResult.rows[0].id
-          sqlQuery += ` AND doctor_id = $2`
-          params.push(doctorId)
-          console.log('✅ Applying doctor filter:', doctorId)
+      if (!canViewAllDoctors) {
+        // Filter by their doctor_id only if they don't have the special permission
+        // Get user email to find their doctor_id
+        const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+        console.log('📧 User email lookup:', userResult.rows[0])
+
+        if (userResult.rows.length > 0) {
+          const userEmail = userResult.rows[0].email
+
+          // Find doctor_id by email
+          const doctorResult = await query(
+            `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+            [clinicId, userEmail]
+          )
+          console.log('👨‍⚕️ Doctor lookup:', doctorResult.rows[0])
+
+          if (doctorResult.rows.length > 0) {
+            const doctorId = doctorResult.rows[0].id
+            sqlQuery += ` AND doctor_id = $2`
+            params.push(doctorId)
+            console.log('✅ Applying doctor filter:', doctorId)
+          } else {
+            // Doctor not found, return empty array
+            console.log('⚠️ Doctor not found for email:', userEmail)
+            return res.json([])
+          }
         } else {
-          // Doctor not found, return empty array
-          console.log('⚠️ Doctor not found for email:', userEmail)
+          console.log('⚠️ User not found:', userId)
           return res.json([])
         }
       } else {
-        console.log('⚠️ User not found:', userId)
-        return res.json([])
+        console.log('✅ User has permission to view all doctors - no filter applied')
       }
     } else {
       console.log('ℹ️ No COLABORADOR filter - showing all consultations')
@@ -658,26 +678,38 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2`
     let params: any[] = [clinicId, code]
 
-    // If user is COLABORADOR, filter by their doctor_id
+    // If user is COLABORADOR, check if they have special permission to view all doctors
     if (userRole === 'COLABORADOR' && userId) {
-      const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+      // Check if user has permission to view all doctors' consultations
+      const permissionResult = await query(
+        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        [userId, clinicId]
+      )
 
-      if (userResult.rows.length > 0) {
-        const userEmail = userResult.rows[0].email
-        const doctorResult = await query(
-          `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
-          [clinicId, userEmail]
-        )
+      const canViewAllDoctors = permissionResult.rows.length > 0 &&
+                                permissionResult.rows[0].can_view_all_doctors_consultations === true
 
-        if (doctorResult.rows.length > 0) {
-          const doctorId = doctorResult.rows[0].id
-          sqlQuery += ` AND doctor_id = $3`
-          params.push(doctorId)
+      if (!canViewAllDoctors) {
+        // Filter by their doctor_id only if they don't have the special permission
+        const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+
+        if (userResult.rows.length > 0) {
+          const userEmail = userResult.rows[0].email
+          const doctorResult = await query(
+            `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+            [clinicId, userEmail]
+          )
+
+          if (doctorResult.rows.length > 0) {
+            const doctorId = doctorResult.rows[0].id
+            sqlQuery += ` AND doctor_id = $3`
+            params.push(doctorId)
+          } else {
+            return res.status(404).json({ error: 'Consultation entry not found' })
+          }
         } else {
           return res.status(404).json({ error: 'Consultation entry not found' })
         }
-      } else {
-        return res.status(404).json({ error: 'Consultation entry not found' })
       }
     }
 
