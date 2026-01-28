@@ -29,6 +29,20 @@ export function CabinetTable({
   const getCabinetName = (id: string) =>
     clinic.configuration.cabinets.find((c) => c.id === id)?.name || id
 
+  // Converter horas decimais para formato "Xh Ymin"
+  const formatHoursMinutes = (decimalHours: number) => {
+    const hours = Math.floor(decimalHours)
+    const minutes = Math.round((decimalHours - hours) * 60)
+
+    if (minutes === 0) {
+      return `${hours}h`
+    }
+    if (hours === 0) {
+      return `${minutes}min`
+    }
+    return `${hours}h ${minutes}min`
+  }
+
   const handleDelete = async (entry: DailyCabinetUsageEntry) => {
     if (!confirm(`Excluir registo de ${getCabinetName(entry.cabinetId)} em ${entry.date}?`)) {
       return
@@ -70,10 +84,10 @@ export function CabinetTable({
                   <TableCell>{entry.date}</TableCell>
                   <TableCell>{getCabinetName(entry.cabinetId)}</TableCell>
                   <TableCell className="text-center">
-                    {entry.hoursAvailable}h
+                    {formatHoursMinutes(entry.hoursAvailable)}
                   </TableCell>
                   <TableCell className="text-center">
-                    {entry.hoursUsed}h
+                    {formatHoursMinutes(entry.hoursUsed)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {rate.toFixed(1)}%

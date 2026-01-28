@@ -33,14 +33,16 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
   const schema = useMemo(() => z.object({
     date: z.string(),
     cabinetId: z.string().min(1, selectCabinetMessage),
-    hoursUsed: z.coerce.number().min(0),
+    hours: z.coerce.number().min(0).max(23),
+    minutes: z.coerce.number().min(0).max(59),
   }), [selectCabinetMessage])
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       cabinetId: '',
-      hoursUsed: 0,
+      hours: 0,
+      minutes: 0,
     },
   })
 
@@ -50,16 +52,22 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
+      // Converter horas e minutos para decimal (ex: 2h 30min = 2.5)
+      const hoursUsed = data.hours + (data.minutes / 60)
+
       await addCabinetUsageEntry(clinic.id, {
         id: Math.random().toString(36),
         hoursAvailable: selectedGab?.standardHours || 0,
-        ...data,
+        date: data.date,
+        cabinetId: data.cabinetId,
+        hoursUsed,
       })
       toast.success(t('forms.usagePosted'))
       form.reset({
         date: data.date,
         cabinetId: '',
-        hoursUsed: 0,
+        hours: 0,
+        minutes: 0,
       })
     } catch (err: any) {
       toast.error(err?.message || t('forms.errorPostingUsage'))
@@ -116,23 +124,58 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
           </div>
         )}
 
-        <FormField
-          control={form.control}
-          name="hoursUsed"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('forms.hoursUsed')}</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.5"
-                  {...field}
-                  onFocus={(e) => e.target.select()}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="hours"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Horas</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="23"
+                    {...field}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="0"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="minutes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minutos</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    step="1"
+                    {...field}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="0"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {(form.watch('hours') > 0 || form.watch('minutes') > 0) && (
+          <div className="text-sm text-muted-foreground p-2 bg-blue-50 dark:bg-blue-950 rounded">
+            Tempo total:{' '}
+            <strong>
+              {form.watch('hours')}h {form.watch('minutes')}min
+              {' '}({(form.watch('hours') + form.watch('minutes') / 60).toFixed(2)}h decimais)
+            </strong>
+          </div>
+        )}
 
         <Button type="submit" className="w-full">
           {t('forms.submitUsage')}
