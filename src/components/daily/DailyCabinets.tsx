@@ -172,7 +172,7 @@ export function DailyCabinets({ clinic }: { clinic: Clinic }) {
             Tempo total:{' '}
             <strong>
               {form.watch('hours')}h {form.watch('minutes')}min
-              {' '}({(form.watch('hours') + form.watch('minutes') / 60).toFixed(2)}h decimais)
+              {' '}({(Number(form.watch('hours')) + Number(form.watch('minutes')) / 60).toFixed(2)}h decimais)
             </strong>
           </div>
         )}
