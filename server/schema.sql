@@ -261,8 +261,8 @@ CREATE TABLE IF NOT EXISTS daily_cabinet_usage_entries (
   clinic_id VARCHAR(255) NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   cabinet_id VARCHAR(255) NOT NULL REFERENCES clinic_cabinets(id) ON DELETE RESTRICT,
-  hours_available INTEGER NOT NULL DEFAULT 0,
-  hours_used INTEGER NOT NULL DEFAULT 0,
+  hours_available DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  hours_used DECIMAL(10, 2) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
