@@ -787,6 +787,14 @@ router.post('/consultation/:clinicId', async (req, res) => {
       return res.status(400).json({ error: 'Code must be 1-6 digits' })
     }
 
+    console.log('📥 POST /consultation - Dados recebidos:', {
+      consultationTypeId,
+      consultationCompleted,
+      consultationCompletedAt,
+      completedProcedures: completedProcedures ? Object.keys(completedProcedures).length : 0,
+      completedProceduresRaw: completedProcedures,
+    })
+
     const entryId = `consultation-${clinicId}-${code}`
 
     const result = await query(
@@ -861,6 +869,12 @@ router.post('/consultation/:clinicId', async (req, res) => {
         planNotEligibleReason || null,
       ]
     )
+
+    console.log('✅ POST /consultation - Salvo no banco:', {
+      consultationTypeId: result.rows[0].consultation_type_id,
+      consultationCompleted: result.rows[0].consultation_completed,
+      completedProcedures: result.rows[0].completed_procedures ? 'HAS DATA' : 'NULL',
+    })
 
     res.status(201).json({
       id: result.rows[0].id,
