@@ -29,10 +29,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { DailyConsultationEntry, Clinic, FirstConsultationType } from '@/lib/types'
+import { DailyConsultationEntry, Clinic, FirstConsultationType, FirstConsultationTypeProcedure } from '@/lib/types'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import useDataStore from '@/stores/useDataStore'
 import { configApi } from '@/services/api'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 
 const schema = z.object({
   date: z.string(),
@@ -82,6 +84,8 @@ export function EditConsultationDialog({
   const { updateConsultationEntry } = useDataStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [consultationTypes, setConsultationTypes] = useState<FirstConsultationType[]>([])
+  const [procedures, setProcedures] = useState<FirstConsultationTypeProcedure[]>([])
+  const [proceduresLoading, setProceduresLoading] = useState(false)
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -114,6 +118,8 @@ export function EditConsultationDialog({
   })
 
   const watchedSourceId = form.watch('sourceId')
+  const watchedConsultationTypeId = form.watch('consultationTypeId')
+  const watchedConsultationCompleted = form.watch('consultationCompleted')
   const selectedSource = clinic.configuration.sources.find(
     (s) => s.id === watchedSourceId,
   )
@@ -132,6 +138,27 @@ export function EditConsultationDialog({
         console.error('Erro ao carregar tipos de consulta:', err)
       })
   }, [clinic.id])
+
+  // Load procedures when consultation type changes
+  useEffect(() => {
+    if (!watchedConsultationTypeId) {
+      setProcedures([])
+      return
+    }
+
+    setProceduresLoading(true)
+    configApi.procedures
+      .getAll(clinic.id, watchedConsultationTypeId)
+      .then((procs) => {
+        setProcedures(procs.sort((a, b) => a.displayOrder - b.displayOrder))
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar procedimentos:', err)
+      })
+      .finally(() => {
+        setProceduresLoading(false)
+      })
+  }, [watchedConsultationTypeId, clinic.id])
 
   // Preencher formulário quando entry mudar
   useEffect(() => {
@@ -455,6 +482,87 @@ export function EditConsultationDialog({
                       </FormItem>
                     )}
                   />
+                )}
+
+                {/* Procedures Section */}
+                {watchedConsultationCompleted && watchedConsultationTypeId && (
+                  <div className="mt-4 space-y-3">
+                    <h5 className="text-sm font-semibold text-green-800">Procedimentos</h5>
+                    {proceduresLoading ? (
+                      <p className="text-sm text-muted-foreground">Carregando procedimentos...</p>
+                    ) : procedures.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum procedimento configurado para este tipo de consulta.</p>
+                    ) : (
+                      <>
+                        {procedures.map((procedure) => {
+                          const procedureData = form.watch('completedProcedures')?.[procedure.id]
+                          const isCompleted = procedureData?.completed === true
+                          const hasSelection = procedureData !== undefined && typeof procedureData.completed === 'boolean'
+
+                          return (
+                            <div
+                              key={procedure.id}
+                              className="space-y-3 p-3 border rounded-md bg-white"
+                            >
+                              <div className="flex flex-col gap-2">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">{procedure.name}</p>
+                                  {procedure.description && (
+                                    <p className="text-xs text-muted-foreground">{procedure.description}</p>
+                                  )}
+                                </div>
+                                <RadioGroup
+                                  value={hasSelection ? (isCompleted ? 'completed' : 'not-completed') : ''}
+                                  onValueChange={(value) => {
+                                    const current = form.getValues('completedProcedures') || {}
+                                    const completed = value === 'completed'
+                                    form.setValue('completedProcedures', {
+                                      ...current,
+                                      [procedure.id]: {
+                                        completed,
+                                        justification: completed ? '' : (current[procedure.id]?.justification || ''),
+                                      },
+                                    })
+                                  }}
+                                  className="flex gap-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="completed" id={`${procedure.id}-completed`} />
+                                    <Label htmlFor={`${procedure.id}-completed`} className="cursor-pointer text-sm font-normal">
+                                      Realizado
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="not-completed" id={`${procedure.id}-not-completed`} />
+                                    <Label htmlFor={`${procedure.id}-not-completed`} className="cursor-pointer text-sm font-normal">
+                                      Não Realizado
+                                    </Label>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                              {hasSelection && !isCompleted && (
+                                <Textarea
+                                  placeholder="Justificativa para procedimento não realizado..."
+                                  value={procedureData?.justification || ''}
+                                  onChange={(e) => {
+                                    const current = form.getValues('completedProcedures') || {}
+                                    form.setValue('completedProcedures', {
+                                      ...current,
+                                      [procedure.id]: {
+                                        completed: false,
+                                        justification: e.target.value,
+                                      },
+                                    })
+                                  }}
+                                  className="min-h-[60px] text-sm"
+                                />
+                              )}
+                            </div>
+                          )
+                        })}
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
