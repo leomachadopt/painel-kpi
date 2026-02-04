@@ -29,14 +29,22 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { DailyConsultationEntry, Clinic } from '@/lib/types'
+import { DailyConsultationEntry, Clinic, FirstConsultationType } from '@/lib/types'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import useDataStore from '@/stores/useDataStore'
+import { configApi } from '@/services/api'
 
 const schema = z.object({
   date: z.string(),
   patientName: z.string().min(1, 'Nome obrigatório'),
   code: z.string().regex(/^\d{1,6}$/, 'Código deve ter 1 a 6 dígitos'),
+  consultationTypeId: z.string().optional(),
+  consultationCompleted: z.boolean(),
+  consultationCompletedAt: z.string().optional(),
+  completedProcedures: z.record(z.string(), z.object({
+    completed: z.boolean(),
+    justification: z.string().optional(),
+  })).optional().nullable(),
   planCreated: z.boolean(),
   planCreatedAt: z.string().optional(),
   planPresented: z.boolean(),
@@ -73,6 +81,7 @@ export function EditConsultationDialog({
 }: EditConsultationDialogProps) {
   const { updateConsultationEntry } = useDataStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [consultationTypes, setConsultationTypes] = useState<FirstConsultationType[]>([])
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -80,6 +89,10 @@ export function EditConsultationDialog({
       date: '',
       patientName: '',
       code: '',
+      consultationTypeId: '',
+      consultationCompleted: false,
+      consultationCompletedAt: '',
+      completedProcedures: {},
       planCreated: false,
       planCreatedAt: '',
       planPresented: false,
@@ -108,6 +121,18 @@ export function EditConsultationDialog({
   const isPaidAds =
     selectedSource?.name === 'Google Ads' || selectedSource?.name === 'Meta Ads'
 
+  // Load consultation types on mount
+  useEffect(() => {
+    configApi.consultationTypes
+      .getAll(clinic.id)
+      .then((types) => {
+        setConsultationTypes(types.filter((t) => t.active))
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar tipos de consulta:', err)
+      })
+  }, [clinic.id])
+
   // Preencher formulário quando entry mudar
   useEffect(() => {
     if (entry && open) {
@@ -122,6 +147,10 @@ export function EditConsultationDialog({
           date: toDateInput(entry.date),
           patientName: entry.patientName,
           code: entry.code,
+          consultationTypeId: entry.consultationTypeId || '',
+          consultationCompleted: !!entry.consultationCompleted,
+          consultationCompletedAt: toDateInput(entry.consultationCompletedAt),
+          completedProcedures: entry.completedProcedures || {},
           planCreated: !!entry.planCreated,
           planCreatedAt: toDateInput(entry.planCreatedAt),
           planPresented: !!entry.planPresented,
@@ -147,6 +176,10 @@ export function EditConsultationDialog({
         date: '',
         patientName: '',
         code: '',
+        consultationTypeId: '',
+        consultationCompleted: false,
+        consultationCompletedAt: '',
+        completedProcedures: {},
         planCreated: false,
         planCreatedAt: '',
         planPresented: false,
@@ -230,6 +263,10 @@ export function EditConsultationDialog({
         date: data.date,
         patientName: data.patientName,
         code: data.code,
+        consultationTypeId: data.consultationTypeId || null,
+        consultationCompleted: data.consultationCompleted,
+        consultationCompletedAt: data.consultationCompleted ? data.consultationCompletedAt || null : null,
+        completedProcedures: data.consultationCompleted ? data.completedProcedures || null : null,
         planCreated: data.planCreated,
         planCreatedAt: data.planCreated ? data.planCreatedAt || null : null,
         planPresented: data.planPresented,
@@ -347,6 +384,40 @@ export function EditConsultationDialog({
                 </FormItem>
               )}
             />
+
+            {/* Consultation Type Info - Read Only */}
+            {form.watch('consultationTypeId') && (
+              <div className="rounded-md border p-4 bg-green-50/50">
+                <h4 className="text-sm font-semibold text-green-800 mb-2">
+                  Informação da Consulta
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Tipo de Consulta: </span>
+                    <span className="text-gray-900">
+                      {consultationTypes.find(t => t.id === form.watch('consultationTypeId'))?.name || 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Consulta Realizada: </span>
+                    <span className={`font-semibold ${form.watch('consultationCompleted') ? 'text-green-700' : 'text-gray-500'}`}>
+                      {form.watch('consultationCompleted') ? 'Sim' : 'Não'}
+                    </span>
+                  </div>
+                  {form.watch('consultationCompleted') && form.watch('consultationCompletedAt') && (
+                    <div>
+                      <span className="font-medium text-gray-700">Data de Realização: </span>
+                      <span className="text-gray-900">
+                        {new Date(form.watch('consultationCompletedAt') + 'T00:00:00').toLocaleDateString('pt-PT')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-3 italic">
+                  ℹ️ Para editar estes campos, use o formulário em Diário → 1.ª Consultas
+                </p>
+              </div>
+            )}
 
             {/* Conditional Campaign Field */}
             {isPaidAds && (
