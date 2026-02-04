@@ -951,6 +951,15 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
       planNotEligibleReason,
     } = req.body
 
+    console.log('📥 PUT /consultation - Dados recebidos:', {
+      entryId,
+      consultationTypeId,
+      consultationCompleted,
+      consultationCompletedAt,
+      completedProcedures: completedProcedures ? Object.keys(completedProcedures).length + ' procedures' : 'NULL',
+    })
+    console.log('📥 PUT /consultation - req.body completo:', JSON.stringify(req.body, null, 2))
+
     // Validate required fields
     if (!date || !patientName || !code || !/^\d{1,6}$/.test(code)) {
       return res.status(400).json({ error: 'Missing or invalid required fields' })
