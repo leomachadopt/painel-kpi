@@ -385,39 +385,79 @@ export function EditConsultationDialog({
               )}
             />
 
-            {/* Consultation Type Info - Read Only */}
-            {form.watch('consultationTypeId') && (
-              <div className="rounded-md border p-4 bg-green-50/50">
-                <h4 className="text-sm font-semibold text-green-800 mb-2">
-                  Informação da Consulta
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-700">Tipo de Consulta: </span>
-                    <span className="text-gray-900">
-                      {consultationTypes.find(t => t.id === form.watch('consultationTypeId'))?.name || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Consulta Realizada: </span>
-                    <span className={`font-semibold ${form.watch('consultationCompleted') ? 'text-green-700' : 'text-gray-500'}`}>
-                      {form.watch('consultationCompleted') ? 'Sim' : 'Não'}
-                    </span>
-                  </div>
-                  {form.watch('consultationCompleted') && form.watch('consultationCompletedAt') && (
-                    <div>
-                      <span className="font-medium text-gray-700">Data de Realização: </span>
-                      <span className="text-gray-900">
-                        {new Date(form.watch('consultationCompletedAt') + 'T00:00:00').toLocaleDateString('pt-PT')}
-                      </span>
-                    </div>
+            {/* Consultation Type Section */}
+            <div className="rounded-md border p-4 bg-green-50/50">
+              <h4 className="text-sm font-semibold text-green-800 mb-3">
+                Informação da Consulta
+              </h4>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="consultationTypeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Consulta</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo (opcional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {consultationTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                <p className="text-xs text-gray-500 mt-3 italic">
-                  ℹ️ Para editar estes campos, use o formulário em Diário → 1.ª Consultas
-                </p>
+                />
+
+                <FormField
+                  control={form.control}
+                  name="consultationCompleted"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between space-y-0">
+                      <FormLabel>Consulta Realizada?</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(v) => {
+                            field.onChange(v)
+                            if (v && !form.getValues('consultationCompletedAt')) {
+                              const today = new Date().toISOString().split('T')[0]
+                              form.setValue('consultationCompletedAt', today, { shouldValidate: true })
+                            } else if (!v) {
+                              form.setValue('consultationCompletedAt', '', { shouldValidate: true })
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch('consultationCompleted') && (
+                  <FormField
+                    control={form.control}
+                    name="consultationCompletedAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">
+                          Data de Realização
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
-            )}
+            </div>
 
             {/* Conditional Campaign Field */}
             {isPaidAds && (
