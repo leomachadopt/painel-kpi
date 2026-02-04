@@ -343,6 +343,12 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
         ? data.consultationCompletedAt || new Date().toISOString()
         : null
 
+      console.log('📤 Enviando consulta para salvar:', {
+        consultationCompleted: data.consultationCompleted,
+        consultationTypeId: data.consultationTypeId,
+        completedProcedures: data.completedProcedures,
+      })
+
       await addConsultationEntry(clinic.id, {
         id,
         date: data.date,
