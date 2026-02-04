@@ -48,10 +48,10 @@ const createSchema = (t: (key: string) => string) => z.object({
   consultationTypeId: z.string().optional(),
   consultationCompleted: z.boolean(),
   consultationCompletedAt: z.string().optional(),
-  completedProcedures: z.record(z.object({
+  completedProcedures: z.record(z.string(), z.object({
     completed: z.boolean(),
     justification: z.string().optional(),
-  })).optional(),
+  })).optional().nullable(),
   planCreated: z.boolean(),
   planCreatedAt: z.string().optional(),
   planPresented: z.boolean(),
@@ -271,7 +271,6 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
   }, [code, clinic.id, form, loadedCode])
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
-    console.log('🟢 onSubmit chamado!', data)
     // Validate conditional fields for referral
     if (isReferralSource) {
       if (!data.referralName || !data.referralCode) {
@@ -1016,18 +1015,13 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
           type="button"
           className="w-full"
           onClick={() => {
-            console.log('🔵 Botão Lançar Consulta clicado!')
             // Check consultation completed validation BEFORE form submit
             const consultationCompleted = form.getValues('consultationCompleted')
             const consultationTypeId = form.getValues('consultationTypeId')
             const completedProcedures = form.getValues('completedProcedures')
 
-            console.log('🔵 Valores:', { consultationCompleted, consultationTypeId, completedProcedures, proceduresLength: procedures.length })
-
             if (consultationCompleted && procedures.length > 0) {
-              console.log('🔵 Consulta marcada como realizada, validando procedimentos...')
               if (!consultationTypeId) {
-                console.log('❌ Tipo de consulta não selecionado')
                 toast.error('Selecione o tipo de consulta antes de marcar como realizada')
                 return
               }
@@ -1049,10 +1043,7 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
                 }
               })
 
-              console.log('🔵 Erros de validação:', { incompleteProcedures, proceduresWithoutJustification })
-
               if (incompleteProcedures.length > 0 || proceduresWithoutJustification.length > 0) {
-                console.log('❌ Validação falhou, mostrando erros')
                 setShowValidationErrors(true)
                 setValidationErrors({
                   incompleteProcedures,
@@ -1064,7 +1055,6 @@ export function DailyConsultations({ clinic }: { clinic: Clinic }) {
             }
 
             // If validation passes, trigger form submit
-            console.log('✅ Validação passou, chamando onSubmit')
             form.handleSubmit(onSubmit)()
           }}
         >
