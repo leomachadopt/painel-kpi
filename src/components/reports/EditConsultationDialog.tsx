@@ -170,6 +170,12 @@ export function EditConsultationDialog({
 
       // Pequeno delay para garantir que o modal está completamente montado
       setTimeout(() => {
+        console.log('📥 Carregando entry:', {
+          consultationTypeId: entry.consultationTypeId,
+          consultationCompleted: entry.consultationCompleted,
+          completedProcedures: entry.completedProcedures,
+        })
+
         form.reset({
           date: toDateInput(entry.date),
           patientName: entry.patientName,
@@ -285,6 +291,18 @@ export function EditConsultationDialog({
 
     setIsSubmitting(true)
     try {
+      // Preserve completedProcedures if it exists and has data
+      const proceduresToSave = data.completedProcedures && Object.keys(data.completedProcedures).length > 0
+        ? data.completedProcedures
+        : entry.completedProcedures || null
+
+      console.log('📝 Salvando consulta:', {
+        consultationCompleted: data.consultationCompleted,
+        completedProceduresFromForm: data.completedProcedures,
+        completedProceduresFromEntry: entry.completedProcedures,
+        proceduresToSave,
+      })
+
       await updateConsultationEntry(clinic.id, entry.id, {
         id: entry.id,
         date: data.date,
@@ -293,7 +311,7 @@ export function EditConsultationDialog({
         consultationTypeId: data.consultationTypeId || null,
         consultationCompleted: data.consultationCompleted,
         consultationCompletedAt: data.consultationCompleted ? data.consultationCompletedAt || null : null,
-        completedProcedures: data.consultationCompleted ? data.completedProcedures || null : null,
+        completedProcedures: proceduresToSave,
         planCreated: data.planCreated,
         planCreatedAt: data.planCreated ? data.planCreatedAt || null : null,
         planPresented: data.planPresented,
