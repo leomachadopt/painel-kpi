@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import useDataStore from '@/stores/useDataStore'
-import { usePatientLookup } from '@/hooks/usePatientLookup'
+import { PatientCodeInput } from '@/components/PatientCodeInput'
 import { toast } from 'sonner'
 import { Clinic } from '@/lib/types'
 import { Separator } from '@/components/ui/separator'
@@ -51,8 +51,6 @@ const createBillingSchema = (t: (key: string) => string, billToThirdParty: boole
 export function DailyBilling({ clinic }: { clinic: Clinic }) {
   const { t } = useTranslation()
   const { addFinancialEntry } = useDataStore()
-  const { patient: foundPatient, lookupByCode } = usePatientLookup()
-  const { patient: foundThirdParty, lookupByCode: lookupThirdParty } = usePatientLookup()
   const [billToThirdParty, setBillToThirdParty] = useState(false)
 
   const schema = createBillingSchema(t, billToThirdParty)
@@ -70,55 +68,16 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
     },
   })
 
-  // Watch para mudanças nos códigos
-  const patientCode = useWatch({ control: form.control, name: 'patientCode' })
-  const thirdPartyCode = useWatch({ control: form.control, name: 'thirdPartyCode' })
-
-  // Auto-preencher nome do paciente quando código mudar
-  useEffect(() => {
-    if (patientCode && /^\d{1,6}$/.test(patientCode)) {
-      lookupByCode(clinic.id, patientCode)
-    }
-  }, [patientCode, clinic.id, lookupByCode])
-
-  // Atualizar nome quando paciente for encontrado
-  useEffect(() => {
-    if (foundPatient) {
-      form.setValue('patientName', foundPatient.name)
-    }
-  }, [foundPatient, form])
-
-  // Auto-preencher nome do terceiro quando código mudar
-  useEffect(() => {
-    if (thirdPartyCode && /^\d{1,6}$/.test(thirdPartyCode)) {
-      lookupThirdParty(clinic.id, thirdPartyCode)
-    } else if (thirdPartyCode === '') {
-      // Se limpar o código, limpa o nome também
-      form.setValue('thirdPartyName', '')
-    }
-  }, [thirdPartyCode, clinic.id, lookupThirdParty, form])
-
-  // Atualizar nome do terceiro quando for encontrado
-  useEffect(() => {
-    if (foundThirdParty) {
-      form.setValue('thirdPartyName', foundThirdParty.name)
-    }
-  }, [foundThirdParty, form])
-
   // Limpar campos de terceiro quando desmarcar checkbox
   useEffect(() => {
     if (!billToThirdParty) {
       form.setValue('thirdPartyCode', '')
       form.setValue('thirdPartyName', '')
     }
-  }, [billToThirdParty])
+  }, [billToThirdParty, form])
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
-      // Se paciente não existe, será criado automaticamente pelo backend
-      if (!foundPatient) {
-        toast.info(t('forms.patientWillBeCreatedInfo').replace('{name}', data.patientName))
-      }
 
       // Usar valores padrão para campos obrigatórios que não são exibidos
       const defaultCategory = clinic.configuration.categories?.[0]?.id || 'default-category'
@@ -189,68 +148,19 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
           )}
         />
 
-        {/* Código e Nome do Paciente lado a lado */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Código do Paciente */}
-          <FormField
-            control={form.control}
-            name="patientCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('forms.code')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{1,6}"
-                    maxLength={6}
-                    placeholder={t('forms.codePlaceholder')}
-                    className="font-mono text-lg"
-                    autoFocus
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 6)
-                      field.onChange(value)
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-                <p className="text-xs text-muted-foreground">{t('forms.codeHelp')}</p>
-              </FormItem>
-            )}
-          />
-
-          {/* Nome do Paciente (auto-preenchido) */}
-          <FormField
-            control={form.control}
-            name="patientName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('forms.patientName')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={t('forms.patientNamePlaceholder')}
-                    className={foundPatient ? 'bg-muted' : ''}
-                    readOnly={foundPatient ? true : false}
-                  />
-                </FormControl>
-                <FormMessage />
-                {patientCode && !foundPatient && (
-                  <p className="text-xs text-amber-600">
-                    {t('forms.patientWillBeCreated')}
-                  </p>
-                )}
-                {patientCode && foundPatient && (
-                  <p className="text-xs text-green-600">
-                    {t('forms.patientFound')}
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
-        </div>
+        {/* Código e Nome do Paciente */}
+        <PatientCodeInput
+          clinicId={clinic.id}
+          value={form.watch('patientCode')}
+          onCodeChange={(c) => form.setValue('patientCode', c, { shouldValidate: true })}
+          patientName={form.watch('patientName')}
+          onPatientNameChange={(n) =>
+            form.setValue('patientName', n, { shouldValidate: true })
+          }
+          label={t('forms.code')}
+          codeError={form.formState.errors.patientCode?.message}
+          patientNameError={form.formState.errors.patientName?.message}
+        />
 
         <Separator />
 
@@ -299,66 +209,19 @@ export function DailyBilling({ clinic }: { clinic: Clinic }) {
 
         {/* Campos condicionais quando "Faturar em nome de 3os" está marcado */}
         {billToThirdParty && (
-          <div className="grid grid-cols-2 gap-3">
-            {/* Código do Terceiro (opcional) */}
-            <FormField
-              control={form.control}
-              name="thirdPartyCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('forms.codeOptional')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]{1,6}"
-                      maxLength={6}
-                      placeholder={t('forms.codePlaceholder')}
-                      className="font-mono text-lg"
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 6)
-                        field.onChange(value)
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground">{t('forms.codeHelp')}</p>
-                </FormItem>
-              )}
-            />
-
-            {/* Nome do Terceiro */}
-            <FormField
-              control={form.control}
-              name="thirdPartyName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('forms.thirdPartyName')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder={t('forms.thirdPartyNamePlaceholder')}
-                      className={foundThirdParty ? 'bg-muted' : ''}
-                      readOnly={foundThirdParty ? true : false}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  {thirdPartyCode && !foundThirdParty && (
-                    <p className="text-xs text-amber-600">
-                      {t('forms.patientNotFoundManual')}
-                    </p>
-                  )}
-                  {thirdPartyCode && foundThirdParty && (
-                    <p className="text-xs text-green-600">
-                      {t('forms.patientFound')}
-                    </p>
-                  )}
-                </FormItem>
-              )}
-            />
-          </div>
+          <PatientCodeInput
+            clinicId={clinic.id}
+            value={form.watch('thirdPartyCode') || ''}
+            onCodeChange={(c) => form.setValue('thirdPartyCode', c, { shouldValidate: true })}
+            patientName={form.watch('thirdPartyName') || ''}
+            onPatientNameChange={(n) =>
+              form.setValue('thirdPartyName', n, { shouldValidate: true })
+            }
+            label={t('forms.codeOptional')}
+            required={false}
+            codeError={form.formState.errors.thirdPartyCode?.message}
+            patientNameError={form.formState.errors.thirdPartyName?.message}
+          />
         )}
 
         <Separator />

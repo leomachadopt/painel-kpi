@@ -2,9 +2,10 @@ import React, { useRef, useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Check } from 'lucide-react'
+import { Loader2, Check, ChevronDown } from 'lucide-react'
 import { usePatientLookup } from '@/hooks/usePatientLookup'
 import { useTranslation } from '@/hooks/useTranslation'
+import { Patient } from '@/lib/types'
 
 interface PatientCodeInputProps {
   clinicId: string
@@ -35,15 +36,30 @@ export function PatientCodeInput({
   const defaultLabel = label || t('forms.patientCode')
   const defaultCodeHint = codeHint || t('forms.codeHelp')
   const [code, setCode] = useState(value)
+  const [nameSearchQuery, setNameSearchQuery] = useState('')
+  const [showNameDropdown, setShowNameDropdown] = useState(false)
   const [patientNotFound, setPatientNotFound] = useState(false)
   const [canAutoCreate, setCanAutoCreate] = useState(true)
   const createSeq = useRef(0)
   const onPatientNameChangeRef = useRef(onPatientNameChange)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const nameDropdownRef = useRef<HTMLDivElement>(null)
+  const nameSearchTimeoutRef = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
     onPatientNameChangeRef.current = onPatientNameChange
   }, [onPatientNameChange])
-  const { patient, loading, error, lookupByCode, createPatient, clearPatient } = usePatientLookup()
+  const {
+    patient,
+    patients,
+    loading,
+    error,
+    lookupByCode,
+    lookupByName,
+    createPatient,
+    clearPatient,
+    clearPatients
+  } = usePatientLookup()
 
   // Update local state when prop changes
   useEffect(() => {
@@ -72,11 +88,98 @@ export function PatientCodeInput({
   useEffect(() => {
     if (patient) {
       onPatientNameChangeRef.current(patient.name)
+      setNameSearchQuery(patient.name)
       setPatientNotFound(false)
+      setShowNameDropdown(false)
     } else if (code.length > 0 && !loading && error?.status === 404) {
       setPatientNotFound(true)
     }
   }, [patient, code.length, loading, error])
+
+  // Sincronizar nameSearchQuery com patientName quando vier de fora
+  useEffect(() => {
+    if (patientName && !patient) {
+      setNameSearchQuery(patientName)
+    }
+  }, [patientName, patient])
+
+  // Buscar pacientes por nome com debounce
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    setNameSearchQuery(newName)
+    onPatientNameChangeRef.current(newName)
+
+    // Limpar paciente selecionado se o nome foi alterado
+    if (patient && newName !== patient.name) {
+      clearPatient()
+      onCodeChange('')
+      setCode('')
+    }
+
+    // Limpar timeout anterior
+    if (nameSearchTimeoutRef.current) {
+      clearTimeout(nameSearchTimeoutRef.current)
+    }
+
+    // Se nome vazio, limpar resultados
+    if (!newName.trim()) {
+      clearPatients()
+      setShowNameDropdown(false)
+      return
+    }
+
+    // Buscar com debounce de 300ms
+    if (newName.trim().length >= 2) {
+      setShowNameDropdown(true)
+      nameSearchTimeoutRef.current = setTimeout(() => {
+        lookupByName(clinicId, newName)
+      }, 300)
+    } else {
+      setShowNameDropdown(false)
+      clearPatients()
+    }
+  }
+
+  // Selecionar paciente do dropdown
+  const handleSelectPatient = (selectedPatient: Patient) => {
+    setCode(selectedPatient.code)
+    onCodeChange(selectedPatient.code)
+    setNameSearchQuery(selectedPatient.name)
+    onPatientNameChangeRef.current(selectedPatient.name)
+    clearPatient()
+    // Buscar dados completos do paciente por código
+    lookupByCode(clinicId, selectedPatient.code)
+    setShowNameDropdown(false)
+    clearPatients()
+  }
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        nameDropdownRef.current &&
+        !nameDropdownRef.current.contains(event.target as Node) &&
+        nameInputRef.current &&
+        !nameInputRef.current.contains(event.target as Node)
+      ) {
+        setShowNameDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (nameSearchTimeoutRef.current) {
+        clearTimeout(nameSearchTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="space-y-2">
@@ -124,28 +227,72 @@ export function PatientCodeInput({
           )}
         </div>
 
-        <div>
+        <div className="relative">
           <Label htmlFor="patient-name">
             {t('forms.patientName')} {required && <span className="text-destructive">*</span>}
           </Label>
-          <Input
-            id="patient-name"
-            type="text"
-            value={patientName}
-            onChange={(e) => onPatientNameChange(e.target.value)}
-            onBlur={() => {
-              // Auto-criação desabilitada para evitar 403; mantemos o preenchimento livre.
-              const trimmed = (patientName || '').trim()
-              if (!trimmed) return
-              setPatientNotFound(false)
-              setCanAutoCreate(true)
-            }}
-            placeholder={t('forms.patientNamePlaceholder')}
-            required={required}
-            disabled={patient !== null || loading}
-            className={patient ? 'bg-muted' : ''}
-            aria-invalid={!!patientNameError}
-          />
+          <div className="relative">
+            <Input
+              ref={nameInputRef}
+              id="patient-name"
+              type="text"
+              value={nameSearchQuery}
+              onChange={handleNameChange}
+              onFocus={() => {
+                if (patients.length > 0 && nameSearchQuery.trim().length >= 2) {
+                  setShowNameDropdown(true)
+                }
+              }}
+              placeholder={t('forms.patientNamePlaceholder')}
+              required={required}
+              disabled={patient !== null || loading}
+              className={patient ? 'bg-muted' : ''}
+              aria-invalid={!!patientNameError}
+            />
+            {loading && patients.length === 0 && nameSearchQuery.length >= 2 && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {showNameDropdown && patients.length > 0 && !patient && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown de sugestões */}
+          {showNameDropdown && patients.length > 0 && !patient && (
+            <div
+              ref={nameDropdownRef}
+              className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+            >
+              {patients.slice(0, 10).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSelectPatient(p)}
+                  className="w-full px-3 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b last:border-b-0 flex items-center justify-between"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{p.name}</div>
+                    {p.email && (
+                      <div className="text-xs text-muted-foreground">{p.email}</div>
+                    )}
+                  </div>
+                  <div className="font-mono text-xs text-muted-foreground ml-2 px-2 py-1 bg-gray-100 rounded">
+                    {p.code}
+                  </div>
+                </button>
+              ))}
+              {patients.length === 0 && !loading && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  Nenhum paciente encontrado
+                </div>
+              )}
+            </div>
+          )}
+
           {patient && (
             <p className="text-xs text-green-600 mt-1">{t('forms.patientFound')}</p>
           )}

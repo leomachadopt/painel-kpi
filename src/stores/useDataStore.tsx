@@ -505,10 +505,17 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         return await promise
       } catch (error: any) {
-        // Se for 403 (sem permissão), usar valor padrão silenciosamente
-        if (error?.status === 403) {
+        // Silenciar 403 (sem permissão) e 404 (rota/dados não existem)
+        const is404or403 = error?.status === 403 ||
+                           error?.status === 404 ||
+                           error?.message?.includes('not found') ||
+                           error?.message?.includes('Route not found')
+
+        if (is404or403) {
+          // Usar valor padrão silenciosamente
           return defaultValue
         }
+
         // Para outros erros, logar mas não quebrar o carregamento
         console.error(errorMessage, error)
         return defaultValue
@@ -768,10 +775,14 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
         return { ...prev, [clinicId]: newTargets }
       })
     } catch (error: any) {
-      // If 404, targets don't exist yet - that's ok, will use defaults
-      if (!error.message?.includes('404')) {
+      // If 404 or Route not found, targets don't exist yet - that's ok, will use defaults
+      const is404 = error.message?.includes('404') ||
+                    error.message?.includes('not found') ||
+                    error.status === 404
+      if (!is404) {
         console.error('Error loading targets:', error)
       }
+      // Silently ignore 404 errors - will use default targets
     }
   }
 

@@ -132,7 +132,11 @@ export const authApi = {
 // CLINICS API
 // ================================
 export const clinicsApi = {
-  getAll: () => apiCall<any[]>('/clinics'),
+  getAll: async () => {
+    const response = await apiCall<any>('/clinics')
+    // Backend pode retornar {clinics: [...]} ou [...] dependendo da versão
+    return Array.isArray(response) ? response : (response.clinics || [])
+  },
 
   getById: (id: string) => apiCall<any>(`/clinics/${id}`),
 

@@ -171,9 +171,12 @@ export default function AccountsPayable() {
     if (activeTab === 'pending' && entry.paid) return false
     if (activeTab === 'paid' && !entry.paid) return false
 
-    // Filter by date period (based on dueDate)
-    const entryDate = entry.dueDate.split('T')[0]
-    if (entryDate < startDate || entryDate > endDate) return false
+    // Filter by date period (based on paidDate) - only for paid tab
+    if (activeTab === 'paid') {
+      if (!entry.paidDate) return false
+      const entryDate = entry.paidDate.split('T')[0]
+      if (entryDate < startDate || entryDate > endDate) return false
+    }
 
     // Filter by search term
     if (searchTerm.trim()) {
@@ -447,73 +450,88 @@ export default function AccountsPayable() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4 mb-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('accountsPayable.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                  <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
+                    <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
                     <Input
-                      placeholder={t('accountsPayable.searchPlaceholder')}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+                    />
+                    <span className="text-muted-foreground">-</span>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
-                      <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-                      />
-                      <span className="text-muted-foreground">-</span>
-                      <Input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={setPeriodToday}
-                        className="text-xs"
-                      >
-                        {t('reports.today')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={setPeriodYesterday}
-                        className="text-xs"
-                      >
-                        {t('reports.yesterday')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={setPeriodLastWeek}
-                        className="text-xs"
-                      >
-                        {t('reports.lastWeek')}
-                      </Button>
-                      <Input
-                        type="month"
-                        value={`${new Date(startDate).getFullYear()}-${String(new Date(startDate).getMonth() + 1).padStart(2, '0')}`}
-                        onChange={(e) => {
-                          const [year, month] = e.target.value.split('-')
-                          const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1)
-                          const lastDay = new Date(parseInt(year), parseInt(month), 0)
-                          setStartDate(firstDay.toISOString().split('T')[0])
-                          setEndDate(lastDay.toISOString().split('T')[0])
-                        }}
-                        className="h-8 w-[140px] text-xs"
-                      />
-                    </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={setPeriodToday}
+                      className="text-xs"
+                    >
+                      {t('reports.today')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={setPeriodYesterday}
+                      className="text-xs"
+                    >
+                      {t('reports.yesterday')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={setPeriodLastWeek}
+                      className="text-xs"
+                    >
+                      {t('reports.lastWeek')}
+                    </Button>
+                    <Select
+                      value={`${new Date(startDate).getFullYear()}-${String(new Date(startDate).getMonth() + 1).padStart(2, '0')}`}
+                      onValueChange={(value) => {
+                        const [year, month] = value.split('-')
+                        const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1)
+                        const lastDay = new Date(parseInt(year), parseInt(month), 0)
+                        setStartDate(firstDay.toISOString().split('T')[0])
+                        setEndDate(lastDay.toISOString().split('T')[0])
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-[160px] text-xs">
+                        <SelectValue placeholder="Selecione o mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const date = new Date()
+                          date.setMonth(date.getMonth() - i)
+                          const year = date.getFullYear()
+                          const month = date.getMonth() + 1
+                          const monthName = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                          const value = `${year}-${String(month).padStart(2, '0')}`
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

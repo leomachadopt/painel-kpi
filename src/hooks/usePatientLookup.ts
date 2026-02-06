@@ -4,15 +4,19 @@ import { Patient } from '@/lib/types'
 
 interface UsePatientLookupReturn {
   patient: Patient | null
+  patients: Patient[]
   loading: boolean
   error: any
   lookupByCode: (clinicId: string, code: string) => Promise<Patient | null>
+  lookupByName: (clinicId: string, name: string) => Promise<Patient[]>
   createPatient: (clinicId: string, data: Partial<Patient>) => Promise<Patient | null>
   clearPatient: () => void
+  clearPatients: () => void
 }
 
 export function usePatientLookup(): UsePatientLookupReturn {
   const [patient, setPatient] = useState<Patient | null>(null)
+  const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<any>(null)
 
@@ -74,17 +78,46 @@ export function usePatientLookup(): UsePatientLookupReturn {
     }
   }, [])
 
+  const lookupByName = useCallback(async (clinicId: string, name: string) => {
+    if (!name || name.trim().length < 2) {
+      setPatients([])
+      return []
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const foundPatients = await patientsApi.getAll(clinicId, name.trim())
+      setPatients(foundPatients)
+      return foundPatients
+    } catch (err: any) {
+      setError(err?.message || 'Erro ao buscar pacientes')
+      setPatients([])
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const clearPatient = useCallback(() => {
     setPatient(null)
     setError(null)
   }, [])
 
+  const clearPatients = useCallback(() => {
+    setPatients([])
+  }, [])
+
   return {
     patient,
+    patients,
     loading,
     error,
     lookupByCode,
+    lookupByName,
     createPatient,
     clearPatient,
+    clearPatients,
   }
 }
