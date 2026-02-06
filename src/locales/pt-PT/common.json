@@ -338,6 +338,7 @@
     "category": "Categoria",
     "amount": "Valor",
     "dueDate": "Vencimento",
+    "paidDate": "Data de Pagamento",
     "status": "Estado",
     "actions": "Acções",
     "viewDetails": "Visualizar Detalhes",

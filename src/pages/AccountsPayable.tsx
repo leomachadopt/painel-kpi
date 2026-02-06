@@ -285,68 +285,12 @@ export default function AccountsPayable() {
 
   return (
     <div className="flex flex-col gap-6 p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('accountsPayable.title')}</h1>
           <p className="text-muted-foreground">
             {t('accountsPayable.manage')}
           </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
-              <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-              />
-              <span className="text-muted-foreground">-</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
-              />
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={setPeriodToday}
-                className="text-xs"
-              >
-                {t('reports.today')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={setPeriodYesterday}
-                className="text-xs"
-              >
-                {t('reports.yesterday')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={setPeriodLastWeek}
-                className="text-xs"
-              >
-                {t('reports.lastWeek')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={setPeriodLastMonth}
-                className="text-xs"
-              >
-                {t('reports.lastMonth')}
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -503,14 +447,74 @@ export default function AccountsPayable() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t('accountsPayable.searchPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={t('accountsPayable.searchPlaceholder')}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
+                      <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+                      />
+                      <span className="text-muted-foreground">-</span>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={setPeriodToday}
+                        className="text-xs"
+                      >
+                        {t('reports.today')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={setPeriodYesterday}
+                        className="text-xs"
+                      >
+                        {t('reports.yesterday')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={setPeriodLastWeek}
+                        className="text-xs"
+                      >
+                        {t('reports.lastWeek')}
+                      </Button>
+                      <Input
+                        type="month"
+                        value={`${new Date(startDate).getFullYear()}-${String(new Date(startDate).getMonth() + 1).padStart(2, '0')}`}
+                        onChange={(e) => {
+                          const [year, month] = e.target.value.split('-')
+                          const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1)
+                          const lastDay = new Date(parseInt(year), parseInt(month), 0)
+                          setStartDate(firstDay.toISOString().split('T')[0])
+                          setEndDate(lastDay.toISOString().split('T')[0])
+                        }}
+                        className="h-8 w-[140px] text-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -524,17 +528,15 @@ export default function AccountsPayable() {
                   <p>{t('accountsPayable.noneFound')}</p>
                 </div>
               ) : (
-                <div className="border rounded-md">
+                <div className="border rounded-md overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t('accountsPayable.description')}</TableHead>
-                        <TableHead>{t('accountsPayable.supplier')}</TableHead>
-                        <TableHead>{t('accountsPayable.category')}</TableHead>
-                        <TableHead>{t('accountsPayable.amount')}</TableHead>
-                        <TableHead>{t('accountsPayable.dueDate')}</TableHead>
-                        <TableHead>{t('accountsPayable.paidDate')}</TableHead>
-                        <TableHead className="text-right">{t('accountsPayable.actions')}</TableHead>
+                        <TableHead className="min-w-[150px]">{t('accountsPayable.description')}</TableHead>
+                        <TableHead className="min-w-[120px]">{t('accountsPayable.supplier')}</TableHead>
+                        <TableHead className="min-w-[100px]">{t('accountsPayable.amount')}</TableHead>
+                        <TableHead className="min-w-[100px]">{t('accountsPayable.paidDate')}</TableHead>
+                        <TableHead className="text-right min-w-[200px]">{t('accountsPayable.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -542,15 +544,17 @@ export default function AccountsPayable() {
                         return (
                           <TableRow key={entry.id}>
                             <TableCell className="font-medium">
-                              {entry.description}
-                            </TableCell>
-                            <TableCell>{entry.supplierName || '-'}</TableCell>
-                            <TableCell>{entry.category || '-'}</TableCell>
-                            <TableCell className="font-medium">
-                              {formatCurrency(entry.amount)}
+                              <div className="max-w-[200px] truncate" title={entry.description}>
+                                {entry.description}
+                              </div>
                             </TableCell>
                             <TableCell>
-                              {format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                              <div className="max-w-[150px] truncate" title={entry.supplierName || '-'}>
+                                {entry.supplierName || '-'}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(entry.amount)}
                             </TableCell>
                             <TableCell>
                               {entry.paidDate ? format(new Date(entry.paidDate), 'dd/MM/yyyy', { locale: ptBR }) : '-'}

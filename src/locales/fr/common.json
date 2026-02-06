@@ -337,6 +337,7 @@
     "category": "Catégorie",
     "amount": "Montant",
     "dueDate": "Échéance",
+    "paidDate": "Date de Paiement",
     "status": "Statut",
     "actions": "Actions",
     "viewDetails": "Voir les Détails",

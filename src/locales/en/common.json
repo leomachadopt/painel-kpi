@@ -337,6 +337,7 @@
     "category": "Category",
     "amount": "Amount",
     "dueDate": "Due Date",
+    "paidDate": "Payment Date",
     "status": "Status",
     "actions": "Actions",
     "viewDetails": "View Details",

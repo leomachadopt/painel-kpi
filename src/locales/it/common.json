@@ -337,6 +337,7 @@
     "category": "Categoria",
     "amount": "Importo",
     "dueDate": "Scadenza",
+    "paidDate": "Data di Pagamento",
     "status": "Stato",
     "actions": "Azioni",
     "viewDetails": "Visualizza Dettagli",
