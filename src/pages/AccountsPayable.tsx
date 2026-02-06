@@ -12,6 +12,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
+import {
   Table,
   TableBody,
   TableCell,
@@ -69,6 +75,7 @@ export default function AccountsPayable() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [activeTab, setActiveTab] = useState<string>('pending')
   const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
@@ -119,6 +126,10 @@ export default function AccountsPayable() {
   }
 
   const filteredEntries = entries.filter((entry) => {
+    // Filter by active tab (pending or paid)
+    if (activeTab === 'pending' && entry.paid) return false
+    if (activeTab === 'paid' && !entry.paid) return false
+
     // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase()
@@ -129,34 +140,29 @@ export default function AccountsPayable() {
       if (!matchesSearch) return false
     }
 
-    // Filter by status
-    if (statusFilter === 'paid') {
-      if (!entry.paid) return false
-    } else if (statusFilter === 'overdue') {
-      if (entry.paid) return false
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const dueDate = new Date(entry.dueDate)
-      dueDate.setHours(0, 0, 0, 0)
-      if (dueDate >= today) return false
-    } else if (statusFilter === 'today') {
-      if (entry.paid) return false
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const dueDate = new Date(entry.dueDate)
-      dueDate.setHours(0, 0, 0, 0)
-      if (dueDate.getTime() !== today.getTime()) return false
-    } else if (statusFilter === 'week') {
-      if (entry.paid) return false
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const nextWeek = new Date(today)
-      nextWeek.setDate(nextWeek.getDate() + 7)
-      const dueDate = new Date(entry.dueDate)
-      dueDate.setHours(0, 0, 0, 0)
-      if (dueDate < today || dueDate > nextWeek) return false
-    } else if (statusFilter === 'pending') {
-      if (entry.paid) return false
+    // Filter by status (only for pending tab)
+    if (activeTab === 'pending') {
+      if (statusFilter === 'overdue') {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const dueDate = new Date(entry.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        if (dueDate >= today) return false
+      } else if (statusFilter === 'today') {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const dueDate = new Date(entry.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        if (dueDate.getTime() !== today.getTime()) return false
+      } else if (statusFilter === 'week') {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const nextWeek = new Date(today)
+        nextWeek.setDate(nextWeek.getDate() + 7)
+        const dueDate = new Date(entry.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        if (dueDate < today || dueDate > nextWeek) return false
+      }
     }
 
     return true
@@ -243,161 +249,270 @@ export default function AccountsPayable() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('accountsPayable.list')}</CardTitle>
-          <CardDescription>
-            {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('accountsPayable.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder={t('accountsPayable.filterByStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('accountsPayable.all')}</SelectItem>
-                  <SelectItem value="pending">{t('accountsPayable.pending')}</SelectItem>
-                  <SelectItem value="overdue">{t('accountsPayable.overdue')}</SelectItem>
-                  <SelectItem value="today">{t('accountsPayable.dueToday')}</SelectItem>
-                  <SelectItem value="week">{t('accountsPayable.next7Days')}</SelectItem>
-                  <SelectItem value="paid">{t('accountsPayable.paid')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pending">{t('accountsPayable.pending')}</TabsTrigger>
+          <TabsTrigger value="paid">{t('accountsPayable.paid')}</TabsTrigger>
+        </TabsList>
 
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : filteredEntries.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>{t('accountsPayable.noneFound')}</p>
-            </div>
-          ) : (
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('accountsPayable.description')}</TableHead>
-                    <TableHead>{t('accountsPayable.supplier')}</TableHead>
-                    <TableHead>{t('accountsPayable.category')}</TableHead>
-                    <TableHead>{t('accountsPayable.amount')}</TableHead>
-                    <TableHead>{t('accountsPayable.dueDate')}</TableHead>
-                    <TableHead>{t('accountsPayable.status')}</TableHead>
-                    <TableHead className="text-right">{t('accountsPayable.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map((entry) => {
-                    const status = getStatusBadge(entry)
-                    return (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium">
-                          {entry.description}
-                        </TableCell>
-                        <TableCell>{entry.supplierName || '-'}</TableCell>
-                        <TableCell>{entry.category || '-'}</TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(entry.amount)}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={status.variant} className={status.color + ' text-white'}>
-                            {status.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setViewEntryId(entry.id)}
-                              title={t('accountsPayable.viewDetails')}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {canEditAccountsPayable && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setEditEntryId(entry.id)}
-                                  title={t('accountsPayable.edit')}
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                                {!entry.paid ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleMarkAsPaid(entry)}
-                                    disabled={markingPaidId === entry.id}
-                                    className="text-green-600"
-                                  >
-                                    {markingPaidId === entry.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <>
-                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                        {t('accountsPayable.markAsPaid')}
-                                      </>
-                                    )}
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleMarkAsUnpaid(entry)}
-                                    disabled={markingPaidId === entry.id}
-                                    className="text-orange-600"
-                                  >
-                                    {markingPaidId === entry.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <>
-                                        <XCircle className="h-4 w-4 mr-2" />
-                                        {t('accountsPayable.markAsUnpaid')}
-                                      </>
-                                    )}
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setDeleteEntryId(entry.id)}
-                                  title={t('accountsPayable.delete')}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
+        <TabsContent value="pending" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('accountsPayable.pending')}</CardTitle>
+              <CardDescription>
+                {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 mb-4">
+                <div className="flex gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={t('accountsPayable.searchPlaceholder')}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder={t('accountsPayable.filterByStatus')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('accountsPayable.all')}</SelectItem>
+                      <SelectItem value="overdue">{t('accountsPayable.overdue')}</SelectItem>
+                      <SelectItem value="today">{t('accountsPayable.dueToday')}</SelectItem>
+                      <SelectItem value="week">{t('accountsPayable.next7Days')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : filteredEntries.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{t('accountsPayable.noneFound')}</p>
+                </div>
+              ) : (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('accountsPayable.description')}</TableHead>
+                        <TableHead>{t('accountsPayable.supplier')}</TableHead>
+                        <TableHead>{t('accountsPayable.category')}</TableHead>
+                        <TableHead>{t('accountsPayable.amount')}</TableHead>
+                        <TableHead>{t('accountsPayable.dueDate')}</TableHead>
+                        <TableHead>{t('accountsPayable.status')}</TableHead>
+                        <TableHead className="text-right">{t('accountsPayable.actions')}</TableHead>
                       </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEntries.map((entry) => {
+                        const status = getStatusBadge(entry)
+                        return (
+                          <TableRow key={entry.id}>
+                            <TableCell className="font-medium">
+                              {entry.description}
+                            </TableCell>
+                            <TableCell>{entry.supplierName || '-'}</TableCell>
+                            <TableCell>{entry.category || '-'}</TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(entry.amount)}
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={status.variant} className={status.color + ' text-white'}>
+                                {status.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setViewEntryId(entry.id)}
+                                  title={t('accountsPayable.viewDetails')}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {canEditAccountsPayable && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setEditEntryId(entry.id)}
+                                      title={t('accountsPayable.edit')}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleMarkAsPaid(entry)}
+                                      disabled={markingPaidId === entry.id}
+                                      className="text-green-600"
+                                    >
+                                      {markingPaidId === entry.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                                          {t('accountsPayable.markAsPaid')}
+                                        </>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setDeleteEntryId(entry.id)}
+                                      title={t('accountsPayable.delete')}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="paid" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('accountsPayable.paid')}</CardTitle>
+              <CardDescription>
+                {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('accountsPayable.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : filteredEntries.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>{t('accountsPayable.noneFound')}</p>
+                </div>
+              ) : (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('accountsPayable.description')}</TableHead>
+                        <TableHead>{t('accountsPayable.supplier')}</TableHead>
+                        <TableHead>{t('accountsPayable.category')}</TableHead>
+                        <TableHead>{t('accountsPayable.amount')}</TableHead>
+                        <TableHead>{t('accountsPayable.dueDate')}</TableHead>
+                        <TableHead>{t('accountsPayable.paidDate')}</TableHead>
+                        <TableHead className="text-right">{t('accountsPayable.actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEntries.map((entry) => {
+                        return (
+                          <TableRow key={entry.id}>
+                            <TableCell className="font-medium">
+                              {entry.description}
+                            </TableCell>
+                            <TableCell>{entry.supplierName || '-'}</TableCell>
+                            <TableCell>{entry.category || '-'}</TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(entry.amount)}
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                            </TableCell>
+                            <TableCell>
+                              {entry.paidDate ? format(new Date(entry.paidDate), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setViewEntryId(entry.id)}
+                                  title={t('accountsPayable.viewDetails')}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {canEditAccountsPayable && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setEditEntryId(entry.id)}
+                                      title={t('accountsPayable.edit')}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleMarkAsUnpaid(entry)}
+                                      disabled={markingPaidId === entry.id}
+                                      className="text-orange-600"
+                                    >
+                                      {markingPaidId === entry.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <XCircle className="h-4 w-4 mr-2" />
+                                          {t('accountsPayable.markAsUnpaid')}
+                                        </>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setDeleteEntryId(entry.id)}
+                                      title={t('accountsPayable.delete')}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={deleteEntryId !== null} onOpenChange={(open) => !open && setDeleteEntryId(null)}>
         <AlertDialogContent>
