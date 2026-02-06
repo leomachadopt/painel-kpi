@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye } from 'lucide-react'
+import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye, Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -76,6 +76,12 @@ export default function AccountsPayable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState<string>('pending')
+  const [startDate, setStartDate] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .split('T')[0],
+  )
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null)
@@ -88,6 +94,41 @@ export default function AccountsPayable() {
       loadEntries()
     }
   }, [clinicId])
+
+  // Funções para definir períodos rápidos
+  const setPeriodToday = () => {
+    const today = new Date().toISOString().split('T')[0]
+    setStartDate(today)
+    setEndDate(today)
+  }
+
+  const setPeriodYesterday = () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toISOString().split('T')[0]
+    setStartDate(yesterdayStr)
+    setEndDate(yesterdayStr)
+  }
+
+  const setPeriodLastWeek = () => {
+    const today = new Date()
+    const lastWeekStart = new Date(today)
+    lastWeekStart.setDate(today.getDate() - 7)
+    const lastWeekEnd = new Date(today)
+    lastWeekEnd.setDate(today.getDate() - 1)
+
+    setStartDate(lastWeekStart.toISOString().split('T')[0])
+    setEndDate(lastWeekEnd.toISOString().split('T')[0])
+  }
+
+  const setPeriodLastMonth = () => {
+    const today = new Date()
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+
+    setStartDate(lastMonthStart.toISOString().split('T')[0])
+    setEndDate(lastMonthEnd.toISOString().split('T')[0])
+  }
 
   const loadEntries = async () => {
     if (!clinicId) return
@@ -129,6 +170,10 @@ export default function AccountsPayable() {
     // Filter by active tab (pending or paid)
     if (activeTab === 'pending' && entry.paid) return false
     if (activeTab === 'paid' && !entry.paid) return false
+
+    // Filter by date period (based on dueDate)
+    const entryDate = entry.dueDate.split('T')[0]
+    if (entryDate < startDate || entryDate > endDate) return false
 
     // Filter by search term
     if (searchTerm.trim()) {
@@ -240,12 +285,68 @@ export default function AccountsPayable() {
 
   return (
     <div className="flex flex-col gap-6 p-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('accountsPayable.title')}</h1>
           <p className="text-muted-foreground">
             {t('accountsPayable.manage')}
           </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border rounded-md p-1 bg-background">
+              <CalendarIcon className="h-4 w-4 ml-2 text-muted-foreground" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="border-0 shadow-none h-8 w-auto p-0 focus-visible:ring-0"
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodToday}
+                className="text-xs"
+              >
+                {t('reports.today')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodYesterday}
+                className="text-xs"
+              >
+                {t('reports.yesterday')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodLastWeek}
+                className="text-xs"
+              >
+                {t('reports.lastWeek')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={setPeriodLastMonth}
+                className="text-xs"
+              >
+                {t('reports.lastMonth')}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
