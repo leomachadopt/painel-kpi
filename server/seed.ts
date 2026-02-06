@@ -60,7 +60,7 @@ const seed = async () => {
     await client.query(`
       INSERT INTO users (id, name, email, password_hash, role, clinic_id)
       VALUES
-        ('mentor-1', 'Dra. Ana Mentora', 'mentor@kpipanel.com', 'mentor123', 'MENTORA', NULL),
+        ('mentor-1', 'Dra. Ana Mentora', 'mentor@kpipanel.com', 'mentor123', 'MENTOR', NULL),
         ('manager-1', 'Gestor da Clínica', 'clinica@kpipanel.com', 'clinica123', 'GESTOR_CLINICA', $1)
       ON CONFLICT (email) DO NOTHING
     `, [clinic1Id])
