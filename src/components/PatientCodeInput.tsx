@@ -71,7 +71,7 @@ export function PatientCodeInput({
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newCode = e.target.value.replace(/\D/g, '').slice(0, 6)
-    isUserTypingRef.current = true // Marcar que usuário está digitando
+    setActiveField('code') // Marca campo de código como ativo
     setCode(newCode)
     onCodeChange(newCode)
     clearPatient()
@@ -88,7 +88,7 @@ export function PatientCodeInput({
     }
 
     if (newCode.length === 0) {
-      isUserTypingRef.current = false
+      setActiveField(null)
       onPatientNameChangeRef.current('')
       return
     }
@@ -97,7 +97,8 @@ export function PatientCodeInput({
     if (newCode.length >= 1 && newCode.length <= 6) {
       codeSearchTimeoutRef.current = setTimeout(() => {
         lookupByCode(clinicId, newCode)
-        isUserTypingRef.current = false
+        // Só limpar activeField se ainda estiver em 'code'
+        setActiveField((current) => current === 'code' ? null : current)
       }, 300)
     }
   }
@@ -107,28 +108,33 @@ export function PatientCodeInput({
     if (patient) {
       // Mudança programática - NÃO deve disparar busca por nome
       isUserTypingRef.current = false
-      onPatientNameChangeRef.current(patient.name)
-      setNameSearchQuery(patient.name)
+      // Só atualizar nome se não estiver digitando no campo de nome
+      if (activeField !== 'name') {
+        onPatientNameChangeRef.current(patient.name)
+        setNameSearchQuery(patient.name)
+      }
       setPatientNotFound(false)
       setShowNameDropdown(false)
     } else if (code.length > 0 && !loading && error?.status === 404) {
       setPatientNotFound(true)
     }
-  }, [patient, code.length, loading, error])
+  }, [patient, code.length, loading, error, activeField])
 
   // Sincronizar nameSearchQuery com patientName quando vier de fora
+  // IMPORTANTE: Só sincronizar se não houver campo ativo (usuário não está digitando)
   useEffect(() => {
-    if (patientName && !patient) {
+    if (patientName && !patient && activeField === null) {
       // Mudança programática - NÃO deve disparar busca por nome
       isUserTypingRef.current = false
       setNameSearchQuery(patientName)
     }
-  }, [patientName, patient])
+  }, [patientName, patient, activeField])
 
   // Buscar pacientes por nome com debounce
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
     isUserTypingRef.current = true // Marcar que usuário está digitando
+    setActiveField('name') // Marca campo de nome como ativo
     setNameSearchQuery(newName)
     onPatientNameChangeRef.current(newName)
 
@@ -154,6 +160,7 @@ export function PatientCodeInput({
       clearPatients()
       setShowNameDropdown(false)
       isUserTypingRef.current = false
+      setActiveField(null)
       return
     }
 
@@ -163,6 +170,8 @@ export function PatientCodeInput({
       nameSearchTimeoutRef.current = setTimeout(() => {
         lookupByName(clinicId, newName)
         isUserTypingRef.current = false
+        // Só limpar activeField se ainda estiver em 'name'
+        setActiveField((current) => current === 'name' ? null : current)
       }, 500)
     } else {
       setShowNameDropdown(false)
