@@ -97,8 +97,7 @@ export function PatientCodeInput({
     if (newCode.length >= 1 && newCode.length <= 6) {
       codeSearchTimeoutRef.current = setTimeout(() => {
         lookupByCode(clinicId, newCode)
-        // Só limpar activeField se ainda estiver em 'code'
-        setActiveField((current) => current === 'code' ? null : current)
+        // NÃO limpar activeField aqui - só no onBlur
       }, 300)
     }
   }
@@ -170,8 +169,7 @@ export function PatientCodeInput({
       nameSearchTimeoutRef.current = setTimeout(() => {
         lookupByName(clinicId, newName)
         isUserTypingRef.current = false
-        // Só limpar activeField se ainda estiver em 'name'
-        setActiveField((current) => current === 'name' ? null : current)
+        // NÃO limpar activeField aqui - só no onBlur
       }, 500)
     } else {
       setShowNameDropdown(false)
@@ -183,6 +181,7 @@ export function PatientCodeInput({
   const handleSelectPatient = (selectedPatient: Patient) => {
     // Mudança programática - não é digitação do usuário
     isUserTypingRef.current = false
+    setActiveField(null) // Limpar campo ativo ao selecionar
     setCode(selectedPatient.code)
     onCodeChange(selectedPatient.code)
     setNameSearchQuery(selectedPatient.name)
