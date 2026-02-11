@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -192,7 +192,7 @@ export function PatientCodeInput({
   }
 
   // Selecionar paciente do dropdown
-  const handleSelectPatient = (selectedPatient: Patient) => {
+  const handleSelectPatient = useCallback((selectedPatient: Patient) => {
     // Mudança programática - não é digitação do usuário
     isUserTypingRef.current = false
     setActiveField(null) // Limpar campo ativo ao selecionar
@@ -205,7 +205,7 @@ export function PatientCodeInput({
     lookupByCode(clinicId, selectedPatient.code)
     setShowNameDropdown(false)
     clearPatients()
-  }
+  }, [clinicId, onCodeChange, lookupByCode, clearPatient, clearPatients])
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -332,6 +332,7 @@ export function PatientCodeInput({
               disabled={patient !== null || loading}
               className={patient ? 'bg-muted' : ''}
               aria-invalid={!!patientNameError}
+              autoComplete="off"
             />
             {loading && patients.length === 0 && nameSearchQuery.length >= 2 && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
