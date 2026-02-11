@@ -135,7 +135,8 @@ export function PatientCodeInput({
     isUserTypingRef.current = true // Marcar que usuário está digitando
     setActiveField('name') // Marca campo de nome como ativo
     setNameSearchQuery(newName)
-    onPatientNameChangeRef.current(newName)
+    // NÃO chamar onPatientNameChangeRef enquanto digita - só no blur
+    // onPatientNameChangeRef.current(newName)
 
     // Limpar paciente selecionado se o nome foi alterado
     if (patient && newName !== patient.name) {
@@ -244,6 +245,8 @@ export function PatientCodeInput({
   }
 
   const handleNameBlur = () => {
+    // Atualizar o componente pai com o valor final
+    onPatientNameChangeRef.current(nameSearchQuery)
     // Pequeno delay para permitir que cliques no dropdown sejam processados
     setTimeout(() => {
       setActiveField(null)
