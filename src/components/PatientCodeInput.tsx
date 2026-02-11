@@ -40,11 +40,13 @@ export function PatientCodeInput({
   const [showNameDropdown, setShowNameDropdown] = useState(false)
   const [patientNotFound, setPatientNotFound] = useState(false)
   const [canAutoCreate, setCanAutoCreate] = useState(true)
+  const [activeField, setActiveField] = useState<'code' | 'name' | null>(null)
   const createSeq = useRef(0)
   const onPatientNameChangeRef = useRef(onPatientNameChange)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const nameDropdownRef = useRef<HTMLDivElement>(null)
   const nameSearchTimeoutRef = useRef<NodeJS.Timeout>()
+  const codeSearchTimeoutRef = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
     onPatientNameChangeRef.current = onPatientNameChange
@@ -72,15 +74,22 @@ export function PatientCodeInput({
     onCodeChange(newCode)
     clearPatient()
     setPatientNotFound(false)
-    
+
+    // Limpar timeout anterior
+    if (codeSearchTimeoutRef.current) {
+      clearTimeout(codeSearchTimeoutRef.current)
+    }
+
     if (newCode.length === 0) {
       onPatientNameChangeRef.current('')
       return
     }
-    
-    // Buscar paciente quando código tiver 1-6 dígitos
+
+    // Buscar paciente quando código tiver 1-6 dígitos COM DEBOUNCE
     if (newCode.length >= 1 && newCode.length <= 6) {
-      lookupByCode(clinicId, newCode)
+      codeSearchTimeoutRef.current = setTimeout(() => {
+        lookupByCode(clinicId, newCode)
+      }, 300)
     }
   }
 
@@ -116,7 +125,12 @@ export function PatientCodeInput({
       setCode('')
     }
 
-    // Limpar timeout anterior
+    // IMPORTANTE: Cancelar busca por código enquanto digita o nome
+    if (codeSearchTimeoutRef.current) {
+      clearTimeout(codeSearchTimeoutRef.current)
+    }
+
+    // Limpar timeout anterior de nome
     if (nameSearchTimeoutRef.current) {
       clearTimeout(nameSearchTimeoutRef.current)
     }
@@ -128,12 +142,12 @@ export function PatientCodeInput({
       return
     }
 
-    // Buscar com debounce de 300ms
+    // Buscar com debounce de 500ms (aumentado para dar mais tempo ao usuário)
     if (newName.trim().length >= 2) {
       setShowNameDropdown(true)
       nameSearchTimeoutRef.current = setTimeout(() => {
         lookupByName(clinicId, newName)
-      }, 300)
+      }, 500)
     } else {
       setShowNameDropdown(false)
       clearPatients()
@@ -172,14 +186,43 @@ export function PatientCodeInput({
     }
   }, [])
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (nameSearchTimeoutRef.current) {
         clearTimeout(nameSearchTimeoutRef.current)
       }
+      if (codeSearchTimeoutRef.current) {
+        clearTimeout(codeSearchTimeoutRef.current)
+      }
     }
   }, [])
+
+  // Handlers para controlar o campo ativo
+  const handleCodeFocus = () => {
+    setActiveField('code')
+  }
+
+  const handleCodeBlur = () => {
+    // Pequeno delay para permitir que cliques no dropdown sejam processados
+    setTimeout(() => {
+      setActiveField(null)
+    }, 200)
+  }
+
+  const handleNameFocus = () => {
+    setActiveField('name')
+    if (patients.length > 0 && nameSearchQuery.trim().length >= 2) {
+      setShowNameDropdown(true)
+    }
+  }
+
+  const handleNameBlur = () => {
+    // Pequeno delay para permitir que cliques no dropdown sejam processados
+    setTimeout(() => {
+      setActiveField(null)
+    }, 200)
+  }
 
   return (
     <div className="space-y-2">
@@ -197,6 +240,8 @@ export function PatientCodeInput({
               maxLength={6}
               value={code}
               onChange={handleCodeChange}
+              onFocus={handleCodeFocus}
+              onBlur={handleCodeBlur}
               placeholder={t('forms.codePlaceholder')}
               className="font-mono text-lg"
               required={required}
@@ -238,11 +283,8 @@ export function PatientCodeInput({
               type="text"
               value={nameSearchQuery}
               onChange={handleNameChange}
-              onFocus={() => {
-                if (patients.length > 0 && nameSearchQuery.trim().length >= 2) {
-                  setShowNameDropdown(true)
-                }
-              }}
+              onFocus={handleNameFocus}
+              onBlur={handleNameBlur}
               placeholder={t('forms.patientNamePlaceholder')}
               required={required}
               disabled={patient !== null || loading}
