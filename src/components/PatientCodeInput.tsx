@@ -41,6 +41,7 @@ export function PatientCodeInput({
   const [patientNotFound, setPatientNotFound] = useState(false)
   const [canAutoCreate, setCanAutoCreate] = useState(true)
   const [activeField, setActiveField] = useState<'code' | 'name' | null>(null)
+  const [isNewPatient, setIsNewPatient] = useState(false) // Flag para novo paciente
   const createSeq = useRef(0)
   const onPatientNameChangeRef = useRef(onPatientNameChange)
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -76,6 +77,7 @@ export function PatientCodeInput({
     onCodeChange(newCode)
     clearPatient()
     setPatientNotFound(false)
+    setIsNewPatient(false) // Reset ao mudar código
 
     // Limpar timeout anterior
     if (codeSearchTimeoutRef.current) {
@@ -90,6 +92,7 @@ export function PatientCodeInput({
     if (newCode.length === 0) {
       setActiveField(null)
       onPatientNameChangeRef.current('')
+      setIsNewPatient(false)
       return
     }
 
@@ -107,6 +110,7 @@ export function PatientCodeInput({
     if (patient) {
       // Mudança programática - NÃO deve disparar busca por nome
       isUserTypingRef.current = false
+      setIsNewPatient(false) // Paciente existente encontrado
       // Só atualizar nome se não estiver digitando no campo de nome
       if (activeField !== 'name') {
         onPatientNameChangeRef.current(patient.name)
@@ -116,6 +120,7 @@ export function PatientCodeInput({
       setShowNameDropdown(false)
     } else if (code.length > 0 && !loading && error?.status === 404) {
       setPatientNotFound(true)
+      setIsNewPatient(true) // Código não encontrado = novo paciente
     }
   }, [patient, code.length, loading, error, activeField])
 
@@ -161,6 +166,14 @@ export function PatientCodeInput({
       setShowNameDropdown(false)
       isUserTypingRef.current = false
       setActiveField(null)
+      return
+    }
+
+    // SE É NOVO PACIENTE (código não encontrado), NÃO buscar por nome
+    if (isNewPatient) {
+      // Modo de criação - não buscar pacientes existentes
+      setShowNameDropdown(false)
+      clearPatients()
       return
     }
 
