@@ -47,6 +47,7 @@ export function PatientCodeInput({
   const nameDropdownRef = useRef<HTMLDivElement>(null)
   const nameSearchTimeoutRef = useRef<NodeJS.Timeout>()
   const codeSearchTimeoutRef = useRef<NodeJS.Timeout>()
+  const isUserTypingRef = useRef(false) // Flag para distinguir digitação do usuário vs mudança programática
 
   useEffect(() => {
     onPatientNameChangeRef.current = onPatientNameChange
@@ -70,6 +71,7 @@ export function PatientCodeInput({
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newCode = e.target.value.replace(/\D/g, '').slice(0, 6)
+    isUserTypingRef.current = true // Marcar que usuário está digitando
     setCode(newCode)
     onCodeChange(newCode)
     clearPatient()
@@ -80,7 +82,13 @@ export function PatientCodeInput({
       clearTimeout(codeSearchTimeoutRef.current)
     }
 
+    // IMPORTANTE: Cancelar busca por nome enquanto digita o código
+    if (nameSearchTimeoutRef.current) {
+      clearTimeout(nameSearchTimeoutRef.current)
+    }
+
     if (newCode.length === 0) {
+      isUserTypingRef.current = false
       onPatientNameChangeRef.current('')
       return
     }
@@ -89,6 +97,7 @@ export function PatientCodeInput({
     if (newCode.length >= 1 && newCode.length <= 6) {
       codeSearchTimeoutRef.current = setTimeout(() => {
         lookupByCode(clinicId, newCode)
+        isUserTypingRef.current = false
       }, 300)
     }
   }
@@ -96,6 +105,8 @@ export function PatientCodeInput({
   // Preencher nome automaticamente quando paciente for encontrado
   useEffect(() => {
     if (patient) {
+      // Mudança programática - NÃO deve disparar busca por nome
+      isUserTypingRef.current = false
       onPatientNameChangeRef.current(patient.name)
       setNameSearchQuery(patient.name)
       setPatientNotFound(false)
@@ -108,6 +119,8 @@ export function PatientCodeInput({
   // Sincronizar nameSearchQuery com patientName quando vier de fora
   useEffect(() => {
     if (patientName && !patient) {
+      // Mudança programática - NÃO deve disparar busca por nome
+      isUserTypingRef.current = false
       setNameSearchQuery(patientName)
     }
   }, [patientName, patient])
@@ -115,6 +128,7 @@ export function PatientCodeInput({
   // Buscar pacientes por nome com debounce
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value
+    isUserTypingRef.current = true // Marcar que usuário está digitando
     setNameSearchQuery(newName)
     onPatientNameChangeRef.current(newName)
 
@@ -139,6 +153,7 @@ export function PatientCodeInput({
     if (!newName.trim()) {
       clearPatients()
       setShowNameDropdown(false)
+      isUserTypingRef.current = false
       return
     }
 
@@ -147,6 +162,7 @@ export function PatientCodeInput({
       setShowNameDropdown(true)
       nameSearchTimeoutRef.current = setTimeout(() => {
         lookupByName(clinicId, newName)
+        isUserTypingRef.current = false
       }, 500)
     } else {
       setShowNameDropdown(false)
@@ -156,6 +172,8 @@ export function PatientCodeInput({
 
   // Selecionar paciente do dropdown
   const handleSelectPatient = (selectedPatient: Patient) => {
+    // Mudança programática - não é digitação do usuário
+    isUserTypingRef.current = false
     setCode(selectedPatient.code)
     onCodeChange(selectedPatient.code)
     setNameSearchQuery(selectedPatient.name)
