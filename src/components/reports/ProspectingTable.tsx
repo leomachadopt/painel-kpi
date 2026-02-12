@@ -11,6 +11,7 @@ import { Trash2 } from 'lucide-react'
 import { DailyProspectingEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
 import { useState } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function ProspectingTable({
   data,
@@ -23,6 +24,7 @@ export function ProspectingTable({
 }) {
   const { deleteProspectingEntry } = useDataStore()
   const [deleting, setDeleting] = useState<string | null>(null)
+  const { formatDate } = useTranslation()
 
   const handleDelete = async (entry: DailyProspectingEntry) => {
     const total = entry.email + entry.sms + entry.whatsapp + entry.instagram + (entry.phone || 0)
@@ -63,7 +65,7 @@ export function ProspectingTable({
                 entry.email + entry.sms + entry.whatsapp + entry.instagram + (entry.phone || 0)
               return (
                 <TableRow key={entry.id}>
-                  <TableCell>{entry.date}</TableCell>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
                   <TableCell className="text-center font-medium text-emerald-600">
                     {entry.scheduled}
                   </TableCell>

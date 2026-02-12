@@ -11,6 +11,7 @@ import { Trash2 } from 'lucide-react'
 import { DailyConsultationControlEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
 import { useState } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function ConsultationControlTable({
   data,
@@ -23,6 +24,7 @@ export function ConsultationControlTable({
 }) {
   const { deleteConsultationControlEntry } = useDataStore()
   const [deleting, setDeleting] = useState<string | null>(null)
+  const { formatDate } = useTranslation()
 
   const handleDelete = async (entry: DailyConsultationControlEntry) => {
     const total = entry.noShow + entry.rescheduled + entry.cancelled + entry.oldPatientBooking
@@ -62,7 +64,7 @@ export function ConsultationControlTable({
                 entry.noShow + entry.rescheduled + entry.cancelled + entry.oldPatientBooking
               return (
                 <TableRow key={entry.id}>
-                  <TableCell>{entry.date}</TableCell>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
                   <TableCell className="text-center font-medium text-orange-600">
                     {entry.noShow}
                   </TableCell>

@@ -12,6 +12,7 @@ import { Trash2 } from 'lucide-react'
 import { DailyServiceTimeEntry, Clinic } from '@/lib/types'
 import useDataStore from '@/stores/useDataStore'
 import { useState } from 'react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function ServiceTimeTable({
   data,
@@ -24,6 +25,7 @@ export function ServiceTimeTable({
 }) {
   const { deleteServiceTimeEntry } = useDataStore()
   const [deleting, setDeleting] = useState<string | null>(null)
+  const { formatDate } = useTranslation()
 
   const getDoctorName = (id: string) =>
     clinic.configuration.doctors.find((d) => d.id === id)?.name || id
@@ -69,7 +71,7 @@ export function ServiceTimeTable({
 
               return (
                 <TableRow key={entry.id}>
-                  <TableCell>{entry.date}</TableCell>
+                  <TableCell>{formatDate(entry.date)}</TableCell>
                   <TableCell>
                     {entry.patientName}
                     <span className="block text-xs text-muted-foreground font-mono">
