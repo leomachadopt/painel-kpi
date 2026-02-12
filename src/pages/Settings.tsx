@@ -706,22 +706,20 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="sources" className="w-full">
-        <div className="overflow-x-auto -mx-2 px-2">
-          <TabsList className="inline-flex w-full min-w-max flex-wrap gap-1 h-auto p-1">
-            <TabsTrigger value="sources" className="text-xs sm:text-sm whitespace-nowrap">Fontes & Campanhas</TabsTrigger>
-            <TabsTrigger value="categories" className="text-xs sm:text-sm whitespace-nowrap">Categorias</TabsTrigger>
-            <TabsTrigger value="paymentSources" className="text-xs sm:text-sm whitespace-nowrap">Fontes de Recebimento</TabsTrigger>
-            <TabsTrigger value="alignerBrands" className="text-xs sm:text-sm whitespace-nowrap">Marcas de Alinhadores</TabsTrigger>
-            <TabsTrigger value="orderItems" className="text-xs sm:text-sm whitespace-nowrap">Itens</TabsTrigger>
-            <TabsTrigger value="consultationTypes" className="text-xs sm:text-sm whitespace-nowrap">Tipos de 1ª Consulta</TabsTrigger>
-            <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap">{t('sidebar.cabinets')}</TabsTrigger>
-            <TabsTrigger value="doctors" className="text-xs sm:text-sm whitespace-nowrap">Médicos</TabsTrigger>
-            <TabsTrigger value="targets" className="text-xs sm:text-sm whitespace-nowrap">Metas</TabsTrigger>
-            <TabsTrigger value="nps" className="text-xs sm:text-sm whitespace-nowrap">NPS</TabsTrigger>
-            <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap">Marketing</TabsTrigger>
-            <TabsTrigger value="language" className="text-xs sm:text-sm whitespace-nowrap">Idioma</TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="w-full h-auto flex-wrap justify-start gap-1 p-1">
+          <TabsTrigger value="sources" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Fontes & Campanhas</TabsTrigger>
+          <TabsTrigger value="categories" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Categorias</TabsTrigger>
+          <TabsTrigger value="paymentSources" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Fontes de Recebimento</TabsTrigger>
+          <TabsTrigger value="alignerBrands" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Marcas de Alinhadores</TabsTrigger>
+          <TabsTrigger value="orderItems" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Itens</TabsTrigger>
+          <TabsTrigger value="consultationTypes" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Tipos de 1ª Consulta</TabsTrigger>
+          <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">{t('sidebar.cabinets')}</TabsTrigger>
+          <TabsTrigger value="doctors" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Médicos</TabsTrigger>
+          <TabsTrigger value="targets" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Metas</TabsTrigger>
+          <TabsTrigger value="nps" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">NPS</TabsTrigger>
+          <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Marketing</TabsTrigger>
+          <TabsTrigger value="language" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Idioma</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="sources" className="space-y-6">
           <Card>
