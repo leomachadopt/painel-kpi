@@ -251,6 +251,7 @@ export interface DailyProspectingEntry {
   whatsapp: number
   instagram: number
   phone: number
+  in_person: number
 }
 
 export interface DailyCabinetUsageEntry {

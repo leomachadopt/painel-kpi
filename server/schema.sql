@@ -250,6 +250,7 @@ CREATE TABLE IF NOT EXISTS daily_prospecting_entries (
   whatsapp INTEGER NOT NULL DEFAULT 0,
   instagram INTEGER NOT NULL DEFAULT 0,
   phone INTEGER NOT NULL DEFAULT 0,
+  in_person INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE(clinic_id, date)

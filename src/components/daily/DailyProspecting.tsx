@@ -61,6 +61,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
     whatsapp: 0,
     instagram: 0,
     phone: 0,
+    in_person: 0,
   })
 
   // Load existing entry when date changes
@@ -76,6 +77,7 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
           whatsapp: localEntry.whatsapp,
           instagram: localEntry.instagram,
           phone: localEntry.phone || 0,
+          in_person: localEntry.in_person || 0,
         })
         return
       }
@@ -92,15 +94,16 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             whatsapp: apiEntry.whatsapp || 0,
             instagram: apiEntry.instagram || 0,
             phone: apiEntry.phone || 0,
+            in_person: apiEntry.in_person || 0,
           })
         } else {
           // null ou undefined significa que não existe entrada para esta data
-          setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
+          setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0, in_person: 0 })
         }
       } catch (error: any) {
         // Agora só vai entrar aqui em erros reais (não 404)
         console.error('Error loading prospecting entry:', error)
-        setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0 })
+        setCounters({ scheduled: 0, email: 0, sms: 0, whatsapp: 0, instagram: 0, phone: 0, in_person: 0 })
       } finally {
         setLoading(false)
       }
@@ -139,6 +142,10 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
     phone: {
       increment: useCallback(() => adjust('phone', 1), [adjust]),
       decrement: useCallback(() => adjust('phone', -1), [adjust]),
+    },
+    in_person: {
+      increment: useCallback(() => adjust('in_person', 1), [adjust]),
+      decrement: useCallback(() => adjust('in_person', -1), [adjust]),
     },
   }
 
@@ -207,6 +214,12 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
               value={counters.phone}
               onIncrement={handlers.phone.increment}
               onDecrement={handlers.phone.decrement}
+            />
+            <CounterRow
+              label={t('prospecting.inPerson')}
+              value={counters.in_person}
+              onIncrement={handlers.in_person.increment}
+              onDecrement={handlers.in_person.decrement}
             />
           </div>
 
