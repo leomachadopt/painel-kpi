@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { AccountsPayableEntry } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
@@ -24,6 +24,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table'
 import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye, Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
@@ -215,6 +216,10 @@ export default function AccountsPayable() {
 
     return true
   })
+
+  const totalAmount = useMemo(() => {
+    return filteredEntries.reduce((sum, entry) => sum + entry.amount, 0)
+  }, [filteredEntries])
 
   const handleDelete = async () => {
     if (!deleteEntryId || !clinicId) return
@@ -433,6 +438,17 @@ export default function AccountsPayable() {
                         )
                       })}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right font-bold">
+                          {t('accountsPayable.total')}
+                        </TableCell>
+                        <TableCell className="font-bold text-lg">
+                          {formatCurrency(totalAmount)}
+                        </TableCell>
+                        <TableCell colSpan={3} />
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
               )}
@@ -629,6 +645,17 @@ export default function AccountsPayable() {
                         )
                       })}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-right font-bold">
+                          {t('accountsPayable.total')}
+                        </TableCell>
+                        <TableCell className="font-bold text-lg">
+                          {formatCurrency(totalAmount)}
+                        </TableCell>
+                        <TableCell colSpan={2} />
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
               )}
