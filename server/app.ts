@@ -23,6 +23,8 @@ import ticketsRoutes from './routes/tickets.js'
 import advancesRoutes from './routes/advances.js'
 import insuranceRoutes from './routes/insurance.js'
 import sidebarRoutes from './routes/sidebar.js'
+import revenueForecastRoutes from './routes/revenueForecast.js'
+import pendingTreatmentsRoutes from './routes/pendingTreatments.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -138,6 +140,8 @@ export function createApp() {
   app.use('/api/advances', advancesRoutes)
   app.use('/api/insurance', insuranceRoutes)
   app.use('/api/sidebar', sidebarRoutes)
+  app.use('/api/revenue-forecast', revenueForecastRoutes)
+  app.use('/api/pending-treatments', pendingTreatmentsRoutes)
 
   // Public routes (no authentication required)
   app.use('/api/public/nps', npsPublicRoutes)

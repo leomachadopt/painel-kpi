@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' })
     }
 
-    // In production, use proper password hashing (bcrypt)
+    // Simple password check (plain text for now - in production use bcrypt)
     const result = await query(
       `SELECT id, name, email, role, clinic_id, avatar_url, active, language
        FROM users
@@ -159,7 +159,7 @@ router.put('/password', authMiddleware, async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect' })
     }
 
-    // Update password
+    // Update password (plain text for now - in production use bcrypt)
     await query(
       'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newPassword, userId]

@@ -24,6 +24,7 @@ import TicketDetail from '@/pages/TicketDetail'
 import Advances from '@/pages/Advances'
 import InsuranceProviders from '@/pages/InsuranceProviders'
 import ProcedureBaseGlobal from '@/pages/ProcedureBaseGlobal'
+import RevenueForecast from '@/pages/RevenueForecast'
 import Privacy from '@/pages/Privacy'
 import Terms from '@/pages/Terms'
 import About from '@/pages/About'
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="/contas-a-pagar/:clinicId" element={<AccountsPayable />} />
               <Route path="/operadoras/:clinicId" element={<InsuranceProviders />} />
               <Route path="/adiantamentos/:clinicId" element={<Advances />} />
+              <Route path="/previsao-receitas/:clinicId" element={<RevenueForecast />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/alertas/:clinicId" element={<Alerts />} />
               <Route path="/tickets/:clinicId" element={<Tickets />} />

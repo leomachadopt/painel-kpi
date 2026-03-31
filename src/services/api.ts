@@ -1122,6 +1122,130 @@ export const sidebarApi = {
     apiCall<SidebarCounts>(`/sidebar/counts/${clinicId}`),
 }
 
+// ================================
+// REVENUE FORECAST API
+// ================================
+const revenueForecastApi = {
+  getPlans: (clinicId: string) =>
+    apiCall<any[]>(`/revenue-forecast/${clinicId}/plans`),
+
+  createPlan: (clinicId: string, data: {
+    description: string
+    totalValue?: number
+    installmentValue: number
+    installmentCount: number
+    startDate: string
+    paymentDay: number
+    categoryId?: string
+  }) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/plans`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateInstallment: (clinicId: string, installmentId: string, data: {
+    value?: number
+    dueDate?: string
+    status?: 'A_RECEBER' | 'RECEBIDO' | 'ATRASADO'
+    receivedDate?: string
+  }) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/installments/${installmentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteInstallment: (clinicId: string, installmentId: string) =>
+    apiCall<{ success: boolean }>(`/revenue-forecast/${clinicId}/installments/${installmentId}`, {
+      method: 'DELETE',
+    }),
+
+  deletePlan: (clinicId: string, planId: string) =>
+    apiCall<{ success: boolean }>(`/revenue-forecast/${clinicId}/plans/${planId}`, {
+      method: 'DELETE',
+    }),
+
+  getMonthlySummary: (clinicId: string) =>
+    apiCall<any[]>(`/revenue-forecast/${clinicId}/monthly-summary`),
+
+  getMonthInstallments: (clinicId: string, year: number, month: number) =>
+    apiCall<any[]>(`/revenue-forecast/${clinicId}/month/${year}/${month}`),
+
+  getDashboard: (clinicId: string) =>
+    apiCall<{
+      totalPending: { count: number; value: number }
+      next30Days: { count: number; value: number }
+      overdue: { count: number; value: number }
+    }>(`/revenue-forecast/${clinicId}/dashboard`),
+}
+
+// ================================
+// PENDING TREATMENTS API
+// ================================
+const pendingTreatmentsApi = {
+  getPatients: (clinicId: string) =>
+    apiCall<any[]>(`/pending-treatments/${clinicId}/patients`),
+
+  createPatient: (clinicId: string, data: {
+    patientCode: string
+    patientName: string
+    treatments: Array<{
+      description: string
+      unitValue: number
+      totalQuantity: number
+      categoryId?: string
+    }>
+  }) =>
+    apiCall<any>(`/pending-treatments/${clinicId}/patients`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  addTreatment: (clinicId: string, patientId: string, data: {
+    description: string
+    unitValue: number
+    totalQuantity: number
+    categoryId?: string
+  }) =>
+    apiCall<any>(`/pending-treatments/${clinicId}/patients/${patientId}/treatments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTreatment: (clinicId: string, treatmentId: string, data: {
+    description?: string
+    unitValue?: number
+    totalQuantity?: number
+    pendingQuantity?: number
+    categoryId?: string
+  }) =>
+    apiCall<any>(`/pending-treatments/${clinicId}/treatments/${treatmentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  completeTreatment: (clinicId: string, treatmentId: string, completedQuantity: number) =>
+    apiCall<any>(`/pending-treatments/${clinicId}/treatments/${treatmentId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ completedQuantity }),
+    }),
+
+  deleteTreatment: (clinicId: string, treatmentId: string) =>
+    apiCall<{ success: boolean; patientHasRemainingTreatments: boolean }>(
+      `/pending-treatments/${clinicId}/treatments/${treatmentId}`,
+      { method: 'DELETE' }
+    ),
+
+  getDashboard: (clinicId: string) =>
+    apiCall<{
+      patientCount: number
+      treatmentCount: number
+      totalPendingValue: number
+    }>(`/pending-treatments/${clinicId}/dashboard`),
+}
+
+// ================================
+// DEFAULT EXPORT
+// ================================
 export default {
   auth: authApi,
   clinics: clinicsApi,
@@ -1135,4 +1259,6 @@ export default {
   auditLogs: auditLogsApi,
   tickets: ticketsApi,
   sidebar: sidebarApi,
+  revenueForecast: revenueForecastApi,
+  pendingTreatments: pendingTreatmentsApi,
 }

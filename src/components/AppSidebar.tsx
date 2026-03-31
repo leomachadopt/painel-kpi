@@ -17,6 +17,7 @@ import {
   Ticket,
   CreditCard,
   Receipt,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -381,6 +382,21 @@ export function AppSidebar() {
                     <Link to={`/adiantamentos/${activeClinicId}`}>
                       <Receipt />
                       <span>{t('sidebar.advances')}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && (canView('canViewFinancial') || canEdit('canEditFinancial')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Previsão de Receitas"
+                    isActive={location.pathname.includes('/previsao-receitas')}
+                  >
+                    <Link to={`/previsao-receitas/${activeClinicId}`}>
+                      <TrendingUp />
+                      <span>Previsão de Receitas</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
