@@ -59,6 +59,7 @@ router.get('/:clinicId/plans', async (req, res) => {
         rp.start_date,
         rp.payment_day,
         rp.category_id,
+        rp.already_paid_amount,
         cc.name as category_name,
         rp.created_at
       FROM revenue_plans rp
@@ -77,7 +78,8 @@ router.get('/:clinicId/plans', async (req, res) => {
             due_date,
             value,
             status,
-            received_date
+            received_date,
+            is_historical
           FROM revenue_installments
           WHERE revenue_plan_id = $1
           ORDER BY installment_number ASC`,
@@ -96,6 +98,7 @@ router.get('/:clinicId/plans', async (req, res) => {
           paymentDay: plan.payment_day,
           categoryId: plan.category_id,
           categoryName: plan.category_name,
+          alreadyPaidAmount: parseFloat(plan.already_paid_amount || '0'),
           createdAt: plan.created_at,
           installments: installmentsResult.rows.map((inst) => ({
             id: inst.id,
@@ -104,6 +107,7 @@ router.get('/:clinicId/plans', async (req, res) => {
             value: parseFloat(inst.value),
             status: inst.status,
             receivedDate: inst.received_date,
+            isHistorical: inst.is_historical || false,
           })),
         }
       })
@@ -134,6 +138,7 @@ router.post('/:clinicId/plans', async (req, res) => {
       startDate,
       paymentDay,
       categoryId,
+      alreadyPaidAmount,
     } = req.body
 
     if (!await canManageRevenueForecast(req, clinicId)) {
@@ -150,6 +155,7 @@ router.post('/:clinicId/plans', async (req, res) => {
     }
 
     const calculatedTotalValue = totalValue || installmentValue * installmentCount
+    const paidAmount = parseFloat(alreadyPaidAmount || '0')
 
     await client.query('BEGIN')
 
@@ -158,8 +164,8 @@ router.post('/:clinicId/plans', async (req, res) => {
     await client.query(
       `INSERT INTO revenue_plans (
         id, clinic_id, patient_code, patient_name, description, total_value,
-        installment_value, installment_count, start_date, payment_day, category_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        installment_value, installment_count, start_date, payment_day, category_id, already_paid_amount
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         planId,
         clinicId,
@@ -172,12 +178,14 @@ router.post('/:clinicId/plans', async (req, res) => {
         startDate,
         paymentDay,
         categoryId || null,
+        paidAmount,
       ]
     )
 
     // Generate installments
     const startDateObj = new Date(startDate)
     const installments = []
+    const today = new Date()
 
     for (let i = 0; i < installmentCount; i++) {
       const dueDate = new Date(startDateObj)
@@ -185,14 +193,16 @@ router.post('/:clinicId/plans', async (req, res) => {
       dueDate.setDate(paymentDay)
 
       const installmentId = `ri-${Date.now()}-${i}-${Math.random().toString(36).substring(7)}`
-      const status = dueDate < new Date() ? 'ATRASADO' : 'A_RECEBER'
+
+      // Determine status (no historical installments, alreadyPaidAmount is just informational)
+      const status = dueDate < today ? 'ATRASADO' : 'A_RECEBER'
 
       await client.query(
         `INSERT INTO revenue_installments (
           id, revenue_plan_id, clinic_id, installment_number,
-          due_date, value, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [installmentId, planId, clinicId, i + 1, dueDate, installmentValue, status]
+          due_date, value, status, is_historical, received_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [installmentId, planId, clinicId, i + 1, dueDate, installmentValue, status, false, null]
       )
 
       installments.push({
@@ -201,6 +211,8 @@ router.post('/:clinicId/plans', async (req, res) => {
         dueDate,
         value: installmentValue,
         status,
+        isHistorical: false,
+        receivedDate: null,
       })
     }
 
@@ -295,6 +307,63 @@ router.patch('/:clinicId/installments/:installmentId', async (req, res) => {
   } catch (error: any) {
     console.error('Update installment error:', error)
     res.status(500).json({ error: 'Failed to update installment' })
+  }
+})
+
+/**
+ * Revert received installment back to A_RECEBER
+ */
+router.post('/:clinicId/installments/:installmentId/revert', async (req, res) => {
+  try {
+    const { clinicId, installmentId } = req.params
+
+    if (!await canManageRevenueForecast(req, clinicId)) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Check if installment is RECEBIDO
+    const checkResult = await query(
+      `SELECT status, is_historical FROM revenue_installments
+       WHERE id = $1 AND clinic_id = $2`,
+      [installmentId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Installment not found' })
+    }
+
+    const installment = checkResult.rows[0]
+
+    if (installment.status !== 'RECEBIDO') {
+      return res.status(400).json({ error: 'Can only revert installments with status RECEBIDO' })
+    }
+
+    if (installment.is_historical) {
+      return res.status(400).json({ error: 'Cannot revert historical installments' })
+    }
+
+    // Update status back to A_RECEBER
+    const result = await query(
+      `UPDATE revenue_installments
+       SET status = 'A_RECEBER', received_date = NULL
+       WHERE id = $1 AND clinic_id = $2
+       RETURNING *`,
+      [installmentId, clinicId]
+    )
+
+    const updated = result.rows[0]
+    res.json({
+      id: updated.id,
+      installmentNumber: updated.installment_number,
+      dueDate: updated.due_date,
+      value: parseFloat(updated.value),
+      status: updated.status,
+      receivedDate: updated.received_date,
+      isHistorical: updated.is_historical,
+    })
+  } catch (error: any) {
+    console.error('Revert installment error:', error)
+    res.status(500).json({ error: 'Failed to revert installment' })
   }
 })
 

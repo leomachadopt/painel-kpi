@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Check, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { Check, Pencil, Trash2, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -76,6 +76,23 @@ export function RevenueForecastPlansSection({
       toast({
         title: 'Erro',
         description: 'Falha ao atualizar parcela',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleRevertReceived = async (installmentId: string) => {
+    try {
+      await api.revenueForecast.revertInstallment(clinicId, installmentId)
+      toast({
+        title: 'Sucesso',
+        description: 'Parcela revertida para A_RECEBER',
+      })
+      onRefresh()
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao reverter parcela',
         variant: 'destructive',
       })
     }
@@ -193,6 +210,11 @@ export function RevenueForecastPlansSection({
                         Total: {formatCurrency(plan.totalValue)}
                         {plan.categoryName && ` • ${plan.categoryName}`}
                       </div>
+                      {plan.alreadyPaidAmount > 0 && (
+                        <div className="text-xs text-green-600 font-medium mt-1">
+                          ℹ️ Pagamentos anteriores: {formatCurrency(plan.alreadyPaidAmount)}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -227,8 +249,13 @@ export function RevenueForecastPlansSection({
                           key={inst.id}
                           className="grid grid-cols-6 gap-4 items-center py-2 text-sm hover:bg-muted/30 rounded px-2"
                         >
-                          <div className="font-medium">
+                          <div className="font-medium flex items-center gap-2">
                             {inst.installmentNumber}/{plan.installmentCount}
+                            {inst.isHistorical && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Histórico
+                              </Badge>
+                            )}
                           </div>
                           <div>{formatDate(inst.dueDate)}</div>
                           <div className="text-right font-semibold">
@@ -249,14 +276,26 @@ export function RevenueForecastPlansSection({
                                 <Check className="w-4 h-4 text-green-600" />
                               </Button>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeleteConfirm({ type: 'installment', id: inst.id })}
-                              title="Excluir parcela"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                            {inst.status === 'RECEBIDO' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRevertReceived(inst.id)}
+                                title="Reverter para A_RECEBER"
+                              >
+                                <RotateCcw className="w-4 h-4 text-orange-600" />
+                              </Button>
+                            )}
+                            {inst.status !== 'RECEBIDO' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteConfirm({ type: 'installment', id: inst.id })}
+                                title="Excluir parcela"
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}

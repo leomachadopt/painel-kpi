@@ -1154,6 +1154,11 @@ const revenueForecastApi = {
       body: JSON.stringify(data),
     }),
 
+  revertInstallment: (clinicId: string, installmentId: string) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/installments/${installmentId}/revert`, {
+      method: 'POST',
+    }),
+
   deleteInstallment: (clinicId: string, installmentId: string) =>
     apiCall<{ success: boolean }>(`/revenue-forecast/${clinicId}/installments/${installmentId}`, {
       method: 'DELETE',

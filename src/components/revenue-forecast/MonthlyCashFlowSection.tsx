@@ -54,6 +54,7 @@ interface Installment {
   status: 'A_RECEBER' | 'RECEBIDO' | 'ATRASADO'
   receivedDate: string | null
   categoryName: string | null
+  isHistorical?: boolean
 }
 
 export function MonthlyCashFlowSection({ clinicId, refreshTrigger }: MonthlyCashFlowSectionProps) {
@@ -755,8 +756,13 @@ export function MonthlyCashFlowSection({ clinicId, refreshTrigger }: MonthlyCash
                         </td>
                         <td className="p-3 text-sm">{formatDate(inst.dueDate)}</td>
                         <td className="p-3">
-                          <div className="text-sm font-medium">
-                            {inst.patientName} • {inst.planDescription}
+                          <div className="text-sm font-medium flex items-center gap-2">
+                            <span>{inst.patientName} • {inst.planDescription}</span>
+                            {inst.isHistorical && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                Histórico
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             #{inst.patientCode} • Parcela {inst.installmentNumber}/{inst.totalInstallments}

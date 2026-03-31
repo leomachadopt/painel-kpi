@@ -50,6 +50,7 @@ export function NewRevenuePlanDialog({
     startDate: '',
     paymentDay: '',
     categoryId: '',
+    alreadyPaidAmount: '',
   })
 
   // Reset form when dialog opens
@@ -65,6 +66,7 @@ export function NewRevenuePlanDialog({
         startDate: '',
         paymentDay: '',
         categoryId: '',
+        alreadyPaidAmount: '',
       })
     }
   }, [open])
@@ -125,6 +127,10 @@ export function NewRevenuePlanDialog({
         data.categoryId = formData.categoryId
       }
 
+      if (formData.alreadyPaidAmount) {
+        data.alreadyPaidAmount = parseFloat(formData.alreadyPaidAmount)
+      }
+
       await api.revenueForecast.createPlan(clinicId, data)
 
       toast({
@@ -152,6 +158,7 @@ export function NewRevenuePlanDialog({
   const calculatedInstallmentValue = formData.totalValue && formData.installmentCount
     ? (parseFloat(formData.totalValue) / parseInt(formData.installmentCount)).toFixed(2)
     : ''
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,6 +238,23 @@ export function NewRevenuePlanDialog({
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Already Paid Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="alreadyPaidAmount">Valor Já Pago Anteriormente (Opcional)</Label>
+            <Input
+              id="alreadyPaidAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.alreadyPaidAmount}
+              onChange={(e) => setFormData({ ...formData, alreadyPaidAmount: e.target.value })}
+              placeholder="0.00"
+            />
+            <p className="text-xs text-muted-foreground">
+              Informe valores já pagos por este paciente antes deste plano de parcelas (apenas para controle histórico).
+            </p>
           </div>
 
           {/* Installment Count and Dates */}
