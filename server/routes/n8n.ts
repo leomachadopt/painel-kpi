@@ -101,23 +101,30 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
         [clinicId, year, month]
       ).catch(() => ({ rows: [] })),
 
-      // Accounts payable overdue
+      // Accounts payable counts (overdue, today, week)
       query(
-        `SELECT COUNT(*) as count
+        `SELECT
+          COUNT(*) FILTER (WHERE due_date < CURRENT_DATE AND paid = false) as overdue,
+          COUNT(*) FILTER (WHERE due_date = CURRENT_DATE AND paid = false) as due_today,
+          COUNT(*) FILTER (
+            WHERE due_date > CURRENT_DATE
+              AND due_date <= CURRENT_DATE + INTERVAL '7 days'
+              AND paid = false
+          ) as due_week
          FROM accounts_payable
-         WHERE clinic_id = $1
-           AND due_date < CURRENT_DATE
-           AND paid = false`,
+         WHERE clinic_id = $1`,
         [clinicId]
       ),
 
-      // Monthly revenue (from monthly_data)
+      // Monthly revenue accumulated (SUM from daily_financial_entries)
       query(
-        `SELECT revenue_total
-         FROM monthly_data
-         WHERE clinic_id = $1 AND year = $2 AND month = $3`,
+        `SELECT COALESCE(SUM(value), 0) as accumulated
+         FROM daily_financial_entries
+         WHERE clinic_id = $1
+           AND EXTRACT(YEAR FROM date::date) = $2
+           AND EXTRACT(MONTH FROM date::date) = $3`,
         [clinicId, year, month]
-      ).catch(() => ({ rows: [] })),
+      ).catch(() => ({ rows: [{ accumulated: 0 }] })),
 
       // Daily prospecting entries
       query(
@@ -171,37 +178,35 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
     const grandTotal = Object.values(paymentTypes).reduce((sum: number, v: any) => sum + v, 0)
 
     // Month target and revenue
-    const monthRevenue = parseFloat(monthlyDataResult.rows[0]?.revenue_total || '0')
+    const monthRevenue = parseFloat(monthlyDataResult.rows[0]?.accumulated || '0')
     const monthTarget = parseFloat(monthTargetResult.rows[0]?.target_revenue || '0')
     const progressPct = monthTarget > 0 ? Math.round((monthRevenue / monthTarget) * 100) : null
 
-    // Prospecting data
+    // Prospecting data — garantir todos os campos sempre presentes
     const p = prospectingResult.rows[0] || {}
     const prospecting = {
-      scheduled: parseInt(p.scheduled || '0'),
-      email: parseInt(p.email || '0'),
-      sms: parseInt(p.sms || '0'),
-      whatsapp: parseInt(p.whatsapp || '0'),
-      instagram: parseInt(p.instagram || '0'),
-      phone: parseInt(p.phone || '0'),
-      inPerson: parseInt(p.in_person || '0'),
-      total: parseInt(p.scheduled || '0') + parseInt(p.email || '0') +
-             parseInt(p.sms || '0') + parseInt(p.whatsapp || '0') +
-             parseInt(p.instagram || '0') + parseInt(p.phone || '0') +
-             parseInt(p.in_person || '0')
+      scheduled: parseInt(p.scheduled || 0),
+      email: parseInt(p.email || 0),
+      sms: parseInt(p.sms || 0),
+      whatsapp: parseInt(p.whatsapp || 0),
+      instagram: parseInt(p.instagram || 0),
+      phone: parseInt(p.phone || 0),
+      inPerson: parseInt(p.in_person || 0),
+      total: [p.scheduled, p.email, p.sms, p.whatsapp, p.instagram, p.phone, p.in_person]
+        .reduce((sum, v) => sum + parseInt(v || 0), 0)
     }
 
-    // Consultation control data
+    // Consultation control — garantir todos os campos sempre presentes
     const cc = consultationControlResult.rows[0] || {}
     const consultationControl = {
-      noShow: parseInt(cc.no_show || '0'),
-      rescheduled: parseInt(cc.rescheduled || '0'),
-      cancelled: parseInt(cc.cancelled || '0'),
-      oldPatientBooking: parseInt(cc.old_patient_booking || '0')
+      noShow: parseInt(cc.no_show || 0),
+      rescheduled: parseInt(cc.rescheduled || 0),
+      cancelled: parseInt(cc.cancelled || 0),
+      oldPatientBooking: parseInt(cc.old_patient_booking || 0)
     }
 
-    // Alerts
-    const overduePayables = parseInt(accountsPayableResult.rows[0]?.count || '0')
+    // Alerts — contas a pagar detalhadas
+    const ap = accountsPayableResult.rows[0] || {}
 
     const response = {
       clinic: {
@@ -227,9 +232,11 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
       prospecting,
       consultationControl,
       alerts: {
-        overduePayables,
-        pendingOrders: 0, // Tabela orders não existe
-        pendingTickets: 0, // Pode ser calculado se necessário
+        overduePayables: parseInt(ap.overdue || 0),
+        dueTodayPayables: parseInt(ap.due_today || 0),
+        dueWeekPayables: parseInt(ap.due_week || 0),
+        pendingOrders: 0,
+        pendingTickets: 0,
       },
     }
 
