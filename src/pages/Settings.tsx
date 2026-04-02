@@ -471,7 +471,7 @@ export default function Settings() {
   const { t, locale } = useTranslation()
   const { user } = useAuthStore()
   const { canEdit } = usePermissions()
-  const { clinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
+  const { clinics, reloadClinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
 
   // Helper to auto-select input content on focus for better UX
   const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -504,6 +504,10 @@ export default function Settings() {
   const [kommoSubdomain, setKommoSubdomain] = useState('')
   const [kommoToken, setKommoToken] = useState('')
   const [showKommoToken, setShowKommoToken] = useState(false)
+  const [kommoContactId, setKommoContactId] = useState('')
+  const [ownerWhatsapp, setOwnerWhatsapp] = useState('')
+  const [n8nReportTime, setN8nReportTime] = useState('08:30')
+  const [n8nReportsEnabled, setN8nReportsEnabled] = useState(false)
 
   // Sincronizar estados locais com dados da clínica quando mudar
   useEffect(() => {
@@ -511,6 +515,10 @@ export default function Settings() {
       setKommoSubdomain(clinic.kommoSubdomain || '')
       setKommoToken('') // Nunca pré-preencher token por segurança
       setShowKommoToken(false)
+      setKommoContactId(clinic.kommoContactId || '')
+      setOwnerWhatsapp(clinic.ownerWhatsapp || '')
+      setN8nReportTime(clinic.n8nReportTime || '08:30')
+      setN8nReportsEnabled(clinic.n8nReportsEnabled || false)
     }
   }, [clinic?.id])
 
@@ -1352,7 +1360,7 @@ export default function Settings() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Kommo → Settings → Integrations → criar integração → Keys and Scopes → Long-term token
+                      Kommo → Settings → Integrations → Criar integração → deixar URL/webhook vazios, preencher apenas nome (ex: "Painel KPI") e marcar "Permitir acesso: Todos" → Guardar → Keys and Scopes → copiar "Long-term token"
                     </p>
                   </div>
 
@@ -1362,15 +1370,8 @@ export default function Settings() {
                     </Label>
                     <Input
                       id="kommo-contact-id"
-                      value={clinic.kommoContactId || ''}
-                      onChange={(e) => {
-                        const newClinics = clinics.map((c) =>
-                          c.id === clinic.id
-                            ? { ...c, kommoContactId: e.target.value }
-                            : c
-                        )
-                        useDataStore.setState({ clinics: newClinics })
-                      }}
+                      value={kommoContactId}
+                      onChange={(e) => setKommoContactId(e.target.value)}
                       placeholder="12345678"
                       className="max-w-md"
                     />
@@ -1385,15 +1386,8 @@ export default function Settings() {
                     </Label>
                     <Input
                       id="owner-whatsapp"
-                      value={clinic.ownerWhatsapp || ''}
-                      onChange={(e) => {
-                        const newClinics = clinics.map((c) =>
-                          c.id === clinic.id
-                            ? { ...c, ownerWhatsapp: e.target.value }
-                            : c
-                        )
-                        useDataStore.setState({ clinics: newClinics })
-                      }}
+                      value={ownerWhatsapp}
+                      onChange={(e) => setOwnerWhatsapp(e.target.value)}
                       placeholder="+351 9XX XXX XXX"
                       className="max-w-md"
                     />
@@ -1409,15 +1403,8 @@ export default function Settings() {
                     <Input
                       id="report-time"
                       type="time"
-                      value={clinic.n8nReportTime || '08:30'}
-                      onChange={(e) => {
-                        const newClinics = clinics.map((c) =>
-                          c.id === clinic.id
-                            ? { ...c, n8nReportTime: e.target.value }
-                            : c
-                        )
-                        useDataStore.setState({ clinics: newClinics })
-                      }}
+                      value={n8nReportTime}
+                      onChange={(e) => setN8nReportTime(e.target.value)}
                       className="max-w-md"
                     />
                     <p className="text-xs text-muted-foreground">
@@ -1429,15 +1416,8 @@ export default function Settings() {
                     <input
                       type="checkbox"
                       id="n8n-reports-enabled"
-                      checked={clinic.n8nReportsEnabled || false}
-                      onChange={(e) => {
-                        const newClinics = clinics.map((c) =>
-                          c.id === clinic.id
-                            ? { ...c, n8nReportsEnabled: e.target.checked }
-                            : c
-                        )
-                        useDataStore.setState({ clinics: newClinics })
-                      }}
+                      checked={n8nReportsEnabled}
+                      onChange={(e) => setN8nReportsEnabled(e.target.checked)}
                       className="h-4 w-4"
                     />
                     <Label htmlFor="n8n-reports-enabled" className="cursor-pointer">
@@ -1452,23 +1432,14 @@ export default function Settings() {
                           await clinicsApi.update(clinic.id, {
                             ...(kommoSubdomain && { kommoSubdomain }),
                             ...(kommoToken && { kommoToken }),
-                            kommoContactId: clinic.kommoContactId,
-                            ownerWhatsapp: clinic.ownerWhatsapp,
-                            n8nReportsEnabled: clinic.n8nReportsEnabled,
-                            n8nReportTime: clinic.n8nReportTime,
+                            kommoContactId,
+                            ownerWhatsapp,
+                            n8nReportsEnabled,
+                            n8nReportTime,
                           })
                           toast.success('Configurações de notificação guardadas com sucesso')
-                          // Atualizar clínica no store
-                          const updatedClinics = clinics.map((c) =>
-                            c.id === clinic.id
-                              ? {
-                                  ...c,
-                                  kommoSubdomain: kommoSubdomain || c.kommoSubdomain,
-                                  kommoTokenConfigured: !!kommoToken || c.kommoTokenConfigured,
-                                }
-                              : c
-                          )
-                          useDataStore.setState({ clinics: updatedClinics })
+                          // Recarregar clínicas para atualizar dados
+                          await reloadClinics()
                           // Limpar token local por segurança
                           setKommoToken('')
                         } catch (error: any) {
