@@ -61,12 +61,19 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
     // Default: ontem
     const reportDate = dateParam || new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
+    // Extrair ano e mês da data do relatório
+    const year = new Date(reportDate).getFullYear()
+    const month = new Date(reportDate).getMonth() + 1
+
     // Executar todas as queries em paralelo
     const [
       clinicResult,
       financialResult,
       monthTargetResult,
       accountsPayableResult,
+      monthlyDataResult,
+      prospectingResult,
+      consultationControlResult,
     ] = await Promise.all([
       // Clinic info
       query(
@@ -86,18 +93,13 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
         [clinicId, reportDate]
       ),
 
-      // Month target vs actual (mês corrente)
+      // Month target (from monthly_targets table)
       query(
-        `SELECT
-          target_revenue,
-          COALESCE((SELECT SUM(value) FROM daily_financial_entries
-                    WHERE clinic_id = $1
-                      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM $2::date)
-                      AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM $2::date)), 0) as actual_revenue
-         FROM clinics
-         WHERE id = $1`,
-        [clinicId, reportDate]
-      ),
+        `SELECT target_revenue
+         FROM monthly_targets
+         WHERE clinic_id = $1 AND year = $2 AND month = $3`,
+        [clinicId, year, month]
+      ).catch(() => ({ rows: [] })),
 
       // Accounts payable overdue
       query(
@@ -108,6 +110,30 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
            AND paid = false`,
         [clinicId]
       ),
+
+      // Monthly revenue (from monthly_data)
+      query(
+        `SELECT revenue_total
+         FROM monthly_data
+         WHERE clinic_id = $1 AND year = $2 AND month = $3`,
+        [clinicId, year, month]
+      ).catch(() => ({ rows: [] })),
+
+      // Daily prospecting entries
+      query(
+        `SELECT scheduled, email, sms, whatsapp, instagram, phone, in_person
+         FROM daily_prospecting_entries
+         WHERE clinic_id = $1 AND date = $2`,
+        [clinicId, reportDate]
+      ).catch(() => ({ rows: [] })),
+
+      // Daily consultation control entries
+      query(
+        `SELECT no_show, rescheduled, cancelled, old_patient_booking
+         FROM daily_consultation_control_entries
+         WHERE clinic_id = $1 AND date = $2`,
+        [clinicId, reportDate]
+      ).catch(() => ({ rows: [] })),
     ])
 
     if (clinicResult.rows.length === 0) {
@@ -144,11 +170,35 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
 
     const grandTotal = Object.values(paymentTypes).reduce((sum: number, v: any) => sum + v, 0)
 
-    // Month target progress
-    const targetRow = monthTargetResult.rows[0] || {}
-    const target = parseFloat(targetRow.target_revenue || '0')
-    const actual = parseFloat(targetRow.actual_revenue || '0')
-    const progressPercent = target > 0 ? Math.round((actual / target) * 100) : 0
+    // Month target and revenue
+    const monthRevenue = parseFloat(monthlyDataResult.rows[0]?.revenue_total || '0')
+    const monthTarget = parseFloat(monthTargetResult.rows[0]?.target_revenue || '0')
+    const progressPct = monthTarget > 0 ? Math.round((monthRevenue / monthTarget) * 100) : null
+
+    // Prospecting data
+    const p = prospectingResult.rows[0] || {}
+    const prospecting = {
+      scheduled: parseInt(p.scheduled || '0'),
+      email: parseInt(p.email || '0'),
+      sms: parseInt(p.sms || '0'),
+      whatsapp: parseInt(p.whatsapp || '0'),
+      instagram: parseInt(p.instagram || '0'),
+      phone: parseInt(p.phone || '0'),
+      inPerson: parseInt(p.in_person || '0'),
+      total: parseInt(p.scheduled || '0') + parseInt(p.email || '0') +
+             parseInt(p.sms || '0') + parseInt(p.whatsapp || '0') +
+             parseInt(p.instagram || '0') + parseInt(p.phone || '0') +
+             parseInt(p.in_person || '0')
+    }
+
+    // Consultation control data
+    const cc = consultationControlResult.rows[0] || {}
+    const consultationControl = {
+      noShow: parseInt(cc.no_show || '0'),
+      rescheduled: parseInt(cc.rescheduled || '0'),
+      cancelled: parseInt(cc.cancelled || '0'),
+      oldPatientBooking: parseInt(cc.old_patient_booking || '0')
+    }
 
     // Alerts
     const overduePayables = parseInt(accountsPayableResult.rows[0]?.count || '0')
@@ -164,11 +214,18 @@ router.get('/daily-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
         byPaymentType: paymentTypes,
         grandTotal,
       },
-      monthTarget: {
-        target,
-        actual,
-        progressPercent,
+      monthTotal: {
+        accumulated: monthRevenue,
+        target: monthTarget,
+        progressPercent: progressPct,
+        remaining: monthTarget > 0 ? Math.max(0, monthTarget - monthRevenue) : null
       },
+      monthTarget: {
+        target: monthTarget,
+        progressPercent: progressPct,
+      },
+      prospecting,
+      consultationControl,
       alerts: {
         overduePayables,
         pendingOrders: 0, // Tabela orders não existe
