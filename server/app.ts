@@ -25,6 +25,7 @@ import insuranceRoutes from './routes/insurance.js'
 import sidebarRoutes from './routes/sidebar.js'
 import revenueForecastRoutes from './routes/revenueForecast.js'
 import pendingTreatmentsRoutes from './routes/pendingTreatments.js'
+import n8nRoutes from './routes/n8n.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -142,6 +143,7 @@ export function createApp() {
   app.use('/api/sidebar', sidebarRoutes)
   app.use('/api/revenue-forecast', revenueForecastRoutes)
   app.use('/api/pending-treatments', pendingTreatmentsRoutes)
+  app.use('/api/n8n', n8nRoutes)
 
   // Public routes (no authentication required)
   app.use('/api/public/nps', npsPublicRoutes)

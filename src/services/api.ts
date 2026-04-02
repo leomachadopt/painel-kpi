@@ -126,6 +126,20 @@ export const authApi = {
       method: 'PUT',
       body: JSON.stringify({ language }),
     }),
+
+  // N8N API Key Management (MENTOR only)
+  generateN8nApiKey: () =>
+    apiCall<{ apiKey: string; message: string }>('/auth/n8n-api-key', {
+      method: 'POST',
+    }),
+
+  revokeN8nApiKey: () =>
+    apiCall<{ message: string }>('/auth/n8n-api-key', {
+      method: 'DELETE',
+    }),
+
+  getN8nApiKeyStatus: () =>
+    apiCall<{ hasKey: boolean; updatedAt: string | null }>('/auth/n8n-api-key/status'),
 }
 
 // ================================
@@ -165,6 +179,12 @@ export const clinicsApi = {
     country?: 'PT-BR' | 'PT-PT';
     npsQuestion?: string;
     language?: 'pt-BR' | 'pt-PT' | 'it' | 'es' | 'en' | 'fr';
+    kommoContactId?: string;
+    ownerWhatsapp?: string;
+    n8nReportsEnabled?: boolean;
+    n8nReportTime?: string;
+    kommoSubdomain?: string;
+    kommoToken?: string;
   }) =>
     apiCall<{ message: string }>(`/clinics/${clinicId}`, {
       method: 'PUT',
