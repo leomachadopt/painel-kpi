@@ -570,25 +570,32 @@ router.get('/consultation/:clinicId', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1`
     let params: any[] = [clinicId]
 
-    // If user is COLABORADOR, check if they have special permission to view all doctors
+    // If user is COLABORADOR, check permissions and apply appropriate filters
     if (userRole === 'COLABORADOR' && userId) {
-      // Check if user has permission to view all doctors' consultations
+      // Check if user has permission to view all doctors' consultations or edit consultations
       const permissionResult = await query(
-        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        `SELECT can_view_all_doctors_consultations, can_edit_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
         [userId, clinicId]
       )
 
       const canViewAllDoctors = permissionResult.rows.length > 0 &&
                                 permissionResult.rows[0].can_view_all_doctors_consultations === true
+      const canEditConsultations = permissionResult.rows.length > 0 &&
+                                   permissionResult.rows[0].can_edit_consultations === true
 
       console.log('🔐 Permission check:', {
         userId,
         canViewAllDoctors,
+        canEditConsultations,
         permissionFound: permissionResult.rows.length > 0
       })
 
-      if (!canViewAllDoctors) {
-        // Filter by their doctor_id only if they don't have the special permission
+      // If user can view all doctors, no filter needed
+      if (canViewAllDoctors) {
+        console.log('✅ User has permission to view all doctors - no filter applied')
+      }
+      // If user can edit consultations (but not view all), filter by their doctor_id
+      else if (canEditConsultations) {
         // Get user email to find their doctor_id
         const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
         console.log('📧 User email lookup:', userResult.rows[0])
@@ -607,7 +614,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
             const doctorId = doctorResult.rows[0].id
             sqlQuery += ` AND doctor_id = $2`
             params.push(doctorId)
-            console.log('✅ Applying doctor filter:', doctorId)
+            console.log('✅ Applying doctor filter (canEditConsultations):', doctorId)
           } else {
             // Doctor not found, return empty array
             console.log('⚠️ Doctor not found for email:', userEmail)
@@ -617,8 +624,11 @@ router.get('/consultation/:clinicId', async (req, res) => {
           console.log('⚠️ User not found:', userId)
           return res.json([])
         }
-      } else {
-        console.log('✅ User has permission to view all doctors - no filter applied')
+      }
+      // User has no permission to view consultations
+      else {
+        console.log('⛔ User has no permission to view consultations')
+        return res.json([])
       }
     } else {
       console.log('ℹ️ No COLABORADOR filter - showing all consultations')
@@ -678,19 +688,25 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2`
     let params: any[] = [clinicId, code]
 
-    // If user is COLABORADOR, check if they have special permission to view all doctors
+    // If user is COLABORADOR, check permissions and apply appropriate filters
     if (userRole === 'COLABORADOR' && userId) {
-      // Check if user has permission to view all doctors' consultations
+      // Check if user has permission to view all doctors' consultations or edit consultations
       const permissionResult = await query(
-        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        `SELECT can_view_all_doctors_consultations, can_edit_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
         [userId, clinicId]
       )
 
       const canViewAllDoctors = permissionResult.rows.length > 0 &&
                                 permissionResult.rows[0].can_view_all_doctors_consultations === true
+      const canEditConsultations = permissionResult.rows.length > 0 &&
+                                   permissionResult.rows[0].can_edit_consultations === true
 
-      if (!canViewAllDoctors) {
-        // Filter by their doctor_id only if they don't have the special permission
+      // If user can view all doctors, no filter needed
+      if (canViewAllDoctors) {
+        // No filter
+      }
+      // If user can edit consultations (but not view all), filter by their doctor_id
+      else if (canEditConsultations) {
         const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
 
         if (userResult.rows.length > 0) {
@@ -710,6 +726,10 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
         } else {
           return res.status(404).json({ error: 'Consultation entry not found' })
         }
+      }
+      // User has no permission to view consultations
+      else {
+        return res.status(404).json({ error: 'Consultation entry not found' })
       }
     }
 
@@ -917,11 +937,11 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
   // Check if user can edit consultation entries
   const { clinicId } = req.params
   const hasPermission = await canEditConsultations(req, clinicId)
-  
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
     const { clinicId, entryId } = req.params
     const {
@@ -965,14 +985,50 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
       return res.status(400).json({ error: 'Missing or invalid required fields' })
     }
 
-    // Check if entry exists
-    const checkResult = await query(
-      `SELECT id FROM daily_consultation_entries WHERE id = $1 AND clinic_id = $2`,
-      [entryId, clinicId]
-    )
+    // Check if entry exists and if COLABORADOR can edit it
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const userRole = (req as any).auth?.role || (req as any).user?.role
+
+    let checkQuery = `SELECT id, doctor_id FROM daily_consultation_entries WHERE id = $1 AND clinic_id = $2`
+    const checkResult = await query(checkQuery, [entryId, clinicId])
 
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    // If user is COLABORADOR, verify they can only edit their own consultations
+    if (userRole === 'COLABORADOR' && userId) {
+      const permissionResult = await query(
+        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        [userId, clinicId]
+      )
+
+      const canViewAllDoctors = permissionResult.rows.length > 0 &&
+                                permissionResult.rows[0].can_view_all_doctors_consultations === true
+
+      // If they can't view all doctors, verify they're editing their own consultation
+      if (!canViewAllDoctors) {
+        const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+
+        if (userResult.rows.length > 0) {
+          const userEmail = userResult.rows[0].email
+          const doctorResult = await query(
+            `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+            [clinicId, userEmail]
+          )
+
+          if (doctorResult.rows.length > 0) {
+            const userDoctorId = doctorResult.rows[0].id
+            const entryDoctorId = checkResult.rows[0].doctor_id
+
+            // Verify the consultation belongs to this doctor
+            if (entryDoctorId && entryDoctorId !== userDoctorId) {
+              console.log('⛔ COLABORADOR trying to edit another doctor\'s consultation')
+              return res.status(403).json({ error: 'You can only edit your own consultations' })
+            }
+          }
+        }
+      }
     }
 
     // Update entry
@@ -1060,13 +1116,60 @@ router.delete('/consultation/:clinicId/:entryId', async (req, res) => {
   // Check if user can delete consultation entries
   const { clinicId } = req.params
   const hasPermission = await canEditConsultations(req, clinicId)
-  
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
     const { clinicId, entryId } = req.params
+    const userId = (req as any).auth?.sub || (req as any).user?.sub
+    const userRole = (req as any).auth?.role || (req as any).user?.role
+
+    // If user is COLABORADOR, verify they can only delete their own consultations
+    if (userRole === 'COLABORADOR' && userId) {
+      const permissionResult = await query(
+        `SELECT can_view_all_doctors_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        [userId, clinicId]
+      )
+
+      const canViewAllDoctors = permissionResult.rows.length > 0 &&
+                                permissionResult.rows[0].can_view_all_doctors_consultations === true
+
+      // If they can't view all doctors, verify they're deleting their own consultation
+      if (!canViewAllDoctors) {
+        const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
+
+        if (userResult.rows.length > 0) {
+          const userEmail = userResult.rows[0].email
+          const doctorResult = await query(
+            `SELECT id FROM clinic_doctors WHERE clinic_id = $1 AND email = $2`,
+            [clinicId, userEmail]
+          )
+
+          if (doctorResult.rows.length > 0) {
+            const userDoctorId = doctorResult.rows[0].id
+
+            // Check the consultation before deleting
+            const checkResult = await query(
+              `SELECT doctor_id FROM daily_consultation_entries WHERE id = $1 AND clinic_id = $2`,
+              [entryId, clinicId]
+            )
+
+            if (checkResult.rows.length > 0) {
+              const entryDoctorId = checkResult.rows[0].doctor_id
+
+              // Verify the consultation belongs to this doctor
+              if (entryDoctorId && entryDoctorId !== userDoctorId) {
+                console.log('⛔ COLABORADOR trying to delete another doctor\'s consultation')
+                return res.status(403).json({ error: 'You can only delete your own consultations' })
+              }
+            }
+          }
+        }
+      }
+    }
+
     const result = await query(
       `DELETE FROM daily_consultation_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
       [entryId, clinicId]
