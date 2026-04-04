@@ -53,8 +53,8 @@ const DoctorsListEditor = ({
     const entry: any = {
       id: Math.random().toString(36),
       name: newName,
-      email: newEmail || undefined,
-      whatsapp: newWhatsapp || undefined,
+      email: newEmail || null,
+      whatsapp: newWhatsapp || null,
     }
     onUpdate([...items, entry])
     setNewName('')
@@ -79,8 +79,8 @@ const DoctorsListEditor = ({
         return {
           ...item,
           name: editName,
-          email: editEmail || undefined,
-          whatsapp: editWhatsapp || undefined,
+          email: editEmail || null,
+          whatsapp: editWhatsapp || null,
         }
       }
       return item
