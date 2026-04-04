@@ -397,7 +397,6 @@ router.get('/plan-alerts/:clinicId', n8nAuthMiddleware, async (req, res) => {
         WHERE e.clinic_id = $1
           AND e.plan_created = true
           AND e.plan_presented = false
-          AND e.plan_accepted = false
           AND e.plan_created_at IS NOT NULL
           AND (CURRENT_DATE - e.plan_created_at) >= 7
         ORDER BY days_waiting DESC`,
@@ -483,7 +482,6 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
         WHERE e.clinic_id = $1
           AND e.plan_created = true
           AND e.plan_presented = false
-          AND e.plan_accepted = false
           AND e.plan_created_at IS NOT NULL
           AND (CURRENT_DATE - e.plan_created_at) >= 7
         ORDER BY d.id, days_waiting DESC`,
