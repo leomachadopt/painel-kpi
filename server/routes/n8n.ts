@@ -384,7 +384,23 @@ router.get('/plan-alerts/:clinicId', n8nAuthMiddleware, async (req, res) => {
   try {
     const { clinicId } = req.params
 
-    const [stuckAtCreated, stuckAtPresented, clinicResult] = await Promise.all([
+    const [noPlanCreated, stuckAtCreated, stuckAtPresented, clinicResult] = await Promise.all([
+      // Pacientes com consulta realizada há mais de 7 dias sem plano criado
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code,
+          e.date as consultation_date,
+          (CURRENT_DATE - e.date) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_created = false
+          AND (CURRENT_DATE - e.date) >= 7
+        ORDER BY days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+
       // Pacientes com Plano Criado há mais de 7 dias sem avançar para Apresentado
       query(
         `SELECT
@@ -439,7 +455,7 @@ router.get('/plan-alerts/:clinicId', n8nAuthMiddleware, async (req, res) => {
       doctorId: row.doctor_id,
       doctorName: row.doctor_name || 'Sem médico',
       doctorWhatsapp: row.doctor_whatsapp || null,
-      stuckSince: row.plan_created_at || row.plan_presented_at,
+      stuckSince: row.consultation_date || row.plan_created_at || row.plan_presented_at,
     })
 
     res.json({
@@ -449,9 +465,13 @@ router.get('/plan-alerts/:clinicId', n8nAuthMiddleware, async (req, res) => {
         ownerWhatsapp: clinic.owner_whatsapp,
       },
       alerts: {
+        noPlanCreated: noPlanCreated.rows.map(formatPatient),
         stuckAtPlanCreated: stuckAtCreated.rows.map(formatPatient),
         stuckAtPlanPresented: stuckAtPresented.rows.map(formatPatient),
-        totalAlerts: stuckAtCreated.rows.length + stuckAtPresented.rows.length,
+        totalAlerts:
+          noPlanCreated.rows.length +
+          stuckAtCreated.rows.length +
+          stuckAtPresented.rows.length,
       },
     })
   } catch (error) {
@@ -469,7 +489,23 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
   try {
     const { clinicId } = req.params
 
-    const [stuckAtCreated, stuckAtPresented] = await Promise.all([
+    const [noPlanCreated, stuckAtCreated, stuckAtPresented] = await Promise.all([
+      // Pacientes com consulta realizada há mais de 7 dias sem plano criado
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code,
+          e.date as consultation_date,
+          (CURRENT_DATE - e.date) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_created = false
+          AND (CURRENT_DATE - e.date) >= 7
+        ORDER BY d.id, days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+
       // Pacientes com Plano Criado há mais de 7 dias sem avançar para Apresentado
       query(
         `SELECT
@@ -513,31 +549,35 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
       code: row.code,
       daysWaiting: parseInt(row.days_waiting || 0),
       planValue: parseFloat(row.plan_presented_value || row.plan_value || 0),
-      stuckSince: row.plan_created_at || row.plan_presented_at,
+      stuckSince: row.consultation_date || row.plan_created_at || row.plan_presented_at,
     })
 
     // Agrupar por médico
     const doctorMap = new Map<string, any>()
 
-    const addToDoctor = (row: any, alertType: 'created' | 'presented') => {
+    const addToDoctor = (row: any, alertType: 'noPlan' | 'created' | 'presented') => {
       const doctorId = row.doctor_id || 'no-doctor'
       if (!doctorMap.has(doctorId)) {
         doctorMap.set(doctorId, {
           doctorId: row.doctor_id,
           doctorName: row.doctor_name || 'Sem médico',
           doctorWhatsapp: row.doctor_whatsapp || null,
+          noPlanCreated: [],
           stuckAtPlanCreated: [],
           stuckAtPlanPresented: [],
         })
       }
       const doctor = doctorMap.get(doctorId)
-      if (alertType === 'created') {
+      if (alertType === 'noPlan') {
+        doctor.noPlanCreated.push(formatPatient(row))
+      } else if (alertType === 'created') {
         doctor.stuckAtPlanCreated.push(formatPatient(row))
       } else {
         doctor.stuckAtPlanPresented.push(formatPatient(row))
       }
     }
 
+    noPlanCreated.rows.forEach((row) => addToDoctor(row, 'noPlan'))
     stuckAtCreated.rows.forEach((row) => addToDoctor(row, 'created'))
     stuckAtPresented.rows.forEach((row) => addToDoctor(row, 'presented'))
 
@@ -545,7 +585,10 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
     const doctorAlerts = Array.from(doctorMap.values())
       .map((doctor) => ({
         ...doctor,
-        totalAlerts: doctor.stuckAtPlanCreated.length + doctor.stuckAtPlanPresented.length,
+        totalAlerts:
+          doctor.noPlanCreated.length +
+          doctor.stuckAtPlanCreated.length +
+          doctor.stuckAtPlanPresented.length,
       }))
       .filter((doctor) => doctor.totalAlerts > 0) // Apenas médicos com alertas
 
