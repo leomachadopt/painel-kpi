@@ -489,7 +489,7 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
   try {
     const { clinicId } = req.params
 
-    const [noPlanCreated, stuckAtCreated, stuckAtPresented] = await Promise.all([
+    const [noPlanCreated, stuckAtCreated, stuckAtPresented, clinicResult] = await Promise.all([
       // Pacientes com consulta realizada há mais de 7 dias sem plano criado
       query(
         `SELECT
@@ -541,6 +541,9 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
         ORDER BY d.id, days_waiting DESC`,
         [clinicId]
       ).catch(() => ({ rows: [] })),
+
+      // Buscar nome da clínica
+      query('SELECT name FROM clinics WHERE id = $1', [clinicId]).catch(() => ({ rows: [] })),
     ])
 
     const formatPatient = (row: any) => ({
@@ -581,10 +584,14 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
     stuckAtCreated.rows.forEach((row) => addToDoctor(row, 'created'))
     stuckAtPresented.rows.forEach((row) => addToDoctor(row, 'presented'))
 
-    // Converter para array e adicionar totalAlerts
+    // Obter nome da clínica
+    const clinicName = clinicResult.rows[0]?.name || ''
+
+    // Converter para array e adicionar totalAlerts e clinicName
     const doctorAlerts = Array.from(doctorMap.values())
       .map((doctor) => ({
         ...doctor,
+        clinicName,
         totalAlerts:
           doctor.noPlanCreated.length +
           doctor.stuckAtPlanCreated.length +
