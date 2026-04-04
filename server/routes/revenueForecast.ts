@@ -239,6 +239,36 @@ router.post('/:clinicId/plans', async (req, res) => {
 })
 
 /**
+ * Helper function to recalculate plan totals based on installments
+ */
+async function recalculatePlanTotals(planId: string) {
+  // Get all installments for this plan
+  const installmentsResult = await query(
+    `SELECT value FROM revenue_installments WHERE revenue_plan_id = $1 ORDER BY installment_number ASC`,
+    [planId]
+  )
+
+  if (installmentsResult.rows.length === 0) {
+    return
+  }
+
+  const installments = installmentsResult.rows.map(row => parseFloat(row.value))
+  const totalValue = installments.reduce((sum, val) => sum + val, 0)
+  const avgInstallmentValue = totalValue / installments.length
+  const installmentCount = installments.length
+
+  // Update the plan
+  await query(
+    `UPDATE revenue_plans
+     SET total_value = $1,
+         installment_value = $2,
+         installment_count = $3
+     WHERE id = $4`,
+    [totalValue, avgInstallmentValue, installmentCount, planId]
+  )
+}
+
+/**
  * Update installment (value, date, or mark as received)
  */
 router.patch('/:clinicId/installments/:installmentId', async (req, res) => {
@@ -296,6 +326,12 @@ router.patch('/:clinicId/installments/:installmentId', async (req, res) => {
     }
 
     const updated = result.rows[0]
+
+    // Recalculate plan totals if value was changed
+    if (value !== undefined) {
+      await recalculatePlanTotals(updated.revenue_plan_id)
+    }
+
     res.json({
       id: updated.id,
       installmentNumber: updated.installment_number,
@@ -381,13 +417,18 @@ router.delete('/:clinicId/installments/:installmentId', async (req, res) => {
     const result = await query(
       `DELETE FROM revenue_installments
        WHERE id = $1 AND clinic_id = $2
-       RETURNING id`,
+       RETURNING id, revenue_plan_id`,
       [installmentId, clinicId]
     )
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Installment not found' })
     }
+
+    const deletedInstallment = result.rows[0]
+
+    // Recalculate plan totals after deletion
+    await recalculatePlanTotals(deletedInstallment.revenue_plan_id)
 
     res.json({ success: true })
   } catch (error: any) {

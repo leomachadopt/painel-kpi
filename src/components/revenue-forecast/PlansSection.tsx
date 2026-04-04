@@ -16,6 +16,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface RevenueForecastPlansSectionProps {
   clinicId: string
@@ -36,6 +46,13 @@ export function RevenueForecastPlansSection({
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'plan' | 'installment'; id: string } | null>(
     null
   )
+  const [editingInstallment, setEditingInstallment] = useState<any | null>(null)
+  const [editForm, setEditForm] = useState({
+    value: '',
+    dueDate: '',
+    status: '',
+    receivedDate: '',
+  })
 
   useEffect(() => {
     loadPlans()
@@ -121,6 +138,51 @@ export function RevenueForecastPlansSection({
       toast({
         title: 'Erro',
         description: 'Falha ao excluir',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleOpenEditDialog = (installment: any) => {
+    setEditingInstallment(installment)
+    setEditForm({
+      value: installment.value.toString(),
+      dueDate: installment.dueDate,
+      status: installment.status,
+      receivedDate: installment.receivedDate || '',
+    })
+  }
+
+  const handleCloseEditDialog = () => {
+    setEditingInstallment(null)
+    setEditForm({
+      value: '',
+      dueDate: '',
+      status: '',
+      receivedDate: '',
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingInstallment) return
+
+    try {
+      await api.revenueForecast.updateInstallment(clinicId, editingInstallment.id, {
+        value: parseFloat(editForm.value),
+        dueDate: editForm.dueDate,
+        status: editForm.status,
+        receivedDate: editForm.receivedDate || null,
+      })
+      toast({
+        title: 'Sucesso',
+        description: 'Parcela atualizada com sucesso',
+      })
+      handleCloseEditDialog()
+      onRefresh()
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao atualizar parcela',
         variant: 'destructive',
       })
     }
@@ -266,6 +328,14 @@ export function RevenueForecastPlansSection({
                             {inst.receivedDate ? formatDate(inst.receivedDate) : '-'}
                           </div>
                           <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenEditDialog(inst)}
+                              title="Editar parcela"
+                            >
+                              <Pencil className="w-4 h-4 text-blue-600" />
+                            </Button>
                             {inst.status !== 'RECEBIDO' && (
                               <Button
                                 variant="ghost"
@@ -329,6 +399,67 @@ export function RevenueForecastPlansSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Installment Dialog */}
+      <Dialog open={!!editingInstallment} onOpenChange={handleCloseEditDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Parcela</DialogTitle>
+            <DialogDescription>
+              Altere os dados da parcela abaixo. Clique em Salvar quando terminar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="value">Valor</Label>
+              <Input
+                id="value"
+                type="number"
+                step="0.01"
+                value={editForm.value}
+                onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="dueDate">Data de Vencimento</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={editForm.dueDate}
+                onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+              >
+                <option value="A_RECEBER">A Receber</option>
+                <option value="RECEBIDO">Recebido</option>
+                <option value="ATRASADO">Atrasado</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="receivedDate">Data de Recebimento (opcional)</Label>
+              <Input
+                id="receivedDate"
+                type="date"
+                value={editForm.receivedDate}
+                onChange={(e) => setEditForm({ ...editForm, receivedDate: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseEditDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
