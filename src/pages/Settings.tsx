@@ -31,6 +31,221 @@ import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
 
+const DoctorsListEditor = ({
+  items,
+  onUpdate,
+  readOnly = false,
+}: {
+  items: { id: string; name: string; email?: string; whatsapp?: string }[]
+  onUpdate: (items: any[]) => void
+  readOnly?: boolean
+}) => {
+  const [newName, setNewName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newWhatsapp, setNewWhatsapp] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editWhatsapp, setEditWhatsapp] = useState('')
+
+  const add = () => {
+    if (!newName) return
+    const entry: any = {
+      id: Math.random().toString(36),
+      name: newName,
+      email: newEmail || undefined,
+      whatsapp: newWhatsapp || undefined,
+    }
+    onUpdate([...items, entry])
+    setNewName('')
+    setNewEmail('')
+    setNewWhatsapp('')
+  }
+
+  const remove = (id: string) => {
+    onUpdate(items.filter((i) => i.id !== id))
+  }
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+    setEditEmail(item.email || '')
+    setEditWhatsapp(item.whatsapp || '')
+  }
+
+  const saveEdit = (id: string) => {
+    const updated = items.map((item) => {
+      if (item.id === id) {
+        return {
+          ...item,
+          name: editName,
+          email: editEmail || undefined,
+          whatsapp: editWhatsapp || undefined,
+        }
+      }
+      return item
+    })
+    onUpdate(updated)
+    setEditingId(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditName('')
+    setEditEmail('')
+    setEditWhatsapp('')
+  }
+
+  const moveUp = (index: number) => {
+    if (index === 0) return
+    const newItems = [...items]
+    const temp = newItems[index]
+    newItems[index] = newItems[index - 1]
+    newItems[index - 1] = temp
+    onUpdate(newItems)
+  }
+
+  const moveDown = (index: number) => {
+    if (index === items.length - 1) return
+    const newItems = [...items]
+    const temp = newItems[index]
+    newItems[index] = newItems[index + 1]
+    newItems[index + 1] = temp
+    onUpdate(newItems)
+  }
+
+  return (
+    <div className="space-y-4">
+      {!readOnly && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Input
+              placeholder="Nome do médico *"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && add()}
+            />
+            <Input
+              placeholder="Email (opcional)"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && add()}
+            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="WhatsApp (ex: +351 912 345 678)"
+                value={newWhatsapp}
+                onChange={(e) => setNewWhatsapp(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && add()}
+              />
+              <Button onClick={add} size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className="flex items-center gap-2 p-3 border rounded bg-background"
+          >
+            {editingId === item.id ? (
+              <>
+                <div className="flex flex-col md:flex-row gap-2 flex-1">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit(item.id)
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    placeholder="Nome"
+                    autoFocus
+                  />
+                  <Input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="Email"
+                  />
+                  <Input
+                    value={editWhatsapp}
+                    onChange={(e) => setEditWhatsapp(e.target.value)}
+                    placeholder="WhatsApp"
+                  />
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => saveEdit(item.id)}
+                  >
+                    <Check className="h-4 w-4 text-green-600" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={cancelEdit}
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-sm text-muted-foreground space-y-0.5">
+                    {item.email && <div>📧 {item.email}</div>}
+                    {item.whatsapp && <div>📱 {item.whatsapp}</div>}
+                  </div>
+                </div>
+                {!readOnly && (
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => moveUp(index)}
+                      disabled={index === 0}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => moveDown(index)}
+                      disabled={index === items.length - 1}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEdit(item)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const ListEditor = ({
   title,
   items,
@@ -906,12 +1121,11 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>Corpo Clínico</CardTitle>
               <CardDescription>
-                Lista de médicos para registo de tempo.
+                Lista de médicos com contactos para alertas automáticos.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ListEditor
-                title="Médico"
+              <DoctorsListEditor
                 items={config.doctors}
                 onUpdate={(items) => setConfig({ ...config, doctors: items })}
                 readOnly={!canManageConfig}

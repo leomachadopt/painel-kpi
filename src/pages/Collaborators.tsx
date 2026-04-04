@@ -65,6 +65,7 @@ export default function Collaborators() {
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
+    whatsapp: '',
     password: '',
   })
 
@@ -72,6 +73,7 @@ export default function Collaborators() {
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
+    whatsapp: '',
     active: true,
     password: '',
   })
@@ -112,7 +114,7 @@ export default function Collaborators() {
       await collaboratorsApi.create(createForm)
       toast.success(t('collaborators.collaboratorCreated'))
       setShowCreateModal(false)
-      setCreateForm({ name: '', email: '', password: '' })
+      setCreateForm({ name: '', email: '', whatsapp: '', password: '' })
       loadCollaborators()
     } catch (error: any) {
       toast.error(error.message || t('collaborators.errorCreatingCollaborator'))
@@ -138,6 +140,7 @@ export default function Collaborators() {
     setEditForm({
       name: collaborator.name || '',
       email: collaborator.email || '',
+      whatsapp: collaborator.whatsapp || '',
       active: collaborator.active !== undefined ? collaborator.active : true,
       password: '',
     })
@@ -155,9 +158,10 @@ export default function Collaborators() {
     try {
       setSubmitting(true)
       // Enviar senha apenas se foi preenchida
-      const updateData: { name: string; email: string; active: boolean; password?: string } = {
+      const updateData: { name: string; email: string; whatsapp?: string; active: boolean; password?: string } = {
         name: editForm.name,
         email: editForm.email,
+        whatsapp: editForm.whatsapp || undefined,
         active: editForm.active,
       }
 
@@ -169,7 +173,7 @@ export default function Collaborators() {
       toast.success(t('collaborators.collaboratorUpdated'))
       setShowEditModal(false)
       setSelectedCollaborator(null)
-      setEditForm({ name: '', email: '', active: true, password: '' })
+      setEditForm({ name: '', email: '', whatsapp: '', active: true, password: '' })
       loadCollaborators()
     } catch (error: any) {
       toast.error(error.message || t('collaborators.errorUpdatingCollaborator'))
@@ -365,6 +369,15 @@ export default function Collaborators() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp (opcional)</Label>
+              <Input
+                id="whatsapp"
+                value={createForm.whatsapp}
+                onChange={(e) => setCreateForm({ ...createForm, whatsapp: e.target.value })}
+                placeholder="Ex: +351 912 345 678"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="password">{t('collaborators.password')}</Label>
               <Input
                 id="password"
@@ -484,6 +497,15 @@ export default function Collaborators() {
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                 placeholder={t('collaborators.emailPlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-whatsapp">WhatsApp (opcional)</Label>
+              <Input
+                id="edit-whatsapp"
+                value={editForm.whatsapp}
+                onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                placeholder="Ex: +351 912 345 678"
               />
             </div>
             <div className="space-y-2">

@@ -25,6 +25,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         u.id,
         u.name,
         u.email,
+        u.whatsapp,
         u.role,
         u.clinic_id,
         u.avatar_url,
@@ -90,6 +91,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
       id: row.id,
       name: row.name,
       email: row.email,
+      whatsapp: row.whatsapp,
       role: row.role,
       clinicId: row.clinic_id,
       avatarUrl: row.avatar_url,
@@ -168,7 +170,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: 'Clinic ID is required' })
     }
 
-    const { name, email, password } = req.body
+    const { name, email, password, whatsapp } = req.body
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' })
@@ -185,9 +187,9 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
     const newUserId = `user-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
     await query(
-      `INSERT INTO users (id, name, email, password_hash, role, clinic_id, active)
-       VALUES ($1, $2, $3, $4, 'COLABORADOR', $5, true)`,
-      [newUserId, name, email, password, clinicId]
+      `INSERT INTO users (id, name, email, whatsapp, password_hash, role, clinic_id, active)
+       VALUES ($1, $2, $3, $4, $5, 'COLABORADOR', $6, true)`,
+      [newUserId, name, email, whatsapp || null, password, clinicId]
     )
 
     // Create default permissions (all false)
@@ -216,6 +218,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         u.id,
         u.name,
         u.email,
+        u.whatsapp,
         u.role,
         u.clinic_id,
         u.avatar_url,
@@ -281,6 +284,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
       id: row.id,
       name: row.name,
       email: row.email,
+      whatsapp: row.whatsapp,
       role: row.role,
       clinicId: row.clinic_id,
       avatarUrl: row.avatar_url,
@@ -363,7 +367,7 @@ router.put('/:id', requireGestor, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: 'Clinic ID is required' })
     }
 
-    const { name, email, active, password } = req.body
+    const { name, email, active, password, whatsapp } = req.body
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' })
@@ -393,16 +397,16 @@ router.put('/:id', requireGestor, async (req: AuthedRequest, res) => {
     if (password) {
       await query(
         `UPDATE users
-         SET name = $1, email = $2, active = $3, password_hash = $4, updated_at = NOW()
-         WHERE id = $5`,
-        [name, email, active !== undefined ? active : true, password, collaboratorId]
+         SET name = $1, email = $2, whatsapp = $3, active = $4, password_hash = $5, updated_at = NOW()
+         WHERE id = $6`,
+        [name, email, whatsapp || null, active !== undefined ? active : true, password, collaboratorId]
       )
     } else {
       await query(
         `UPDATE users
-         SET name = $1, email = $2, active = $3, updated_at = NOW()
-         WHERE id = $4`,
-        [name, email, active !== undefined ? active : true, collaboratorId]
+         SET name = $1, email = $2, whatsapp = $3, active = $4, updated_at = NOW()
+         WHERE id = $5`,
+        [name, email, whatsapp || null, active !== undefined ? active : true, collaboratorId]
       )
     }
 

@@ -84,10 +84,13 @@ router.put('/:clinicId', requirePermission('canEditClinicConfig'), async (req, r
       }
       for (const doctor of doctors) {
         await query(
-          `INSERT INTO clinic_doctors (id, clinic_id, name)
-           VALUES ($1, $2, $3)
-           ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
-          [doctor.id, clinicId, doctor.name]
+          `INSERT INTO clinic_doctors (id, clinic_id, name, email, whatsapp)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO UPDATE SET
+             name = EXCLUDED.name,
+             email = EXCLUDED.email,
+             whatsapp = EXCLUDED.whatsapp`,
+          [doctor.id, clinicId, doctor.name, doctor.email || null, doctor.whatsapp || null]
         )
       }
     }

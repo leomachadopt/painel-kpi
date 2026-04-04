@@ -375,4 +375,187 @@ router.get('/weekly-report/:clinicId', n8nAuthMiddleware, async (req, res) => {
   }
 })
 
+/**
+ * GET /api/n8n/plan-alerts/:clinicId
+ * Retorna alertas consolidados de planos de tratamento em atraso.
+ * Para envio ao dono da clínica (todos os planos em atraso de todos os médicos).
+ */
+router.get('/plan-alerts/:clinicId', n8nAuthMiddleware, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const [stuckAtCreated, stuckAtPresented, clinicResult] = await Promise.all([
+      // Pacientes com Plano Criado há mais de 7 dias sem avançar para Apresentado
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code, e.plan_created_at,
+          e.plan_presented_value, e.plan_value,
+          (CURRENT_DATE - e.plan_created_at) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_created = true
+          AND e.plan_presented = false
+          AND e.plan_accepted = false
+          AND e.plan_created_at IS NOT NULL
+          AND (CURRENT_DATE - e.plan_created_at) >= 7
+        ORDER BY days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+
+      // Pacientes com Plano Apresentado há mais de 7 dias sem aceitar
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code, e.plan_presented_at,
+          e.plan_presented_value, e.plan_value,
+          (CURRENT_DATE - e.plan_presented_at) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_presented = true
+          AND e.plan_accepted = false
+          AND e.plan_presented_at IS NOT NULL
+          AND (CURRENT_DATE - e.plan_presented_at) >= 7
+        ORDER BY days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+
+      // Dados básicos da clínica
+      query(
+        'SELECT name, owner_name, kommo_contact_id, owner_whatsapp FROM clinics WHERE id = $1',
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+    ])
+
+    const clinic = clinicResult.rows[0] || {}
+
+    const formatPatient = (row: any) => ({
+      id: row.id,
+      patientName: row.patient_name,
+      code: row.code,
+      daysWaiting: parseInt(row.days_waiting || 0),
+      planValue: parseFloat(row.plan_presented_value || row.plan_value || 0),
+      doctorId: row.doctor_id,
+      doctorName: row.doctor_name || 'Sem médico',
+      doctorWhatsapp: row.doctor_whatsapp || null,
+      stuckSince: row.plan_created_at || row.plan_presented_at,
+    })
+
+    res.json({
+      clinic: {
+        name: clinic.name,
+        ownerName: clinic.owner_name,
+        ownerWhatsapp: clinic.owner_whatsapp,
+      },
+      alerts: {
+        stuckAtPlanCreated: stuckAtCreated.rows.map(formatPatient),
+        stuckAtPlanPresented: stuckAtPresented.rows.map(formatPatient),
+        totalAlerts: stuckAtCreated.rows.length + stuckAtPresented.rows.length,
+      },
+    })
+  } catch (error) {
+    console.error('Error generating plan alerts for n8n:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/n8n/plan-alerts/:clinicId/by-doctor
+ * Retorna alertas agrupados por médico.
+ * Para envio individual a cada médico — apenas médicos com pelo menos 1 alerta.
+ */
+router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const [stuckAtCreated, stuckAtPresented] = await Promise.all([
+      // Pacientes com Plano Criado há mais de 7 dias sem avançar para Apresentado
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code, e.plan_created_at,
+          e.plan_presented_value, e.plan_value,
+          (CURRENT_DATE - e.plan_created_at) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_created = true
+          AND e.plan_presented = false
+          AND e.plan_accepted = false
+          AND e.plan_created_at IS NOT NULL
+          AND (CURRENT_DATE - e.plan_created_at) >= 7
+        ORDER BY d.id, days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+
+      // Pacientes com Plano Apresentado há mais de 7 dias sem aceitar
+      query(
+        `SELECT
+          e.id, e.patient_name, e.code, e.plan_presented_at,
+          e.plan_presented_value, e.plan_value,
+          (CURRENT_DATE - e.plan_presented_at) AS days_waiting,
+          d.id AS doctor_id, d.name AS doctor_name, d.whatsapp AS doctor_whatsapp
+        FROM daily_consultation_entries e
+        LEFT JOIN clinic_doctors d ON e.doctor_id = d.id
+        WHERE e.clinic_id = $1
+          AND e.plan_presented = true
+          AND e.plan_accepted = false
+          AND e.plan_presented_at IS NOT NULL
+          AND (CURRENT_DATE - e.plan_presented_at) >= 7
+        ORDER BY d.id, days_waiting DESC`,
+        [clinicId]
+      ).catch(() => ({ rows: [] })),
+    ])
+
+    const formatPatient = (row: any) => ({
+      id: row.id,
+      patientName: row.patient_name,
+      code: row.code,
+      daysWaiting: parseInt(row.days_waiting || 0),
+      planValue: parseFloat(row.plan_presented_value || row.plan_value || 0),
+      stuckSince: row.plan_created_at || row.plan_presented_at,
+    })
+
+    // Agrupar por médico
+    const doctorMap = new Map<string, any>()
+
+    const addToDoctor = (row: any, alertType: 'created' | 'presented') => {
+      const doctorId = row.doctor_id || 'no-doctor'
+      if (!doctorMap.has(doctorId)) {
+        doctorMap.set(doctorId, {
+          doctorId: row.doctor_id,
+          doctorName: row.doctor_name || 'Sem médico',
+          doctorWhatsapp: row.doctor_whatsapp || null,
+          stuckAtPlanCreated: [],
+          stuckAtPlanPresented: [],
+        })
+      }
+      const doctor = doctorMap.get(doctorId)
+      if (alertType === 'created') {
+        doctor.stuckAtPlanCreated.push(formatPatient(row))
+      } else {
+        doctor.stuckAtPlanPresented.push(formatPatient(row))
+      }
+    }
+
+    stuckAtCreated.rows.forEach((row) => addToDoctor(row, 'created'))
+    stuckAtPresented.rows.forEach((row) => addToDoctor(row, 'presented'))
+
+    // Converter para array e adicionar totalAlerts
+    const doctorAlerts = Array.from(doctorMap.values())
+      .map((doctor) => ({
+        ...doctor,
+        totalAlerts: doctor.stuckAtPlanCreated.length + doctor.stuckAtPlanPresented.length,
+      }))
+      .filter((doctor) => doctor.totalAlerts > 0) // Apenas médicos com alertas
+
+    res.json(doctorAlerts)
+  } catch (error) {
+    console.error('Error generating doctor plan alerts for n8n:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
 export default router

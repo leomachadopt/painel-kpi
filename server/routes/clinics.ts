@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
             [clinic.id]
           ).catch(() => ({ rows: [] }))
           const doctors = await query(
-            'SELECT id, name FROM clinic_doctors WHERE clinic_id = $1',
+            'SELECT id, name, email, whatsapp FROM clinic_doctors WHERE clinic_id = $1',
             [clinic.id]
           ).catch(() => ({ rows: [] }))
           const sources = await query(
@@ -285,7 +285,7 @@ router.get('/:id', async (req, res) => {
       [clinic.id]
     ).catch(() => ({ rows: [] }))
     const doctors = await query(
-      'SELECT id, name FROM clinic_doctors WHERE clinic_id = $1',
+      'SELECT id, name, email, whatsapp FROM clinic_doctors WHERE clinic_id = $1',
       [clinic.id]
     ).catch(() => ({ rows: [] }))
     const sources = await query(
