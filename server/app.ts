@@ -26,6 +26,11 @@ import sidebarRoutes from './routes/sidebar.js'
 import revenueForecastRoutes from './routes/revenueForecast.js'
 import pendingTreatmentsRoutes from './routes/pendingTreatments.js'
 import n8nRoutes from './routes/n8n.js'
+import appointmentsRoutes from './routes/appointments.js'
+import clinicScheduleRoutes from './routes/clinicSchedule.js'
+import planProceduresRoutes from './routes/planProcedures.js'
+import proceduresCatalogRoutes from './routes/proceduresCatalog.js'
+import dashboardMetricsRoutes from './routes/dashboardMetrics.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -144,6 +149,11 @@ export function createApp() {
   app.use('/api/revenue-forecast', revenueForecastRoutes)
   app.use('/api/pending-treatments', pendingTreatmentsRoutes)
   app.use('/api/n8n', n8nRoutes)
+  app.use('/api/appointments', appointmentsRoutes)
+  app.use('/api/clinic-schedule', clinicScheduleRoutes)
+  app.use('/api/plan-procedures', planProceduresRoutes)
+  app.use('/api/procedures-catalog', proceduresCatalogRoutes)
+  app.use('/api/clinics', dashboardMetricsRoutes)
 
   // Public routes (no authentication required)
   app.use('/api/public/nps', npsPublicRoutes)

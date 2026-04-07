@@ -43,6 +43,9 @@ import {
   RevenuePerCabinetChart,
   TopReferrersChart,
 } from '@/components/dashboard/Charts'
+import { FinancialHealthSection } from '@/components/dashboard/FinancialHealthSection'
+import { AgendaEfficiencySection } from '@/components/dashboard/AgendaEfficiencySection'
+import { MarketingAcquisitionSection } from '@/components/dashboard/MarketingAcquisitionSection'
 
 export default function Dashboard() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -166,7 +169,7 @@ export default function Dashboard() {
   }
 
   // Se for colaborador e não tiver permissão para ver nenhuma seção do dashboard, mostrar mensagem
-  if (user?.role === 'COLABORADOR' && !canViewAnyDashboardSection) {
+  if (user && (user.role === 'COLABORADOR' || user.role === 'MEDICO') && !canViewAnyDashboardSection) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center space-y-4">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -345,6 +348,27 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Financial Health Section - Nova seção de Saúde Financeira */}
+      {canViewFinancial && clinicId && (
+        <div className="animate-slide-up">
+          <FinancialHealthSection clinicId={clinicId} />
+        </div>
+      )}
+
+      {/* Agenda Efficiency Section - Métricas de eficiência da agenda */}
+      {canViewOperational && clinicId && clinic?.agendaEnabled && (
+        <div className="animate-slide-up mt-6">
+          <AgendaEfficiencySection clinicId={clinicId} />
+        </div>
+      )}
+
+      {/* Marketing & Acquisition Section - Phase 3 */}
+      {canViewCommercial && clinicId && (
+        <div className="animate-slide-up mt-6">
+          <MarketingAcquisitionSection clinicId={clinicId} />
         </div>
       )}
 

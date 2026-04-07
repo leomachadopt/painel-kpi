@@ -147,7 +147,9 @@ export const authApi = {
 // ================================
 export const clinicsApi = {
   getAll: async () => {
-    const response = await apiCall<any>('/clinics')
+    // Add cache-busting query parameter to force fresh data
+    const cacheBuster = `?_t=${Date.now()}`
+    const response = await apiCall<any>(`/clinics${cacheBuster}`)
     // Backend pode retornar {clinics: [...]} ou [...] dependendo da versão
     return Array.isArray(response) ? response : (response.clinics || [])
   },
@@ -257,6 +259,9 @@ export const configApi = {
     getAll: (clinicId: string) =>
       apiCall<any[]>(`/config/${clinicId}/consultation-types`),
 
+    getProcedures: (clinicId: string, typeId: string) =>
+      apiCall<any[]>(`/config/${clinicId}/consultation-types/${typeId}/procedures`),
+
     create: (clinicId: string, data: { name: string; description?: string }) =>
       apiCall<any>(`/config/${clinicId}/consultation-types`, {
         method: 'POST',
@@ -344,6 +349,43 @@ export const dailyEntriesApi = {
       apiCall<any>(`/daily-entries/consultation/${clinicId}/${entryId}`, {
         method: 'PUT',
         body: JSON.stringify(entry),
+      }),
+
+    completeConsultation: (clinicId: string, entryId: string, data: {
+      consultationTypeId: string
+      completedProcedures: Record<string, { completed: boolean; justification: string }>
+    }) =>
+      apiCall<any>(`/daily-entries/consultation/${clinicId}/${entryId}/complete`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    presentPlan: (clinicId: string, entryId: string) =>
+      apiCall<{
+        success: boolean
+        message: string
+        patientId: string
+        treatmentsCreated: number
+      }>(`/daily-entries/consultation/${clinicId}/${entryId}/present-plan`, {
+        method: 'PATCH',
+      }),
+
+    executeProcedures: (clinicId: string, entryId: string, data: {
+      executions: Array<{
+        procedureId: string
+        executedAt: string
+        notes: string
+      }>
+    }) =>
+      apiCall<{
+        success: boolean
+        message: string
+        executedCount: number
+        movedToInExecution: boolean
+        movedToFinished: boolean
+      }>(`/daily-entries/consultation/${clinicId}/${entryId}/execute-procedures`, {
+        method: 'POST',
+        body: JSON.stringify(data),
       }),
 
     delete: (clinicId: string, entryId: string) =>
@@ -1248,10 +1290,14 @@ const pendingTreatmentsApi = {
       body: JSON.stringify(data),
     }),
 
-  completeTreatment: (clinicId: string, treatmentId: string, completedQuantity: number) =>
+  completeTreatment: (clinicId: string, treatmentId: string, data: {
+    completedQuantity: number
+    executedAt?: string
+    notes?: string
+  }) =>
     apiCall<any>(`/pending-treatments/${clinicId}/treatments/${treatmentId}/complete`, {
       method: 'POST',
-      body: JSON.stringify({ completedQuantity }),
+      body: JSON.stringify(data),
     }),
 
   deleteTreatment: (clinicId: string, treatmentId: string) =>
@@ -1266,6 +1312,269 @@ const pendingTreatmentsApi = {
       treatmentCount: number
       totalPendingValue: number
     }>(`/pending-treatments/${clinicId}/dashboard`),
+}
+
+// ================================
+// PLAN PROCEDURES API (Fase 2)
+// ================================
+export const planProceduresApi = {
+  // Buscar procedimentos do plano
+  get: (clinicId: string, entryId: string) =>
+    apiCall<any>(`/plan-procedures/${clinicId}/${entryId}`),
+
+  // Criar procedimentos do plano (batch)
+  create: (
+    clinicId: string,
+    entryId: string,
+    data: {
+      priceTableType: 'clinica' | 'operadora'
+      insuranceProviderId?: string
+      procedures: Array<{
+        procedureCode: string
+        procedureDescription: string
+        priceAtCreation: number
+        quantity?: number
+        procedureBaseId?: string
+        insuranceProviderProcedureId?: string
+        sortOrder?: number
+        notes?: string
+      }>
+    }
+  ) =>
+    apiCall<{ message: string; procedures: any[] }>(
+      `/plan-procedures/${clinicId}/${entryId}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Atualizar procedimento (marcar como realizado)
+  update: (
+    clinicId: string,
+    entryId: string,
+    procedureId: string,
+    data: {
+      completed?: boolean
+      doctorId?: string
+      appointmentId?: string
+      notes?: string
+    }
+  ) =>
+    apiCall<{ message: string }>(
+      `/plan-procedures/${clinicId}/${entryId}/${procedureId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Deletar procedimento
+  delete: (clinicId: string, entryId: string, procedureId: string) =>
+    apiCall<{ message: string }>(
+      `/plan-procedures/${clinicId}/${entryId}/${procedureId}`,
+      {
+        method: 'DELETE',
+      }
+    ),
+
+  // Adicionar procedimentos extras ao plano existente
+  addExtraProcedures: (
+    clinicId: string,
+    entryId: string,
+    data: {
+      procedures: Array<{
+        procedureCode: string
+        procedureDescription: string
+        priceAtCreation: number
+        quantity?: number
+        procedureBaseId?: string | null
+        insuranceProviderProcedureId?: string | null
+        notes?: string | null
+      }>
+    }
+  ) =>
+    apiCall<{
+      message: string
+      procedures: any[]
+      addedValue: number
+      newTotalValue: number
+    }>(`/plan-procedures/${clinicId}/${entryId}/add`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// ================================
+// PROCEDURES CATALOG API (Fase 2)
+// ================================
+export const proceduresCatalogApi = {
+  // Buscar catálogo de procedimentos
+  search: (
+    clinicId: string,
+    params: {
+      type: 'clinica' | 'operadora'
+      providerId?: string
+      search?: string
+      limit?: number
+    }
+  ) => {
+    const queryParams = new URLSearchParams()
+    queryParams.append('type', params.type)
+    if (params.providerId) queryParams.append('providerId', params.providerId)
+    if (params.search) queryParams.append('search', params.search)
+    if (params.limit) queryParams.append('limit', params.limit.toString())
+
+    return apiCall<{
+      type: string
+      providerId: string | null
+      total: number
+      procedures: any[]
+    }>(`/procedures-catalog/${clinicId}?${queryParams}`)
+  },
+
+  // Listar operadoras disponíveis
+  getProviders: (clinicId: string) =>
+    apiCall<{ providers: any[] }>(`/procedures-catalog/${clinicId}/providers`),
+}
+
+// ================================
+// TREATMENT PLAN API (Fase 2)
+// ================================
+export const treatmentPlanApi = {
+  // Abandonar plano
+  abandon: (
+    clinicId: string,
+    entryId: string,
+    data: {
+      reason: 'financeiro' | 'mudou_clinica' | 'plano_extenso' | 'nao_compareceu' | 'outro'
+      notes?: string
+    }
+  ) =>
+    apiCall<{ message: string }>(
+      `/daily-entries/consultation/${clinicId}/${entryId}/abandon`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Reativar plano abandonado
+  reactivate: (clinicId: string, entryId: string) =>
+    apiCall<{ message: string; newState: any }>(
+      `/daily-entries/consultation/${clinicId}/${entryId}/reactivate`,
+      {
+        method: 'PATCH',
+      }
+    ),
+}
+
+// ================================
+// APPOINTMENTS PROCEDURES API (Fase 2)
+// ================================
+export const appointmentProceduresApi = {
+  // Buscar procedimentos do plano associados ao agendamento
+  getPlanProcedures: (clinicId: string, appointmentId: string) =>
+    apiCall<any[]>(`/appointments/${clinicId}/${appointmentId}/procedures`),
+
+  // Executar um procedimento via agenda
+  executeProcedure: (
+    clinicId: string,
+    appointmentId: string,
+    procedureId: string,
+    data: { executedAt?: string; notes?: string }
+  ) =>
+    apiCall<any>(
+      `/appointments/${clinicId}/${appointmentId}/procedures/${procedureId}/execute`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    ),
+
+  // Marcar procedimentos como realizados neste agendamento
+  completeProcedures: (
+    clinicId: string,
+    appointmentId: string,
+    data: {
+      procedureIds: string[]
+      doctorId?: string
+    }
+  ) =>
+    apiCall<{ message: string; updatedCount: number }>(
+      `/appointments/${clinicId}/${appointmentId}/complete-procedures`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    ),
+}
+
+// ================================
+// DASHBOARD METRICS API
+// ================================
+import type {
+  GuaranteedRevenue,
+  PendingTreatmentsSummary,
+  PlanConversionRate,
+  PlansAtRisk,
+  ScheduleOccupancy,
+  WaitTimes,
+  DelayReasons,
+  AppointmentConversion,
+  OccupancyByDoctor,
+  HourlyDistribution,
+  ConversionFunnel,
+  SourcePerformance,
+  AcquisitionTrends,
+  ProspectingPipeline,
+} from '@/lib/types/dashboardMetrics'
+
+export const dashboardMetricsApi = {
+  // Phase 1: Financial Health
+  getGuaranteedRevenue: (clinicId: string) =>
+    apiCall<GuaranteedRevenue>(`/clinics/${clinicId}/metrics/guaranteed-revenue`),
+
+  getPendingTreatments: (clinicId: string) =>
+    apiCall<PendingTreatmentsSummary>(`/clinics/${clinicId}/metrics/pending-treatments`),
+
+  getPlanConversionRate: (clinicId: string) =>
+    apiCall<PlanConversionRate>(`/clinics/${clinicId}/metrics/plan-conversion-rate`),
+
+  getPlansAtRisk: (clinicId: string) =>
+    apiCall<PlansAtRisk>(`/clinics/${clinicId}/metrics/plans-at-risk`),
+
+  // Phase 2: Agenda Efficiency
+  getScheduleOccupancy: (clinicId: string) =>
+    apiCall<ScheduleOccupancy>(`/clinics/${clinicId}/metrics/schedule-occupancy`),
+
+  getWaitTimes: (clinicId: string) =>
+    apiCall<WaitTimes>(`/clinics/${clinicId}/metrics/wait-times`),
+
+  getDelayReasons: (clinicId: string) =>
+    apiCall<DelayReasons>(`/clinics/${clinicId}/metrics/delay-reasons`),
+
+  getAppointmentConversion: (clinicId: string) =>
+    apiCall<AppointmentConversion>(`/clinics/${clinicId}/metrics/appointment-conversion`),
+
+  getOccupancyByDoctor: (clinicId: string) =>
+    apiCall<OccupancyByDoctor>(`/clinics/${clinicId}/metrics/occupancy-by-doctor`),
+
+  getHourlyDistribution: (clinicId: string) =>
+    apiCall<HourlyDistribution>(`/clinics/${clinicId}/metrics/hourly-distribution`),
+
+  // Phase 3: Marketing & Acquisition
+  getConversionFunnel: (clinicId: string) =>
+    apiCall<ConversionFunnel>(`/clinics/${clinicId}/metrics/conversion-funnel`),
+
+  getSourcePerformance: (clinicId: string) =>
+    apiCall<SourcePerformance>(`/clinics/${clinicId}/metrics/source-performance`),
+
+  getAcquisitionTrends: (clinicId: string) =>
+    apiCall<AcquisitionTrends>(`/clinics/${clinicId}/metrics/acquisition-trends`),
+
+  getProspectingPipeline: (clinicId: string) =>
+    apiCall<ProspectingPipeline>(`/clinics/${clinicId}/metrics/prospecting-pipeline`),
 }
 
 // ================================
@@ -1286,4 +1595,9 @@ export default {
   sidebar: sidebarApi,
   revenueForecast: revenueForecastApi,
   pendingTreatments: pendingTreatmentsApi,
+  planProcedures: planProceduresApi,
+  proceduresCatalog: proceduresCatalogApi,
+  treatmentPlan: treatmentPlanApi,
+  appointmentProcedures: appointmentProceduresApi,
+  dashboardMetrics: dashboardMetricsApi,
 }
