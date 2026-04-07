@@ -53,12 +53,14 @@ export interface UserPermissions {
   canManageInsuranceProviders: boolean
   hasSpecialAccountsPayableAccess: boolean
   canViewAllDoctorsConsultations: boolean
+  canViewAppointments: boolean
+  canEditAppointments: boolean
 }
 
 /**
  * Get user permissions from database
  * MENTOR and GESTOR_CLINICA have all permissions by default
- * COLABORADOR permissions are loaded from user_permissions table
+ * MEDICO and COLABORADOR permissions are loaded from user_permissions table
  */
 export async function getUserPermissions(
   userId: string,
@@ -118,6 +120,8 @@ export async function getUserPermissions(
       canManageInsuranceProviders: true,
       hasSpecialAccountsPayableAccess: true,
       canViewAllDoctorsConsultations: true,
+      canViewAppointments: true,
+      canEditAppointments: true,
     }
   }
 
@@ -178,7 +182,9 @@ export async function getUserPermissions(
       can_bill_advances,
       can_manage_insurance_providers,
       has_special_accounts_payable_access,
-      can_view_all_doctors_consultations
+      can_view_all_doctors_consultations,
+      can_view_appointments,
+      can_edit_appointments
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -241,11 +247,13 @@ export async function getUserPermissions(
     canManageInsuranceProviders: Boolean(perms.can_manage_insurance_providers),
     hasSpecialAccountsPayableAccess: Boolean(perms.has_special_accounts_payable_access),
     canViewAllDoctorsConsultations: Boolean(perms.can_view_all_doctors_consultations),
+    canViewAppointments: perms.can_view_appointments !== false, // Default true
+    canEditAppointments: Boolean(perms.can_edit_appointments),
   }
   
-  // Para contas a pagar, apenas colaboradores com permissão especial têm acesso
+  // Para contas a pagar, apenas colaboradores e médicos com permissão especial têm acesso
   // Ignorar canViewAccountsPayable e canEditAccountsPayable se não tiver permissão especial
-  if (role === 'COLABORADOR') {
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     if (permissions.hasSpecialAccountsPayableAccess) {
       // Se tem permissão especial, garantir acesso
       permissions.canViewAccountsPayable = true
@@ -312,6 +320,8 @@ function createEmptyPermissions(): UserPermissions {
     canManageInsuranceProviders: false,
     hasSpecialAccountsPayableAccess: false,
     canViewAllDoctorsConsultations: false,
+    canViewAppointments: false,
+    canEditAppointments: false,
   }
 }
 
@@ -383,7 +393,7 @@ export function requireMentor(req: AuthedRequest, res: Response, next: NextFunct
 
 /**
  * Helper function to check if user has access to accounts payable
- * GESTOR_CLINICA always has access, COLABORADOR needs canViewAccountsPayable or hasSpecialAccountsPayableAccess
+ * GESTOR_CLINICA always has access, MEDICO and COLABORADOR need canViewAccountsPayable or hasSpecialAccountsPayableAccess
  */
 export async function canAccessAccountsPayable(
   userId: string,
@@ -395,10 +405,10 @@ export async function canAccessAccountsPayable(
     return true
   }
 
-  // COLABORADOR - check permissions
-  if (role === 'COLABORADOR' && clinicId) {
+  // MEDICO and COLABORADOR - check permissions
+  if ((role === 'MEDICO' || role === 'COLABORADOR') && clinicId) {
     const permissions = await getUserPermissions(userId, role, clinicId)
-    return permissions.canViewAccountsPayable === true || 
+    return permissions.canViewAccountsPayable === true ||
            permissions.hasSpecialAccountsPayableAccess === true
   }
 

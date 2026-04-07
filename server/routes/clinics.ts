@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
           target_agenda_operational, target_agenda_planning,
           target_agenda_sales, target_agenda_leadership,
           kommo_contact_id, owner_whatsapp, n8n_reports_enabled, n8n_report_time,
-          kommo_subdomain, kommo_token
+          kommo_subdomain, kommo_token, agenda_enabled
         FROM clinics
         WHERE active = true
         ORDER BY name
@@ -144,6 +144,7 @@ router.get('/', async (req, res) => {
             kommoSubdomain: (clinic as any).kommo_subdomain || null,
             kommoToken: (clinic as any).kommo_token || null,
             kommoTokenConfigured: !!(clinic as any).kommo_token,
+            agendaEnabled: (clinic as any).agenda_enabled || false,
             configuration: {
               categories: categories.rows.map((r) => ({ id: r.id, name: r.name })),
               cabinets: cabinets.rows.map((r) => ({

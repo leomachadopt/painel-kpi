@@ -110,7 +110,8 @@
     "targets": "Targets",
     "procedureBase": "Base Procedure Table",
     "marketing": "Marketing",
-    "cabinets": "Offices"
+    "cabinets": "Offices",
+    "team": "Team"
   },
   "auth": {
     "login": "Login",
@@ -606,5 +607,29 @@
     "delayReasons": "Delay Reasons",
     "topSources": "Top Sources",
     "topReferrers": "Top Referrers"
+  },
+  "team": {
+    "title": "Team",
+    "description": "Manage clinic doctors and staff",
+    "doctors": "Doctors",
+    "collaborators": "Staff",
+    "doctorsInfo": "Doctors Information",
+    "doctorsDescription": "Doctors have default permissions to edit their consultations, view reports and edit patients.",
+    "realEmails": "Real emails",
+    "fictitiousEmails": "Fictitious emails",
+    "doctorsList": "Doctors List",
+    "doctorsWithAccess": "Doctors registered in the system",
+    "noDoctorsRegistered": "No doctors registered",
+    "name": "Name",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "status": "Status",
+    "actions": "Actions",
+    "fictitious": "Fictitious",
+    "hasAccount": "Has account",
+    "noAccount": "No account",
+    "permissions": "Permissions",
+    "permissionsComingSoon": "Permissions management coming soon",
+    "errorLoadingDoctors": "Error loading doctors"
   }
 }

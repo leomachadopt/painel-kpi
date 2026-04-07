@@ -25,7 +25,7 @@ router.get('/:clinicId/count', requirePermission('canViewTickets'), async (req: 
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -189,7 +189,7 @@ router.get('/ticket/:ticketId', requirePermission('canViewTickets'), async (req:
     const ticket = result.rows[0]
 
     // Verificar se usuário tem acesso à clínica do ticket
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -240,7 +240,7 @@ router.get('/:clinicId/users', requirePermission('canViewTickets'), async (req: 
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -293,7 +293,7 @@ router.get('/:clinicId', requirePermission('canViewTickets'), async (req: Authed
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]

@@ -110,7 +110,8 @@
     "targets": "Metas",
     "procedureBase": "Tabela Base de Procedimentos",
     "marketing": "Marketing",
-    "cabinets": "Consultórios"
+    "cabinets": "Consultórios",
+    "team": "Equipa"
   },
   "auth": {
     "login": "Entrar",
@@ -607,5 +608,29 @@
     "delayReasons": "Motivos de Atraso",
     "topSources": "Top Fontes",
     "topReferrers": "Top Referenciadores"
+  },
+  "team": {
+    "title": "Equipa",
+    "description": "Gerir médicos e colaboradores da clínica",
+    "doctors": "Médicos",
+    "collaborators": "Colaboradores",
+    "doctorsInfo": "Informação sobre Médicos",
+    "doctorsDescription": "Médicos têm permissões padrão para editar suas consultas, visualizar relatórios e editar pacientes.",
+    "realEmails": "Emails reais",
+    "fictitiousEmails": "Emails fictícios",
+    "doctorsList": "Lista de Médicos",
+    "doctorsWithAccess": "Médicos registados no sistema",
+    "noDoctorsRegistered": "Nenhum médico registado",
+    "name": "Nome",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "status": "Estado",
+    "actions": "Ações",
+    "fictitious": "Fictício",
+    "hasAccount": "Tem conta",
+    "noAccount": "Sem conta",
+    "permissions": "Permissões",
+    "permissionsComingSoon": "Gestão de permissões em breve",
+    "errorLoadingDoctors": "Erro ao carregar médicos"
   }
 }

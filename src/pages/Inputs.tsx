@@ -52,7 +52,7 @@ export default function Inputs() {
 
   // Refresh permissions when component mounts if user is a collaborator
   useEffect(() => {
-    if (user?.role === 'COLABORADOR' && refreshPermissions) {
+    if (user && (user.role === 'COLABORADOR' || user.role === 'MEDICO') && refreshPermissions) {
       refreshPermissions()
     }
   }, [user?.role, refreshPermissions])
@@ -64,9 +64,9 @@ export default function Inputs() {
   const hasBilling = canEdit('canEditBilling') || canEdit('canEditAdvances') || canEdit('canEditAdvanceInvoice')
   const hasConsultations = canEdit('canEditConsultations')
   const hasProspecting = canEdit('canEditProspecting')
-  const hasCabinets = canEdit('canEditCabinets')
-  const hasServiceTime = canEdit('canEditServiceTime')
-  const hasConsultationControl = canEdit('canEditConsultationControl')
+  const hasCabinets = canEdit('canEditCabinets') && !clinic?.agendaEnabled
+  const hasServiceTime = canEdit('canEditServiceTime') && !clinic?.agendaEnabled
+  const hasConsultationControl = canEdit('canEditConsultationControl') && !clinic?.agendaEnabled
   const hasAligners = canEdit('canEditAligners')
   const hasOrders = canEdit('canEditOrders')
   const hasAccountsPayable = canEdit('canEditAccountsPayable')

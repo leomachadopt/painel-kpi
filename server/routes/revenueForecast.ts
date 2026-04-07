@@ -23,8 +23,8 @@ async function canManageRevenueForecast(req: any, clinicId: string): Promise<boo
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditFinancial === true
   }

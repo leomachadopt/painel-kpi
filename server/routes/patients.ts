@@ -25,8 +25,8 @@ async function canEditPatients(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditPatients === true
   }
@@ -303,7 +303,7 @@ router.get('/:clinicId/:patientId/history', async (req, res) => {
     const code = patientResult.rows[0].code
 
     // Fetch all records for this patient code
-    const [financial, consultation, serviceTime, source] = await Promise.all([
+    const [financial, consultation, serviceTime, source, executedProcedures, proceduresByConsultation] = await Promise.all([
       query(
         `SELECT id, date, patient_name, code, category_id, value, cabinet_id, doctor_id, payment_source_id, created_at
          FROM daily_financial_entries
@@ -334,6 +334,45 @@ router.get('/:clinicId/:patientId/history', async (req, res) => {
          ORDER BY date DESC`,
         [clinicId, code]
       ),
+      // Buscar procedimentos executados do plano de tratamento
+      query(
+        `SELECT
+          pp.id,
+          pp.procedure_code,
+          pp.procedure_description,
+          pp.price_at_creation,
+          pp.completed_at,
+          pp.notes,
+          dce.date as consultation_date,
+          dce.patient_name,
+          dce.code
+         FROM plan_procedures pp
+         INNER JOIN daily_consultation_entries dce ON pp.consultation_entry_id = dce.id
+         WHERE pp.clinic_id = $1
+           AND dce.code = $2
+           AND pp.completed = true
+         ORDER BY pp.completed_at DESC`,
+        [clinicId, code]
+      ),
+      // Buscar procedimentos agrupados por consulta (incluindo completed e não completed)
+      query(
+        `SELECT
+          pp.id,
+          pp.consultation_entry_id,
+          pp.procedure_code,
+          pp.procedure_description,
+          pp.price_at_creation,
+          pp.completed,
+          pp.completed_at,
+          pp.notes,
+          pp.sort_order
+         FROM plan_procedures pp
+         INNER JOIN daily_consultation_entries dce ON pp.consultation_entry_id = dce.id
+         WHERE pp.clinic_id = $1
+           AND dce.code = $2
+         ORDER BY pp.consultation_entry_id, pp.sort_order ASC`,
+        [clinicId, code]
+      ),
     ])
 
     res.json({
@@ -349,20 +388,37 @@ router.get('/:clinicId/:patientId/history', async (req, res) => {
         paymentSourceId: row.payment_source_id,
         createdAt: row.created_at,
       })),
-      consultation: consultation.rows.map(row => ({
-        id: row.id,
-        date: row.date,
-        patientName: row.patient_name,
-        code: row.code,
-        planCreated: row.plan_created,
-        planCreatedAt: row.plan_created_at,
-        planPresented: row.plan_presented,
-        planPresentedAt: row.plan_presented_at,
-        planAccepted: row.plan_accepted,
-        planAcceptedAt: row.plan_accepted_at,
-        planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
-        createdAt: row.created_at,
-      })),
+      consultation: consultation.rows.map(row => {
+        // Buscar procedimentos desta consulta
+        const procedures = proceduresByConsultation.rows
+          .filter((proc: any) => proc.consultation_entry_id === row.id)
+          .map((proc: any) => ({
+            id: proc.id,
+            procedureCode: proc.procedure_code,
+            procedureDescription: proc.procedure_description,
+            value: parseFloat(proc.price_at_creation),
+            completed: proc.completed,
+            completedAt: proc.completed_at,
+            notes: proc.notes,
+            sortOrder: proc.sort_order,
+          }))
+
+        return {
+          id: row.id,
+          date: row.date,
+          patientName: row.patient_name,
+          code: row.code,
+          planCreated: row.plan_created,
+          planCreatedAt: row.plan_created_at,
+          planPresented: row.plan_presented,
+          planPresentedAt: row.plan_presented_at,
+          planAccepted: row.plan_accepted,
+          planAcceptedAt: row.plan_accepted_at,
+          planValue: row.plan_value ? parseFloat(row.plan_value) : 0,
+          createdAt: row.created_at,
+          procedures, // Lista de procedimentos desta consulta
+        }
+      }),
       serviceTime: serviceTime.rows.map(row => ({
         id: row.id,
         date: row.date,
@@ -386,6 +442,38 @@ router.get('/:clinicId/:patientId/history', async (req, res) => {
         campaignId: row.campaign_id,
         createdAt: row.created_at,
       })),
+      // Adicionar procedimentos executados
+      executedProcedures: executedProcedures.rows.map(row => ({
+        id: row.id,
+        procedureCode: row.procedure_code,
+        procedureDescription: row.procedure_description,
+        value: parseFloat(row.price_at_creation),
+        completedAt: row.completed_at,
+        notes: row.notes,
+        consultationDate: row.consultation_date,
+      })),
+      // Criar fluxo de caixa unificado (cashflow)
+      cashflow: [
+        // Lançamentos financeiros como créditos (+)
+        ...financial.rows.map(row => ({
+          id: `fin-${row.id}`,
+          date: row.date,
+          type: 'credit',
+          description: 'Pagamento recebido',
+          amount: parseFloat(row.value),
+          balance: 0, // será calculado no frontend
+        })),
+        // Procedimentos executados como débitos (-)
+        ...executedProcedures.rows.map(row => ({
+          id: `proc-${row.id}`,
+          date: row.completed_at ? new Date(row.completed_at).toISOString().split('T')[0] : row.consultation_date,
+          type: 'debit',
+          description: `${row.procedure_code} - ${row.procedure_description}`,
+          amount: parseFloat(row.price_at_creation),
+          notes: row.notes,
+          balance: 0, // será calculado no frontend
+        })),
+      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     })
   } catch (error) {
     console.error('Get patient history error:', error)
@@ -403,35 +491,112 @@ router.put('/:clinicId/:patientId', async (req, res) => {
 
   try {
     const { clinicId: clinicIdParam, patientId } = req.params
-    const { name, email, phone, birthDate, notes } = req.body
+    const { code, name, email, phone, birthDate, notes } = req.body
 
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Name is required' })
     }
 
-    const result = await query(
-      `UPDATE patients
-       SET name = $1, email = $2, phone = $3, birth_date = $4, notes = $5
-       WHERE id = $6 AND clinic_id = $7
-       RETURNING id, code, name, email, phone, birth_date, notes, created_at`,
-      [name.trim(), email || null, phone || null, birthDate || null, notes || null, patientId, clinicIdParam]
+    // Get current patient code before updating
+    const currentPatientResult = await query(
+      'SELECT code FROM patients WHERE id = $1 AND clinic_id = $2',
+      [patientId, clinicIdParam]
     )
 
-    if (result.rows.length === 0) {
+    if (currentPatientResult.rows.length === 0) {
       return res.status(404).json({ error: 'Patient not found' })
     }
 
-    const row = result.rows[0]
-    res.json({
-      id: row.id,
-      code: row.code,
-      name: row.name,
-      email: row.email,
-      phone: row.phone,
-      birthDate: row.birth_date,
-      notes: row.notes,
-      createdAt: row.created_at,
-    })
+    const oldCode = currentPatientResult.rows[0].code
+
+    // Validate code if provided
+    if (code !== undefined) {
+      if (!/^\d{1,6}$/.test(code)) {
+        return res.status(400).json({ error: 'Code must be 1-6 digits' })
+      }
+
+      // Check if code is already in use by another patient
+      const codeCheck = await query(
+        'SELECT id FROM patients WHERE code = $1 AND clinic_id = $2 AND id != $3',
+        [code, clinicIdParam, patientId]
+      )
+
+      if (codeCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'Code already in use by another patient' })
+      }
+    }
+
+    // Use transaction to ensure atomicity
+    const client = await getClient()
+
+    try {
+      await client.query('BEGIN')
+
+      // Update patient
+      const result = await client.query(
+        `UPDATE patients
+         SET code = COALESCE($1, code), name = $2, email = $3, phone = $4, birth_date = $5, notes = $6
+         WHERE id = $7 AND clinic_id = $8
+         RETURNING id, code, name, email, phone, birth_date, notes, created_at`,
+        [code || null, name.trim(), email || null, phone || null, birthDate || null, notes || null, patientId, clinicIdParam]
+      )
+
+      const row = result.rows[0]
+      const newCode = row.code
+
+      // If code changed, update all daily entries with the old code
+      if (code && oldCode !== newCode) {
+        console.log(`📝 Updating patient code from ${oldCode} to ${newCode} in all daily entries`)
+
+        // Update daily_consultation_entries
+        await client.query(
+          'UPDATE daily_consultation_entries SET code = $1, patient_code = $1 WHERE clinic_id = $2 AND code = $3',
+          [newCode, clinicIdParam, oldCode]
+        )
+
+        // Update daily_financial_entries
+        await client.query(
+          'UPDATE daily_financial_entries SET code = $1 WHERE clinic_id = $2 AND code = $3',
+          [newCode, clinicIdParam, oldCode]
+        )
+
+        // Update daily_service_time_entries
+        await client.query(
+          'UPDATE daily_service_time_entries SET code = $1 WHERE clinic_id = $2 AND code = $3',
+          [newCode, clinicIdParam, oldCode]
+        )
+
+        // Update daily_source_entries
+        await client.query(
+          'UPDATE daily_source_entries SET code = $1 WHERE clinic_id = $2 AND code = $3',
+          [newCode, clinicIdParam, oldCode]
+        )
+
+        console.log(`✅ Successfully updated all daily entries from code ${oldCode} to ${newCode}`)
+      }
+
+      await client.query('COMMIT')
+      client.release()
+
+      res.json({
+        id: row.id,
+        code: row.code,
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        birthDate: row.birth_date,
+        notes: row.notes,
+        createdAt: row.created_at,
+      })
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK')
+      } catch (rollbackError) {
+        console.error('Rollback error:', rollbackError)
+      }
+      client.release()
+      throw error
+    }
   } catch (error) {
     console.error('Update patient error:', error)
     res.status(500).json({ error: 'Failed to update patient' })

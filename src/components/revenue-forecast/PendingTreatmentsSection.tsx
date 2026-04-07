@@ -51,6 +51,9 @@ export function PendingTreatmentsSection({
     unitValue: number
   } | null>(null)
   const [completedQuantity, setCompletedQuantity] = useState('')
+  const [executionDate, setExecutionDate] = useState('')
+  const [executionTime, setExecutionTime] = useState('')
+  const [executionNotes, setExecutionNotes] = useState('')
 
   useEffect(() => {
     loadPatients()
@@ -90,13 +93,25 @@ export function PendingTreatmentsSection({
     }
 
     try {
-      await api.pendingTreatments.completeTreatment(clinicId, completeDialog.treatmentId, qty)
+      const executedAtISO = executionDate && executionTime
+        ? `${executionDate}T${executionTime}:00`
+        : undefined
+
+      await api.pendingTreatments.completeTreatment(clinicId, completeDialog.treatmentId, {
+        completedQuantity: qty,
+        executedAt: executedAtISO,
+        notes: executionNotes || undefined,
+      })
+
       toast({
         title: 'Sucesso',
         description: `${qty} procedimento(s) marcado(s) como realizado(s)`,
       })
       setCompleteDialog(null)
       setCompletedQuantity('')
+      setExecutionDate('')
+      setExecutionTime('')
+      setExecutionNotes('')
       onRefresh()
     } catch (error: any) {
       toast({
@@ -217,48 +232,67 @@ export function PendingTreatmentsSection({
                       </div>
 
                       {/* Rows */}
-                      {patient.treatments.map((treatment: any) => (
-                        <div
-                          key={treatment.id}
-                          className="grid grid-cols-7 gap-4 items-center py-2 text-sm hover:bg-muted/30 rounded px-2"
-                        >
-                          <div className="col-span-2 font-medium">{treatment.description}</div>
-                          <div className="text-right">
-                            {treatment.pendingQuantity} de {treatment.totalQuantity}
+                      {patient.treatments.map((treatment: any) => {
+                        const isCompleted = treatment.status === 'CONCLUIDO'
+                        return (
+                          <div
+                            key={treatment.id}
+                            className={`grid grid-cols-7 gap-4 items-center py-2 text-sm rounded px-2 ${
+                              isCompleted ? 'opacity-60 bg-muted/20' : 'hover:bg-muted/30'
+                            }`}
+                          >
+                            <div className={`col-span-2 font-medium ${isCompleted ? 'line-through' : ''}`}>
+                              {treatment.description}
+                            </div>
+                            <div className="text-right">
+                              {treatment.pendingQuantity} de {treatment.totalQuantity}
+                            </div>
+                            <div className="text-right">{formatCurrency(treatment.unitValue)}</div>
+                            <div className="text-right font-semibold text-primary">
+                              {formatCurrency(treatment.pendingValue)}
+                            </div>
+                            <div>{getStatusBadge(treatment.status)}</div>
+                            <div className="flex justify-end gap-1">
+                              {!isCompleted && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Initialize with current date/time
+                                      const now = new Date()
+                                      const dateStr = now.toISOString().split('T')[0]
+                                      const timeStr = now.toTimeString().slice(0, 5)
+
+                                      setCompleteDialog({
+                                        treatmentId: treatment.id,
+                                        description: treatment.description,
+                                        pendingQuantity: treatment.pendingQuantity,
+                                        unitValue: treatment.unitValue,
+                                      })
+                                      setCompletedQuantity('')
+                                      setExecutionDate(dateStr)
+                                      setExecutionTime(timeStr)
+                                      setExecutionNotes('')
+                                    }}
+                                    title="Marcar como realizado"
+                                  >
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setDeleteConfirm(treatment.id)}
+                                    title="Excluir tratamento"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">{formatCurrency(treatment.unitValue)}</div>
-                          <div className="text-right font-semibold text-primary">
-                            {formatCurrency(treatment.pendingValue)}
-                          </div>
-                          <div>{getStatusBadge(treatment.status)}</div>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCompleteDialog({
-                                  treatmentId: treatment.id,
-                                  description: treatment.description,
-                                  pendingQuantity: treatment.pendingQuantity,
-                                  unitValue: treatment.unitValue,
-                                })
-                                setCompletedQuantity('')
-                              }}
-                              title="Marcar como realizado"
-                            >
-                              <Check className="w-4 h-4 text-green-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeleteConfirm(treatment.id)}
-                              title="Excluir tratamento"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
 
                     {/* Patient Total */}
@@ -316,6 +350,35 @@ export function PendingTreatmentsSection({
                 value={completedQuantity}
                 onChange={(e) => setCompletedQuantity(e.target.value)}
                 placeholder="Ex: 1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="execution-date">Data da execução</Label>
+                <Input
+                  id="execution-date"
+                  type="date"
+                  value={executionDate}
+                  onChange={(e) => setExecutionDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="execution-time">Horário</Label>
+                <Input
+                  id="execution-time"
+                  type="time"
+                  value={executionTime}
+                  onChange={(e) => setExecutionTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="execution-notes">Observações (opcional)</Label>
+              <Input
+                id="execution-notes"
+                value={executionNotes}
+                onChange={(e) => setExecutionNotes(e.target.value)}
+                placeholder="Ex: Procedimento realizado com sucesso"
               />
             </div>
             {completedQuantity && completeDialog && (

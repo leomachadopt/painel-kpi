@@ -22,7 +22,7 @@ async function canEditAdvances(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  if (role === 'COLABORADOR') {
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditAdvances === true
   }
@@ -48,7 +48,7 @@ async function canBillAdvances(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  if (role === 'COLABORADOR') {
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canBillAdvances === true
   }
@@ -74,7 +74,7 @@ async function canViewAdvances(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  if (role === 'COLABORADOR') {
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canViewAdvances === true || permissions.canEditAdvances === true
   }
@@ -100,7 +100,7 @@ async function canManageInsuranceProviders(req: any, clinicId: string): Promise<
     return true
   }
 
-  if (role === 'COLABORADOR') {
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canManageInsuranceProviders === true
   }

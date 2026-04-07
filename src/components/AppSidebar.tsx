@@ -18,6 +18,7 @@ import {
   CreditCard,
   Receipt,
   TrendingUp,
+  ClipboardList,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -244,6 +245,23 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
+              {currentClinic?.agendaEnabled && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Agenda"
+                    isActive={location.pathname.includes('/agenda')}
+                  >
+                    <Link
+                      to={`/agenda/${currentClinic?.id || user?.clinicId}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      <span>Agenda</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -255,6 +273,21 @@ export function AppSidebar() {
                   >
                     <FileText />
                     <span>{t('sidebar.reports')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Planos e Consultas"
+                  isActive={location.pathname.includes('/planos-consultas')}
+                >
+                  <Link
+                    to={`/planos-consultas/${currentClinic?.id || user?.clinicId}`}
+                  >
+                    <ClipboardList />
+                    <span>Planos e Consultas</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -436,12 +469,12 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip={t('sidebar.collaborators')}
+                    tooltip={t('sidebar.team')}
                     isActive={location.pathname.includes('/colaboradores')}
                   >
                     <Link to="/colaboradores">
                       <UserCog />
-                      <span>{t('sidebar.collaborators')}</span>
+                      <span>{t('sidebar.team')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

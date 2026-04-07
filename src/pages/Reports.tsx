@@ -24,8 +24,6 @@ import useAuthStore from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { FinancialGroupedTable } from '@/components/reports/FinancialGroupedTable'
 import { UnifiedBillingTable } from '@/components/reports/UnifiedBillingTable'
-import { ConsultationTable } from '@/components/reports/ConsultationTable'
-import { ConsultationKanban } from '@/components/reports/ConsultationKanban'
 import { ProspectingTable } from '@/components/reports/ProspectingTable'
 import { CabinetTable } from '@/components/reports/CabinetTable'
 import { ServiceTimeTable } from '@/components/reports/ServiceTimeTable'
@@ -65,7 +63,6 @@ export default function Reports() {
   )
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [, setReloadTrigger] = useState(0)
-  const [consultationView, setConsultationView] = useState<'table' | 'kanban'>('kanban')
   const [alignersView, setAlignersView] = useState<'table' | 'kanban'>('kanban')
 
   // Funções para definir períodos rápidos
@@ -116,7 +113,7 @@ export default function Reports() {
   const mentorAccess = isMentor()
   const gestorAccess = user?.role === 'GESTOR_CLINICA' && user.clinicId === clinicId
   const colaboradorAccess =
-    user?.role === 'COLABORADOR' &&
+    user && (user.role === 'COLABORADOR' || user.role === 'MEDICO') &&
     user.clinicId === clinicId &&
     canView('canViewReports')
 
@@ -273,11 +270,6 @@ export default function Reports() {
                 {t('reports.billing')}
               </TabsTrigger>
             )}
-            {canViewReport('canViewReportConsultations') && (
-              <TabsTrigger value="consultations" className="text-xs sm:text-sm whitespace-nowrap min-w-[100px]">
-                {t('reports.consultations')}
-              </TabsTrigger>
-            )}
             {canViewReport('canViewReportAligners') && (
               <TabsTrigger value="aligners" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
                 {t('reports.aligners')}
@@ -339,47 +331,6 @@ export default function Reports() {
                 onDelete={handleDataChange}
               />
             </TabsContent>
-          )}
-          {canViewReport('canViewReportConsultations') && (
-            <TabsContent value="consultations">
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-end">
-                <div className="inline-flex rounded-md border">
-                  <Button
-                    variant={consultationView === 'kanban' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setConsultationView('kanban')}
-                    className="rounded-r-none"
-                  >
-                    <LayoutGrid className="h-4 w-4 mr-2" />
-                    {t('reports.kanban')}
-                  </Button>
-                  <Button
-                    variant={consultationView === 'table' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setConsultationView('table')}
-                    className="rounded-l-none"
-                  >
-                    <List className="h-4 w-4 mr-2" />
-                    {t('reports.table')}
-                  </Button>
-                </div>
-              </div>
-              {consultationView === 'kanban' ? (
-                <ConsultationKanban
-                  data={filterByDate(consultationEntries[clinic.id])}
-                  clinic={clinic}
-                  onDelete={handleDataChange}
-                />
-              ) : (
-                <ConsultationTable
-                  data={filterByDate(consultationEntries[clinic.id])}
-                  clinic={clinic}
-                  onDelete={handleDataChange}
-                />
-              )}
-            </div>
-          </TabsContent>
           )}
           {canViewReport('canViewReportAligners') && (
             <TabsContent value="aligners">

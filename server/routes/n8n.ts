@@ -606,4 +606,210 @@ router.get('/plan-alerts/:clinicId/by-doctor', n8nAuthMiddleware, async (req, re
   }
 })
 
+/**
+ * GET /api/n8n/treatment-alerts/:clinicId/waiting-too-long
+ * Retorna pacientes em "Aguardando Início" há muito tempo (30+ dias)
+ * Query param: ?days=30 (default: 30)
+ */
+router.get('/treatment-alerts/:clinicId/waiting-too-long', n8nAuthMiddleware, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const minDays = parseInt(req.query.days as string || '30', 10)
+
+    const result = await query(
+      `SELECT
+        dce.id,
+        dce.patient_name,
+        dce.code,
+        dce.waiting_start_at,
+        CURRENT_DATE - dce.waiting_start_at::date as days_waiting,
+        dce.plan_procedures_total,
+        dce.plan_total_value,
+        cd.name as doctor_name,
+        cd.email as doctor_email,
+        cd.whatsapp as doctor_whatsapp
+       FROM daily_consultation_entries dce
+       LEFT JOIN clinic_doctors cd ON dce.doctor_id = cd.id
+       WHERE dce.clinic_id = $1
+         AND dce.waiting_start = true
+         AND dce.in_execution = false
+         AND dce.abandoned = false
+         AND dce.plan_finished = false
+         AND (CURRENT_DATE - dce.waiting_start_at::date) >= $2
+       ORDER BY days_waiting DESC`,
+      [clinicId, minDays]
+    )
+
+    const patients = result.rows.map(row => ({
+      id: row.id,
+      patientName: row.patient_name,
+      patientCode: row.code,
+      waitingStartDate: row.waiting_start_at,
+      daysWaiting: parseInt(row.days_waiting, 10),
+      planProceduresTotal: parseInt(row.plan_procedures_total, 10),
+      planTotalValue: parseFloat(row.plan_total_value || 0),
+      doctorName: row.doctor_name,
+      doctorEmail: row.doctor_email,
+      doctorWhatsapp: row.doctor_whatsapp
+    }))
+
+    // Busca info da clínica
+    const clinicResult = await query(
+      'SELECT name, owner_whatsapp FROM clinics WHERE id = $1',
+      [clinicId]
+    )
+
+    res.json({
+      clinicId,
+      clinicName: clinicResult.rows[0]?.name,
+      ownerWhatsapp: clinicResult.rows[0]?.owner_whatsapp,
+      minDays,
+      totalPatients: patients.length,
+      patients
+    })
+  } catch (error) {
+    console.error('Error fetching waiting-too-long alerts:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/n8n/treatment-alerts/:clinicId/stalled-treatments
+ * Retorna pacientes em "Em Execução" parados há muito tempo (60+ dias sem procedimento)
+ * Query param: ?days=60 (default: 60)
+ */
+router.get('/treatment-alerts/:clinicId/stalled-treatments', n8nAuthMiddleware, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const minDays = parseInt(req.query.days as string || '60', 10)
+
+    const result = await query(
+      `SELECT
+        dce.id,
+        dce.patient_name,
+        dce.code,
+        dce.in_execution_at,
+        dce.plan_procedures_completed,
+        dce.plan_procedures_total,
+        dce.plan_total_value,
+        MAX(pp.completed_at) as last_procedure_date,
+        CURRENT_DATE - MAX(pp.completed_at)::date as days_since_last,
+        cd.name as doctor_name,
+        cd.email as doctor_email,
+        cd.whatsapp as doctor_whatsapp
+       FROM daily_consultation_entries dce
+       LEFT JOIN clinic_doctors cd ON dce.doctor_id = cd.id
+       LEFT JOIN plan_procedures pp ON pp.consultation_entry_id = dce.id AND pp.completed = true
+       WHERE dce.clinic_id = $1
+         AND dce.in_execution = true
+         AND dce.plan_finished = false
+         AND dce.abandoned = false
+       GROUP BY dce.id, cd.name, cd.email, cd.whatsapp
+       HAVING MAX(pp.completed_at) IS NOT NULL
+         AND CURRENT_DATE - MAX(pp.completed_at)::date >= $2
+       ORDER BY days_since_last DESC`,
+      [clinicId, minDays]
+    )
+
+    const patients = result.rows.map(row => ({
+      id: row.id,
+      patientName: row.patient_name,
+      patientCode: row.code,
+      inExecutionSince: row.in_execution_at,
+      lastProcedureDate: row.last_procedure_date,
+      daysSinceLast: parseInt(row.days_since_last, 10),
+      planProceduresCompleted: parseInt(row.plan_procedures_completed, 10),
+      planProceduresTotal: parseInt(row.plan_procedures_total, 10),
+      completionPercent: Math.round((parseInt(row.plan_procedures_completed, 10) / parseInt(row.plan_procedures_total, 10)) * 100),
+      planTotalValue: parseFloat(row.plan_total_value || 0),
+      doctorName: row.doctor_name,
+      doctorEmail: row.doctor_email,
+      doctorWhatsapp: row.doctor_whatsapp
+    }))
+
+    // Busca info da clínica
+    const clinicResult = await query(
+      'SELECT name, owner_whatsapp FROM clinics WHERE id = $1',
+      [clinicId]
+    )
+
+    res.json({
+      clinicId,
+      clinicName: clinicResult.rows[0]?.name,
+      ownerWhatsapp: clinicResult.rows[0]?.owner_whatsapp,
+      minDays,
+      totalPatients: patients.length,
+      patients
+    })
+  } catch (error) {
+    console.error('Error fetching stalled treatments alerts:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/n8n/treatment-alerts/:clinicId/summary
+ * Resumo de todos os alertas de tratamento
+ */
+router.get('/treatment-alerts/:clinicId/summary', n8nAuthMiddleware, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const [waitingResult, stalledResult, abandonedResult] = await Promise.all([
+      // Aguardando Início há 30+ dias
+      query(
+        `SELECT COUNT(*) as count
+         FROM daily_consultation_entries
+         WHERE clinic_id = $1
+           AND waiting_start = true
+           AND in_execution = false
+           AND abandoned = false
+           AND (CURRENT_DATE - waiting_start_at::date) >= 30`,
+        [clinicId]
+      ),
+      // Em Execução parados há 60+ dias
+      query(
+        `SELECT COUNT(*) as count
+         FROM daily_consultation_entries dce
+         LEFT JOIN plan_procedures pp ON pp.consultation_entry_id = dce.id AND pp.completed = true
+         WHERE dce.clinic_id = $1
+           AND dce.in_execution = true
+           AND dce.plan_finished = false
+           AND dce.abandoned = false
+         GROUP BY dce.id
+         HAVING MAX(pp.completed_at) IS NOT NULL
+           AND CURRENT_DATE - MAX(pp.completed_at)::date >= 60`,
+        [clinicId]
+      ),
+      // Total abandonados no mês atual
+      query(
+        `SELECT COUNT(*) as count, SUM(plan_total_value) as lost_value
+         FROM daily_consultation_entries
+         WHERE clinic_id = $1
+           AND abandoned = true
+           AND EXTRACT(YEAR FROM abandoned_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+           AND EXTRACT(MONTH FROM abandoned_at) = EXTRACT(MONTH FROM CURRENT_DATE)`,
+        [clinicId]
+      )
+    ])
+
+    const clinicResult = await query(
+      'SELECT name FROM clinics WHERE id = $1',
+      [clinicId]
+    )
+
+    res.json({
+      clinicId,
+      clinicName: clinicResult.rows[0]?.name,
+      waitingTooLong: parseInt(waitingResult.rows[0]?.count || 0, 10),
+      stalledTreatments: stalledResult.rows.length,
+      abandonedThisMonth: parseInt(abandonedResult.rows[0]?.count || 0, 10),
+      lostValueThisMonth: parseFloat(abandonedResult.rows[0]?.lost_value || 0)
+    })
+  } catch (error) {
+    console.error('Error fetching treatment alerts summary:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
 export default router

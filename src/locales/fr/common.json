@@ -110,7 +110,8 @@
     "targets": "Objectifs",
     "procedureBase": "Table de Base des Procédures",
     "marketing": "Marketing",
-    "cabinets": "Cabinets"
+    "cabinets": "Cabinets",
+    "team": "Équipe"
   },
   "auth": {
     "login": "Connexion",
@@ -606,5 +607,29 @@
     "delayReasons": "Raisons du Retard",
     "topSources": "Sources Principales",
     "topReferrers": "Top Référents"
+  },
+  "team": {
+    "title": "Équipe",
+    "description": "Gérer les médecins et le personnel de la clinique",
+    "doctors": "Médecins",
+    "collaborators": "Personnel",
+    "doctorsInfo": "Informations sur les Médecins",
+    "doctorsDescription": "Les médecins ont des autorisations par défaut pour modifier leurs consultations, afficher les rapports et modifier les patients.",
+    "realEmails": "Emails réels",
+    "fictitiousEmails": "Emails fictifs",
+    "doctorsList": "Liste des Médecins",
+    "doctorsWithAccess": "Médecins enregistrés dans le système",
+    "noDoctorsRegistered": "Aucun médecin enregistré",
+    "name": "Nom",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "status": "Statut",
+    "actions": "Actions",
+    "fictitious": "Fictif",
+    "hasAccount": "A un compte",
+    "noAccount": "Pas de compte",
+    "permissions": "Autorisations",
+    "permissionsComingSoon": "Gestion des autorisations bientôt",
+    "errorLoadingDoctors": "Erreur lors du chargement des médecins"
   }
 }

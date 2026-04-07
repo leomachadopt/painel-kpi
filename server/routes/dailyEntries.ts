@@ -25,8 +25,8 @@ async function canEditFinancial(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditFinancial === true
   }
@@ -55,8 +55,8 @@ async function canEditConsultations(req: any, clinicId: string): Promise<boolean
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditConsultations === true
   }
@@ -85,8 +85,8 @@ async function canEditProspecting(req: any, clinicId: string): Promise<boolean> 
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditProspecting === true
   }
@@ -115,8 +115,8 @@ async function canEditCabinets(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditCabinets === true
   }
@@ -145,8 +145,8 @@ async function canEditServiceTime(req: any, clinicId: string): Promise<boolean> 
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditServiceTime === true
   }
@@ -175,8 +175,8 @@ async function canEditSources(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditSources === true
   }
@@ -205,8 +205,8 @@ async function canEditConsultationControl(req: any, clinicId: string): Promise<b
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditConsultationControl === true
   }
@@ -235,8 +235,8 @@ async function canEditAligners(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditAligners === true
   }
@@ -265,8 +265,8 @@ async function canEditAdvanceInvoice(req: any, clinicId: string): Promise<boolea
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditAdvanceInvoice === true
   }
@@ -295,8 +295,8 @@ async function canEditBilling(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs one of the billing-related permissions
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need one of the billing-related permissions
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditBilling === true ||
            permissions.canEditAdvances === true ||
@@ -327,8 +327,8 @@ async function canEditAccountsPayable(req: any, clinicId: string): Promise<boole
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditAccountsPayable === true
   }
@@ -357,8 +357,8 @@ async function canViewAccountsPayable(req: any, clinicId: string): Promise<boole
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canViewAccountsPayable === true
   }
@@ -570,8 +570,8 @@ router.get('/consultation/:clinicId', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1`
     let params: any[] = [clinicId]
 
-    // If user is COLABORADOR, check permissions and apply appropriate filters
-    if (userRole === 'COLABORADOR' && userId) {
+    // If user is COLABORADOR or MEDICO, check permissions and apply appropriate filters
+    if ((userRole === 'COLABORADOR' || userRole === 'MEDICO') && userId) {
       // Check if user has permission to view all doctors' consultations or edit consultations
       const permissionResult = await query(
         `SELECT can_view_all_doctors_consultations, can_edit_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
@@ -585,6 +585,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
 
       console.log('🔐 Permission check:', {
         userId,
+        userRole,
         canViewAllDoctors,
         canEditConsultations,
         permissionFound: permissionResult.rows.length > 0
@@ -631,7 +632,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
         return res.json([])
       }
     } else {
-      console.log('ℹ️ No COLABORADOR filter - showing all consultations')
+      console.log('ℹ️ No COLABORADOR/MEDICO filter - showing all consultations')
     }
 
     sqlQuery += ` ORDER BY date DESC`
@@ -666,6 +667,24 @@ router.get('/consultation/:clinicId', async (req, res) => {
         planNotEligible: row.plan_not_eligible || false,
         planNotEligibleAt: row.plan_not_eligible_at || null,
         planNotEligibleReason: row.plan_not_eligible_reason || null,
+        // Treatment stages
+        waitingStart: row.waiting_start || false,
+        waitingStartAt: row.waiting_start_at || null,
+        inExecution: row.in_execution || false,
+        inExecutionAt: row.in_execution_at || null,
+        planFinished: row.plan_finished || false,
+        planFinishedAt: row.plan_finished_at || null,
+        abandoned: row.abandoned || false,
+        abandonedAt: row.abandoned_at || null,
+        abandonedReason: row.abandoned_reason || null,
+        abandonedReasonNotes: row.abandoned_reason_notes || null,
+        // Plan configuration
+        priceTableType: row.price_table_type || null,
+        insuranceProviderId: row.insurance_provider_id || null,
+        // Metrics
+        planProceduresTotal: row.plan_procedures_total || 0,
+        planProceduresCompleted: row.plan_procedures_completed || 0,
+        planTotalValue: row.plan_total_value ? parseFloat(row.plan_total_value) : 0,
       }))
     )
   } catch (error) {
@@ -1109,6 +1128,320 @@ router.put('/consultation/:clinicId/:entryId', async (req, res) => {
       message: error.message,
       detail: error.detail || error.toString()
     })
+  }
+})
+
+// Complete consultation (mark as done with procedures)
+router.post('/consultation/:clinicId/:entryId/complete', async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+    const { consultationTypeId, completedProcedures } = req.body
+
+    if (!consultationTypeId || !completedProcedures) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Update consultation entry
+    const result = await query(
+      `UPDATE daily_consultation_entries
+       SET consultation_type_id = $1,
+           consultation_completed = true,
+           consultation_completed_at = NOW(),
+           completed_procedures = $2
+       WHERE id = $3 AND clinic_id = $4
+       RETURNING *`,
+      [consultationTypeId, JSON.stringify(completedProcedures), entryId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Consultation entry not found' })
+    }
+
+    console.log(`[CONSULTATION] Completed consultation: ${entryId} - Type: ${consultationTypeId}`)
+
+    res.json({
+      success: true,
+      entry: result.rows[0]
+    })
+  } catch (error: any) {
+    console.error('Complete consultation error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * PATCH /api/daily-entries/consultation/:clinicId/:entryId/present-plan
+ * Marca o plano como apresentado e move para "Aguardando Início"
+ * Cria registros em pending_treatment_patients e pending_treatments
+ */
+router.patch('/consultation/:clinicId/:entryId/present-plan', async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+
+    // Verifica permissões
+    const hasPermission = await canEditConsultations(req, clinicId)
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Sem permissão para editar consultas' })
+    }
+
+    // Busca a consulta e verifica se tem plano criado
+    const entryResult = await query(
+      `SELECT id, patient_name, code, plan_created, plan_presented, plan_value, plan_total_value
+       FROM daily_consultation_entries
+       WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Consulta não encontrada' })
+    }
+
+    const entry = entryResult.rows[0]
+
+    if (!entry.plan_created) {
+      return res.status(400).json({ error: 'Plano ainda não foi criado' })
+    }
+
+    // Verifica se o plano já foi apresentado
+    if (entry.plan_presented) {
+      return res.status(400).json({ error: 'Plano já foi apresentado anteriormente' })
+    }
+
+    // Busca os procedimentos do plano
+    const proceduresResult = await query(
+      `SELECT id, procedure_code, procedure_description, price_at_creation
+       FROM plan_procedures
+       WHERE consultation_entry_id = $1
+       ORDER BY sort_order ASC`,
+      [entryId]
+    )
+
+    if (proceduresResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Nenhum procedimento encontrado no plano' })
+    }
+
+    const procedures = proceduresResult.rows
+    const totalValue = parseFloat(entry.plan_value || entry.plan_total_value || '0')
+
+    // Verifica se já existe um registro de pending_treatment_patients para este paciente
+    let patientId: string
+    const existingPatientResult = await query(
+      `SELECT id FROM pending_treatment_patients
+       WHERE clinic_id = $1 AND patient_code = $2`,
+      [clinicId, entry.code]
+    )
+
+    if (existingPatientResult.rows.length > 0) {
+      patientId = existingPatientResult.rows[0].id
+    } else {
+      // Criar novo registro de pending_treatment_patients
+      patientId = `ptp-${Date.now()}`
+      await query(
+        `INSERT INTO pending_treatment_patients (id, clinic_id, patient_code, patient_name)
+         VALUES ($1, $2, $3, $4)`,
+        [patientId, clinicId, entry.code, entry.patient_name]
+      )
+    }
+
+    // Criar registros em pending_treatments para cada procedimento E criar links bidirecionais
+    for (const proc of procedures) {
+      const treatmentId = `pt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      // Inserir em pending_treatments com link para plan_procedure
+      await query(
+        `INSERT INTO pending_treatments (
+          id, pending_treatment_patient_id, clinic_id,
+          description, unit_value, total_quantity, pending_quantity, status,
+          plan_procedure_id
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          treatmentId,
+          patientId,
+          clinicId,
+          `${proc.procedure_code} - ${proc.procedure_description}`,
+          proc.price_at_creation,
+          1, // total_quantity = 1 por linha
+          1, // pending_quantity = 1 (tudo pendente inicialmente)
+          'PENDENTE',
+          proc.id // Link para plan_procedure
+        ]
+      )
+
+      // Atualizar plan_procedure com link para pending_treatment
+      await query(
+        `UPDATE plan_procedures
+         SET pending_treatment_id = $1
+         WHERE id = $2`,
+        [treatmentId, proc.id]
+      )
+    }
+
+    // Atualiza a consulta: marca plano como apresentado e move para "Aguardando Início"
+    await query(
+      `UPDATE daily_consultation_entries
+       SET plan_presented = true,
+           plan_presented_at = NOW(),
+           waiting_start = true,
+           waiting_start_at = NOW()
+       WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    console.log(`[PLAN PRESENTED] Plano apresentado: ${entryId} - Paciente: ${entry.patient_name} - Valor: ${totalValue}`)
+
+    res.json({
+      success: true,
+      message: 'Plano apresentado com sucesso',
+      patientId,
+      treatmentsCreated: procedures.length
+    })
+  } catch (error: any) {
+    console.error('Present plan error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /api/daily-entries/consultation/:clinicId/:entryId/execute-procedures
+ * Executa procedimentos do plano e sincroniza com pending_treatments
+ * Move card para "Em Execução" (primeira execução) ou "Finalizado" (todos executados)
+ */
+router.post('/consultation/:clinicId/:entryId/execute-procedures', async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+    const { executions } = req.body
+
+    // Verifica permissões
+    const hasPermission = await canEditConsultations(req, clinicId)
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Sem permissão para editar consultas' })
+    }
+
+    if (!executions || !Array.isArray(executions) || executions.length === 0) {
+      return res.status(400).json({ error: 'Nenhum procedimento para executar' })
+    }
+
+    // Busca a consulta
+    const entryResult = await query(
+      `SELECT id, waiting_start, in_execution, plan_finished
+       FROM daily_consultation_entries
+       WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (entryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Consulta não encontrada' })
+    }
+
+    const entry = entryResult.rows[0]
+    const wasNotInExecution = !entry.in_execution
+
+    // Executar cada procedimento
+    let executedCount = 0
+    for (const execution of executions) {
+      const { procedureId, executedAt, notes } = execution
+
+      // Atualizar plan_procedure
+      const procResult = await query(
+        `UPDATE plan_procedures
+         SET completed = true,
+             completed_at = $1,
+             notes = $2
+         WHERE id = $3 AND clinic_id = $4 AND completed = false
+         RETURNING id, pending_treatment_id`,
+        [executedAt, notes, procedureId, clinicId]
+      )
+
+      if (procResult.rows.length > 0) {
+        executedCount++
+
+        const proc = procResult.rows[0]
+
+        // SINCRONIZAÇÃO: Atualizar pending_treatment correspondente
+        if (proc.pending_treatment_id) {
+          await query(
+            `UPDATE pending_treatments
+             SET pending_quantity = 0,
+                 status = 'CONCLUIDO'
+             WHERE id = $1`,
+            [proc.pending_treatment_id]
+          )
+          console.log(`✅ Synced: Marked pending_treatment ${proc.pending_treatment_id} as completed`)
+        }
+      }
+    }
+
+    // Buscar total de procedimentos e quantos estão completos
+    const statsResult = await query(
+      `SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE completed = true) as completed
+       FROM plan_procedures
+       WHERE consultation_entry_id = $1`,
+      [entryId]
+    )
+
+    const stats = statsResult.rows[0]
+    const allCompleted = parseInt(stats.total) === parseInt(stats.completed)
+
+    // Lógica de movimentação do Kanban
+    let movedToInExecution = false
+    let movedToFinished = false
+
+    if (wasNotInExecution && !allCompleted) {
+      // Primeira execução → Move para "Em Execução"
+      await query(
+        `UPDATE daily_consultation_entries
+         SET in_execution = true,
+             in_execution_at = NOW(),
+             waiting_start = false,
+             plan_procedures_completed = $1,
+             plan_procedures_total = $2
+         WHERE id = $3 AND clinic_id = $4`,
+        [stats.completed, stats.total, entryId, clinicId]
+      )
+      movedToInExecution = true
+      console.log(`✅ Moved to "Em Execução": ${entryId}`)
+    } else if (allCompleted) {
+      // Todos completos → Move para "Finalizado"
+      await query(
+        `UPDATE daily_consultation_entries
+         SET plan_finished = true,
+             plan_finished_at = NOW(),
+             in_execution = false,
+             waiting_start = false,
+             plan_procedures_completed = $1,
+             plan_procedures_total = $2
+         WHERE id = $3 AND clinic_id = $4`,
+        [stats.completed, stats.total, entryId, clinicId]
+      )
+      movedToFinished = true
+      console.log(`✅ Moved to "Finalizado": ${entryId}`)
+    } else {
+      // Atualizar apenas contadores
+      await query(
+        `UPDATE daily_consultation_entries
+         SET plan_procedures_completed = $1,
+             plan_procedures_total = $2
+         WHERE id = $3 AND clinic_id = $4`,
+        [stats.completed, stats.total, entryId, clinicId]
+      )
+    }
+
+    res.json({
+      success: true,
+      message: `${executedCount} procedimento(s) executado(s) com sucesso`,
+      executedCount,
+      movedToInExecution,
+      movedToFinished,
+      stats: {
+        total: parseInt(stats.total),
+        completed: parseInt(stats.completed)
+      }
+    })
+  } catch (error: any) {
+    console.error('Execute procedures error:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 
@@ -2220,8 +2553,8 @@ async function canViewOrders(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission (view or edit)
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission (view or edit)
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canViewOrders === true || permissions.canEditOrders === true
   }
@@ -2246,8 +2579,8 @@ async function canViewSuppliers(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission (view or edit)
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission (view or edit)
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canViewSuppliers === true || permissions.canEditOrders === true
   }
@@ -2276,8 +2609,8 @@ async function canEditOrders(req: any, clinicId: string): Promise<boolean> {
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditOrders === true
   }
@@ -4807,7 +5140,7 @@ router.get('/accounts-payable/:clinicId', requirePermission('canViewAccountsPaya
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -4876,7 +5209,7 @@ router.get('/accounts-payable/:clinicId/counts', requirePermission('canViewAccou
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -4941,7 +5274,7 @@ router.get('/accounts-payable/:clinicId/categories', requirePermission('canViewA
     }
 
     // Verificar se usuário tem acesso à clínica
-    if (role === 'COLABORADOR') {
+    if (role === 'COLABORADOR' || role === 'MEDICO') {
       const userClinic = await query(
         'SELECT clinic_id FROM users WHERE id = $1',
         [userId]
@@ -5367,6 +5700,172 @@ router.delete('/accounts-payable/:clinicId/:entryId/documents/:documentId', requ
   } catch (error: any) {
     console.error('Delete document error:', error)
     res.status(500).json({ error: 'Failed to delete document', message: error.message })
+  }
+})
+
+/**
+ * PATCH /api/daily-entries/consultation/:clinicId/:entryId/abandon
+ * Marca plano de tratamento como abandonado/perda
+ */
+router.patch('/consultation/:clinicId/:entryId/abandon', async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+    const { reason, notes } = req.body
+
+    // Verifica permissões
+    const hasPermission = await canEditConsultations(req, clinicId)
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Sem permissão para editar consultas' })
+    }
+
+    // Valida motivo
+    const validReasons = [
+      'financeiro',
+      'mudou_clinica',
+      'plano_extenso',
+      'nao_compareceu',
+      'outro'
+    ]
+
+    if (!reason || !validReasons.includes(reason)) {
+      return res.status(400).json({
+        error: 'Motivo inválido. Deve ser um de: ' + validReasons.join(', ')
+      })
+    }
+
+    // Verifica se consulta existe
+    const entryCheck = await query(
+      `SELECT id, plan_finished, abandoned
+       FROM daily_consultation_entries
+       WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (entryCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consulta não encontrada' })
+    }
+
+    const entry = entryCheck.rows[0]
+
+    // Não permite abandonar se já finalizado
+    if (entry.plan_finished) {
+      return res.status(400).json({
+        error: 'Não é possível abandonar um plano já finalizado'
+      })
+    }
+
+    // Não permite abandonar se já está abandonado
+    if (entry.abandoned) {
+      return res.status(400).json({
+        error: 'Este plano já está marcado como abandonado'
+      })
+    }
+
+    // Marca como abandonado
+    await query(
+      `UPDATE daily_consultation_entries
+       SET abandoned = true,
+           abandoned_at = NOW(),
+           abandoned_reason = $1,
+           abandoned_reason_notes = $2,
+           waiting_start = false,
+           in_execution = false
+       WHERE id = $3`,
+      [reason, notes || null, entryId]
+    )
+
+    res.json({
+      message: 'Plano marcado como abandonado com sucesso',
+      reason,
+      notes: notes || null
+    })
+  } catch (error: any) {
+    console.error('Error abandoning treatment plan:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * PATCH /api/daily-entries/consultation/:clinicId/:entryId/reactivate
+ * Reativa plano de tratamento abandonado
+ */
+router.patch('/consultation/:clinicId/:entryId/reactivate', async (req, res) => {
+  try {
+    const { clinicId, entryId } = req.params
+
+    // Verifica permissões
+    const hasPermission = await canEditConsultations(req, clinicId)
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Sem permissão para editar consultas' })
+    }
+
+    // Verifica se consulta existe e está abandonada
+    const entryCheck = await query(
+      `SELECT
+        id, abandoned,
+        plan_procedures_completed, plan_procedures_total
+       FROM daily_consultation_entries
+       WHERE id = $1 AND clinic_id = $2`,
+      [entryId, clinicId]
+    )
+
+    if (entryCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Consulta não encontrada' })
+    }
+
+    const entry = entryCheck.rows[0]
+
+    if (!entry.abandoned) {
+      return res.status(400).json({
+        error: 'Este plano não está marcado como abandonado'
+      })
+    }
+
+    // Determina estado correto baseado no progresso
+    const completed = parseInt(entry.plan_procedures_completed, 10)
+    const total = parseInt(entry.plan_procedures_total, 10)
+
+    let newState = {}
+    if (completed === 0) {
+      newState = { waiting_start: true, waiting_start_at: new Date() }
+    } else if (completed < total) {
+      newState = { in_execution: true, in_execution_at: new Date() }
+    } else {
+      newState = { plan_finished: true, plan_finished_at: new Date() }
+    }
+
+    // Reativa plano
+    await query(
+      `UPDATE daily_consultation_entries
+       SET abandoned = false,
+           abandoned_at = NULL,
+           abandoned_reason = NULL,
+           abandoned_reason_notes = NULL,
+           waiting_start = $1,
+           waiting_start_at = $2,
+           in_execution = $3,
+           in_execution_at = $4,
+           plan_finished = $5,
+           plan_finished_at = $6
+       WHERE id = $7`,
+      [
+        newState.waiting_start || false,
+        newState.waiting_start_at || null,
+        newState.in_execution || false,
+        newState.in_execution_at || null,
+        newState.plan_finished || false,
+        newState.plan_finished_at || null,
+        entryId
+      ]
+    )
+
+    res.json({
+      message: 'Plano reativado com sucesso',
+      newState
+    })
+  } catch (error: any) {
+    console.error('Error reactivating treatment plan:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 

@@ -110,7 +110,8 @@
     "targets": "Obiettivi",
     "procedureBase": "Tabella Base Procedure",
     "marketing": "Marketing",
-    "cabinets": "Studi"
+    "cabinets": "Studi",
+    "team": "Squadra"
   },
   "auth": {
     "login": "Accedi",
@@ -606,5 +607,29 @@
     "delayReasons": "Motivi di Ritardo",
     "topSources": "Fonti Principali",
     "topReferrers": "Top Referenti"
+  },
+  "team": {
+    "title": "Squadra",
+    "description": "Gestisci medici e collaboratori della clinica",
+    "doctors": "Medici",
+    "collaborators": "Collaboratori",
+    "doctorsInfo": "Informazioni sui Medici",
+    "doctorsDescription": "I medici hanno permessi predefiniti per modificare le loro consultazioni, visualizzare report e modificare pazienti.",
+    "realEmails": "Email reali",
+    "fictitiousEmails": "Email fittizi",
+    "doctorsList": "Elenco dei Medici",
+    "doctorsWithAccess": "Medici registrati nel sistema",
+    "noDoctorsRegistered": "Nessun medico registrato",
+    "name": "Nome",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "status": "Stato",
+    "actions": "Azioni",
+    "fictitious": "Fittizio",
+    "hasAccount": "Ha un account",
+    "noAccount": "Nessun account",
+    "permissions": "Permessi",
+    "permissionsComingSoon": "Gestione permessi prossimamente",
+    "errorLoadingDoctors": "Errore durante il caricamento dei medici"
   }
 }

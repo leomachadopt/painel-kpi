@@ -10,9 +10,10 @@ import Dashboard from '@/pages/Dashboard'
 import Inputs from '@/pages/Inputs'
 import Settings from '@/pages/Settings'
 import Reports from '@/pages/Reports'
+import PlansAndConsultations from '@/pages/PlansAndConsultations'
 import Patients from '@/pages/Patients'
 import Profile from '@/pages/Profile'
-import Collaborators from '@/pages/Collaborators'
+import Team from '@/pages/Team'
 import NPSManagement from '@/pages/NPSManagement'
 import NPSSurvey from '@/pages/NPSSurvey'
 import Alerts from '@/pages/Alerts'
@@ -25,6 +26,7 @@ import Advances from '@/pages/Advances'
 import InsuranceProviders from '@/pages/InsuranceProviders'
 import ProcedureBaseGlobal from '@/pages/ProcedureBaseGlobal'
 import RevenueForecast from '@/pages/RevenueForecast'
+import Agenda from '@/pages/Agenda'
 import Privacy from '@/pages/Privacy'
 import Terms from '@/pages/Terms'
 import About from '@/pages/About'
@@ -60,6 +62,7 @@ const App = () => (
               <Route path="/dashboard/:clinicId" element={<Dashboard />} />
               <Route path="/lancamentos/:clinicId" element={<Inputs />} />
               <Route path="/relatorios/:clinicId" element={<Reports />} />
+              <Route path="/planos-consultas/:clinicId" element={<PlansAndConsultations />} />
               <Route path="/pacientes/:clinicId" element={<Patients />} />
               <Route path="/pedidos/:clinicId" element={<Orders />} />
               <Route path="/fornecedores/:clinicId" element={<Suppliers />} />
@@ -67,13 +70,14 @@ const App = () => (
               <Route path="/operadoras/:clinicId" element={<InsuranceProviders />} />
               <Route path="/adiantamentos/:clinicId" element={<Advances />} />
               <Route path="/previsao-receitas/:clinicId" element={<RevenueForecast />} />
+              <Route path="/agenda/:clinicId" element={<Agenda />} />
               <Route path="/nps/:clinicId" element={<NPSManagement />} />
               <Route path="/alertas/:clinicId" element={<Alerts />} />
               <Route path="/tickets/:clinicId" element={<Tickets />} />
               <Route path="/tickets/:clinicId/:ticketId" element={<TicketDetail />} />
               <Route path="/configuracoes" element={<Settings />} />
               <Route path="/tabela-base-procedimentos" element={<ProcedureBaseGlobal />} />
-              <Route path="/colaboradores" element={<Collaborators />} />
+              <Route path="/colaboradores" element={<Team />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>
 

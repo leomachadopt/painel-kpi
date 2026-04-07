@@ -11,7 +11,7 @@ export function usePermissions() {
 
   // Refresh permissions when component mounts if user is a collaborator
   useEffect(() => {
-    if (user?.role === 'COLABORADOR' && refreshPermissions) {
+    if (user && (user.role === 'COLABORADOR' || user.role === 'MEDICO') && refreshPermissions) {
       refreshPermissions()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,7 +176,7 @@ export function usePermissions() {
    * Check if user is a collaborator
    */
   const isColaborador = (): boolean => {
-    return user?.role === 'COLABORADOR'
+    return user?.role === 'COLABORADOR' || user?.role === 'MEDICO'
   }
 
   /**

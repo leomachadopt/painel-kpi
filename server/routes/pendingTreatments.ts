@@ -23,8 +23,8 @@ async function canManagePendingTreatments(req: any, clinicId: string): Promise<b
     return true
   }
 
-  // COLABORADOR needs permission
-  if (role === 'COLABORADOR') {
+  // MEDICO and COLABORADOR need permission
+  if (role === 'COLABORADOR' || role === 'MEDICO') {
     const permissions = await getUserPermissions(userId, role, clinicId)
     return permissions.canEditFinancial === true
   }
@@ -47,7 +47,7 @@ router.get('/:clinicId/patients', async (req, res) => {
       return res.status(403).json({ error: 'Permission denied' })
     }
 
-    // Get all patients with at least one non-completed treatment
+    // Get all patients with treatments (including completed for historical view)
     const patientsResult = await query(
       `SELECT DISTINCT
         ptp.id,
@@ -57,7 +57,6 @@ router.get('/:clinicId/patients', async (req, res) => {
       FROM pending_treatment_patients ptp
       INNER JOIN pending_treatments pt ON pt.pending_treatment_patient_id = ptp.id
       WHERE ptp.clinic_id = $1
-        AND pt.status IN ('PENDENTE', 'PARCIAL')
       ORDER BY ptp.patient_name ASC`,
       [clinicId]
     )
@@ -80,8 +79,13 @@ router.get('/:clinicId/patients', async (req, res) => {
           FROM pending_treatments pt
           LEFT JOIN clinic_categories cc ON pt.category_id = cc.id
           WHERE pt.pending_treatment_patient_id = $1
-            AND pt.status IN ('PENDENTE', 'PARCIAL')
-          ORDER BY pt.created_at ASC`,
+          ORDER BY
+            CASE
+              WHEN pt.status = 'PENDENTE' THEN 1
+              WHEN pt.status = 'PARCIAL' THEN 2
+              WHEN pt.status = 'CONCLUIDO' THEN 3
+            END,
+            pt.created_at ASC`,
           [patient.id]
         )
 
@@ -374,7 +378,7 @@ router.patch('/:clinicId/treatments/:treatmentId', async (req, res) => {
 router.post('/:clinicId/treatments/:treatmentId/complete', async (req, res) => {
   try {
     const { clinicId, treatmentId } = req.params
-    const { completedQuantity } = req.body
+    const { completedQuantity, executedAt, notes } = req.body
 
     if (!await canManagePendingTreatments(req, clinicId)) {
       return res.status(403).json({ error: 'Permission denied' })
@@ -384,9 +388,9 @@ router.post('/:clinicId/treatments/:treatmentId/complete', async (req, res) => {
       return res.status(400).json({ error: 'Invalid completed quantity' })
     }
 
-    // Get current treatment
+    // Get current treatment with link to plan_procedure
     const currentResult = await query(
-      `SELECT pending_quantity, total_quantity
+      `SELECT pending_quantity, total_quantity, plan_procedure_id
        FROM pending_treatments
        WHERE id = $1 AND clinic_id = $2`,
       [treatmentId, clinicId]
@@ -412,6 +416,85 @@ router.post('/:clinicId/treatments/:treatmentId/complete', async (req, res) => {
        RETURNING *`,
       [newPendingQuantity, newStatus, treatmentId, clinicId]
     )
+
+    // SINCRONIZAÇÃO: Se completou o tratamento e existe link com plan_procedure, marcar como completado
+    if (newStatus === 'CONCLUIDO' && current.plan_procedure_id) {
+      const completedAtValue = executedAt || new Date().toISOString()
+
+      await query(
+        `UPDATE plan_procedures
+         SET completed = true,
+             completed_at = $1,
+             notes = $2
+         WHERE id = $3`,
+        [completedAtValue, notes || null, current.plan_procedure_id]
+      )
+      console.log(`✅ Synced: Marked plan_procedure ${current.plan_procedure_id} as completed with date ${completedAtValue}`)
+
+      // Atualizar contadores na consulta
+      const entryResult = await query(
+        `SELECT consultation_entry_id FROM plan_procedures WHERE id = $1`,
+        [current.plan_procedure_id]
+      )
+
+      if (entryResult.rows.length > 0) {
+        const consultationEntryId = entryResult.rows[0].consultation_entry_id
+
+        // Recalcular estatísticas
+        const statsResult = await query(
+          `SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE completed = true) as completed
+           FROM plan_procedures
+           WHERE consultation_entry_id = $1`,
+          [consultationEntryId]
+        )
+
+        const stats = statsResult.rows[0]
+        const completedCount = parseInt(stats.completed)
+        const totalCount = parseInt(stats.total)
+        const allCompleted = completedCount === totalCount
+
+        // Atualizar flags da consulta
+        if (completedCount === 1 && !allCompleted) {
+          // Primeira execução → Em Execução
+          await query(
+            `UPDATE daily_consultation_entries
+             SET in_execution = true,
+                 in_execution_at = NOW(),
+                 waiting_start = false,
+                 plan_procedures_completed = $1,
+                 plan_procedures_total = $2
+             WHERE id = $3`,
+            [completedCount, totalCount, consultationEntryId]
+          )
+          console.log(`✅ Moved to "Em Execução": ${consultationEntryId}`)
+        } else if (allCompleted) {
+          // Todos completos → Finalizado
+          await query(
+            `UPDATE daily_consultation_entries
+             SET plan_finished = true,
+                 plan_finished_at = NOW(),
+                 in_execution = false,
+                 waiting_start = false,
+                 plan_procedures_completed = $1,
+                 plan_procedures_total = $2
+             WHERE id = $3`,
+            [completedCount, totalCount, consultationEntryId]
+          )
+          console.log(`✅ Moved to "Finalizado": ${consultationEntryId}`)
+        } else {
+          // Atualizar apenas contadores
+          await query(
+            `UPDATE daily_consultation_entries
+             SET plan_procedures_completed = $1,
+                 plan_procedures_total = $2
+             WHERE id = $3`,
+            [completedCount, totalCount, consultationEntryId]
+          )
+        }
+      }
+    }
 
     const updated = result.rows[0]
     res.json({

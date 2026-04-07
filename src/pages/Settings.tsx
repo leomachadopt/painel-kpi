@@ -27,6 +27,8 @@ import { configApi, clinicsApi } from '@/services/api'
 import { MarketingSettings } from '@/components/settings/MarketingSettings'
 import { FirstConsultationTypesSettings } from '@/components/settings/FirstConsultationTypesSettings'
 import { LanguageSettings } from '@/components/settings/LanguageSettings'
+import { AppointmentTypesEditor } from '@/components/settings/AppointmentTypesEditor'
+import { ClinicScheduleEditor } from '@/components/settings/ClinicScheduleEditor'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -682,6 +684,281 @@ const OrderItemsEditor = ({
   )
 }
 
+const AppointmentTypesEditor = ({
+  clinicId,
+  readOnly = false,
+}: {
+  clinicId: string
+  readOnly?: boolean
+}) => {
+  const [types, setTypes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [newName, setNewName] = useState('')
+  const [newDuration, setNewDuration] = useState('30')
+  const [newColor, setNewColor] = useState('#1D9E75')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editDuration, setEditDuration] = useState('')
+  const [editColor, setEditColor] = useState('')
+
+  const colors = [
+    '#1D9E75', // Verde (padrão)
+    '#3B82F6', // Azul
+    '#EF4444', // Vermelho
+    '#F59E0B', // Laranja
+    '#8B5CF6', // Roxo
+    '#EC4899', // Rosa
+  ]
+
+  useEffect(() => {
+    loadTypes()
+  }, [clinicId])
+
+  const loadTypes = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/appointments/${clinicId}/types`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      })
+      const data = await response.json()
+      setTypes(data.types || [])
+    } catch (error) {
+      console.error('Error loading appointment types:', error)
+      toast.error('Erro ao carregar tipos de consulta')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const add = async () => {
+    if (!newName || !newDuration) return
+
+    try {
+      const response = await fetch(`/api/appointments/${clinicId}/types`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+        body: JSON.stringify({
+          name: newName,
+          durationMinutes: parseInt(newDuration),
+          color: newColor,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to create type')
+
+      toast.success('Tipo de consulta criado')
+      setNewName('')
+      setNewDuration('30')
+      setNewColor('#1D9E75')
+      loadTypes()
+    } catch (error) {
+      console.error('Error creating type:', error)
+      toast.error('Erro ao criar tipo de consulta')
+    }
+  }
+
+  const remove = async (id: string) => {
+    try {
+      const response = await fetch(`/api/appointments/${clinicId}/types/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      })
+
+      if (!response.ok) throw new Error('Failed to delete type')
+
+      toast.success('Tipo de consulta removido')
+      loadTypes()
+    } catch (error) {
+      console.error('Error deleting type:', error)
+      toast.error('Erro ao remover tipo de consulta')
+    }
+  }
+
+  const startEdit = (item: any) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+    setEditDuration(item.durationMinutes.toString())
+    setEditColor(item.color)
+  }
+
+  const saveEdit = async (id: string) => {
+    try {
+      const response = await fetch(`/api/appointments/${clinicId}/types/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+        body: JSON.stringify({
+          name: editName,
+          durationMinutes: parseInt(editDuration),
+          color: editColor,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update type')
+
+      toast.success('Tipo de consulta atualizado')
+      setEditingId(null)
+      loadTypes()
+    } catch (error) {
+      console.error('Error updating type:', error)
+      toast.error('Erro ao atualizar tipo de consulta')
+    }
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditName('')
+    setEditDuration('')
+    setEditColor('')
+  }
+
+  if (loading) {
+    return <div className="text-center py-4">Carregando...</div>
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Add new type */}
+      {!readOnly && (
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <Label>Nome</Label>
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="ex: 1ª Consulta"
+            />
+          </div>
+          <div className="w-32">
+            <Label>Duração (min)</Label>
+            <Input
+              type="number"
+              value={newDuration}
+              onChange={(e) => setNewDuration(e.target.value)}
+              placeholder="30"
+            />
+          </div>
+          <div className="w-24">
+            <Label>Cor</Label>
+            <div className="flex gap-1">
+              {colors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setNewColor(color)}
+                  className={`w-6 h-6 rounded border-2 ${
+                    newColor === color ? 'border-gray-900' : 'border-transparent'
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+          <Button onClick={add} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            Adicionar
+          </Button>
+        </div>
+      )}
+
+      {/* List of types */}
+      <div className="space-y-2">
+        {types.map((type) => (
+          <div
+            key={type.id}
+            className="flex items-center gap-2 p-2 border rounded"
+          >
+            {editingId === type.id ? (
+              <>
+                <div className="flex-1">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                <div className="w-32">
+                  <Input
+                    type="number"
+                    value={editDuration}
+                    onChange={(e) => setEditDuration(e.target.value)}
+                  />
+                </div>
+                <div className="w-24 flex gap-1">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setEditColor(color)}
+                      className={`w-6 h-6 rounded border-2 ${
+                        editColor === color ? 'border-gray-900' : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <Button
+                  onClick={() => saveEdit(type.id)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button onClick={cancelEdit} size="sm" variant="ghost">
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <div
+                  className="w-4 h-4 rounded"
+                  style={{ backgroundColor: type.color }}
+                />
+                <div className="flex-1 font-medium">{type.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {type.durationMinutes} min
+                </div>
+                {!readOnly && (
+                  <>
+                    <Button
+                      onClick={() => startEdit(type)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => remove(type.id)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+
+        {types.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Nenhum tipo de consulta configurado
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { t, locale } = useTranslation()
   const { user } = useAuthStore()
@@ -792,11 +1069,12 @@ export default function Settings() {
     if (!clinic) return
 
     if (clinic.configuration) {
-      // Ensure paymentSources and alignerBrands exist
+      // Ensure paymentSources, alignerBrands, and agendaEnabled exist
       const config = {
         ...clinic.configuration,
         paymentSources: clinic.configuration.paymentSources || [],
         alignerBrands: clinic.configuration.alignerBrands || [],
+        agendaEnabled: clinic.agendaEnabled || false,
       }
       setConfig(config)
     }
@@ -956,6 +1234,7 @@ export default function Settings() {
           <TabsTrigger value="nps" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">NPS</TabsTrigger>
           <TabsTrigger value="marketing" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Marketing</TabsTrigger>
           <TabsTrigger value="language" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Idioma</TabsTrigger>
+          <TabsTrigger value="agenda" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Agenda</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Relatórios Automáticos</TabsTrigger>
         </TabsList>
 
@@ -1521,6 +1800,68 @@ export default function Settings() {
 
         <TabsContent value="language" className="space-y-6">
           <LanguageSettings clinicId={clinic.id} />
+        </TabsContent>
+
+        <TabsContent value="agenda" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>📅 Agenda Clínica</CardTitle>
+              <CardDescription>
+                Quando ativada, a agenda preenche automaticamente os módulos de Tempos, Consultórios e Controlo.
+                Estes módulos desaparecerão do menu quando a agenda estiver ativa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!canManageConfig ? (
+                <p className="text-sm text-muted-foreground">
+                  Apenas o gestor da clínica pode ativar/desativar a agenda.
+                </p>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="agenda-enabled"
+                    checked={config?.agendaEnabled || false}
+                    onChange={(e) => setConfig({ ...config, agendaEnabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="agenda-enabled" className="font-normal">
+                    Ativar Agenda Clínica
+                  </Label>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipos de Consulta</CardTitle>
+              <CardDescription>
+                Configure os tipos de consulta disponíveis na agenda (ex: 1ª Consulta, Tratamento, Urgência).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AppointmentTypesEditor
+                clinicId={clinic.id}
+                readOnly={!canManageConfig}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Horários de Funcionamento</CardTitle>
+              <CardDescription>
+                Configure os horários de funcionamento da clínica por dia da semana. A agenda exibirá apenas estes horários.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicScheduleEditor
+                clinicId={clinic.id}
+                readOnly={!canManageConfig}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">

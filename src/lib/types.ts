@@ -1,4 +1,4 @@
-export type Role = 'MENTOR' | 'GESTOR_CLINICA' | 'COLABORADOR'
+export type Role = 'MENTOR' | 'GESTOR_CLINICA' | 'MEDICO' | 'COLABORADOR'
 
 export interface AgendaDistribution {
   operational: number
@@ -72,6 +72,7 @@ export interface Clinic {
   country?: 'PT-BR' | 'PT-PT'
   language?: 'pt-BR' | 'pt-PT' | 'it' | 'es' | 'en' | 'fr'
   configuration: ClinicConfiguration
+  agendaEnabled?: boolean
 
   // Deprecated - mantido para compatibilidade, use MonthlyTargets
   targetRevenue: number
@@ -240,6 +241,78 @@ export interface DailyConsultationEntry {
   planNotEligible?: boolean
   planNotEligibleAt?: string | null
   planNotEligibleReason?: string | null
+
+  // Treatment stages (Fase 2)
+  waitingStart?: boolean
+  waitingStartAt?: string | null
+  inExecution?: boolean
+  inExecutionAt?: string | null
+  planFinished?: boolean
+  planFinishedAt?: string | null
+  abandoned?: boolean
+  abandonedAt?: string | null
+  abandonedReason?: 'financeiro' | 'mudou_clinica' | 'plano_extenso' | 'nao_compareceu' | 'outro'
+  abandonedReasonNotes?: string | null
+
+  // Plan configuration
+  priceTableType?: 'clinica' | 'operadora'
+  insuranceProviderId?: string | null
+
+  // Metrics
+  planProceduresTotal?: number
+  planProceduresCompleted?: number
+  planTotalValue?: number
+}
+
+export interface PlanProcedure {
+  id: string
+  consultationEntryId: string
+  clinicId: string
+  procedureBaseId?: string | null
+  insuranceProviderProcedureId?: string | null
+  procedureCode: string
+  procedureDescription: string
+  priceAtCreation: number
+  priceTableType: 'clinica' | 'operadora'
+  completed: boolean
+  completedAt?: string | null
+  completedByDoctorId?: string | null
+  completedByDoctorName?: string | null
+  appointmentId?: string | null
+  sortOrder: number
+  notes?: string | null
+  createdAt: string
+}
+
+export interface PlanProceduresResponse {
+  priceTableType: 'clinica' | 'operadora'
+  insuranceProviderId: string | null
+  procedures: PlanProcedure[]
+  summary: {
+    total: number
+    completed: number
+    remaining: number
+    totalValue: number
+    completedValue: number
+    remainingValue: number
+    completionPercent: number
+  }
+}
+
+export interface ProcedureCatalogItem {
+  id: string
+  code: string
+  description: string
+  value: number
+  type: 'clinica' | 'operadora'
+  procedureBaseId?: string | null
+  insuranceProviderProcedureId?: string | null
+}
+
+export interface InsuranceProvider {
+  id: string
+  name: string
+  proceduresCount?: number
 }
 
 export interface DailyProspectingEntry {

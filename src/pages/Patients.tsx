@@ -61,7 +61,7 @@ export default function Patients() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', birthDate: '', notes: '' })
+  const [editForm, setEditForm] = useState({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
   const [saving, setSaving] = useState(false)
   const [showNewPatientDialog, setShowNewPatientDialog] = useState(false)
   const [newPatientForm, setNewPatientForm] = useState({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
@@ -146,6 +146,7 @@ export default function Patients() {
 
     setEditingPatient(patient)
     setEditForm({
+      code: patient.code || '',
       name: patient.name || '',
       email: patient.email || '',
       phone: patient.phone || '',
@@ -157,6 +158,12 @@ export default function Patients() {
 
   const handleSaveEdit = async () => {
     if (!clinicId || !editingPatient) return
+
+    // Validar código (1-6 dígitos)
+    if (!editForm.code || !/^\d{1,6}$/.test(editForm.code)) {
+      toast.error('O código deve ter entre 1 e 6 dígitos')
+      return
+    }
 
     setSaving(true)
     try {
@@ -377,15 +384,15 @@ export default function Patients() {
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Histórico do Paciente</DialogTitle>
-            <DialogDescription>
-              {selectedPatient && (
-                <>
-                  <div className="mt-2">
-                    <p className="font-medium">{selectedPatient.name}</p>
-                    <p className="text-xs text-muted-foreground">Código: {selectedPatient.code}</p>
+            <DialogDescription asChild>
+              <div>
+                {selectedPatient && (
+                  <div className="mt-2 space-y-1">
+                    <span className="font-medium block">{selectedPatient.name}</span>
+                    <span className="text-xs text-muted-foreground block">Código: {selectedPatient.code}</span>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </DialogDescription>
           </DialogHeader>
 
@@ -517,18 +524,81 @@ export default function Patients() {
                 </TabsContent>
 
                 <TabsContent value="financial" className="mt-4">
-                  {patientHistory.financial.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">Nenhuma entrada financeira encontrada.</p>
+                  {patientHistory.cashflow && patientHistory.cashflow.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhuma movimentação financeira encontrada.</p>
                   ) : (
                     <div className="space-y-2">
-                      {patientHistory.financial.map((entry: any) => (
-                        <div key={entry.id} className="border rounded p-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
-                            <span className="font-semibold">€{entry.value.toFixed(2)}</span>
+                      {/* Calcular saldo acumulado */}
+                      {(() => {
+                        let runningBalance = 0
+                        return patientHistory.cashflow?.map((transaction: any) => {
+                          // Crédito (+) ou Débito (-)
+                          const amount = transaction.type === 'credit' ? transaction.amount : -transaction.amount
+                          runningBalance += amount
+
+                          return (
+                            <div
+                              key={transaction.id}
+                              className={`border rounded p-3 text-sm ${
+                                transaction.type === 'credit' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{format(new Date(transaction.date), 'dd/MM/yyyy')}</span>
+                                    {transaction.type === 'credit' ? (
+                                      <Badge className="bg-green-600">Entrada</Badge>
+                                    ) : (
+                                      <Badge className="bg-red-600">Procedimento</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>
+                                  {transaction.notes && (
+                                    <p className="text-xs text-muted-foreground mt-1 italic">Obs: {transaction.notes}</p>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <div
+                                    className={`font-semibold text-lg ${
+                                      transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                    }`}
+                                  >
+                                    {transaction.type === 'credit' ? '+' : '-'}€{transaction.amount.toFixed(2)}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Saldo:{' '}
+                                    <span className={`font-semibold ${runningBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      €{Math.abs(runningBalance).toFixed(2)} {runningBalance < 0 && '(deve)'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })
+                      })()}
+
+                      {/* Saldo Final */}
+                      {patientHistory.cashflow && patientHistory.cashflow.length > 0 && (() => {
+                        const finalBalance = patientHistory.cashflow.reduce((acc: number, t: any) => {
+                          return acc + (t.type === 'credit' ? t.amount : -t.amount)
+                        }, 0)
+
+                        return (
+                          <div className="border-2 border-primary/20 rounded-lg p-4 bg-primary/5 mt-4">
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold text-lg">SALDO FINAL:</span>
+                              <span className={`text-2xl font-bold ${finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                €{Math.abs(finalBalance).toFixed(2)}
+                                {finalBalance < 0 && ' (paciente deve)'}
+                                {finalBalance > 0 && ' (crédito do paciente)'}
+                                {finalBalance === 0 && ' (quite)'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })()}
                     </div>
                   )}
                 </TabsContent>
@@ -537,20 +607,74 @@ export default function Patients() {
                   {patientHistory.consultation.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Nenhuma consulta encontrada.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {patientHistory.consultation.map((entry: any) => (
-                        <div key={entry.id} className="border rounded p-3 text-sm">
-                          <div className="flex justify-between">
-                            <span className="font-medium">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
+                        <div key={entry.id} className="border rounded-lg p-4 bg-background">
+                          <div className="flex justify-between items-start mb-3">
+                            <span className="font-medium text-base">{format(new Date(entry.date), 'dd/MM/yyyy')}</span>
                             {entry.planValue > 0 && (
                               <span className="font-semibold">Plano: €{entry.planValue.toFixed(2)}</span>
                             )}
                           </div>
-                          <div className="mt-1 text-xs text-muted-foreground">
+                          <div className="mb-3 text-xs text-muted-foreground">
                             {entry.planCreated && '✓ Plano criado'}
                             {entry.planPresented && ' • ✓ Plano apresentado'}
                             {entry.planAccepted && ' • ✓ Plano aceito'}
                           </div>
+
+                          {/* Procedures List */}
+                          {entry.procedures && entry.procedures.length > 0 && (
+                            <div className="mt-3 border-t pt-3 space-y-2">
+                              <div className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                                Procedimentos
+                              </div>
+                              {entry.procedures
+                                .sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+                                .map((proc: any) => (
+                                  <div
+                                    key={proc.id}
+                                    className={`border rounded-md p-3 ${
+                                      proc.completed ? 'bg-green-50 border-green-200' : 'bg-muted/20'
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Badge
+                                            variant={proc.completed ? 'default' : 'outline'}
+                                            className={`text-xs ${
+                                              proc.completed ? 'bg-green-600' : 'bg-gray-400'
+                                            }`}
+                                          >
+                                            {proc.completed ? 'Concluído' : 'Pendente'}
+                                          </Badge>
+                                          <span className="text-xs font-mono text-muted-foreground">
+                                            {proc.procedureCode}
+                                          </span>
+                                        </div>
+                                        <div className="font-medium text-sm mb-1">
+                                          {proc.procedureDescription}
+                                        </div>
+                                        {proc.completed && proc.completedAt && (
+                                          <div className="text-xs text-muted-foreground mt-1">
+                                            <span className="font-medium">Executado em:</span>{' '}
+                                            {format(new Date(proc.completedAt), "dd/MM/yyyy 'às' HH:mm")}
+                                          </div>
+                                        )}
+                                        {proc.notes && (
+                                          <div className="mt-2 text-xs bg-background/80 border rounded p-2">
+                                            <span className="font-medium">Observações:</span> {proc.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="text-right font-semibold text-sm whitespace-nowrap">
+                                        €{proc.value.toFixed(2)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -732,6 +856,23 @@ export default function Patients() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
+              <Label htmlFor="edit-code">Código * (1-6 dígitos)</Label>
+              <Input
+                id="edit-code"
+                value={editForm.code}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setEditForm({ ...editForm, code: value })
+                }}
+                placeholder="123456"
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                O código deve ser único e ter entre 1 e 6 dígitos
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="edit-name">Nome *</Label>
               <Input
                 id="edit-name"
@@ -789,7 +930,7 @@ export default function Patients() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)} disabled={saving}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveEdit} disabled={saving || !editForm.name.trim()}>
+            <Button onClick={handleSaveEdit} disabled={saving || !editForm.code || !editForm.name.trim()}>
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

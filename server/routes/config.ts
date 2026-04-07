@@ -8,14 +8,23 @@ const router = Router()
 router.put('/:clinicId', requirePermission('canEditClinicConfig'), async (req, res) => {
   try {
     const { clinicId } = req.params
-    const { categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands } = req.body
+    const { categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands, agendaEnabled } = req.body
 
     console.log('🔧 Updating config for clinic:', clinicId)
-    console.log('📦 Received data:', JSON.stringify({ categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands }, null, 2))
+    console.log('📦 Received data:', JSON.stringify({ categories, cabinets, doctors, sources, campaigns, paymentSources, alignerBrands, agendaEnabled }, null, 2))
 
     const client = await query('SELECT 1 FROM clinics WHERE id = $1', [clinicId])
     if (client.rows.length === 0) {
       return res.status(404).json({ error: 'Clinic not found' })
+    }
+
+    // Update agenda_enabled flag if provided
+    if (agendaEnabled !== undefined) {
+      await query(
+        'UPDATE clinics SET agenda_enabled = $1 WHERE id = $2',
+        [agendaEnabled, clinicId]
+      )
+      console.log('✅ Agenda enabled flag updated:', agendaEnabled)
     }
 
     // Use DELETE + UPSERT strategy to ensure deleted items are removed
@@ -263,8 +272,8 @@ router.get('/:clinicId/consultation-types', async (req, res) => {
     // GESTOR_CLINICA and MENTOR always can read
     let canRead = userRole === 'GESTOR_CLINICA' || userRole === 'MENTOR'
 
-    // COLABORADOR needs canEditConsultations permission
-    if (!canRead && userRole === 'COLABORADOR') {
+    // COLABORADOR and MEDICO need canEditConsultations permission
+    if (!canRead && (userRole === 'COLABORADOR' || userRole === 'MEDICO')) {
       const permissions = await getUserPermissions(userId, userRole, clinicId)
       canRead = permissions.canEditConsultations === true
     }
@@ -414,8 +423,8 @@ router.get('/:clinicId/consultation-types/:typeId/procedures', async (req, res) 
     // GESTOR_CLINICA and MENTOR always can read
     let canRead = userRole === 'GESTOR_CLINICA' || userRole === 'MENTOR'
 
-    // COLABORADOR needs canEditConsultations permission
-    if (!canRead && userRole === 'COLABORADOR') {
+    // COLABORADOR and MEDICO need canEditConsultations permission
+    if (!canRead && (userRole === 'COLABORADOR' || userRole === 'MEDICO')) {
       const permissions = await getUserPermissions(userId, userRole, clinicId)
       canRead = permissions.canEditConsultations === true
     }
