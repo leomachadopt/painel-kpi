@@ -41,8 +41,8 @@ export async function uploadToCloudinary(
       // Gerar um ID único
       use_filename: false,
       unique_filename: true,
-      // Upload com autenticação (privado)
-      type: 'authenticated',
+      // Upload público (mais simples e compatível)
+      type: 'upload',
     })
 
     return {
@@ -72,7 +72,7 @@ export async function deleteFromCloudinary(
   try {
     await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType,
-      type: 'authenticated',
+      type: 'upload',
       invalidate: true
     })
   } catch (error: any) {
@@ -91,27 +91,14 @@ export async function deleteFromCloudinary(
 export function getCloudinarySignedUrl(
   publicId: string,
   resourceType: 'image' | 'raw' | 'video' = 'raw',
-  expiresIn: number = 3600 // 1 hora
+  expiresIn: number = 3600 // 1 hora (não usado para arquivos públicos)
 ): string {
-  try {
-    // Usar o método utils.private_download_url para arquivos authenticated
-    const downloadUrl = cloudinary.utils.private_download_url(publicId, '', {
-      resource_type: resourceType,
-      expires_at: Math.floor(Date.now() / 1000) + expiresIn,
-      attachment: false, // inline para visualizar no browser
-    })
-
-    return downloadUrl
-  } catch (error: any) {
-    console.error('Error generating signed URL:', error)
-    // Fallback para URL assinada padrão
-    return cloudinary.url(publicId, {
-      resource_type: resourceType,
-      secure: true,
-      sign_url: true,
-      type: 'authenticated',
-    })
-  }
+  // Para arquivos públicos, apenas retornar a URL segura
+  return cloudinary.url(publicId, {
+    resource_type: resourceType,
+    secure: true,
+    type: 'upload',
+  })
 }
 
 /**
