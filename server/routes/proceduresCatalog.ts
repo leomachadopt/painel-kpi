@@ -53,7 +53,8 @@ router.get('/:clinicId', async (req, res) => {
           pb.id,
           pb.code,
           pb.description,
-          pb.default_value as value
+          pb.default_value as value,
+          pb.is_custom
          FROM procedure_base_table pb
          WHERE (pb.clinic_id = $1 OR pb.clinic_id IS NULL)
            AND pb.active = true
@@ -70,7 +71,8 @@ router.get('/:clinicId', async (req, res) => {
         value: parseFloat(row.value || 0),
         type: 'clinica',
         procedureBaseId: row.id,
-        insuranceProviderProcedureId: null
+        insuranceProviderProcedureId: null,
+        isCustom: row.is_custom || false
       }))
     } else {
       // Busca da tabela de operadora
@@ -164,6 +166,83 @@ router.get('/:clinicId/providers', async (req, res) => {
     res.json({ providers })
   } catch (error: any) {
     console.error('Error fetching insurance providers:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /api/procedures-catalog/:clinicId/custom
+ * Cria um procedimento customizado para a clínica
+ */
+router.post('/:clinicId/custom', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { code, description, defaultValue } = req.body
+
+    // Verifica permissões
+    if (!req.user || !req.user.sub) {
+      return res.status(401).json({ error: 'Não autenticado' })
+    }
+
+    if (req.user.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Sem permissão para acessar esta clínica' })
+    }
+
+    // Valida input
+    if (!code || !description || defaultValue === undefined) {
+      return res.status(400).json({
+        error: 'Campos obrigatórios: code, description, defaultValue'
+      })
+    }
+
+    // Verifica se já existe um procedimento com o mesmo código
+    const existingCheck = await query(
+      `SELECT id FROM procedure_base_table
+       WHERE clinic_id = $1 AND code = $2`,
+      [clinicId, code]
+    )
+
+    if (existingCheck.rows.length > 0) {
+      return res.status(400).json({
+        error: 'Já existe um procedimento com este código na clínica'
+      })
+    }
+
+    // Cria procedimento customizado
+    const procedureId = `custom-proc-${Date.now()}`
+
+    await query(
+      `INSERT INTO procedure_base_table (
+        id, clinic_id, code, description, default_value,
+        is_custom, created_by_user_id, active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        procedureId,
+        clinicId,
+        code,
+        description,
+        defaultValue,
+        true,
+        req.user.sub,
+        true
+      ]
+    )
+
+    res.status(201).json({
+      message: 'Procedimento customizado criado com sucesso',
+      procedure: {
+        id: procedureId,
+        code,
+        description,
+        value: parseFloat(defaultValue),
+        type: 'clinica',
+        procedureBaseId: procedureId,
+        insuranceProviderProcedureId: null,
+        isCustom: true
+      }
+    })
+  } catch (error: any) {
+    console.error('Error creating custom procedure:', error)
     res.status(500).json({ error: error.message })
   }
 })

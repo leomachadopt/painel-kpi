@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import api from '@/services/api'
+import { CreateCustomProcedureModal } from './CreateCustomProcedureModal'
 
 interface AddProceduresModalProps {
   open: boolean
@@ -49,6 +50,7 @@ interface SelectedProcedure extends Procedure {
   quantity: number
   editableDescription: string
   editableValue: number
+  toothRegion: string
 }
 
 export function AddProceduresModal({
@@ -71,6 +73,7 @@ export function AddProceduresModal({
   const [searchType, setSearchType] = useState<'clinica' | 'operadora'>(priceTableType as 'clinica' | 'operadora' || 'clinica')
   const [providers, setProviders] = useState<any[]>([])
   const [selectedProviderId, setSelectedProviderId] = useState<string>(insuranceProviderId || '')
+  const [showCreateCustomModal, setShowCreateCustomModal] = useState(false)
 
   useEffect(() => {
     if (open && clinicId) {
@@ -153,23 +156,29 @@ export function AddProceduresModal({
     }
   }
 
-  const addProcedure = (procedure: Procedure) => {
-    // Check if already added
-    const existing = selectedProcedures.find(p => p.id === procedure.id)
+  const addProcedure = (procedure: Procedure, toothRegion: string = '') => {
+    // Check if already added WITH THE SAME TOOTH/REGION
+    const existing = selectedProcedures.find(
+      p => p.id === procedure.id && p.toothRegion === toothRegion
+    )
+
     if (existing) {
-      // Increment quantity
+      // Increment quantity only if same procedure AND same tooth/region
       setSelectedProcedures(prev =>
         prev.map(p =>
-          p.id === procedure.id ? { ...p, quantity: p.quantity + 1 } : p
+          p.id === procedure.id && p.toothRegion === toothRegion
+            ? { ...p, quantity: p.quantity + 1 }
+            : p
         )
       )
     } else {
-      // Add new with editable fields
+      // Add new with editable fields - creates a separate entry for different tooth/region
       setSelectedProcedures(prev => [...prev, {
         ...procedure,
         quantity: 1,
         editableDescription: procedure.description,
-        editableValue: procedure.value
+        editableValue: procedure.value,
+        toothRegion: toothRegion
       }])
     }
 
@@ -178,33 +187,48 @@ export function AddProceduresModal({
     setSearchResults([])
   }
 
-  const removeProcedure = (procedureId: string) => {
-    setSelectedProcedures(prev => prev.filter(p => p.id !== procedureId))
+  const removeProcedure = (index: number) => {
+    setSelectedProcedures(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateQuantity = (procedureId: string, quantity: number) => {
+  const updateQuantity = (index: number, quantity: number) => {
     if (quantity < 1) {
-      removeProcedure(procedureId)
+      removeProcedure(index)
       return
     }
 
     setSelectedProcedures(prev =>
-      prev.map(p => (p.id === procedureId ? { ...p, quantity } : p))
+      prev.map((p, i) => (i === index ? { ...p, quantity } : p))
     )
   }
 
-  const updateDescription = (procedureId: string, description: string) => {
+  const updateDescription = (index: number, description: string) => {
     setSelectedProcedures(prev =>
-      prev.map(p => (p.id === procedureId ? { ...p, editableDescription: description } : p))
+      prev.map((p, i) => (i === index ? { ...p, editableDescription: description } : p))
     )
   }
 
-  const updateValue = (procedureId: string, value: number) => {
+  const updateValue = (index: number, value: number) => {
     // Garante que o valor é sempre um número válido maior que 0
     const validValue = isNaN(value) || value <= 0 ? 0.01 : value
     setSelectedProcedures(prev =>
-      prev.map(p => (p.id === procedureId ? { ...p, editableValue: validValue } : p))
+      prev.map((p, i) => (i === index ? { ...p, editableValue: validValue } : p))
     )
+  }
+
+  const updateToothRegion = (index: number, toothRegion: string) => {
+    setSelectedProcedures(prev =>
+      prev.map((p, i) => (i === index ? { ...p, toothRegion } : p))
+    )
+  }
+
+  const handleCustomProcedureCreated = (procedure: Procedure) => {
+    // Adiciona automaticamente o procedimento customizado recém-criado à lista de selecionados
+    addProcedure(procedure)
+    toast({
+      title: 'Procedimento adicionado',
+      description: 'O procedimento customizado foi criado e adicionado à lista',
+    })
   }
 
   const handleSave = async () => {
@@ -240,6 +264,7 @@ export function AddProceduresModal({
         quantity: proc.quantity,
         procedureBaseId: proc.procedureBaseId,
         insuranceProviderProcedureId: proc.insuranceProviderProcedureId,
+        toothRegion: proc.toothRegion || null,           // Incluir dente/região
         notes: null,
       }))
 
@@ -326,14 +351,26 @@ export function AddProceduresModal({
               )}
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por código ou descrição (min. 2 caracteres)..."
-                className="pl-9"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por código ou descrição (min. 2 caracteres)..."
+                  className="pl-9"
+                />
+              </div>
+              {searchType === 'clinica' && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateCustomModal(true)}
+                  className="gap-2 shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  Criar Novo
+                </Button>
+              )}
             </div>
 
             {/* Search Results */}
@@ -372,9 +409,9 @@ export function AddProceduresModal({
               </Label>
               <ScrollArea className="h-[200px] border rounded-lg">
                 <div className="space-y-3 p-3">
-                  {selectedProcedures.map(procedure => (
+                  {selectedProcedures.map((procedure, index) => (
                     <div
-                      key={procedure.id}
+                      key={`${procedure.id}-${index}`}
                       className="bg-accent/50 p-3 rounded-lg space-y-2"
                     >
                       <div className="flex items-start gap-2">
@@ -388,7 +425,16 @@ export function AddProceduresModal({
                             <Label className="text-xs">Descrição</Label>
                             <Input
                               value={procedure.editableDescription}
-                              onChange={(e) => updateDescription(procedure.id, e.target.value)}
+                              onChange={(e) => updateDescription(index, e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Dente/Região (opcional)</Label>
+                            <Input
+                              value={procedure.toothRegion}
+                              onChange={(e) => updateToothRegion(index, e.target.value)}
+                              placeholder="Ex: 16, 11-21, Superior direito..."
                               className="h-8 text-sm"
                             />
                           </div>
@@ -400,7 +446,7 @@ export function AddProceduresModal({
                                 step="0.01"
                                 min="0"
                                 value={procedure.editableValue}
-                                onChange={(e) => updateValue(procedure.id, parseFloat(e.target.value) || 0)}
+                                onChange={(e) => updateValue(index, parseFloat(e.target.value) || 0)}
                                 className="h-8 text-sm"
                               />
                             </div>
@@ -410,7 +456,7 @@ export function AddProceduresModal({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateQuantity(procedure.id, procedure.quantity - 1)}
+                                  onClick={() => updateQuantity(index, procedure.quantity - 1)}
                                   className="h-8 w-8 p-0"
                                 >
                                   -
@@ -419,13 +465,13 @@ export function AddProceduresModal({
                                   type="number"
                                   min="1"
                                   value={procedure.quantity}
-                                  onChange={(e) => updateQuantity(procedure.id, parseInt(e.target.value) || 1)}
+                                  onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
                                   className="h-8 text-sm text-center"
                                 />
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateQuantity(procedure.id, procedure.quantity + 1)}
+                                  onClick={() => updateQuantity(index, procedure.quantity + 1)}
                                   className="h-8 w-8 p-0"
                                 >
                                   +
@@ -440,7 +486,7 @@ export function AddProceduresModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeProcedure(procedure.id)}
+                          onClick={() => removeProcedure(index)}
                           className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                         >
                           <X className="h-4 w-4" />
@@ -471,6 +517,14 @@ export function AddProceduresModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Modal de criar procedimento customizado */}
+      <CreateCustomProcedureModal
+        open={showCreateCustomModal}
+        onClose={() => setShowCreateCustomModal(false)}
+        clinicId={clinicId}
+        onSuccess={handleCustomProcedureCreated}
+      />
     </Dialog>
   )
 }
