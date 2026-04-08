@@ -32,6 +32,7 @@ import { ConsultationControlTable } from '@/components/reports/ConsultationContr
 import { AlignersTable } from '@/components/reports/AlignersTable'
 import { AlignersKanban } from '@/components/reports/AlignersKanban'
 import { MarketingReport } from '@/components/reports/MarketingReport'
+import { BancoRemarcacoesTable } from '@/components/reports/BancoRemarcacoesTable'
 import { DailyAlignersEntry } from '@/lib/types'
 import { isBrazilClinic } from '@/lib/clinicUtils'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -162,6 +163,7 @@ export default function Reports() {
     if (canViewReport('canViewReportSources')) return 'sources'
     if (canViewReport('canViewReportConsultationControl')) return 'consultationControl'
     if (canViewReport('canViewReportMarketing')) return 'marketing'
+    if (canView('canViewAppointments')) return 'bancoRemarcacoes'
     return 'financial' // fallback
   }
 
@@ -305,6 +307,11 @@ export default function Reports() {
                 {t('reports.marketing')}
               </TabsTrigger>
             )}
+            {canView('canViewAppointments') && (
+              <TabsTrigger value="bancoRemarcacoes" className="text-xs sm:text-sm whitespace-nowrap min-w-[80px]">
+                📋 Remarcações
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -425,6 +432,11 @@ export default function Reports() {
                 startDate={startDate}
                 endDate={endDate}
               />
+            </TabsContent>
+          )}
+          {canView('canViewAppointments') && (
+            <TabsContent value="bancoRemarcacoes">
+              <BancoRemarcacoesTable clinicId={clinic.id} />
             </TabsContent>
           )}
         </div>
