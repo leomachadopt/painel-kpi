@@ -846,7 +846,7 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
 })
 
 // Download/Visualizar documento (PROTEGIDO)
-// Backend faz proxy do Cloudinary (funciona com arquivos públicos ou privados)
+// Backend faz proxy REAL do Cloudinary (funciona com arquivos públicos ou privados)
 router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, res) => {
   const { clinicId, patientId, documentId } = req.params
 
@@ -870,15 +870,32 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
     }
 
     const document = result.rows[0]
-
-    // Usar a secure_url diretamente do banco (file_path)
-    // Essa URL sempre funciona, independente de público/privado
     const cloudinaryUrl = document.file_path
 
-    console.log('Redirecting to Cloudinary URL:', cloudinaryUrl)
+    console.log('Proxying file from Cloudinary:', cloudinaryUrl)
 
-    // Redirecionar para URL do Cloudinary
-    res.redirect(cloudinaryUrl)
+    // Baixar arquivo do Cloudinary e fazer streaming para o cliente
+    // Isso funciona mesmo se o arquivo for privado no Cloudinary
+    const cloudinaryResponse = await fetch(cloudinaryUrl)
+
+    if (!cloudinaryResponse.ok) {
+      console.error('Failed to fetch from Cloudinary:', cloudinaryResponse.status)
+      return res.status(502).json({ error: 'Failed to fetch document from storage' })
+    }
+
+    // Definir headers apropriados
+    const contentType = document.mime_type || cloudinaryResponse.headers.get('content-type') || 'application/octet-stream'
+    const contentLength = cloudinaryResponse.headers.get('content-length')
+
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Content-Disposition', `inline; filename="${document.original_filename}"`)
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength)
+    }
+
+    // Stream do Cloudinary direto para o cliente
+    const buffer = await cloudinaryResponse.arrayBuffer()
+    res.send(Buffer.from(buffer))
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
