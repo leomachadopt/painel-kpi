@@ -1511,8 +1511,8 @@ router.post('/:clinicId/:appointmentId/create-consultation-entry', requirePermis
         id, clinic_id, date, patient_name, code,
         doctor_id, consultation_completed,
         plan_created, plan_presented, plan_accepted,
-        plan_value, price_table_type, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, false, false, false, false, 0, 'clinica', NOW())`,
+        plan_value, price_table_type, insurance_provider_id, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, false, false, false, false, 0, 'clinica', NULL, NOW())`,
       [
         consultationEntryId,
         clinicId,
