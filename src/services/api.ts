@@ -254,15 +254,7 @@ export const patientsApi = {
     apiCall<any[]>(`/patients/${clinicId}/${patientId}/documents`),
 
   downloadDocument: (clinicId: string, patientId: string, documentId: string) =>
-    fetch(`${import.meta.env.VITE_API_URL || ''}/api/patients/${clinicId}/${patientId}/documents/${documentId}/download`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('kpi_token')}`,
-      },
-    }).then(res => {
-      if (!res.ok) throw new Error('Failed to download document')
-      return res.blob()
-    }),
+    apiCall<{ url: string; filename: string; mimeType: string }>(`/patients/${clinicId}/${patientId}/documents/${documentId}/download`),
 
   deleteDocument: (clinicId: string, patientId: string, documentId: string) =>
     apiCall<{ message: string }>(`/patients/${clinicId}/${patientId}/documents/${documentId}`, {

@@ -132,20 +132,20 @@ export function PatientDocuments({
 
   const handleDownload = async (document: PatientDocument) => {
     try {
-      const blob = await patientsApi.downloadDocument(
+      const result = await patientsApi.downloadDocument(
         clinicId,
         patientId,
         document.id
       )
 
-      // Criar URL temporária e fazer download
-      const url = window.URL.createObjectURL(blob)
+      // Usar a URL do Cloudinary diretamente para download
       const a = window.document.createElement('a')
-      a.href = url
-      a.download = document.originalFilename
+      a.href = result.url
+      a.download = result.filename || document.originalFilename
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
       window.document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
       window.document.body.removeChild(a)
     } catch (error: any) {
       toast.error('Erro ao baixar documento')
@@ -154,17 +154,14 @@ export function PatientDocuments({
 
   const handleView = async (document: PatientDocument) => {
     try {
-      const blob = await patientsApi.downloadDocument(
+      const result = await patientsApi.downloadDocument(
         clinicId,
         patientId,
         document.id
       )
 
-      // Criar URL temporária e abrir em nova aba
-      const url = window.URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      // Não revogar imediatamente para permitir visualização
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+      // Abrir URL do Cloudinary diretamente em nova aba
+      window.open(result.url, '_blank')
     } catch (error: any) {
       toast.error('Erro ao visualizar documento')
     }

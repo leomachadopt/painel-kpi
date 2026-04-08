@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 import crypto from 'crypto'
-import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl, downloadFromCloudinary } from '../utils/cloudinary.js'
+import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl } from '../utils/cloudinary.js'
 
 const router = Router()
 
@@ -846,7 +846,7 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
 })
 
 // Download/Visualizar documento (PROTEGIDO)
-// Backend faz proxy REAL do Cloudinary (funciona com arquivos públicos ou privados)
+// Retorna URL assinada do Cloudinary para download direto pelo browser
 router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, res) => {
   const { clinicId, patientId, documentId } = req.params
 
@@ -871,26 +871,26 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     const document = result.rows[0]
 
-    console.log('Proxying file from Cloudinary:', document.filename)
+    console.log('Generating download URL for:', document.filename)
 
-    // Baixar arquivo do Cloudinary - passa a secure_url (file_path) como método primário
-    const resourceType = document.cloudinary_resource_type || 'raw'
-    const fileBuffer = await downloadFromCloudinary(
-      document.filename,
-      resourceType as 'image' | 'raw' | 'video',
-      document.file_path // secure_url salva no banco
-    )
+    // Retornar URL do Cloudinary para download direto pelo browser
+    // Usar file_path (secure_url) salva no banco - é a URL pública do Cloudinary
+    let downloadUrl = document.file_path
 
-    // Definir headers apropriados
-    const contentType = document.mime_type || 'application/octet-stream'
+    // Se não tiver file_path, construir URL usando o SDK
+    if (!downloadUrl) {
+      const resourceType = document.cloudinary_resource_type || 'raw'
+      downloadUrl = getCloudinarySignedUrl(
+        document.filename,
+        resourceType as 'image' | 'raw' | 'video'
+      )
+    }
 
-    res.setHeader('Content-Type', contentType)
-    res.setHeader('Content-Disposition', `inline; filename="${document.original_filename}"`)
-    res.setHeader('Content-Length', fileBuffer.length.toString())
-    res.setHeader('Cache-Control', 'public, max-age=31536000') // Cache por 1 ano
-
-    // Enviar arquivo para o cliente
-    res.send(fileBuffer)
+    res.json({
+      url: downloadUrl,
+      filename: document.original_filename,
+      mimeType: document.mime_type || 'application/octet-stream'
+    })
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
