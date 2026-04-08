@@ -846,7 +846,7 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
 })
 
 // Download/Visualizar documento (PROTEGIDO)
-// Com Cloudinary, o file_path já é a URL segura do arquivo
+// Backend faz proxy do Cloudinary (funciona com arquivos públicos ou privados)
 router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, res) => {
   const { clinicId, patientId, documentId } = req.params
 
@@ -871,20 +871,14 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     const document = result.rows[0]
 
-    // Gerar URL assinada do Cloudinary (válida por 1 hora)
-    // O filename contém o public_id do Cloudinary
-    // Usar o resource_type correto salvo no banco
-    const resourceType = document.cloudinary_resource_type || 'raw'
-    const signedUrl = getCloudinarySignedUrl(document.filename, resourceType as any, 3600)
+    // Usar a secure_url diretamente do banco (file_path)
+    // Essa URL sempre funciona, independente de público/privado
+    const cloudinaryUrl = document.file_path
 
-    console.log('Generated signed URL for document:', {
-      public_id: document.filename,
-      resource_type: resourceType,
-      url: signedUrl
-    })
+    console.log('Redirecting to Cloudinary URL:', cloudinaryUrl)
 
-    // Redirecionar para URL assinada
-    res.redirect(signedUrl)
+    // Redirecionar para URL do Cloudinary
+    res.redirect(cloudinaryUrl)
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
