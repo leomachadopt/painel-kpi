@@ -83,6 +83,7 @@ export async function deleteFromCloudinary(
 
 /**
  * Obter URL segura e assinada de um arquivo (com expiração)
+ * Para arquivos authenticated do Cloudinary
  * @param publicId - ID público do arquivo
  * @param resourceType - Tipo de recurso
  * @param expiresIn - Tempo de expiração em segundos (padrão: 1 hora)
@@ -92,16 +93,25 @@ export function getCloudinarySignedUrl(
   resourceType: 'image' | 'raw' | 'video' = 'raw',
   expiresIn: number = 3600 // 1 hora
 ): string {
-  // Calcular timestamp de expiração
-  const expiration = Math.floor(Date.now() / 1000) + expiresIn
+  try {
+    // Usar o método utils.private_download_url para arquivos authenticated
+    const downloadUrl = cloudinary.utils.private_download_url(publicId, '', {
+      resource_type: resourceType,
+      expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+      attachment: false, // inline para visualizar no browser
+    })
 
-  return cloudinary.url(publicId, {
-    resource_type: resourceType,
-    secure: true,
-    sign_url: true,
-    type: 'authenticated',
-    expires_at: expiration,
-  })
+    return downloadUrl
+  } catch (error: any) {
+    console.error('Error generating signed URL:', error)
+    // Fallback para URL assinada padrão
+    return cloudinary.url(publicId, {
+      resource_type: resourceType,
+      secure: true,
+      sign_url: true,
+      type: 'authenticated',
+    })
+  }
 }
 
 /**
