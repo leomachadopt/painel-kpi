@@ -121,7 +121,8 @@ export function getCloudinaryUrl(
 }
 
 /**
- * Baixar arquivo do Cloudinary usando credenciais (funciona com arquivos públicos ou privados)
+ * Baixar arquivo do Cloudinary usando API autenticada
+ * Funciona mesmo se a conta Cloudinary estiver em modo "Restricted"
  * @param publicId - ID público do arquivo
  * @param resourceType - Tipo de recurso
  * @returns Buffer do arquivo
@@ -131,20 +132,46 @@ export async function downloadFromCloudinary(
   resourceType: 'image' | 'raw' | 'video' = 'raw'
 ): Promise<Buffer> {
   try {
-    // Gerar URL assinada com as credenciais
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new Error('Cloudinary credentials not configured')
+    }
+
+    // Gerar timestamp para assinatura
+    const timestamp = Math.round(Date.now() / 1000)
+
+    // Criar assinatura usando crypto
+    const crypto = await import('crypto')
+    const stringToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`
+    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex')
+
+    // URL da API do Cloudinary com autenticação
     const url = cloudinary.url(publicId, {
       resource_type: resourceType,
       secure: true,
+      type: 'upload',
       sign_url: true,
-      type: 'upload'
+      api_key: apiKey,
+      signature,
+      timestamp
     })
 
-    console.log('Downloading from Cloudinary:', url)
+    console.log('Downloading from Cloudinary with auth:', publicId)
 
-    // Fazer fetch com a URL assinada
-    const response = await fetch(url)
+    // Fazer fetch com autenticação básica
+    const authHeader = 'Basic ' + Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': authHeader
+      }
+    })
 
     if (!response.ok) {
+      console.error('Cloudinary download failed:', response.status, response.statusText)
       throw new Error(`Cloudinary returned ${response.status}: ${response.statusText}`)
     }
 
