@@ -35,9 +35,16 @@ export async function uploadToCloudinary(
       ? base64Data
       : `data:application/octet-stream;base64,${base64Data}`
 
+    // Detectar PDFs e forçar como 'raw' (Cloudinary classifica PDFs como 'image' erroneamente)
+    let finalResourceType = resourceType
+    if (resourceType === 'auto' && base64WithPrefix.includes('application/pdf')) {
+      finalResourceType = 'raw'
+      console.log('Detected PDF, forcing resource_type: raw')
+    }
+
     const result = await cloudinary.uploader.upload(base64WithPrefix, {
       folder,
-      resource_type: resourceType,
+      resource_type: finalResourceType,
       // Gerar um ID único
       use_filename: false,
       unique_filename: true,

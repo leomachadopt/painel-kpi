@@ -873,18 +873,15 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     console.log('Generating download URL for:', document.filename)
 
-    // Retornar URL do Cloudinary para download direto pelo browser
-    // Usar file_path (secure_url) salva no banco - é a URL pública do Cloudinary
-    let downloadUrl = document.file_path
+    // Sempre construir URL usando o SDK com o resource_type correto do banco
+    // Não usar file_path porque pode ter sido salva com tipo errado (ex: /image/ para PDFs)
+    const resourceType = document.cloudinary_resource_type || 'raw'
+    const downloadUrl = getCloudinarySignedUrl(
+      document.filename,
+      resourceType as 'image' | 'raw' | 'video'
+    )
 
-    // Se não tiver file_path, construir URL usando o SDK
-    if (!downloadUrl) {
-      const resourceType = document.cloudinary_resource_type || 'raw'
-      downloadUrl = getCloudinarySignedUrl(
-        document.filename,
-        resourceType as 'image' | 'raw' | 'video'
-      )
-    }
+    console.log('Generated URL:', downloadUrl, 'for resource_type:', resourceType)
 
     res.json({
       url: downloadUrl,
