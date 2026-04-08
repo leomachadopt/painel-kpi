@@ -913,7 +913,8 @@ router.delete('/:clinicId/:patientId/documents/:documentId', async (req, res) =>
     // Deletar do Cloudinary
     // O filename contém o public_id do Cloudinary
     try {
-      await deleteFromCloudinary(document.filename, 'auto' as any)
+      const resourceType = document.cloudinary_resource_type || 'raw'
+      await deleteFromCloudinary(document.filename, resourceType as any)
       console.log('Deleted from Cloudinary:', document.filename)
     } catch (cloudinaryError: any) {
       console.error('Error deleting from Cloudinary:', cloudinaryError)
