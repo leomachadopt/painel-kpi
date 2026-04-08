@@ -41,6 +41,9 @@ export async function uploadToCloudinary(
       // Gerar um ID único
       use_filename: false,
       unique_filename: true,
+      // Garantir acesso público
+      type: 'upload',
+      access_mode: 'public',
     })
 
     return {
