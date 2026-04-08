@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 import crypto from 'crypto'
-import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js'
+import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl } from '../utils/cloudinary.js'
 
 const router = Router()
 
@@ -869,9 +869,12 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     const document = result.rows[0]
 
-    // Redirecionar para URL do Cloudinary
-    // O file_path contém a secure_url do Cloudinary
-    res.redirect(document.file_path)
+    // Gerar URL assinada do Cloudinary (válida por 1 hora)
+    // O filename contém o public_id do Cloudinary
+    const signedUrl = getCloudinarySignedUrl(document.filename, 'raw', 3600)
+
+    // Redirecionar para URL assinada
+    res.redirect(signedUrl)
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })

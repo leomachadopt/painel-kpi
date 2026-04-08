@@ -41,9 +41,8 @@ export async function uploadToCloudinary(
       // Gerar um ID único
       use_filename: false,
       unique_filename: true,
-      // Garantir acesso público
-      type: 'upload',
-      access_mode: 'public',
+      // Upload com autenticação (privado)
+      type: 'authenticated',
     })
 
     return {
@@ -71,7 +70,11 @@ export async function deleteFromCloudinary(
   resourceType: 'image' | 'raw' | 'video' = 'raw'
 ): Promise<void> {
   try {
-    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType })
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+      type: 'authenticated',
+      invalidate: true
+    })
   } catch (error: any) {
     console.error('Cloudinary delete error:', error)
     throw new Error(`Failed to delete from Cloudinary: ${error.message}`)
@@ -79,7 +82,30 @@ export async function deleteFromCloudinary(
 }
 
 /**
- * Obter URL segura de um arquivo
+ * Obter URL segura e assinada de um arquivo (com expiração)
+ * @param publicId - ID público do arquivo
+ * @param resourceType - Tipo de recurso
+ * @param expiresIn - Tempo de expiração em segundos (padrão: 1 hora)
+ */
+export function getCloudinarySignedUrl(
+  publicId: string,
+  resourceType: 'image' | 'raw' | 'video' = 'raw',
+  expiresIn: number = 3600 // 1 hora
+): string {
+  // Calcular timestamp de expiração
+  const expiration = Math.floor(Date.now() / 1000) + expiresIn
+
+  return cloudinary.url(publicId, {
+    resource_type: resourceType,
+    secure: true,
+    sign_url: true,
+    type: 'authenticated',
+    expires_at: expiration,
+  })
+}
+
+/**
+ * Obter URL segura de um arquivo (sem assinatura - só funciona se arquivo for público)
  * @param publicId - ID público do arquivo
  * @param resourceType - Tipo de recurso
  */
