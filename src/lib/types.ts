@@ -523,6 +523,7 @@ export interface PatientDocument {
   description?: string | null
   uploadedBy?: string | null
   uploadedAt: string
+  cloudinaryResourceType?: 'image' | 'raw' | 'video' | null
 }
 
 export interface DailyAlignersEntry {

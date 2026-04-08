@@ -751,8 +751,8 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
       await query(
         `INSERT INTO patient_documents (
           id, patient_id, filename, original_filename, file_path, file_size,
-          mime_type, document_type, description, uploaded_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          mime_type, document_type, description, uploaded_by, cloudinary_resource_type
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           documentId,
           patientId,
@@ -763,7 +763,8 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
           mimeType || null,
           documentType || null,
           description || null,
-          req.user?.sub || null
+          req.user?.sub || null,
+          cloudinaryResult.resource_type // Guardar tipo de recurso do Cloudinary
         ]
       )
       console.log('Database record created successfully')
@@ -815,7 +816,7 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
     const result = await query(
       `SELECT
         id, patient_id, filename, original_filename, file_path, file_size,
-        mime_type, document_type, description, uploaded_by, uploaded_at
+        mime_type, document_type, description, uploaded_by, uploaded_at, cloudinary_resource_type
       FROM patient_documents
       WHERE patient_id = $1
       ORDER BY uploaded_at DESC`,
@@ -834,7 +835,8 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
         documentType: row.document_type,
         description: row.description,
         uploadedBy: row.uploaded_by,
-        uploadedAt: row.uploaded_at
+        uploadedAt: row.uploaded_at,
+        cloudinaryResourceType: row.cloudinary_resource_type
       }))
     )
   } catch (error: any) {
@@ -871,7 +873,15 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     // Gerar URL assinada do Cloudinary (válida por 1 hora)
     // O filename contém o public_id do Cloudinary
-    const signedUrl = getCloudinarySignedUrl(document.filename, 'raw', 3600)
+    // Usar o resource_type correto salvo no banco
+    const resourceType = document.cloudinary_resource_type || 'raw'
+    const signedUrl = getCloudinarySignedUrl(document.filename, resourceType as any, 3600)
+
+    console.log('Generated signed URL for document:', {
+      public_id: document.filename,
+      resource_type: resourceType,
+      url: signedUrl
+    })
 
     // Redirecionar para URL assinada
     res.redirect(signedUrl)
