@@ -871,24 +871,15 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     const document = result.rows[0]
 
-    console.log('Downloading from Cloudinary:', document.filename)
+    // Usar a secure_url salva no banco (file_path)
+    // Essa é a URL pública retornada pelo Cloudinary no upload
+    const cloudinaryUrl = document.file_path
 
-    // Baixar arquivo do Cloudinary usando SDK (funciona com arquivos públicos ou privados)
-    const resourceType = document.cloudinary_resource_type || 'raw'
-    const fileBuffer = await downloadFromCloudinary(
-      document.filename,
-      resourceType as 'image' | 'raw' | 'video'
-    )
+    console.log('Redirecting to Cloudinary URL:', cloudinaryUrl)
 
-    // Definir headers apropriados
-    const contentType = document.mime_type || 'application/octet-stream'
-
-    res.setHeader('Content-Type', contentType)
-    res.setHeader('Content-Disposition', `inline; filename="${document.original_filename}"`)
-    res.setHeader('Content-Length', fileBuffer.length.toString())
-
-    // Enviar arquivo para o cliente
-    res.send(fileBuffer)
+    // Simplesmente redirecionar para a URL pública do Cloudinary
+    // Se ainda der 401, deletar todos os documentos antigos e refazer upload
+    res.redirect(cloudinaryUrl)
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
