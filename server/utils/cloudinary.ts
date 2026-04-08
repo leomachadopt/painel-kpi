@@ -121,7 +121,7 @@ export function getCloudinaryUrl(
 }
 
 /**
- * Baixar arquivo do Cloudinary usando API autenticada
+ * Baixar arquivo do Cloudinary usando private_download_url
  * Funciona mesmo se a conta Cloudinary estiver em modo "Restricted"
  * @param publicId - ID público do arquivo
  * @param resourceType - Tipo de recurso
@@ -132,47 +132,38 @@ export async function downloadFromCloudinary(
   resourceType: 'image' | 'raw' | 'video' = 'raw'
 ): Promise<Buffer> {
   try {
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-    const apiKey = process.env.CLOUDINARY_API_KEY
-    const apiSecret = process.env.CLOUDINARY_API_SECRET
-
-    if (!cloudName || !apiKey || !apiSecret) {
-      throw new Error('Cloudinary credentials not configured')
-    }
-
-    // Gerar timestamp para assinatura
-    const timestamp = Math.round(Date.now() / 1000)
-
-    // Criar assinatura usando crypto
-    const crypto = await import('crypto')
-    const stringToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`
-    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex')
-
-    // URL da API do Cloudinary com autenticação
-    const url = cloudinary.url(publicId, {
+    // Gerar URL privada assinada usando o método oficial do SDK
+    // Isso funciona mesmo com conta Restricted
+    const privateUrl = cloudinary.utils.private_download_url(publicId, 'pdf', {
       resource_type: resourceType,
-      secure: true,
-      type: 'upload',
-      sign_url: true,
-      api_key: apiKey,
-      signature,
-      timestamp
+      attachment: false,
+      expires_at: Math.floor(Date.now() / 1000) + 3600 // Expira em 1 hora
     })
 
-    console.log('Downloading from Cloudinary with auth:', publicId)
+    console.log('Downloading from Cloudinary private URL:', publicId)
 
-    // Fazer fetch com autenticação básica
-    const authHeader = 'Basic ' + Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
-
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': authHeader
-      }
-    })
+    // Fazer download usando a URL privada assinada
+    const response = await fetch(privateUrl)
 
     if (!response.ok) {
       console.error('Cloudinary download failed:', response.status, response.statusText)
-      throw new Error(`Cloudinary returned ${response.status}: ${response.statusText}`)
+
+      // Se falhar, tentar a URL pública direta como fallback
+      const publicUrl = cloudinary.url(publicId, {
+        resource_type: resourceType,
+        secure: true,
+        type: 'upload'
+      })
+
+      console.log('Trying public URL as fallback:', publicUrl)
+      const fallbackResponse = await fetch(publicUrl)
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`)
+      }
+
+      const arrayBuffer = await fallbackResponse.arrayBuffer()
+      return Buffer.from(arrayBuffer)
     }
 
     const arrayBuffer = await response.arrayBuffer()
