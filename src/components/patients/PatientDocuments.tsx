@@ -78,9 +78,9 @@ export function PatientDocuments({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validar tamanho (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Arquivo deve ter no máximo 10MB')
+    // Validar tamanho (max 3MB devido ao limite de 4.5MB do body JSON em base64)
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Arquivo deve ter no máximo 3MB')
       return
     }
 
@@ -250,7 +250,7 @@ export function PatientDocuments({
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Tamanho máximo: 10MB
+              Tamanho máximo: 3MB
             </p>
           </div>
 

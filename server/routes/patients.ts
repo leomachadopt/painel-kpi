@@ -732,8 +732,8 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     // Gerar ID único para o documento
     const documentId = crypto.randomUUID()
 
-    // Criar diretório de uploads se não existir
-    const uploadsDir = path.join(__dirname, '../../uploads/patient-documents', clinicId)
+    // Criar diretório de uploads se não existir (seguindo o padrão de orders: public/uploads/)
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'patient-documents', clinicId)
     console.log('Upload directory:', uploadsDir)
 
     if (!fs.existsSync(uploadsDir)) {
@@ -754,7 +754,7 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     fs.writeFileSync(filePath, buffer)
 
     // Salvar no banco de dados
-    const relativePath = `uploads/patient-documents/${clinicId}/${uniqueFilename}`
+    const relativePath = `public/uploads/patient-documents/${clinicId}/${uniqueFilename}`
     await query(
       `INSERT INTO patient_documents (
         id, patient_id, filename, original_filename, file_path, file_size,
@@ -863,7 +863,7 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
     const document = result.rows[0]
 
     // Construir caminho do arquivo
-    const filePath = path.join(__dirname, '../..', document.file_path)
+    const filePath = path.join(process.cwd(), document.file_path)
 
     // Verificar se arquivo existe
     if (!fs.existsSync(filePath)) {
@@ -913,7 +913,7 @@ router.delete('/:clinicId/:patientId/documents/:documentId', async (req, res) =>
     const document = result.rows[0]
 
     // Deletar arquivo do disco
-    const filePath = path.join(__dirname, '../..', document.file_path)
+    const filePath = path.join(process.cwd(), document.file_path)
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath)
     }
