@@ -625,6 +625,12 @@ export const dailyEntriesApi = {
       apiCall<{ message: string }>(`/daily-entries/orders/${clinicId}/${orderId}`, {
         method: 'DELETE',
       }),
+
+    merge: (clinicId: string, orderIds: string[], targetData?: { date?: string; orderNumber?: string; observations?: string }) =>
+      apiCall<any>(`/daily-entries/orders/${clinicId}/merge`, {
+        method: 'POST',
+        body: JSON.stringify({ orderIds, targetData }),
+      }),
   },
 
   // Order Items

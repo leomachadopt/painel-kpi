@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, Loader2, Package, Eye, Edit2, Trash2, CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react'
+import { Search, Loader2, Package, Eye, Edit2, Trash2, CheckCircle2, XCircle, ClipboardCheck, Package2, X } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ import { ViewOrderDialog } from '@/components/orders/ViewOrderDialog'
 import { EditOrderDialog } from '@/components/orders/EditOrderDialog'
 import { RejectOrderDialog } from '@/components/orders/RejectOrderDialog'
 import { CheckOrderDialog } from '@/components/orders/CheckOrderDialog'
+import { MergeOrdersDialog } from '@/components/orders/MergeOrdersDialog'
 import { toast } from 'sonner'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -73,6 +75,8 @@ export default function Orders() {
   const [approvingOrderId, setApprovingOrderId] = useState<string | null>(null)
   const [rejectOrderId, setRejectOrderId] = useState<string | null>(null)
   const [checkOrderId, setCheckOrderId] = useState<string | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set())
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false)
 
   useEffect(() => {
     if (clinicId) {
@@ -167,6 +171,44 @@ export default function Orders() {
     } finally {
       setApprovingOrderId(null)
     }
+  }
+
+  const toggleOrderSelection = (orderId: string, order: DailyOrderEntry) => {
+    // Não permitir selecionar pedidos aprovados
+    if (order.approved) {
+      toast.error('Não é possível selecionar pedidos já aprovados')
+      return
+    }
+
+    const newSelection = new Set(selectedOrderIds)
+
+    if (newSelection.has(orderId)) {
+      newSelection.delete(orderId)
+    } else {
+      // Validar fornecedor se já houver seleções
+      if (newSelection.size > 0) {
+        const firstSelectedOrder = orders.find(o => newSelection.has(o.id))
+        if (firstSelectedOrder && firstSelectedOrder.supplierId !== order.supplierId) {
+          toast.error('Todos os pedidos devem ser do mesmo fornecedor')
+          return
+        }
+      }
+      newSelection.add(orderId)
+    }
+
+    setSelectedOrderIds(newSelection)
+  }
+
+  const clearSelection = () => {
+    setSelectedOrderIds(new Set())
+  }
+
+  const handleMergeOrders = () => {
+    if (selectedOrderIds.size < 2) {
+      toast.error('Selecione pelo menos 2 pedidos para unificar')
+      return
+    }
+    setMergeDialogOpen(true)
   }
 
   if (!clinicId) {
@@ -273,6 +315,22 @@ export default function Orders() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {canEditOrders && (
+                      <TableHead className="w-[40px]">
+                        <div className="flex items-center justify-center">
+                          {selectedOrderIds.size > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={clearSelection}
+                              title="Limpar seleção"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableHead>
+                    )}
                     <TableHead>Data</TableHead>
                     <TableHead>Fornecedor</TableHead>
                     <TableHead>Número do Pedido</TableHead>
@@ -285,8 +343,23 @@ export default function Orders() {
                 <TableBody>
                   {orders.map((order) => {
                     const status = getOrderStatus(order)
+                    const isSelected = selectedOrderIds.has(order.id)
+                    const canSelect = canEditOrders && !order.approved
+
                     return (
-                      <TableRow key={order.id}>
+                      <TableRow key={order.id} className={isSelected ? 'bg-muted/50' : ''}>
+                        {canEditOrders && (
+                          <TableCell className="w-[40px]">
+                            <div className="flex items-center justify-center">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleOrderSelection(order.id, order)}
+                                disabled={!canSelect}
+                                title={!canSelect ? 'Pedidos aprovados não podem ser selecionados' : undefined}
+                              />
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>
                           {order.date
                             ? format(new Date(order.date), 'dd/MM/yyyy', { locale: ptBR })
@@ -386,6 +459,43 @@ export default function Orders() {
         </CardContent>
       </Card>
 
+      {/* Barra de Ação Flutuante */}
+      {canEditOrders && selectedOrderIds.size > 0 && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+          <Card className="shadow-lg border-2">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Package2 className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">
+                    {selectedOrderIds.size} pedido{selectedOrderIds.size > 1 ? 's' : ''} selecionado{selectedOrderIds.size > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleMergeOrders}
+                    disabled={selectedOrderIds.size < 2}
+                  >
+                    <Package2 className="h-4 w-4 mr-2" />
+                    Unificar Pedidos
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearSelection}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Dialogs */}
       <ViewOrderDialog
         open={viewOrderId !== null}
@@ -420,6 +530,17 @@ export default function Orders() {
         orderId={checkOrderId}
         clinicId={clinicId || ''}
         onSuccess={() => {
+          loadOrders()
+        }}
+      />
+
+      <MergeOrdersDialog
+        open={mergeDialogOpen}
+        onOpenChange={setMergeDialogOpen}
+        orderIds={Array.from(selectedOrderIds)}
+        clinicId={clinicId || ''}
+        onSuccess={() => {
+          clearSelection()
           loadOrders()
         }}
       />

@@ -4516,26 +4516,220 @@ router.delete('/orders/:clinicId/:orderId/documents/:documentId', async (req, re
 router.delete('/orders/:clinicId/:orderId', async (req, res) => {
   const { clinicId } = req.params
   const hasPermission = await canEditOrders(req, clinicId)
-  
+
   if (!hasPermission) {
     return res.status(403).json({ error: 'Forbidden' })
   }
-  
+
   try {
     const { orderId } = req.params
     const result = await query(
       `DELETE FROM daily_order_entries WHERE id = $1 AND clinic_id = $2 RETURNING *`,
       [orderId, clinicId]
     )
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Order not found' })
     }
-    
+
     res.json({ message: 'Order deleted successfully' })
   } catch (error) {
     console.error('Delete order error:', error)
     res.status(500).json({ error: 'Failed to delete order' })
+  }
+})
+
+// Rota para unificar múltiplos pedidos
+router.post('/orders/:clinicId/merge', async (req, res) => {
+  const { clinicId } = req.params
+  const hasPermission = await canEditOrders(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  try {
+    const { orderIds, targetData } = req.body
+
+    // Validações básicas
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length < 2) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'É necessário selecionar pelo menos 2 pedidos para unificar'
+      })
+    }
+
+    // Buscar todos os pedidos
+    const ordersResult = await query(
+      `SELECT * FROM daily_order_entries
+       WHERE id = ANY($1) AND clinic_id = $2
+       ORDER BY date DESC`,
+      [orderIds, clinicId]
+    )
+
+    if (ordersResult.rows.length !== orderIds.length) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Alguns pedidos não foram encontrados'
+      })
+    }
+
+    const orders = ordersResult.rows
+
+    // Validar que todos os pedidos não estão aprovados
+    const approvedOrders = orders.filter(o => o.approved)
+    if (approvedOrders.length > 0) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Não é possível unificar pedidos já aprovados'
+      })
+    }
+
+    // Validar que todos os pedidos têm o mesmo fornecedor
+    const supplierIds = [...new Set(orders.map(o => o.supplier_id))]
+    if (supplierIds.length > 1) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Todos os pedidos devem ser do mesmo fornecedor'
+      })
+    }
+
+    const supplierId = supplierIds[0]
+
+    // Buscar todos os itens de todos os pedidos
+    const itemsResult = await query(
+      `SELECT oie.*, oi.name as item_name
+       FROM order_item_entries oie
+       JOIN order_items oi ON oie.item_id = oi.id
+       WHERE oie.order_id = ANY($1)`,
+      [orderIds]
+    )
+
+    // Consolidar itens: agrupar por item_id e somar quantidades
+    const consolidatedItems = new Map()
+
+    for (const item of itemsResult.rows) {
+      const itemId = item.item_id
+
+      if (consolidatedItems.has(itemId)) {
+        const existing = consolidatedItems.get(itemId)
+        const totalQuantity = existing.quantity + item.quantity
+        const totalWeight = (existing.quantity * existing.unitPrice) + (item.quantity * (item.unit_price || 0))
+        const avgPrice = totalWeight / totalQuantity
+
+        consolidatedItems.set(itemId, {
+          itemId,
+          itemName: item.item_name,
+          quantity: totalQuantity,
+          unitPrice: avgPrice > 0 ? avgPrice : existing.unitPrice,
+          notes: existing.notes || item.notes || null,
+        })
+      } else {
+        consolidatedItems.set(itemId, {
+          itemId,
+          itemName: item.item_name,
+          quantity: item.quantity,
+          unitPrice: item.unit_price || 0,
+          notes: item.notes || null,
+        })
+      }
+    }
+
+    const items = Array.from(consolidatedItems.values())
+
+    // Calcular total
+    const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
+
+    // Determinar data: usar a fornecida ou a mais recente
+    const mergedDate = targetData?.date || orders[0].date
+    const mergedOrderNumber = targetData?.orderNumber?.trim() || null
+    const mergedObservations = targetData?.observations?.trim() ||
+      `Pedido unificado de ${orderIds.length} pedidos em ${new Date().toLocaleDateString('pt-PT')}`
+
+    // Criar novo pedido unificado
+    const newOrderId = `order-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+    const newOrderResult = await query(
+      `INSERT INTO daily_order_entries
+       (id, clinic_id, date, supplier_id, order_number, total, observations, approved, requires_prepayment, invoice_pending)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        newOrderId,
+        clinicId,
+        mergedDate,
+        supplierId,
+        mergedOrderNumber,
+        total,
+        mergedObservations,
+        false, // approved
+        false, // requires_prepayment
+        false, // invoice_pending
+      ]
+    )
+
+    const newOrder = newOrderResult.rows[0]
+
+    // Inserir itens consolidados
+    const insertedItems = []
+    for (const item of items) {
+      const itemEntryId = `order-item-${newOrderId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+      await query(
+        `INSERT INTO order_item_entries
+         (id, order_id, item_id, quantity, unit_price, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          itemEntryId,
+          newOrderId,
+          item.itemId,
+          item.quantity,
+          item.unitPrice,
+          item.notes,
+        ]
+      )
+
+      insertedItems.push({
+        id: itemEntryId,
+        orderId: newOrderId,
+        itemId: item.itemId,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        notes: item.notes,
+      })
+    }
+
+    // Deletar pedidos originais
+    await query(
+      `DELETE FROM daily_order_entries WHERE id = ANY($1) AND clinic_id = $2`,
+      [orderIds, clinicId]
+    )
+
+    // Buscar nome do fornecedor
+    const supplierResult = await query(`SELECT name FROM suppliers WHERE id = $1`, [supplierId])
+    const supplierName = supplierResult.rows[0]?.name || ''
+
+    res.json({
+      id: newOrder.id,
+      clinicId: newOrder.clinic_id,
+      date: newOrder.date,
+      supplierId: newOrder.supplier_id,
+      supplierName,
+      orderNumber: newOrder.order_number || null,
+      total: newOrder.total ? parseFloat(newOrder.total) : 0,
+      observations: newOrder.observations || null,
+      items: insertedItems,
+      approved: newOrder.approved || false,
+      requiresPrepayment: newOrder.requires_prepayment || false,
+      invoicePending: newOrder.invoice_pending || false,
+      mergedFrom: orderIds,
+      createdAt: newOrder.created_at,
+      updatedAt: newOrder.updated_at,
+    })
+  } catch (error: any) {
+    console.error('Merge orders error:', error)
+    res.status(500).json({ error: 'Failed to merge orders', message: error.message })
   }
 })
 
