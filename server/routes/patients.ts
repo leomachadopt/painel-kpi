@@ -700,14 +700,20 @@ router.delete('/:clinicId/:patientId', async (req, res) => {
 // Upload documento para paciente
 router.post('/:clinicId/:patientId/documents', async (req, res) => {
   const { clinicId, patientId } = req.params
+
+  console.log('Upload document request:', { clinicId, patientId, user: req.user })
+
   const hasPermission = await canEditPatients(req, clinicId)
 
   if (!hasPermission) {
+    console.log('Permission denied for user:', req.user)
     return res.status(403).json({ error: 'Permission denied' })
   }
 
   try {
     const { file, filename, mimeType, documentType, description } = req.body
+
+    console.log('Upload data:', { filename, mimeType, documentType, fileSize: file?.length })
 
     if (!file || !filename) {
       return res.status(400).json({ error: 'File and filename are required' })
@@ -728,7 +734,10 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
 
     // Criar diretório de uploads se não existir
     const uploadsDir = path.join(__dirname, '../../uploads/patient-documents', clinicId)
+    console.log('Upload directory:', uploadsDir)
+
     if (!fs.existsSync(uploadsDir)) {
+      console.log('Creating directory:', uploadsDir)
       fs.mkdirSync(uploadsDir, { recursive: true })
     }
 
@@ -737,6 +746,7 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
     const uniqueFilename = `${timestamp}-${documentId}-${safeFilename}`
     const filePath = path.join(uploadsDir, uniqueFilename)
+    console.log('File path:', filePath)
 
     // Decodificar base64 e salvar arquivo
     const base64Data = file.replace(/^data:[^;]+;base64,/, '')
