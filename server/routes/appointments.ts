@@ -390,6 +390,8 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
       newPatientName,
       newPatientWhatsapp,
       sourceId,
+      // Reschedule field
+      rescheduledFrom,
     } = req.body
 
     if (!date || !scheduledStart || !scheduledEnd) {
@@ -510,8 +512,8 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
       `INSERT INTO appointments (
         id, clinic_id, doctor_id, cabinet_id, appointment_type_id,
         patient_name, patient_code, date, scheduled_start, scheduled_end,
-        status, is_new_patient, notes, created_by, consultation_entry_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        status, is_new_patient, notes, created_by, consultation_entry_id, rescheduled_from
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [
         appointmentId,
         clinicId,
@@ -528,8 +530,19 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
         notes || null,
         userId,
         consultationEntryId, // Link to consultation entry
+        rescheduledFrom || null,
       ]
     )
+
+    // If this is a reschedule, update the original appointment with rescheduled_to
+    if (rescheduledFrom) {
+      await query(
+        `UPDATE appointments
+         SET rescheduled_to = $1
+         WHERE id = $2 AND clinic_id = $3`,
+        [appointmentId, rescheduledFrom, clinicId]
+      )
+    }
 
     res.status(201).json({
       id: appointmentId,
@@ -822,15 +835,11 @@ router.delete('/:clinicId/types/:typeId', requirePermission('canEditClinicConfig
   }
 })
 
-// POST /api/appointments/:clinicId/:appointmentId/reschedule - Reschedule appointment
+// POST /api/appointments/:clinicId/:appointmentId/reschedule - Reschedule appointment (envia para banco)
 router.post('/:clinicId/:appointmentId/reschedule', requirePermission('canEditAppointments'), async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
-    const { date, scheduledStart, scheduledEnd, reason } = req.body
-
-    if (!date || !scheduledStart || !scheduledEnd) {
-      return res.status(400).json({ error: 'Data, hora de início e fim são obrigatórios' })
-    }
+    const { reason } = req.body
 
     // Get original appointment
     const originalResult = await query(
@@ -844,89 +853,49 @@ router.post('/:clinicId/:appointmentId/reschedule', requirePermission('canEditAp
 
     const original = originalResult.rows[0]
 
-    // Check for conflicts in new slot
-    if (original.doctor_id) {
-      const doctorConflict = await query(
-        `SELECT id FROM appointments
-         WHERE clinic_id = $1 AND date = $2 AND doctor_id = $3
-           AND status NOT IN ('cancelled', 'no_show', 'rescheduled')
-           AND (
-             (scheduled_start < $5 AND scheduled_end > $4) OR
-             (scheduled_start >= $4 AND scheduled_start < $5)
-           )`,
-        [clinicId, date, original.doctor_id, scheduledStart, scheduledEnd]
-      )
-
-      if (doctorConflict.rows.length > 0) {
-        return res.status(409).json({ error: 'Médico já tem consulta agendada neste horário' })
-      }
-    }
-
-    if (original.cabinet_id) {
-      const cabinetConflict = await query(
-        `SELECT id FROM appointments
-         WHERE clinic_id = $1 AND date = $2 AND cabinet_id = $3
-           AND status NOT IN ('cancelled', 'no_show', 'rescheduled')
-           AND (
-             (scheduled_start < $5 AND scheduled_end > $4) OR
-             (scheduled_start >= $4 AND scheduled_start < $5)
-           )`,
-        [clinicId, date, original.cabinet_id, scheduledStart, scheduledEnd]
-      )
-
-      if (cabinetConflict.rows.length > 0) {
-        return res.status(409).json({ error: 'Consultório já está ocupado neste horário' })
-      }
-    }
-
-    const newAppointmentId = crypto.randomUUID()
+    // Create entry in pending_reschedules
+    const pendingRescheduleId = crypto.randomUUID()
     const userId = (req as any).user?.id || null
 
-    // Create new appointment
     await query(
-      `INSERT INTO appointments (
-        id, clinic_id, doctor_id, cabinet_id, appointment_type_id,
-        patient_name, patient_code, date, scheduled_start, scheduled_end,
-        status, is_new_patient, notes, created_by, rescheduled_from
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      `INSERT INTO pending_reschedules (
+        id, clinic_id, original_appointment_id,
+        patient_name, patient_code,
+        preferred_doctor_id, preferred_appointment_type_id,
+        reason, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
-        newAppointmentId,
+        pendingRescheduleId,
         clinicId,
-        original.doctor_id,
-        original.cabinet_id,
-        original.appointment_type_id,
+        appointmentId,
         original.patient_name,
         original.patient_code,
-        date,
-        scheduledStart,
-        scheduledEnd,
-        'scheduled',
-        original.is_new_patient,
-        reason ? `Remarcado: ${reason}` : 'Consulta remarcada',
+        original.doctor_id,
+        original.appointment_type_id,
+        reason || 'Paciente solicitou remarcação',
         userId,
-        appointmentId, // Link to original
       ]
     )
 
-    // Update original appointment status and link to new one
+    // Update original appointment status
     await query(
       `UPDATE appointments
-       SET status = 'rescheduled', rescheduled_to = $1
-       WHERE id = $2 AND clinic_id = $3`,
-      [newAppointmentId, appointmentId, clinicId]
+       SET status = 'rescheduled'
+       WHERE id = $1 AND clinic_id = $2`,
+      [appointmentId, clinicId]
     )
 
     // Trigger metrics update for original appointment
-    const updatedOriginal = { ...original, status: 'rescheduled' }
+    const updatedOriginal = { ...original, status: 'rescheduled', date: original.date }
     await updateMetricsOnStatusChange(clinicId, updatedOriginal, original.status)
 
     res.status(201).json({
       success: true,
-      newAppointmentId,
-      message: 'Consulta remarcada com sucesso'
+      pendingRescheduleId,
+      message: 'Paciente adicionado ao banco de remarcações'
     })
   } catch (error: any) {
-    console.error('Error rescheduling appointment:', error)
+    console.error('Error adding to reschedule queue:', error)
     res.status(500).json({ error: error.message })
   }
 })
@@ -1580,6 +1549,222 @@ router.post('/:clinicId/:appointmentId/create-consultation-entry', requirePermis
     }
   } catch (error: any) {
     console.error('Error creating consultation entry:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// ============================================================================
+// PENDING RESCHEDULES - Banco de Remarcações
+// ============================================================================
+
+/**
+ * GET /api/appointments/:clinicId/pending-reschedules
+ * Lista todas as remarcações pendentes da clínica
+ */
+router.get('/:clinicId/pending-reschedules', requirePermission('canViewAppointments'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const result = await query(
+      `SELECT
+        pr.id,
+        pr.patient_name,
+        pr.patient_code,
+        pr.reason,
+        pr.notes,
+        pr.requested_at,
+        pr.created_at,
+        pr.original_appointment_id,
+        json_build_object('id', d.id, 'name', d.name) as preferred_doctor,
+        json_build_object(
+          'id', at.id,
+          'name', at.name,
+          'color', at.color,
+          'durationMinutes', at.duration_minutes
+        ) as preferred_appointment_type
+       FROM pending_reschedules pr
+       LEFT JOIN clinic_doctors d ON d.id = pr.preferred_doctor_id
+       LEFT JOIN appointment_types at ON at.id = pr.preferred_appointment_type_id
+       WHERE pr.clinic_id = $1
+       ORDER BY pr.requested_at DESC`,
+      [clinicId]
+    )
+
+    const pendingReschedules = result.rows.map(row => ({
+      id: row.id,
+      patientName: row.patient_name,
+      patientCode: row.patient_code,
+      reason: row.reason,
+      notes: row.notes,
+      requestedAt: row.requested_at,
+      createdAt: row.created_at,
+      originalAppointmentId: row.original_appointment_id,
+      preferredDoctor: row.preferred_doctor?.id ? row.preferred_doctor : null,
+      preferredAppointmentType: row.preferred_appointment_type?.id ? row.preferred_appointment_type : null,
+    }))
+
+    res.json({ pendingReschedules })
+  } catch (error: any) {
+    console.error('Error fetching pending reschedules:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * GET /api/appointments/:clinicId/pending-reschedules/search
+ * Busca remarcações pendentes por código ou nome do paciente
+ */
+router.get('/:clinicId/pending-reschedules/search', requirePermission('canViewAppointments'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const { q } = req.query
+
+    if (!q || (q as string).length < 2) {
+      return res.json({ results: [] })
+    }
+
+    const searchTerm = `%${q}%`
+    const result = await query(
+      `SELECT
+        pr.id,
+        pr.patient_name,
+        pr.patient_code,
+        pr.reason,
+        pr.notes,
+        pr.requested_at,
+        pr.original_appointment_id,
+        pr.preferred_doctor_id,
+        pr.preferred_appointment_type_id,
+        d.name as preferred_doctor_name,
+        at.name as preferred_appointment_type_name,
+        at.duration_minutes as preferred_duration
+       FROM pending_reschedules pr
+       LEFT JOIN clinic_doctors d ON d.id = pr.preferred_doctor_id
+       LEFT JOIN appointment_types at ON at.id = pr.preferred_appointment_type_id
+       WHERE pr.clinic_id = $1
+         AND (pr.patient_code ILIKE $2 OR pr.patient_name ILIKE $2)
+       ORDER BY pr.requested_at DESC
+       LIMIT 20`,
+      [clinicId, searchTerm]
+    )
+
+    const results = result.rows.map(row => ({
+      id: row.id,
+      patientName: row.patient_name,
+      patientCode: row.patient_code,
+      reason: row.reason,
+      notes: row.notes,
+      requestedAt: row.requested_at,
+      originalAppointmentId: row.original_appointment_id,
+      preferredDoctorId: row.preferred_doctor_id,
+      preferredDoctorName: row.preferred_doctor_name,
+      preferredAppointmentTypeId: row.preferred_appointment_type_id,
+      preferredAppointmentTypeName: row.preferred_appointment_type_name,
+      preferredDuration: row.preferred_duration,
+    }))
+
+    res.json({ results })
+  } catch (error: any) {
+    console.error('Error searching pending reschedules:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * GET /api/appointments/:clinicId/pending-reschedules/count
+ * Retorna contador de remarcações pendentes
+ */
+router.get('/:clinicId/pending-reschedules/count', requirePermission('canViewAppointments'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    const result = await query(
+      'SELECT COUNT(*) as count FROM pending_reschedules WHERE clinic_id = $1',
+      [clinicId]
+    )
+
+    res.json({ count: parseInt(result.rows[0].count) })
+  } catch (error: any) {
+    console.error('Error counting pending reschedules:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * POST /api/appointments/:clinicId/pending-reschedules
+ * Adiciona uma remarcação ao banco
+ */
+router.post('/:clinicId/pending-reschedules', requirePermission('canEditAppointments'), async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    const {
+      originalAppointmentId,
+      patientName,
+      patientCode,
+      preferredDoctorId,
+      preferredAppointmentTypeId,
+      reason,
+      notes,
+    } = req.body
+
+    if (!patientName) {
+      return res.status(400).json({ error: 'Nome do paciente é obrigatório' })
+    }
+
+    const id = crypto.randomUUID()
+    const userId = (req as any).user?.id || null
+
+    await query(
+      `INSERT INTO pending_reschedules (
+        id, clinic_id, original_appointment_id,
+        patient_name, patient_code,
+        preferred_doctor_id, preferred_appointment_type_id,
+        reason, notes, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        id,
+        clinicId,
+        originalAppointmentId || null,
+        patientName,
+        patientCode || null,
+        preferredDoctorId || null,
+        preferredAppointmentTypeId || null,
+        reason || null,
+        notes || null,
+        userId,
+      ]
+    )
+
+    res.status(201).json({
+      id,
+      message: 'Remarcação adicionada ao banco com sucesso'
+    })
+  } catch (error: any) {
+    console.error('Error creating pending reschedule:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * DELETE /api/appointments/:clinicId/pending-reschedules/:rescheduleId
+ * Remove uma remarcação do banco (usado quando agendamento é criado ou cancelado)
+ */
+router.delete('/:clinicId/pending-reschedules/:rescheduleId', requirePermission('canEditAppointments'), async (req, res) => {
+  try {
+    const { clinicId, rescheduleId } = req.params
+
+    const result = await query(
+      'DELETE FROM pending_reschedules WHERE id = $1 AND clinic_id = $2 RETURNING *',
+      [rescheduleId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Remarcação não encontrada' })
+    }
+
+    res.json({ message: 'Remarcação removida do banco' })
+  } catch (error: any) {
+    console.error('Error deleting pending reschedule:', error)
     res.status(500).json({ error: error.message })
   }
 })

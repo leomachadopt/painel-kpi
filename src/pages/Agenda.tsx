@@ -80,12 +80,7 @@ export default function Agenda() {
 
   // Reschedule modal
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
-  const [rescheduleData, setRescheduleData] = useState({
-    date: '',
-    scheduledStart: '',
-    scheduledEnd: '',
-    reason: '',
-  })
+  const [rescheduleReason, setRescheduleReason] = useState('')
 
   // Add procedures modal
   const [isAddProceduresModalOpen, setIsAddProceduresModalOpen] = useState(false)
@@ -97,6 +92,12 @@ export default function Agenda() {
   const [patientSearch, setPatientSearch] = useState('')
   const [patientResults, setPatientResults] = useState<any[]>([])
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null)
+
+  // Reschedule from queue
+  const [isRescheduling, setIsRescheduling] = useState(false)
+  const [rescheduleSearch, setRescheduleSearch] = useState('')
+  const [rescheduleResults, setRescheduleResults] = useState<any[]>([])
+  const [selectedReschedule, setSelectedReschedule] = useState<any | null>(null)
 
   // New appointment form
   const [newAppointment, setNewAppointment] = useState({
@@ -444,6 +445,49 @@ export default function Agenda() {
     setNewAppointment({ ...newAppointment })
   }
 
+  // Reschedule queue search
+  const searchReschedules = async (search: string) => {
+    if (search.length < 2) {
+      setRescheduleResults([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `/api/appointments/${clinicId}/pending-reschedules/search?q=${encodeURIComponent(search)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+          },
+        }
+      )
+      const data = await response.json()
+      setRescheduleResults(data.results || [])
+    } catch (error) {
+      console.error('Error searching reschedules:', error)
+    }
+  }
+
+  const handleRescheduleSearch = (value: string) => {
+    setRescheduleSearch(value)
+    searchReschedules(value)
+  }
+
+  const selectReschedule = (reschedule: any) => {
+    setSelectedReschedule(reschedule)
+    setRescheduleSearch(`${reschedule.patientCode} - ${reschedule.patientName}`)
+    setRescheduleResults([])
+
+    // Auto-preencher tipo de consulta e observações
+    if (reschedule.preferredAppointmentTypeId) {
+      setNewAppointment({
+        ...newAppointment,
+        appointmentTypeId: reschedule.preferredAppointmentTypeId,
+        notes: reschedule.reason ? `Remarcação: ${reschedule.reason}` : 'Remarcação'
+      })
+    }
+  }
+
   const generateTimeSlots = (): TimeSlot[] => {
     const slots: TimeSlot[] = []
 
@@ -536,6 +580,11 @@ export default function Agenda() {
         toast.error('Preencha o nome, WhatsApp e a fonte de chegada do paciente novo')
         return
       }
+    } else if (isRescheduling) {
+      if (!selectedReschedule) {
+        toast.error('Selecione um paciente do banco de remarcações')
+        return
+      }
     } else {
       if (!selectedPatient) {
         toast.error('Selecione um paciente existente')
@@ -566,6 +615,10 @@ export default function Agenda() {
         requestBody.newPatientName = newAppointment.newPatientName
         requestBody.newPatientWhatsapp = newAppointment.newPatientWhatsapp
         requestBody.sourceId = newAppointment.sourceId
+      } else if (isRescheduling && selectedReschedule) {
+        requestBody.patientName = selectedReschedule.patientName
+        requestBody.patientCode = selectedReschedule.patientCode
+        requestBody.rescheduledFrom = selectedReschedule.originalAppointmentId
       } else {
         requestBody.patientName = selectedPatient.name
         requestBody.patientCode = selectedPatient.code
@@ -585,8 +638,26 @@ export default function Agenda() {
         throw new Error(error.error || 'Erro ao criar agendamento')
       }
 
-      toast.success('Agendamento criado')
+      // If it was a reschedule, delete from pending_reschedules
+      if (isRescheduling && selectedReschedule) {
+        try {
+          await fetch(`/api/appointments/${clinicId}/pending-reschedules/${selectedReschedule.id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+            },
+          })
+        } catch (deleteError) {
+          console.error('Error deleting pending reschedule:', deleteError)
+          // Don't fail the whole operation if this fails
+        }
+      }
+
+      toast.success(isRescheduling ? 'Remarcação agendada com sucesso' : 'Agendamento criado')
       setIsNewAppointmentOpen(false)
+      setIsRescheduling(false)
+      setSelectedReschedule(null)
+      setRescheduleSearch('')
       setReloadTrigger((prev) => prev + 1) // Trigger reload
     } catch (error: any) {
       toast.error(error.message)
@@ -638,10 +709,10 @@ export default function Agenda() {
     }
   }
 
-  // Reschedule appointment
+  // Reschedule appointment (envia para banco de remarcações)
   const handleReschedule = async () => {
-    if (!editingAppointment || !rescheduleData.date || !rescheduleData.scheduledStart || !rescheduleData.scheduledEnd) {
-      toast.error('Preencha todos os campos obrigatórios')
+    if (!editingAppointment) {
+      toast.error('Nenhum agendamento selecionado')
       return
     }
 
@@ -652,7 +723,7 @@ export default function Agenda() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
         },
-        body: JSON.stringify(rescheduleData),
+        body: JSON.stringify({ reason: rescheduleReason }),
       })
 
       if (!response.ok) {
@@ -660,10 +731,10 @@ export default function Agenda() {
         throw new Error(error.error || 'Erro ao remarcar consulta')
       }
 
-      toast.success('Consulta remarcada com sucesso')
+      toast.success('Paciente adicionado ao banco de remarcações')
       setIsRescheduleModalOpen(false)
       setIsEditModalOpen(false)
-      setRescheduleData({ date: '', scheduledStart: '', scheduledEnd: '', reason: '' })
+      setRescheduleReason('')
       setReloadTrigger((prev) => prev + 1)
     } catch (error: any) {
       toast.error(error.message)
@@ -673,14 +744,7 @@ export default function Agenda() {
   // Open reschedule modal
   const openRescheduleModal = () => {
     if (!editingAppointment) return
-
-    // Pre-fill with current appointment data
-    setRescheduleData({
-      date: editingAppointment.date || format(selectedDate, 'yyyy-MM-dd'),
-      scheduledStart: editingAppointment.scheduledStart?.substring(0, 5) || '',
-      scheduledEnd: editingAppointment.scheduledEnd?.substring(0, 5) || '',
-      reason: '',
-    })
+    setRescheduleReason('')
     setIsRescheduleModalOpen(true)
   }
 
@@ -1195,6 +1259,12 @@ export default function Agenda() {
                   // Clear patient selection when toggling
                   setSelectedPatient(null)
                   setPatientSearch('')
+                  // Uncheck reschedule if new patient
+                  if (e.target.checked) {
+                    setIsRescheduling(false)
+                    setSelectedReschedule(null)
+                    setRescheduleSearch('')
+                  }
                 }}
                 className="h-4 w-4"
               />
@@ -1203,7 +1273,30 @@ export default function Agenda() {
               </Label>
             </div>
 
-            {/* Conditional: New Patient Form OR Existing Patient Search */}
+            {/* Checkbox Remarcação */}
+            {!newAppointment.isNewPatient && (
+              <div className="flex items-center space-x-2 pb-2 border-b">
+                <input
+                  type="checkbox"
+                  id="is-reschedule-toggle"
+                  checked={isRescheduling}
+                  onChange={(e) => {
+                    setIsRescheduling(e.target.checked)
+                    // Clear patient selection when toggling
+                    setSelectedPatient(null)
+                    setPatientSearch('')
+                    setSelectedReschedule(null)
+                    setRescheduleSearch('')
+                  }}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="is-reschedule-toggle" className="font-semibold text-blue-600">
+                  📋 Remarcação (do banco)
+                </Label>
+              </div>
+            )}
+
+            {/* Conditional: New Patient Form OR Reschedule Search OR Existing Patient Search */}
             {newAppointment.isNewPatient ? (
               <>
                 {/* New Patient Form */}
@@ -1243,6 +1336,52 @@ export default function Agenda() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </>
+            ) : isRescheduling ? (
+              <>
+                {/* Reschedule Search */}
+                <div>
+                  <Label>Buscar Paciente no Banco de Remarcações *</Label>
+                  <div className="relative">
+                    <Input
+                      value={rescheduleSearch}
+                      onChange={(e) => handleRescheduleSearch(e.target.value)}
+                      placeholder="Digite o código ou nome"
+                      autoComplete="off"
+                    />
+                    {rescheduleResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {rescheduleResults.map((reschedule) => (
+                          <button
+                            key={reschedule.id}
+                            onClick={() => selectReschedule(reschedule)}
+                            className="w-full text-left px-4 py-2 hover:bg-accent border-b last:border-b-0"
+                          >
+                            <div className="font-medium">{reschedule.patientCode} - {reschedule.patientName}</div>
+                            {reschedule.reason && (
+                              <div className="text-xs text-muted-foreground">Motivo: {reschedule.reason}</div>
+                            )}
+                            {reschedule.preferredDoctorName && (
+                              <div className="text-xs text-blue-600">Médico preferido: {reschedule.preferredDoctorName}</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedReschedule && (
+                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                      <div className="text-sm text-blue-800">
+                        ✓ {selectedReschedule.patientCode} - {selectedReschedule.patientName}
+                      </div>
+                      {selectedReschedule.reason && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Motivo: {selectedReschedule.reason}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -1829,7 +1968,7 @@ export default function Agenda() {
       <Dialog open={isRescheduleModalOpen} onOpenChange={setIsRescheduleModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Remarcar Consulta</DialogTitle>
+            <DialogTitle>Enviar para Banco de Remarcações</DialogTitle>
             <DialogDescription>
               {editingAppointment?.patientName} - {editingAppointment?.patientCode}
             </DialogDescription>
@@ -1845,47 +1984,18 @@ export default function Agenda() {
               </p>
             </div>
 
-            {/* New date and time */}
-            <div>
-              <Label>Nova Data *</Label>
-              <Input
-                type="date"
-                value={rescheduleData.date}
-                onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Novo Horário Início *</Label>
-                <Input
-                  type="time"
-                  value={rescheduleData.scheduledStart}
-                  onChange={(e) => setRescheduleData({ ...rescheduleData, scheduledStart: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Novo Horário Fim *</Label>
-                <Input
-                  type="time"
-                  value={rescheduleData.scheduledEnd}
-                  onChange={(e) => setRescheduleData({ ...rescheduleData, scheduledEnd: e.target.value })}
-                />
-              </div>
-            </div>
-
             <div>
               <Label>Motivo da Remarcação (opcional)</Label>
               <Input
-                value={rescheduleData.reason}
-                onChange={(e) => setRescheduleData({ ...rescheduleData, reason: e.target.value })}
+                value={rescheduleReason}
+                onChange={(e) => setRescheduleReason(e.target.value)}
                 placeholder="Ex: Paciente solicitou, conflito de agenda..."
               />
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                ℹ️ A consulta atual será marcada como "Remarcada" e uma nova consulta será criada com os novos dados.
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+              <p className="text-sm text-blue-800">
+                📋 O paciente será adicionado ao banco de remarcações. Você poderá encaixá-lo posteriormente ao clicar em um horário disponível na agenda.
               </p>
             </div>
 
@@ -1901,7 +2011,7 @@ export default function Agenda() {
                 className="flex-1"
                 onClick={handleReschedule}
               >
-                Confirmar Remarcação
+                Adicionar ao Banco
               </Button>
             </div>
           </div>
