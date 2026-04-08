@@ -120,4 +120,40 @@ export function getCloudinaryUrl(
   })
 }
 
+/**
+ * Baixar arquivo do Cloudinary usando credenciais (funciona com arquivos públicos ou privados)
+ * @param publicId - ID público do arquivo
+ * @param resourceType - Tipo de recurso
+ * @returns Buffer do arquivo
+ */
+export async function downloadFromCloudinary(
+  publicId: string,
+  resourceType: 'image' | 'raw' | 'video' = 'raw'
+): Promise<Buffer> {
+  try {
+    // Gerar URL assinada com as credenciais
+    const url = cloudinary.url(publicId, {
+      resource_type: resourceType,
+      secure: true,
+      sign_url: true,
+      type: 'upload'
+    })
+
+    console.log('Downloading from Cloudinary:', url)
+
+    // Fazer fetch com a URL assinada
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      throw new Error(`Cloudinary returned ${response.status}: ${response.statusText}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    return Buffer.from(arrayBuffer)
+  } catch (error: any) {
+    console.error('Cloudinary download error:', error)
+    throw new Error(`Failed to download from Cloudinary: ${error.message}`)
+  }
+}
+
 export default cloudinary

@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 import crypto from 'crypto'
-import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl } from '../utils/cloudinary.js'
+import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl, downloadFromCloudinary } from '../utils/cloudinary.js'
 
 const router = Router()
 
@@ -870,32 +870,25 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
     }
 
     const document = result.rows[0]
-    const cloudinaryUrl = document.file_path
 
-    console.log('Proxying file from Cloudinary:', cloudinaryUrl)
+    console.log('Downloading from Cloudinary:', document.filename)
 
-    // Baixar arquivo do Cloudinary e fazer streaming para o cliente
-    // Isso funciona mesmo se o arquivo for privado no Cloudinary
-    const cloudinaryResponse = await fetch(cloudinaryUrl)
-
-    if (!cloudinaryResponse.ok) {
-      console.error('Failed to fetch from Cloudinary:', cloudinaryResponse.status)
-      return res.status(502).json({ error: 'Failed to fetch document from storage' })
-    }
+    // Baixar arquivo do Cloudinary usando SDK (funciona com arquivos públicos ou privados)
+    const resourceType = document.cloudinary_resource_type || 'raw'
+    const fileBuffer = await downloadFromCloudinary(
+      document.filename,
+      resourceType as 'image' | 'raw' | 'video'
+    )
 
     // Definir headers apropriados
-    const contentType = document.mime_type || cloudinaryResponse.headers.get('content-type') || 'application/octet-stream'
-    const contentLength = cloudinaryResponse.headers.get('content-length')
+    const contentType = document.mime_type || 'application/octet-stream'
 
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Disposition', `inline; filename="${document.original_filename}"`)
-    if (contentLength) {
-      res.setHeader('Content-Length', contentLength)
-    }
+    res.setHeader('Content-Length', fileBuffer.length.toString())
 
-    // Stream do Cloudinary direto para o cliente
-    const buffer = await cloudinaryResponse.arrayBuffer()
-    res.send(Buffer.from(buffer))
+    // Enviar arquivo para o cliente
+    res.send(fileBuffer)
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
