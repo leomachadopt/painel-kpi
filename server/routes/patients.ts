@@ -873,11 +873,12 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     console.log('Proxying file from Cloudinary:', document.filename)
 
-    // Baixar arquivo do Cloudinary usando credenciais (funciona mesmo com conta Restricted)
+    // Baixar arquivo do Cloudinary - passa a secure_url (file_path) como método primário
     const resourceType = document.cloudinary_resource_type || 'raw'
     const fileBuffer = await downloadFromCloudinary(
       document.filename,
-      resourceType as 'image' | 'raw' | 'video'
+      resourceType as 'image' | 'raw' | 'video',
+      document.file_path // secure_url salva no banco
     )
 
     // Definir headers apropriados

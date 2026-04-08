@@ -121,52 +121,64 @@ export function getCloudinaryUrl(
 }
 
 /**
- * Baixar arquivo do Cloudinary usando private_download_url
- * Funciona mesmo se a conta Cloudinary estiver em modo "Restricted"
+ * Baixar arquivo do Cloudinary
+ * Suporta arquivos públicos (usando URL direta) e privados (usando private_download_url)
  * @param publicId - ID público do arquivo
  * @param resourceType - Tipo de recurso
+ * @param secureUrl - URL segura do Cloudinary (se disponível, usada como método primário)
  * @returns Buffer do arquivo
  */
 export async function downloadFromCloudinary(
   publicId: string,
-  resourceType: 'image' | 'raw' | 'video' = 'raw'
+  resourceType: 'image' | 'raw' | 'video' = 'raw',
+  secureUrl?: string
 ): Promise<Buffer> {
   try {
-    // Gerar URL privada assinada usando o método oficial do SDK
-    // Isso funciona mesmo com conta Restricted
-    const privateUrl = cloudinary.utils.private_download_url(publicId, 'pdf', {
-      resource_type: resourceType,
-      attachment: false,
-      expires_at: Math.floor(Date.now() / 1000) + 3600 // Expira em 1 hora
-    })
+    // Método 1: Usar a secure_url direta (mais confiável para arquivos públicos)
+    if (secureUrl) {
+      console.log('Downloading from Cloudinary secure URL:', publicId)
+      const response = await fetch(secureUrl)
 
-    console.log('Downloading from Cloudinary private URL:', publicId)
-
-    // Fazer download usando a URL privada assinada
-    const response = await fetch(privateUrl)
-
-    if (!response.ok) {
-      console.error('Cloudinary download failed:', response.status, response.statusText)
-
-      // Se falhar, tentar a URL pública direta como fallback
-      const publicUrl = cloudinary.url(publicId, {
-        resource_type: resourceType,
-        secure: true,
-        type: 'upload'
-      })
-
-      console.log('Trying public URL as fallback:', publicUrl)
-      const fallbackResponse = await fetch(publicUrl)
-
-      if (!fallbackResponse.ok) {
-        throw new Error(`Failed to download: ${response.status} ${response.statusText}`)
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer()
+        return Buffer.from(arrayBuffer)
       }
-
-      const arrayBuffer = await fallbackResponse.arrayBuffer()
-      return Buffer.from(arrayBuffer)
+      console.warn('Secure URL download failed:', response.status, response.statusText)
     }
 
-    const arrayBuffer = await response.arrayBuffer()
+    // Método 2: Construir URL pública usando o SDK
+    const publicUrl = cloudinary.url(publicId, {
+      resource_type: resourceType,
+      secure: true,
+      type: 'upload'
+    })
+
+    console.log('Downloading from Cloudinary public URL:', publicUrl)
+    const publicResponse = await fetch(publicUrl)
+
+    if (publicResponse.ok) {
+      const arrayBuffer = await publicResponse.arrayBuffer()
+      return Buffer.from(arrayBuffer)
+    }
+    console.warn('Public URL download failed:', publicResponse.status, publicResponse.statusText)
+
+    // Método 3: Tentar private_download_url como último recurso
+    // Extrair formato do public_id ou usar formato genérico
+    const format = publicId.includes('.') ? publicId.split('.').pop()! : ''
+    const privateUrl = cloudinary.utils.private_download_url(publicId, format || 'raw', {
+      resource_type: resourceType,
+      attachment: false,
+      expires_at: Math.floor(Date.now() / 1000) + 3600
+    })
+
+    console.log('Trying private download URL as fallback:', publicId)
+    const privateResponse = await fetch(privateUrl)
+
+    if (!privateResponse.ok) {
+      throw new Error(`All download methods failed for ${publicId}. Last status: ${privateResponse.status} ${privateResponse.statusText}`)
+    }
+
+    const arrayBuffer = await privateResponse.arrayBuffer()
     return Buffer.from(arrayBuffer)
   } catch (error: any) {
     console.error('Cloudinary download error:', error)
