@@ -1504,43 +1504,80 @@ router.post('/:clinicId/:appointmentId/create-consultation-entry', requirePermis
       })
     }
 
-    // Create consultation entry with default price table type as 'clinica'
-    const consultationEntryId = crypto.randomUUID()
-    await query(
-      `INSERT INTO daily_consultation_entries (
-        id, clinic_id, date, patient_name, code,
-        doctor_id, consultation_completed,
-        plan_created, plan_presented, plan_accepted,
-        plan_value, price_table_type, insurance_provider_id, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, false, false, false, false, 0, 'clinica', $7, NOW())`,
-      [
+    // Check if there's already a consultation entry for this patient (clinic_id, code)
+    const existingEntryResult = await query(
+      `SELECT id, price_table_type, insurance_provider_id
+       FROM daily_consultation_entries
+       WHERE clinic_id = $1 AND code = $2`,
+      [clinicId, appointment.patient_code]
+    )
+
+    let consultationEntryId: string
+
+    if (existingEntryResult.rows.length > 0) {
+      // Reuse existing consultation entry
+      const existingEntry = existingEntryResult.rows[0]
+      consultationEntryId = existingEntry.id
+
+      console.log(`[APPOINTMENTS] Reusing existing consultation entry: ${consultationEntryId} for patient ${appointment.patient_code}`)
+
+      // Link appointment to existing consultation entry
+      await query(
+        `UPDATE appointments
+         SET consultation_entry_id = $1
+         WHERE id = $2`,
+        [consultationEntryId, appointmentId]
+      )
+
+      res.json({
         consultationEntryId,
-        clinicId,
-        appointment.date,
-        appointment.patient_name,
-        appointment.patient_code,
-        appointment.doctor_id || null,
-        null, // insurance_provider_id must be null when price_table_type is 'clinica'
-      ]
-    )
+        priceTableType: existingEntry.price_table_type || 'clinica',
+        insuranceProviderId: existingEntry.insurance_provider_id || null,
+        message: 'Linked to existing consultation entry',
+        alreadyExists: true,
+        reuseExisting: true
+      })
+    } else {
+      // Create new consultation entry
+      consultationEntryId = crypto.randomUUID()
 
-    // Link consultation entry to appointment
-    await query(
-      `UPDATE appointments
-       SET consultation_entry_id = $1
-       WHERE id = $2`,
-      [consultationEntryId, appointmentId]
-    )
+      await query(
+        `INSERT INTO daily_consultation_entries (
+          id, clinic_id, date, patient_name, code,
+          doctor_id, consultation_completed,
+          plan_created, plan_presented, plan_accepted,
+          plan_value, price_table_type, insurance_provider_id, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, false, false, false, false, 0, 'clinica', $7, NOW())`,
+        [
+          consultationEntryId,
+          clinicId,
+          appointment.date,
+          appointment.patient_name,
+          appointment.patient_code,
+          appointment.doctor_id || null,
+          null, // insurance_provider_id must be null when price_table_type is 'clinica'
+        ]
+      )
 
-    console.log(`[APPOINTMENTS] Created consultation entry: ${consultationEntryId} for appointment ${appointmentId}`)
+      // Link consultation entry to appointment
+      await query(
+        `UPDATE appointments
+         SET consultation_entry_id = $1
+         WHERE id = $2`,
+        [consultationEntryId, appointmentId]
+      )
 
-    res.json({
-      consultationEntryId,
-      priceTableType: 'clinica',
-      insuranceProviderId: null,
-      message: 'Consultation entry created successfully',
-      alreadyExists: false
-    })
+      console.log(`[APPOINTMENTS] Created new consultation entry: ${consultationEntryId} for appointment ${appointmentId}`)
+
+      res.json({
+        consultationEntryId,
+        priceTableType: 'clinica',
+        insuranceProviderId: null,
+        message: 'Consultation entry created successfully',
+        alreadyExists: false,
+        reuseExisting: false
+      })
+    }
   } catch (error: any) {
     console.error('Error creating consultation entry:', error)
     res.status(500).json({ error: error.message })
