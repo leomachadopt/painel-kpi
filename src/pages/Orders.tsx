@@ -311,32 +311,32 @@ export default function Orders() {
               <p>Nenhum pedido encontrado</p>
             </div>
           ) : (
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     {canEditOrders && (
-                      <TableHead className="w-[40px]">
+                      <TableHead className="w-[35px] p-2">
                         <div className="flex items-center justify-center">
                           {selectedOrderIds.size > 0 && (
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7"
                               onClick={clearSelection}
                               title="Limpar seleção"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3 w-3" />
                             </Button>
                           )}
                         </div>
                       </TableHead>
                     )}
-                    <TableHead>Data</TableHead>
-                    <TableHead>Fornecedor</TableHead>
-                    <TableHead>Número do Pedido</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Última Atualização</TableHead>
+                    <TableHead className="w-[90px]">Data</TableHead>
+                    <TableHead className="w-[150px]">Fornecedor</TableHead>
+                    <TableHead className="w-[100px]">Nº Pedido</TableHead>
+                    <TableHead className="w-[100px]">Total</TableHead>
+                    <TableHead className="w-[90px]">Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -349,7 +349,7 @@ export default function Orders() {
                     return (
                       <TableRow key={order.id} className={isSelected ? 'bg-muted/50' : ''}>
                         {canEditOrders && (
-                          <TableCell className="w-[40px]">
+                          <TableCell className="w-[35px] p-2">
                             <div className="flex items-center justify-center">
                               <Checkbox
                                 checked={isSelected}
@@ -360,16 +360,18 @@ export default function Orders() {
                             </div>
                           </TableCell>
                         )}
-                        <TableCell>
+                        <TableCell className="w-[90px] text-sm">
                           {order.date
                             ? format(new Date(order.date), 'dd/MM/yyyy', { locale: ptBR })
                             : '-'}
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium w-[150px] text-sm truncate max-w-[150px]" title={order.supplierName || '-'}>
                           {order.supplierName || '-'}
                         </TableCell>
-                        <TableCell>{order.orderNumber || '-'}</TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="w-[100px] text-sm truncate max-w-[100px]" title={order.orderNumber || '-'}>
+                          {order.orderNumber || '-'}
+                        </TableCell>
+                        <TableCell className="font-medium w-[100px] text-sm">
                           {order.total && order.total > 0
                             ? new Intl.NumberFormat('pt-PT', {
                                 style: 'currency',
@@ -377,19 +379,15 @@ export default function Orders() {
                               }).format(order.total)
                             : '-'}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={status.variant}>{status.label}</Badge>
+                        <TableCell className="w-[90px]">
+                          <Badge variant={status.variant} className="text-xs">{status.label}</Badge>
                         </TableCell>
-                        <TableCell>
-                          {order.updatedAt
-                            ? format(new Date(order.updatedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
+                        <TableCell className="p-1">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-8 w-8"
                               onClick={() => setViewOrderId(order.id)}
                               title="Visualizar"
                             >
@@ -400,6 +398,7 @@ export default function Orders() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="h-8 w-8"
                                   onClick={() => setEditOrderId(order.id)}
                                   title="Editar"
                                 >
@@ -408,6 +407,7 @@ export default function Orders() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="h-8 w-8"
                                   onClick={() => setDeleteOrderId(order.id)}
                                   title="Excluir"
                                 >
@@ -422,17 +422,17 @@ export default function Orders() {
                                   size="sm"
                                   onClick={() => handleApprove(order.id)}
                                   disabled={approvingOrderId === order.id}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  className="bg-green-600 hover:bg-green-700 text-white h-8 px-2 text-xs whitespace-nowrap"
                                 >
                                   {approvingOrderId === order.id ? (
                                     <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                       Autorizando...
                                     </>
                                   ) : (
                                     <>
-                                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                                      Autorizar Pedido
+                                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                                      Autorizar
                                     </>
                                   )}
                                 </Button>
@@ -440,10 +440,10 @@ export default function Orders() {
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => setRejectOrderId(order.id)}
-                                  className="bg-red-600 hover:bg-red-700 text-white"
+                                  className="bg-red-600 hover:bg-red-700 text-white h-8 px-2 text-xs whitespace-nowrap"
                                 >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Recusar Pedido
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Recusar
                                 </Button>
                               </>
                             )}
