@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search, UserPlus, Loader2, Mail, Phone, Calendar, Trash2, Edit, DollarSign, Stethoscope, Clock, MapPin } from 'lucide-react'
+import { Search, UserPlus, Loader2, Mail, Phone, Calendar, Trash2, Edit, DollarSign, Stethoscope, Clock, MapPin, FileText } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -47,6 +47,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PatientDocuments } from '@/components/patients/PatientDocuments'
 
 export default function Patients() {
   const { user } = useAuthStore()
@@ -66,6 +67,7 @@ export default function Patients() {
   const [showNewPatientDialog, setShowNewPatientDialog] = useState(false)
   const [newPatientForm, setNewPatientForm] = useState({ code: '', name: '', email: '', phone: '', birthDate: '', notes: '' })
   const [creating, setCreating] = useState(false)
+  const [showDocumentsDialog, setShowDocumentsDialog] = useState(false)
 
   // ===================================================================
   // OTIMIZAÇÃO FASE 2: React Query + Debounce integrado
@@ -403,12 +405,13 @@ export default function Patients() {
           ) : patientHistory ? (
             <ScrollArea className="max-h-[60vh] pr-4">
               <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="all">Todos</TabsTrigger>
                   <TabsTrigger value="financial">Financeiro</TabsTrigger>
                   <TabsTrigger value="consultation">Consultas</TabsTrigger>
                   <TabsTrigger value="serviceTime">Tempo Serviço</TabsTrigger>
                   <TabsTrigger value="source">Origem</TabsTrigger>
+                  <TabsTrigger value="documents">Documentos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="space-y-4 mt-4">
@@ -730,6 +733,21 @@ export default function Patients() {
                     </div>
                   )}
                 </TabsContent>
+
+                <TabsContent value="documents" className="mt-4">
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Gerir documentos, exames e imagens do paciente
+                    </p>
+                    <Button
+                      onClick={() => setShowDocumentsDialog(true)}
+                      className="gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Abrir Gestor de Documentos
+                    </Button>
+                  </div>
+                </TabsContent>
               </Tabs>
             </ScrollArea>
           ) : (
@@ -988,6 +1006,16 @@ export default function Patients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Patient Documents Dialog */}
+      {selectedPatient && clinicId && (
+        <PatientDocuments
+          patientId={selectedPatient.id}
+          clinicId={clinicId}
+          open={showDocumentsDialog}
+          onOpenChange={setShowDocumentsDialog}
+        />
+      )}
     </div>
   )
 }

@@ -511,6 +511,20 @@ export interface OrderDocument {
   uploadedAt: string
 }
 
+export interface PatientDocument {
+  id: string
+  patientId: string
+  filename: string
+  originalFilename: string
+  filePath: string
+  fileSize: number
+  mimeType?: string | null
+  documentType?: 'medical_record' | 'exam' | 'image' | 'consent' | 'other' | null
+  description?: string | null
+  uploadedBy?: string | null
+  uploadedAt: string
+}
+
 export interface DailyAlignersEntry {
   id: string
   date: string

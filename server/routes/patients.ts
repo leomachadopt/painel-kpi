@@ -1,6 +1,13 @@
 import { Router } from 'express'
 import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import crypto from 'crypto'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const router = Router()
 
@@ -683,6 +690,231 @@ router.delete('/:clinicId/:patientId', async (req, res) => {
   } catch (error) {
     console.error('Delete patient error:', error)
     res.status(500).json({ error: 'Failed to delete patient' })
+  }
+})
+
+// ================================
+// PATIENT DOCUMENTS ENDPOINTS
+// ================================
+
+// Upload documento para paciente
+router.post('/:clinicId/:patientId/documents', async (req, res) => {
+  const { clinicId, patientId } = req.params
+  const hasPermission = await canEditPatients(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Permission denied' })
+  }
+
+  try {
+    const { file, filename, mimeType, documentType, description } = req.body
+
+    if (!file || !filename) {
+      return res.status(400).json({ error: 'File and filename are required' })
+    }
+
+    // Verificar se paciente existe
+    const patientCheck = await query(
+      'SELECT id FROM patients WHERE id = $1 AND clinic_id = $2',
+      [patientId, clinicId]
+    )
+
+    if (patientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' })
+    }
+
+    // Gerar ID único para o documento
+    const documentId = crypto.randomUUID()
+
+    // Criar diretório de uploads se não existir
+    const uploadsDir = path.join(__dirname, '../../uploads/patient-documents', clinicId)
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true })
+    }
+
+    // Gerar nome único para o arquivo
+    const timestamp = Date.now()
+    const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+    const uniqueFilename = `${timestamp}-${documentId}-${safeFilename}`
+    const filePath = path.join(uploadsDir, uniqueFilename)
+
+    // Decodificar base64 e salvar arquivo
+    const base64Data = file.replace(/^data:[^;]+;base64,/, '')
+    const buffer = Buffer.from(base64Data, 'base64')
+    fs.writeFileSync(filePath, buffer)
+
+    // Salvar no banco de dados
+    const relativePath = `uploads/patient-documents/${clinicId}/${uniqueFilename}`
+    await query(
+      `INSERT INTO patient_documents (
+        id, patient_id, filename, original_filename, file_path, file_size,
+        mime_type, document_type, description, uploaded_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        documentId,
+        patientId,
+        uniqueFilename,
+        filename,
+        relativePath,
+        buffer.length,
+        mimeType || null,
+        documentType || null,
+        description || null,
+        req.user?.sub || null
+      ]
+    )
+
+    res.json({
+      message: 'Document uploaded successfully',
+      documentId,
+      filename: uniqueFilename,
+      originalFilename: filename
+    })
+  } catch (error: any) {
+    console.error('Upload document error:', error)
+    res.status(500).json({ error: 'Failed to upload document', message: error.message })
+  }
+})
+
+// Listar documentos de um paciente
+router.get('/:clinicId/:patientId/documents', async (req, res) => {
+  const { clinicId, patientId } = req.params
+
+  try {
+    // Qualquer usuário autenticado da clínica pode visualizar documentos
+    if (!req.user || req.user.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Verificar se paciente existe
+    const patientCheck = await query(
+      'SELECT id FROM patients WHERE id = $1 AND clinic_id = $2',
+      [patientId, clinicId]
+    )
+
+    if (patientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' })
+    }
+
+    const result = await query(
+      `SELECT
+        id, patient_id, filename, original_filename, file_path, file_size,
+        mime_type, document_type, description, uploaded_by, uploaded_at
+      FROM patient_documents
+      WHERE patient_id = $1
+      ORDER BY uploaded_at DESC`,
+      [patientId]
+    )
+
+    res.json(
+      result.rows.map(row => ({
+        id: row.id,
+        patientId: row.patient_id,
+        filename: row.filename,
+        originalFilename: row.original_filename,
+        filePath: row.file_path,
+        fileSize: row.file_size,
+        mimeType: row.mime_type,
+        documentType: row.document_type,
+        description: row.description,
+        uploadedBy: row.uploaded_by,
+        uploadedAt: row.uploaded_at
+      }))
+    )
+  } catch (error: any) {
+    console.error('Get documents error:', error)
+    res.status(500).json({ error: 'Failed to get documents' })
+  }
+})
+
+// Download/Visualizar documento (PROTEGIDO)
+router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, res) => {
+  const { clinicId, patientId, documentId } = req.params
+
+  try {
+    // Verificar permissão
+    if (!req.user || req.user.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Buscar documento no banco
+    const result = await query(
+      `SELECT pd.*, p.clinic_id
+      FROM patient_documents pd
+      JOIN patients p ON pd.patient_id = p.id
+      WHERE pd.id = $1 AND pd.patient_id = $2 AND p.clinic_id = $3`,
+      [documentId, patientId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+
+    const document = result.rows[0]
+
+    // Construir caminho do arquivo
+    const filePath = path.join(__dirname, '../..', document.file_path)
+
+    // Verificar se arquivo existe
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on disk' })
+    }
+
+    // Configurar headers para download
+    res.setHeader('Content-Type', document.mime_type || 'application/octet-stream')
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(document.original_filename)}"`
+    )
+    res.setHeader('Content-Length', document.file_size)
+
+    // Enviar arquivo
+    const fileStream = fs.createReadStream(filePath)
+    fileStream.pipe(res)
+  } catch (error: any) {
+    console.error('Download document error:', error)
+    res.status(500).json({ error: 'Failed to download document' })
+  }
+})
+
+// Deletar documento
+router.delete('/:clinicId/:patientId/documents/:documentId', async (req, res) => {
+  const { clinicId, patientId, documentId } = req.params
+  const hasPermission = await canEditPatients(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Permission denied' })
+  }
+
+  try {
+    // Buscar documento
+    const result = await query(
+      `SELECT pd.*, p.clinic_id
+      FROM patient_documents pd
+      JOIN patients p ON pd.patient_id = p.id
+      WHERE pd.id = $1 AND pd.patient_id = $2 AND p.clinic_id = $3`,
+      [documentId, patientId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' })
+    }
+
+    const document = result.rows[0]
+
+    // Deletar arquivo do disco
+    const filePath = path.join(__dirname, '../..', document.file_path)
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+
+    // Deletar do banco
+    await query('DELETE FROM patient_documents WHERE id = $1', [documentId])
+
+    res.json({ message: 'Document deleted successfully' })
+  } catch (error: any) {
+    console.error('Delete document error:', error)
+    res.status(500).json({ error: 'Failed to delete document' })
   }
 })
 

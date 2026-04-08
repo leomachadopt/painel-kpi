@@ -242,6 +242,32 @@ export const patientsApi = {
     apiCall<{ message: string }>(`/patients/${clinicId}/${patientId}`, {
       method: 'DELETE',
     }),
+
+  // Document management
+  uploadDocument: (clinicId: string, patientId: string, file: string, filename: string, mimeType?: string, documentType?: string, description?: string) =>
+    apiCall<any>(`/patients/${clinicId}/${patientId}/documents`, {
+      method: 'POST',
+      body: JSON.stringify({ file, filename, mimeType, documentType, description }),
+    }),
+
+  getDocuments: (clinicId: string, patientId: string) =>
+    apiCall<any[]>(`/patients/${clinicId}/${patientId}/documents`),
+
+  downloadDocument: (clinicId: string, patientId: string, documentId: string) =>
+    fetch(`${import.meta.env.VITE_API_URL || ''}/api/patients/${clinicId}/${patientId}/documents/${documentId}/download`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('kpi_token')}`,
+      },
+    }).then(res => {
+      if (!res.ok) throw new Error('Failed to download document')
+      return res.blob()
+    }),
+
+  deleteDocument: (clinicId: string, patientId: string, documentId: string) =>
+    apiCall<{ message: string }>(`/patients/${clinicId}/${patientId}/documents/${documentId}`, {
+      method: 'DELETE',
+    }),
 }
 
 // ================================
