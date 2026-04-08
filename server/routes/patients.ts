@@ -716,29 +716,43 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     console.log('Upload data:', { filename, mimeType, documentType, fileSize: file?.length })
 
     if (!file || !filename) {
+      console.log('Missing file or filename')
       return res.status(400).json({ error: 'File and filename are required' })
     }
 
     // Verificar se paciente existe
+    console.log('Checking if patient exists...')
     const patientCheck = await query(
       'SELECT id FROM patients WHERE id = $1 AND clinic_id = $2',
       [patientId, clinicId]
     )
 
     if (patientCheck.rows.length === 0) {
+      console.log('Patient not found')
       return res.status(404).json({ error: 'Patient not found' })
     }
+    console.log('Patient found')
 
     // Gerar ID único para o documento
     const documentId = crypto.randomUUID()
+    console.log('Generated document ID:', documentId)
 
     // Criar diretório de uploads se não existir (seguindo o padrão de orders: public/uploads/)
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'patient-documents', clinicId)
     console.log('Upload directory:', uploadsDir)
+    console.log('process.cwd():', process.cwd())
 
-    if (!fs.existsSync(uploadsDir)) {
-      console.log('Creating directory:', uploadsDir)
-      fs.mkdirSync(uploadsDir, { recursive: true })
+    try {
+      if (!fs.existsSync(uploadsDir)) {
+        console.log('Creating directory:', uploadsDir)
+        fs.mkdirSync(uploadsDir, { recursive: true })
+        console.log('Directory created successfully')
+      } else {
+        console.log('Directory already exists')
+      }
+    } catch (dirError: any) {
+      console.error('Error creating directory:', dirError)
+      throw new Error(`Failed to create directory: ${dirError.message}`)
     }
 
     // Gerar nome único para o arquivo
@@ -749,30 +763,55 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     console.log('File path:', filePath)
 
     // Decodificar base64 e salvar arquivo
+    console.log('Decoding base64 data...')
     const base64Data = file.replace(/^data:[^;]+;base64,/, '')
     const buffer = Buffer.from(base64Data, 'base64')
-    fs.writeFileSync(filePath, buffer)
+    console.log('Buffer size:', buffer.length)
+
+    try {
+      console.log('Writing file to disk...')
+      fs.writeFileSync(filePath, buffer)
+      console.log('File written successfully')
+    } catch (writeError: any) {
+      console.error('Error writing file:', writeError)
+      throw new Error(`Failed to write file: ${writeError.message}`)
+    }
 
     // Salvar no banco de dados
     const relativePath = `public/uploads/patient-documents/${clinicId}/${uniqueFilename}`
-    await query(
-      `INSERT INTO patient_documents (
-        id, patient_id, filename, original_filename, file_path, file_size,
-        mime_type, document_type, description, uploaded_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
-        documentId,
-        patientId,
-        uniqueFilename,
-        filename,
-        relativePath,
-        buffer.length,
-        mimeType || null,
-        documentType || null,
-        description || null,
-        req.user?.sub || null
-      ]
-    )
+    console.log('Saving to database with path:', relativePath)
+
+    try {
+      await query(
+        `INSERT INTO patient_documents (
+          id, patient_id, filename, original_filename, file_path, file_size,
+          mime_type, document_type, description, uploaded_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          documentId,
+          patientId,
+          uniqueFilename,
+          filename,
+          relativePath,
+          buffer.length,
+          mimeType || null,
+          documentType || null,
+          description || null,
+          req.user?.sub || null
+        ]
+      )
+      console.log('Database record created successfully')
+    } catch (dbError: any) {
+      console.error('Database error:', dbError)
+      // Tentar deletar o arquivo se a inserção no banco falhar
+      try {
+        fs.unlinkSync(filePath)
+        console.log('Cleaned up file after database error')
+      } catch (cleanupError) {
+        console.error('Failed to cleanup file:', cleanupError)
+      }
+      throw new Error(`Database error: ${dbError.message}`)
+    }
 
     res.json({
       message: 'Document uploaded successfully',
