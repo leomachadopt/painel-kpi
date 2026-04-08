@@ -1,13 +1,8 @@
 import { Router } from 'express'
 import { query, getClient } from '../db.js'
 import { getUserPermissions } from '../middleware/permissions.js'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import crypto from 'crypto'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js'
 
 const router = Router()
 
@@ -737,50 +732,21 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     const documentId = crypto.randomUUID()
     console.log('Generated document ID:', documentId)
 
-    // Criar diretório de uploads se não existir (seguindo o padrão de orders: public/uploads/)
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'patient-documents', clinicId)
-    console.log('Upload directory:', uploadsDir)
-    console.log('process.cwd():', process.cwd())
+    // Upload para Cloudinary
+    console.log('Uploading to Cloudinary...')
+    const cloudinaryFolder = `patient-documents/${clinicId}`
 
+    let cloudinaryResult
     try {
-      if (!fs.existsSync(uploadsDir)) {
-        console.log('Creating directory:', uploadsDir)
-        fs.mkdirSync(uploadsDir, { recursive: true })
-        console.log('Directory created successfully')
-      } else {
-        console.log('Directory already exists')
-      }
-    } catch (dirError: any) {
-      console.error('Error creating directory:', dirError)
-      throw new Error(`Failed to create directory: ${dirError.message}`)
-    }
-
-    // Gerar nome único para o arquivo
-    const timestamp = Date.now()
-    const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const uniqueFilename = `${timestamp}-${documentId}-${safeFilename}`
-    const filePath = path.join(uploadsDir, uniqueFilename)
-    console.log('File path:', filePath)
-
-    // Decodificar base64 e salvar arquivo
-    console.log('Decoding base64 data...')
-    const base64Data = file.replace(/^data:[^;]+;base64,/, '')
-    const buffer = Buffer.from(base64Data, 'base64')
-    console.log('Buffer size:', buffer.length)
-
-    try {
-      console.log('Writing file to disk...')
-      fs.writeFileSync(filePath, buffer)
-      console.log('File written successfully')
-    } catch (writeError: any) {
-      console.error('Error writing file:', writeError)
-      throw new Error(`Failed to write file: ${writeError.message}`)
+      cloudinaryResult = await uploadToCloudinary(file, cloudinaryFolder, 'auto')
+      console.log('Cloudinary upload successful:', cloudinaryResult.public_id)
+    } catch (uploadError: any) {
+      console.error('Cloudinary upload error:', uploadError)
+      throw new Error(`Failed to upload to cloud storage: ${uploadError.message}`)
     }
 
     // Salvar no banco de dados
-    const relativePath = `public/uploads/patient-documents/${clinicId}/${uniqueFilename}`
-    console.log('Saving to database with path:', relativePath)
-
+    console.log('Saving to database...')
     try {
       await query(
         `INSERT INTO patient_documents (
@@ -790,10 +756,10 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
         [
           documentId,
           patientId,
-          uniqueFilename,
+          cloudinaryResult.public_id, // Guardar public_id do Cloudinary como filename
           filename,
-          relativePath,
-          buffer.length,
+          cloudinaryResult.secure_url, // Guardar URL do Cloudinary como file_path
+          cloudinaryResult.bytes,
           mimeType || null,
           documentType || null,
           description || null,
@@ -803,12 +769,12 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
       console.log('Database record created successfully')
     } catch (dbError: any) {
       console.error('Database error:', dbError)
-      // Tentar deletar o arquivo se a inserção no banco falhar
+      // Tentar deletar do Cloudinary se a inserção no banco falhar
       try {
-        fs.unlinkSync(filePath)
-        console.log('Cleaned up file after database error')
+        await deleteFromCloudinary(cloudinaryResult.public_id, cloudinaryResult.resource_type as any)
+        console.log('Cleaned up Cloudinary file after database error')
       } catch (cleanupError) {
-        console.error('Failed to cleanup file:', cleanupError)
+        console.error('Failed to cleanup Cloudinary file:', cleanupError)
       }
       throw new Error(`Database error: ${dbError.message}`)
     }
@@ -816,8 +782,9 @@ router.post('/:clinicId/:patientId/documents', async (req, res) => {
     res.json({
       message: 'Document uploaded successfully',
       documentId,
-      filename: uniqueFilename,
-      originalFilename: filename
+      filename: cloudinaryResult.public_id,
+      originalFilename: filename,
+      url: cloudinaryResult.secure_url
     })
   } catch (error: any) {
     console.error('Upload document error:', error)
@@ -877,6 +844,7 @@ router.get('/:clinicId/:patientId/documents', async (req, res) => {
 })
 
 // Download/Visualizar documento (PROTEGIDO)
+// Com Cloudinary, o file_path já é a URL segura do arquivo
 router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, res) => {
   const { clinicId, patientId, documentId } = req.params
 
@@ -901,25 +869,9 @@ router.get('/:clinicId/:patientId/documents/:documentId/download', async (req, r
 
     const document = result.rows[0]
 
-    // Construir caminho do arquivo
-    const filePath = path.join(process.cwd(), document.file_path)
-
-    // Verificar se arquivo existe
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on disk' })
-    }
-
-    // Configurar headers para download
-    res.setHeader('Content-Type', document.mime_type || 'application/octet-stream')
-    res.setHeader(
-      'Content-Disposition',
-      `inline; filename="${encodeURIComponent(document.original_filename)}"`
-    )
-    res.setHeader('Content-Length', document.file_size)
-
-    // Enviar arquivo
-    const fileStream = fs.createReadStream(filePath)
-    fileStream.pipe(res)
+    // Redirecionar para URL do Cloudinary
+    // O file_path contém a secure_url do Cloudinary
+    res.redirect(document.file_path)
   } catch (error: any) {
     console.error('Download document error:', error)
     res.status(500).json({ error: 'Failed to download document' })
@@ -951,10 +903,14 @@ router.delete('/:clinicId/:patientId/documents/:documentId', async (req, res) =>
 
     const document = result.rows[0]
 
-    // Deletar arquivo do disco
-    const filePath = path.join(process.cwd(), document.file_path)
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath)
+    // Deletar do Cloudinary
+    // O filename contém o public_id do Cloudinary
+    try {
+      await deleteFromCloudinary(document.filename, 'auto' as any)
+      console.log('Deleted from Cloudinary:', document.filename)
+    } catch (cloudinaryError: any) {
+      console.error('Error deleting from Cloudinary:', cloudinaryError)
+      // Continuar mesmo se falhar - o arquivo pode já ter sido deletado
     }
 
     // Deletar do banco
