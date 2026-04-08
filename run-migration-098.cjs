@@ -1,9 +1,13 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://leonardomachado@localhost:5432/painelkpi'
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('neon.tech') ? {
+    rejectUnauthorized: false,
+  } : undefined,
 });
 
 async function runMigration() {
