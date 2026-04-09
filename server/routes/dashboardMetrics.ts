@@ -19,6 +19,19 @@ router.get('/:clinicId/metrics/guaranteed-revenue', async (req, res) => {
     `, [clinicId]);
     const summary = summaryResult.rows[0];
 
+    // If no data exists for this clinic, return empty/zero values
+    if (!summary) {
+      return res.json({
+        next30Days: { total: 0 },
+        next60Days: { total: 0 },
+        next90Days: { total: 0 },
+        overdue: { amount: 0, count: 0 },
+        receivable: { amount: 0, count: 0 },
+        receivedMonth: { amount: 0, count: 0 },
+        installments: [],
+      });
+    }
+
     // Get detailed installments breakdown
     const installmentsResult = await query(`
       SELECT
