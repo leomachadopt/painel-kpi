@@ -24,6 +24,7 @@ export default function RevenueForecast() {
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [treatmentsDashboard, setTreatmentsDashboard] = useState<any>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [activeTab, setActiveTab] = useState('cashflow')
 
   const [showNewPlanDialog, setShowNewPlanDialog] = useState(false)
   const [showNewPatientDialog, setShowNewPatientDialog] = useState(false)
@@ -180,7 +181,7 @@ export default function RevenueForecast() {
       </Card>
 
       {/* Tabs for different sections */}
-      <Tabs defaultValue="cashflow" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="cashflow">Fluxo de Caixa Mensal</TabsTrigger>
           <TabsTrigger value="revenues">Receitas Recorrentes</TabsTrigger>
