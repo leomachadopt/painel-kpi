@@ -269,25 +269,39 @@ export function RevenueForecastPlansSection({
                       <div className="text-sm text-muted-foreground">
                         {plan.patientCode && `#${plan.patientCode} • `}
                         {(() => {
-                          // Calculate pending installments and remaining balance
-                          const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO').length || 0
-                          const pendingInstallments = plan.installmentCount - receivedInstallments
-                          const remainingBalance = plan.totalValue - (plan.alreadyPaidAmount || 0)
+                          // Calculate received and pending amounts
+                          const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO') || []
+                          const receivedCount = receivedInstallments.length
+                          const receivedAmount = receivedInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
+                          const totalPaid = receivedAmount + (plan.alreadyPaidAmount || 0)
+                          const pendingInstallments = plan.installmentCount - receivedCount
+                          const remainingBalance = plan.totalValue - totalPaid
 
                           return (
                             <>
-                              {pendingInstallments} parcelas de {formatCurrency(plan.installmentValue)} •
-                              Saldo: {formatCurrency(remainingBalance)}
+                              {pendingInstallments} parcelas •
+                              Saldo pendente: {formatCurrency(remainingBalance)}
                               {plan.categoryName && ` • ${plan.categoryName}`}
                             </>
                           )
                         })()}
                       </div>
-                      {plan.alreadyPaidAmount > 0 && (
-                        <div className="text-xs text-green-600 font-medium mt-1">
-                          ℹ️ Pagamentos anteriores: {formatCurrency(plan.alreadyPaidAmount)}
-                        </div>
-                      )}
+                      {(() => {
+                        const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO') || []
+                        const receivedAmount = receivedInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
+                        const totalPaid = receivedAmount + (plan.alreadyPaidAmount || 0)
+
+                        return totalPaid > 0 ? (
+                          <div className="text-xs text-green-600 font-medium mt-1">
+                            ✅ Já recebido: {formatCurrency(totalPaid)}
+                            {plan.alreadyPaidAmount > 0 && (
+                              <span className="text-muted-foreground ml-1">
+                                (inclui {formatCurrency(plan.alreadyPaidAmount)} anteriores)
+                              </span>
+                            )}
+                          </div>
+                        ) : null
+                      })()}
                     </div>
                   </div>
                   <Button
