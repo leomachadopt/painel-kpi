@@ -271,15 +271,17 @@ export function RevenueForecastPlansSection({
                         {(() => {
                           // Calculate received and pending amounts
                           const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO') || []
+                          const pendingInstallments = plan.installments?.filter((i: any) => i.status !== 'RECEBIDO') || []
+
                           const receivedCount = receivedInstallments.length
-                          const receivedAmount = receivedInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
-                          const totalPaid = receivedAmount + (plan.alreadyPaidAmount || 0)
-                          const pendingInstallments = plan.installmentCount - receivedCount
-                          const remainingBalance = plan.totalValue - totalPaid
+                          const pendingCount = pendingInstallments.length
+
+                          // Sum actual values of pending installments
+                          const remainingBalance = pendingInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
 
                           return (
                             <>
-                              {pendingInstallments} parcelas •
+                              {pendingCount} parcelas •
                               Saldo pendente: {formatCurrency(remainingBalance)}
                               {plan.categoryName && ` • ${plan.categoryName}`}
                             </>
