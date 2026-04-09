@@ -79,39 +79,73 @@ export function RevenueForecastPlansSection({
   }
 
   const handleMarkAsReceived = async (installmentId: string) => {
+    const receivedDate = new Date().toISOString().split('T')[0]
+
+    // Optimistic update: update local state immediately
+    setPlans(prevPlans =>
+      prevPlans.map(plan => ({
+        ...plan,
+        installments: plan.installments.map((inst: any) =>
+          inst.id === installmentId
+            ? { ...inst, status: 'RECEBIDO', receivedDate }
+            : inst
+        )
+      }))
+    )
+
     try {
       await api.revenueForecast.updateInstallment(clinicId, installmentId, {
         status: 'RECEBIDO',
-        receivedDate: new Date().toISOString().split('T')[0],
+        receivedDate,
       })
       toast({
         title: 'Sucesso',
         description: 'Parcela marcada como recebida',
       })
+      // Refresh from server to ensure consistency
       onRefresh()
     } catch (error: any) {
+      // Revert optimistic update on error
       toast({
         title: 'Erro',
         description: 'Falha ao atualizar parcela',
         variant: 'destructive',
       })
+      // Reload to revert changes
+      loadPlans()
     }
   }
 
   const handleRevertReceived = async (installmentId: string) => {
+    // Optimistic update: revert status immediately
+    setPlans(prevPlans =>
+      prevPlans.map(plan => ({
+        ...plan,
+        installments: plan.installments.map((inst: any) =>
+          inst.id === installmentId
+            ? { ...inst, status: 'A_RECEBER', receivedDate: null }
+            : inst
+        )
+      }))
+    )
+
     try {
       await api.revenueForecast.revertInstallment(clinicId, installmentId)
       toast({
         title: 'Sucesso',
         description: 'Parcela revertida para A_RECEBER',
       })
+      // Refresh from server to ensure consistency
       onRefresh()
     } catch (error: any) {
+      // Revert optimistic update on error
       toast({
         title: 'Erro',
         description: error.message || 'Falha ao reverter parcela',
         variant: 'destructive',
       })
+      // Reload to revert changes
+      loadPlans()
     }
   }
 
@@ -166,18 +200,34 @@ export function RevenueForecastPlansSection({
   const handleSaveEdit = async () => {
     if (!editingInstallment) return
 
+    const updatedData = {
+      value: parseFloat(editForm.value),
+      dueDate: editForm.dueDate,
+      status: editForm.status,
+      receivedDate: editForm.receivedDate || null,
+    }
+
+    // Optimistic update: update local state immediately
+    setPlans(prevPlans =>
+      prevPlans.map(plan => ({
+        ...plan,
+        installments: plan.installments.map((inst: any) =>
+          inst.id === editingInstallment.id
+            ? { ...inst, ...updatedData }
+            : inst
+        )
+      }))
+    )
+
+    handleCloseEditDialog()
+
     try {
-      await api.revenueForecast.updateInstallment(clinicId, editingInstallment.id, {
-        value: parseFloat(editForm.value),
-        dueDate: editForm.dueDate,
-        status: editForm.status,
-        receivedDate: editForm.receivedDate || null,
-      })
+      await api.revenueForecast.updateInstallment(clinicId, editingInstallment.id, updatedData)
       toast({
         title: 'Sucesso',
         description: 'Parcela atualizada com sucesso',
       })
-      handleCloseEditDialog()
+      // Refresh from server to ensure consistency
       onRefresh()
     } catch (error: any) {
       toast({
@@ -185,6 +235,8 @@ export function RevenueForecastPlansSection({
         description: error.message || 'Falha ao atualizar parcela',
         variant: 'destructive',
       })
+      // Reload to revert changes
+      loadPlans()
     }
   }
 
