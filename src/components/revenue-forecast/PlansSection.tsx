@@ -102,8 +102,8 @@ export function RevenueForecastPlansSection({
         title: 'Sucesso',
         description: 'Parcela marcada como recebida',
       })
-      // Refresh from server to ensure consistency
-      onRefresh()
+      // Don't call onRefresh to avoid closing expanded plans
+      // The optimistic update already updated the UI
     } catch (error: any) {
       // Revert optimistic update on error
       toast({
@@ -135,8 +135,8 @@ export function RevenueForecastPlansSection({
         title: 'Sucesso',
         description: 'Parcela revertida para A_RECEBER',
       })
-      // Refresh from server to ensure consistency
-      onRefresh()
+      // Don't call onRefresh to avoid closing expanded plans
+      // The optimistic update already updated the UI
     } catch (error: any) {
       // Revert optimistic update on error
       toast({
@@ -227,8 +227,8 @@ export function RevenueForecastPlansSection({
         title: 'Sucesso',
         description: 'Parcela atualizada com sucesso',
       })
-      // Refresh from server to ensure consistency
-      onRefresh()
+      // Don't call onRefresh to avoid closing expanded plans
+      // The optimistic update already updated the UI
     } catch (error: any) {
       toast({
         title: 'Erro',
