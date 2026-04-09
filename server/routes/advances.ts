@@ -2580,11 +2580,12 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
   }
 
   try {
-    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName } = req.body
+    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName, issuedAt } = req.body
 
     console.log(`[Billing Manual] Received request for contract ${contractId} with ${items?.length || 0} items`, {
       dependentId,
       dependentName,
+      issuedAt,
     })
 
     if (!items || !Array.isArray(items)) {
@@ -2596,6 +2597,7 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
     }
 
     const finalServiceDate = serviceDate || new Date().toISOString().split('T')[0]
+    const finalIssuedAt = issuedAt || new Date().toISOString()
 
     // Verify contract exists
     const contractResult = await query(
@@ -2712,7 +2714,7 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
         id, contract_id, batch_number, target_amount, target_periciable_amount,
         total_amount, total_periciable_amount, status, issued_at, created_by, doctor_id,
         dependent_id, dependent_name
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', CURRENT_TIMESTAMP, $8, $9, $10, $11)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ISSUED', $8, $9, $10, $11, $12)`,
       [
         batchId,
         contractId,
@@ -2721,6 +2723,7 @@ router.post('/contracts/:clinicId/:contractId/billing-batch/manual', async (req,
         totalPericiable,
         totalAmount,
         totalPericiable,
+        finalIssuedAt,
         userId,
         doctorId,
         dependentId || null,
@@ -2839,7 +2842,7 @@ router.put('/contracts/:clinicId/:contractId/billing-batch/:batchId', async (req
   }
 
   try {
-    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName } = req.body
+    const { items, serviceDate, doctorId, targetAmount: providedTargetAmount, dependentId, dependentName, issuedAt } = req.body
 
     if (!items || !Array.isArray(items)) {
       return res.status(400).json({ error: 'Items must be an array (can be empty)' })
@@ -2875,15 +2878,26 @@ router.put('/contracts/:clinicId/:contractId/billing-batch/:batchId', async (req
           sum + (item.totalValue || (item.unitValue || 0) * (item.quantity || 1)), 0)
     }
 
-    // Update batch
-    await query(
-      `UPDATE billing_batches
-       SET total_amount = $1, total_periciable_amount = $2, target_amount = $3,
-           doctor_id = $4, dependent_id = $5, dependent_name = $6
-       WHERE id = $7`,
-      [totalAmount, totalPericiable, providedTargetAmount || totalAmount,
-       doctorId, dependentId || null, dependentName || null, batchId]
-    )
+    // Update batch (include issued_at if provided)
+    if (issuedAt) {
+      await query(
+        `UPDATE billing_batches
+         SET total_amount = $1, total_periciable_amount = $2, target_amount = $3,
+             doctor_id = $4, dependent_id = $5, dependent_name = $6, issued_at = $7
+         WHERE id = $8`,
+        [totalAmount, totalPericiable, providedTargetAmount || totalAmount,
+         doctorId, dependentId || null, dependentName || null, issuedAt, batchId]
+      )
+    } else {
+      await query(
+        `UPDATE billing_batches
+         SET total_amount = $1, total_periciable_amount = $2, target_amount = $3,
+             doctor_id = $4, dependent_id = $5, dependent_name = $6
+         WHERE id = $7`,
+        [totalAmount, totalPericiable, providedTargetAmount || totalAmount,
+         doctorId, dependentId || null, dependentName || null, batchId]
+      )
+    }
 
     // Delete and recreate items
     await query(`DELETE FROM billing_items WHERE batch_id = $1`, [batchId])

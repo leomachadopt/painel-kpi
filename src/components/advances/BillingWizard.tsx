@@ -111,6 +111,7 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
   const [targetAmount, setTargetAmount] = useState('')
   const [clinic, setClinic] = useState<Clinic | null>(null)
   const [doctorId, setDoctorId] = useState<string>('')
+  const [issuedDate, setIssuedDate] = useState<string>(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     loadData()
@@ -148,6 +149,11 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
           age: null,
           type: 'DEPENDENT',
         })
+      }
+
+      // Load issued date if editing
+      if (batchToEdit.issuedAt) {
+        setIssuedDate(new Date(batchToEdit.issuedAt).toISOString().split('T')[0])
       }
     }
   }, [batchToEdit])
@@ -431,39 +437,64 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
 
     setCreating(true)
     try {
-      console.error('[BillingWizard] Creating batch with', selectedItems.length, 'items')
-      console.error('[BillingWizard] Items to send:', JSON.stringify(selectedItems.map(item => ({
-        procedure: item.procedureDescription,
-        dependentId: item.dependentId,
-        dependentName: item.dependentName,
-      })), null, 2))
+      // If editing, update the existing batch
+      if (batchToEdit) {
+        console.log('[BillingWizard] Updating batch:', batchToEdit.id)
 
-      // Alert para garantir que vemos
-      alert(`Criando lote com ${selectedItems.length} itens. Veja o console (F12) para detalhes.`)
+        const result = await advancesApi.contracts.updateBillingBatch(clinicId, contractId, batchToEdit.id, {
+          items: selectedItems.map(item => ({
+            procedureId: item.procedureId,
+            procedureCode: item.procedureCode,
+            procedureDescription: item.procedureDescription,
+            isPericiable: item.isPericiable,
+            unitValue: item.unitValue,
+            quantity: item.quantity,
+            totalValue: item.totalValue,
+            dependentId: item.dependentId,
+          })),
+          serviceDate: new Date().toISOString().split('T')[0],
+          doctorId: doctorId,
+          issuedAt: issuedDate,
+        })
 
-      const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
-        items: selectedItems.map(item => ({
-          procedureId: item.procedureId,
-          procedureCode: item.procedureCode,
-          procedureDescription: item.procedureDescription,
-          isPericiable: item.isPericiable,
-          unitValue: item.unitValue,
-          quantity: item.quantity,
-          totalValue: item.totalValue,
+        toast.success(`Lote ${result.batchNumber} atualizado com sucesso!`)
+      } else {
+        // Creating new batch
+        console.error('[BillingWizard] Creating batch with', selectedItems.length, 'items')
+        console.error('[BillingWizard] Items to send:', JSON.stringify(selectedItems.map(item => ({
+          procedure: item.procedureDescription,
           dependentId: item.dependentId,
-        })),
-        serviceDate: new Date().toISOString().split('T')[0],
-        doctorId: doctorId,
-      })
+          dependentName: item.dependentName,
+        })), null, 2))
 
-      console.log('[BillingWizard] Batch created successfully:', result.batchNumber)
-      toast.success(`Lote ${result.batchNumber} criado com sucesso!`)
+        // Alert para garantir que vemos
+        alert(`Criando lote com ${selectedItems.length} itens. Veja o console (F12) para detalhes.`)
+
+        const result = await advancesApi.contracts.createBillingBatchManual(clinicId, contractId, {
+          items: selectedItems.map(item => ({
+            procedureId: item.procedureId,
+            procedureCode: item.procedureCode,
+            procedureDescription: item.procedureDescription,
+            isPericiable: item.isPericiable,
+            unitValue: item.unitValue,
+            quantity: item.quantity,
+            totalValue: item.totalValue,
+            dependentId: item.dependentId,
+          })),
+          serviceDate: new Date().toISOString().split('T')[0],
+          doctorId: doctorId,
+          issuedAt: issuedDate,
+        })
+
+        console.log('[BillingWizard] Batch created successfully:', result.batchNumber)
+        toast.success(`Lote ${result.batchNumber} criado com sucesso!`)
+      }
 
       // Close dialog and trigger parent refresh via callback
       onClose()
     } catch (err: any) {
-      console.error('[BillingWizard] Error creating batch:', err)
-      toast.error(err.message || 'Erro ao criar lote')
+      console.error('[BillingWizard] Error creating/updating batch:', err)
+      toast.error(err.message || 'Erro ao processar lote')
       setCreating(false) // Only reset on error
     }
     // Don't reset creating flag on success to prevent any potential race conditions
@@ -514,6 +545,7 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
           doctorId: doctorId,
           dependentId: selectedPerson.id,
           dependentName: selectedPerson.name,
+          issuedAt: issuedDate,
         })
 
         toast.success(`Lote ${result.batchNumber} atualizado com sucesso no valor de ${formatCurrency(amount)}!`)
@@ -528,6 +560,7 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
           doctorId: doctorId,
           dependentId: selectedPerson.id,
           dependentName: selectedPerson.name,
+          issuedAt: issuedDate,
         })
 
         toast.success(`Lote ${result.batchNumber} emitido sem procedimentos no valor de ${formatCurrency(amount)}`)
@@ -767,6 +800,20 @@ export function BillingWizard({ clinicId, contractId, onClose, batchToEdit }: Bi
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
               Obrigatório para emitir o lote
+            </p>
+          </div>
+
+          {/* Data de Emissão */}
+          <div>
+            <Label>Data de Emissão *</Label>
+            <Input
+              type="date"
+              value={issuedDate}
+              onChange={(e) => setIssuedDate(e.target.value)}
+              disabled={creating}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Data de emissão do lote de fatura
             </p>
           </div>
 
