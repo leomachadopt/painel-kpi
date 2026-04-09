@@ -169,7 +169,7 @@ router.post('/:clinicId/patients', async (req, res) => {
     const createdTreatments = []
 
     for (const treatment of treatments) {
-      const { description, unitValue, totalQuantity, categoryId } = treatment
+      const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId } = treatment
 
       if (!description || !unitValue || !totalQuantity) {
         throw new Error('Invalid treatment data')
@@ -181,8 +181,9 @@ router.post('/:clinicId/patients', async (req, res) => {
       await client.query(
         `INSERT INTO pending_treatments (
           id, pending_treatment_patient_id, clinic_id, description,
-          unit_value, total_quantity, pending_quantity, category_id, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          unit_value, total_quantity, pending_quantity, category_id, status,
+          procedure_code, procedure_base_id, insurance_provider_procedure_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
         [
           treatmentId,
           finalPatientId,
@@ -193,6 +194,9 @@ router.post('/:clinicId/patients', async (req, res) => {
           totalQuantity, // initially all pending
           categoryId || null,
           status,
+          procedureCode || null,
+          procedureBaseId || null,
+          insuranceProviderProcedureId || null,
         ]
       )
 
@@ -232,7 +236,7 @@ router.post('/:clinicId/patients', async (req, res) => {
 router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
   try {
     const { clinicId, patientId } = req.params
-    const { description, unitValue, totalQuantity, categoryId } = req.body
+    const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId } = req.body
 
     if (!await canManagePendingTreatments(req, clinicId)) {
       return res.status(403).json({ error: 'Permission denied' })
@@ -249,8 +253,9 @@ router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
     await query(
       `INSERT INTO pending_treatments (
         id, pending_treatment_patient_id, clinic_id, description,
-        unit_value, total_quantity, pending_quantity, category_id, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        unit_value, total_quantity, pending_quantity, category_id, status,
+        procedure_code, procedure_base_id, insurance_provider_procedure_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         treatmentId,
         patientId,
@@ -261,6 +266,9 @@ router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
         totalQuantity,
         categoryId || null,
         status,
+        procedureCode || null,
+        procedureBaseId || null,
+        insuranceProviderProcedureId || null,
       ]
     )
 

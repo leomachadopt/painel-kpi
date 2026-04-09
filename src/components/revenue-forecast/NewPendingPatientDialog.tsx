@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Search } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,18 @@ interface Treatment {
   unitValue: string
   totalQuantity: string
   categoryId: string
+  procedureCode?: string
+  procedureBaseId?: string | null
+  insuranceProviderProcedureId?: string | null
+}
+
+interface ProcedureResult {
+  id: string
+  code: string
+  description: string
+  value: number
+  procedureBaseId?: string
+  insuranceProviderProcedureId?: string
 }
 
 interface NewPendingPatientDialogProps {
@@ -56,12 +68,22 @@ export function NewPendingPatientDialog({
     { description: '', unitValue: '', totalQuantity: '', categoryId: '' },
   ])
 
+  // Procedure search state
+  const [searchTerm, setSearchTerm] = useState<Record<number, string>>({})
+  const [searchResults, setSearchResults] = useState<Record<number, ProcedureResult[]>>({})
+  const [searching, setSearching] = useState<Record<number, boolean>>({})
+  const [showResults, setShowResults] = useState<Record<number, boolean>>({})
+
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       setPatientCode('')
       setPatientName('')
       setTreatments([{ description: '', unitValue: '', totalQuantity: '', categoryId: '' }])
+      setSearchTerm({})
+      setSearchResults({})
+      setSearching({})
+      setShowResults({})
     }
   }, [open])
 
@@ -82,12 +104,80 @@ export function NewPendingPatientDialog({
       return
     }
     setTreatments(treatments.filter((_, i) => i !== index))
+    // Clean up search state for this index
+    const newSearchTerm = { ...searchTerm }
+    const newSearchResults = { ...searchResults }
+    const newSearching = { ...searching }
+    const newShowResults = { ...showResults }
+    delete newSearchTerm[index]
+    delete newSearchResults[index]
+    delete newSearching[index]
+    delete newShowResults[index]
+    setSearchTerm(newSearchTerm)
+    setSearchResults(newSearchResults)
+    setSearching(newSearching)
+    setShowResults(newShowResults)
   }
 
   const handleTreatmentChange = (index: number, field: keyof Treatment, value: string) => {
     const updated = [...treatments]
     updated[index][field] = value
     setTreatments(updated)
+  }
+
+  // Search for procedures
+  const handleSearchProcedure = async (index: number, search: string) => {
+    setSearchTerm({ ...searchTerm, [index]: search })
+
+    if (search.length < 2) {
+      setSearchResults({ ...searchResults, [index]: [] })
+      setShowResults({ ...showResults, [index]: false })
+      return
+    }
+
+    setSearching({ ...searching, [index]: true })
+    setShowResults({ ...showResults, [index]: true })
+
+    try {
+      const data = await api.proceduresCatalog.search(clinicId, {
+        type: 'clinica',
+        search,
+        limit: 20,
+      })
+
+      setSearchResults({
+        ...searchResults,
+        [index]: data.procedures.map((p: any) => ({
+          id: p.id,
+          code: p.code,
+          description: p.description,
+          value: p.value,
+          procedureBaseId: p.procedureBaseId,
+          insuranceProviderProcedureId: p.insuranceProviderProcedureId,
+        })),
+      })
+    } catch (error: any) {
+      console.error('Search error:', error)
+      setSearchResults({ ...searchResults, [index]: [] })
+    } finally {
+      setSearching({ ...searching, [index]: false })
+    }
+  }
+
+  // Select a procedure from search results
+  const handleSelectProcedure = (index: number, procedure: ProcedureResult) => {
+    const updated = [...treatments]
+    updated[index] = {
+      ...updated[index],
+      description: procedure.description,
+      unitValue: procedure.value.toString(),
+      procedureCode: procedure.code,
+      procedureBaseId: procedure.procedureBaseId || null,
+      insuranceProviderProcedureId: procedure.insuranceProviderProcedureId || null,
+    }
+    setTreatments(updated)
+    setSearchTerm({ ...searchTerm, [index]: procedure.description })
+    setShowResults({ ...showResults, [index]: false })
   }
 
   const handleSubmit = async () => {
@@ -124,6 +214,9 @@ export function NewPendingPatientDialog({
           unitValue: parseFloat(t.unitValue),
           totalQuantity: parseInt(t.totalQuantity),
           categoryId: t.categoryId || undefined,
+          procedureCode: t.procedureCode || undefined,
+          procedureBaseId: t.procedureBaseId || undefined,
+          insuranceProviderProcedureId: t.insuranceProviderProcedureId || undefined,
         })),
       }
 
@@ -206,19 +299,56 @@ export function NewPendingPatientDialog({
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <Label htmlFor={`description-${index}`}>
                         Descrição <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        id={`description-${index}`}
-                        value={treatment.description}
-                        onChange={(e) =>
-                          handleTreatmentChange(index, 'description', e.target.value)
-                        }
-                        placeholder="Ex: Cáries, Implante"
-                        required
-                      />
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id={`description-${index}`}
+                          value={searchTerm[index] || treatment.description}
+                          onChange={(e) => {
+                            handleTreatmentChange(index, 'description', e.target.value)
+                            handleSearchProcedure(index, e.target.value)
+                          }}
+                          onFocus={() => {
+                            if (searchResults[index]?.length > 0) {
+                              setShowResults({ ...showResults, [index]: true })
+                            }
+                          }}
+                          placeholder="Ex: Cáries, Implante"
+                          className="pl-9"
+                          required
+                        />
+                        {searching[index] && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Search Results Dropdown */}
+                      {showResults[index] && searchResults[index]?.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {searchResults[index].map((proc) => (
+                            <button
+                              key={proc.id}
+                              type="button"
+                              className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0"
+                              onClick={() => handleSelectProcedure(index, proc)}
+                            >
+                              <div className="font-medium text-sm">{proc.description}</div>
+                              <div className="text-xs text-muted-foreground flex justify-between mt-1">
+                                <span>Código: {proc.code}</span>
+                                <span className="font-semibold text-primary">
+                                  {formatCurrency(proc.value)}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
