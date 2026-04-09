@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Search } from 'lucide-react'
+import { Plus, X, Search, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -18,20 +18,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import api from '@/services/api'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from '@/hooks/useTranslation'
 import useDataStore from '@/stores/useDataStore'
 
-interface Treatment {
+interface SelectedTreatment {
+  id: string
+  code: string
   description: string
-  unitValue: string
-  totalQuantity: string
+  value: number
+  procedureBaseId?: string
+  insuranceProviderProcedureId?: string
+  quantity: number
+  editedValue: number
+  editedDescription: string
   categoryId: string
-  procedureCode?: string
-  procedureBaseId?: string | null
-  insuranceProviderProcedureId?: string | null
 }
 
 interface ProcedureResult {
@@ -41,6 +46,12 @@ interface ProcedureResult {
   value: number
   procedureBaseId?: string
   insuranceProviderProcedureId?: string
+}
+
+interface InsuranceProvider {
+  id: string
+  name: string
+  proceduresCount?: number
 }
 
 interface NewPendingPatientDialogProps {
@@ -64,121 +75,155 @@ export function NewPendingPatientDialog({
   const [loading, setLoading] = useState(false)
   const [patientCode, setPatientCode] = useState('')
   const [patientName, setPatientName] = useState('')
-  const [treatments, setTreatments] = useState<Treatment[]>([
-    { description: '', unitValue: '', totalQuantity: '', categoryId: '' },
-  ])
 
-  // Procedure search state
-  const [searchTerm, setSearchTerm] = useState<Record<number, string>>({})
-  const [searchResults, setSearchResults] = useState<Record<number, ProcedureResult[]>>({})
-  const [searching, setSearching] = useState<Record<number, boolean>>({})
-  const [showResults, setShowResults] = useState<Record<number, boolean>>({})
+  // Price table selection
+  const [priceTableType, setPriceTableType] = useState<'clinica' | 'operadora'>('clinica')
+  const [insuranceProviderId, setInsuranceProviderId] = useState<string>('')
+  const [providers, setProviders] = useState<InsuranceProvider[]>([])
+  const [providersLoading, setProvidersLoading] = useState(false)
+
+  // Procedure search
+  const [searchTerm, setSearchTerm] = useState('')
+  const [searchResults, setSearchResults] = useState<ProcedureResult[]>([])
+  const [searching, setSearching] = useState(false)
+
+  // Selected treatments
+  const [selectedTreatments, setSelectedTreatments] = useState<SelectedTreatment[]>([])
 
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       setPatientCode('')
       setPatientName('')
-      setTreatments([{ description: '', unitValue: '', totalQuantity: '', categoryId: '' }])
-      setSearchTerm({})
-      setSearchResults({})
-      setSearching({})
-      setShowResults({})
+      setPriceTableType('clinica')
+      setInsuranceProviderId('')
+      setSearchTerm('')
+      setSearchResults([])
+      setSelectedTreatments([])
+
+      // Load insurance providers
+      setProvidersLoading(true)
+      api.proceduresCatalog
+        .getProviders(clinicId)
+        .then((data) => setProviders(data.providers))
+        .catch((err) => {
+          console.error('Erro ao carregar operadoras:', err)
+          toast({
+            title: 'Erro',
+            description: 'Erro ao carregar operadoras',
+            variant: 'destructive',
+          })
+        })
+        .finally(() => setProvidersLoading(false))
     }
-  }, [open])
+  }, [open, clinicId])
 
-  const handleAddTreatment = () => {
-    setTreatments([
-      ...treatments,
-      { description: '', unitValue: '', totalQuantity: '', categoryId: '' },
-    ])
-  }
+  // Debounced search for procedures
+  useEffect(() => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setSearchResults([])
+      return
+    }
 
-  const handleRemoveTreatment = (index: number) => {
-    if (treatments.length === 1) {
+    if (priceTableType === 'operadora' && !insuranceProviderId) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setSearching(true)
+      api.proceduresCatalog
+        .search(clinicId, {
+          type: priceTableType,
+          providerId: insuranceProviderId || undefined,
+          search: searchTerm,
+          limit: 20,
+        })
+        .then((data) =>
+          setSearchResults(
+            data.procedures.map((p: any) => ({
+              id: p.id,
+              code: p.code,
+              description: p.description,
+              value: p.value,
+              procedureBaseId: p.procedureBaseId,
+              insuranceProviderProcedureId: p.insuranceProviderProcedureId,
+            }))
+          )
+        )
+        .catch((err) => {
+          console.error('Erro ao buscar procedimentos:', err)
+          setSearchResults([])
+        })
+        .finally(() => setSearching(false))
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, priceTableType, insuranceProviderId, clinicId])
+
+  const handleAddProcedure = (procedure: ProcedureResult) => {
+    // Check if already added
+    if (selectedTreatments.some((t) => t.id === procedure.id)) {
       toast({
-        title: 'Erro',
-        description: 'Deve haver pelo menos 1 tratamento',
-        variant: 'destructive',
+        title: 'Atenção',
+        description: 'Procedimento já adicionado',
       })
       return
     }
-    setTreatments(treatments.filter((_, i) => i !== index))
-    // Clean up search state for this index
-    const newSearchTerm = { ...searchTerm }
-    const newSearchResults = { ...searchResults }
-    const newSearching = { ...searching }
-    const newShowResults = { ...showResults }
-    delete newSearchTerm[index]
-    delete newSearchResults[index]
-    delete newSearching[index]
-    delete newShowResults[index]
-    setSearchTerm(newSearchTerm)
-    setSearchResults(newSearchResults)
-    setSearching(newSearching)
-    setShowResults(newShowResults)
-  }
 
-  const handleTreatmentChange = (index: number, field: keyof Treatment, value: string) => {
-    const updated = [...treatments]
-    updated[index][field] = value
-    setTreatments(updated)
-  }
-
-  // Search for procedures
-  const handleSearchProcedure = async (index: number, search: string) => {
-    setSearchTerm({ ...searchTerm, [index]: search })
-
-    if (search.length < 2) {
-      setSearchResults({ ...searchResults, [index]: [] })
-      setShowResults({ ...showResults, [index]: false })
-      return
-    }
-
-    setSearching({ ...searching, [index]: true })
-    setShowResults({ ...showResults, [index]: true })
-
-    try {
-      const data = await api.proceduresCatalog.search(clinicId, {
-        type: 'clinica',
-        search,
-        limit: 20,
-      })
-
-      setSearchResults({
-        ...searchResults,
-        [index]: data.procedures.map((p: any) => ({
-          id: p.id,
-          code: p.code,
-          description: p.description,
-          value: p.value,
-          procedureBaseId: p.procedureBaseId,
-          insuranceProviderProcedureId: p.insuranceProviderProcedureId,
-        })),
-      })
-    } catch (error: any) {
-      console.error('Search error:', error)
-      setSearchResults({ ...searchResults, [index]: [] })
-    } finally {
-      setSearching({ ...searching, [index]: false })
-    }
-  }
-
-  // Select a procedure from search results
-  const handleSelectProcedure = (index: number, procedure: ProcedureResult) => {
-    const updated = [...treatments]
-    updated[index] = {
-      ...updated[index],
+    const newTreatment: SelectedTreatment = {
+      id: procedure.id,
+      code: procedure.code,
       description: procedure.description,
-      unitValue: procedure.value.toString(),
-      procedureCode: procedure.code,
-      procedureBaseId: procedure.procedureBaseId || null,
-      insuranceProviderProcedureId: procedure.insuranceProviderProcedureId || null,
+      value: procedure.value,
+      procedureBaseId: procedure.procedureBaseId,
+      insuranceProviderProcedureId: procedure.insuranceProviderProcedureId,
+      quantity: 1,
+      editedValue: procedure.value,
+      editedDescription: procedure.description,
+      categoryId: '',
     }
-    setTreatments(updated)
-    setSearchTerm({ ...searchTerm, [index]: procedure.description })
-    setShowResults({ ...showResults, [index]: false })
+
+    setSelectedTreatments([...selectedTreatments, newTreatment])
+    setSearchTerm('')
+    setSearchResults([])
   }
+
+  const handleRemoveTreatment = (treatmentId: string) => {
+    setSelectedTreatments(selectedTreatments.filter((t) => t.id !== treatmentId))
+  }
+
+  const handleUpdateQuantity = (treatmentId: string, quantity: number) => {
+    if (quantity < 1) return
+    setSelectedTreatments(
+      selectedTreatments.map((t) => (t.id === treatmentId ? { ...t, quantity } : t))
+    )
+  }
+
+  const handleUpdateValue = (treatmentId: string, value: number) => {
+    if (value < 0) return
+    setSelectedTreatments(
+      selectedTreatments.map((t) => (t.id === treatmentId ? { ...t, editedValue: value } : t))
+    )
+  }
+
+  const handleUpdateDescription = (treatmentId: string, description: string) => {
+    setSelectedTreatments(
+      selectedTreatments.map((t) =>
+        t.id === treatmentId ? { ...t, editedDescription: description } : t
+      )
+    )
+  }
+
+  const handleUpdateCategory = (treatmentId: string, categoryId: string) => {
+    setSelectedTreatments(
+      selectedTreatments.map((t) => (t.id === treatmentId ? { ...t, categoryId } : t))
+    )
+  }
+
+  const totalPendingValue = selectedTreatments.reduce(
+    (sum, t) => sum + t.editedValue * t.quantity,
+    0
+  )
 
   const handleSubmit = async () => {
     // Validation
@@ -191,14 +236,19 @@ export function NewPendingPatientDialog({
       return
     }
 
-    const validTreatments = treatments.filter(
-      (t) => t.description && t.unitValue && t.totalQuantity
-    )
-
-    if (validTreatments.length === 0) {
+    if (selectedTreatments.length === 0) {
       toast({
         title: 'Erro',
-        description: 'Adicione pelo menos 1 tratamento completo',
+        description: 'Adicione pelo menos 1 tratamento',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (priceTableType === 'operadora' && !insuranceProviderId) {
+      toast({
+        title: 'Erro',
+        description: 'Selecione uma operadora',
         variant: 'destructive',
       })
       return
@@ -209,12 +259,12 @@ export function NewPendingPatientDialog({
       const data = {
         patientCode,
         patientName,
-        treatments: validTreatments.map((t) => ({
-          description: t.description,
-          unitValue: parseFloat(t.unitValue),
-          totalQuantity: parseInt(t.totalQuantity),
+        treatments: selectedTreatments.map((t) => ({
+          description: t.editedDescription,
+          unitValue: t.editedValue,
+          totalQuantity: t.quantity,
           categoryId: t.categoryId || undefined,
-          procedureCode: t.procedureCode || undefined,
+          procedureCode: t.code,
           procedureBaseId: t.procedureBaseId || undefined,
           insuranceProviderProcedureId: t.insuranceProviderProcedureId || undefined,
         })),
@@ -240,15 +290,9 @@ export function NewPendingPatientDialog({
     }
   }
 
-  const totalPendingValue = treatments.reduce((sum, t) => {
-    const value = parseFloat(t.unitValue || '0')
-    const quantity = parseInt(t.totalQuantity || '0')
-    return sum + value * quantity
-  }, 0)
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Cadastrar Tratamentos Pendentes</DialogTitle>
           <DialogDescription>
@@ -256,7 +300,7 @@ export function NewPendingPatientDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex flex-col gap-6 flex-1 min-h-0">
           {/* Patient Lookup */}
           <PatientCodeInput
             clinicId={clinicId}
@@ -267,171 +311,227 @@ export function NewPendingPatientDialog({
             required={true}
           />
 
-          {/* Treatments Section */}
+          {/* Only show treatment section after patient is selected */}
           {patientCode && patientName && (
             <>
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="text-sm font-medium">
-                  Tratamentos pendentes para: <span className="text-primary">{patientName}</span> (#{patientCode})
+              <div className="border-t pt-4">
+                <div className="text-sm font-medium mb-4">
+                  Tratamentos pendentes para:{' '}
+                  <span className="text-primary">{patientName}</span> (#{patientCode})
                 </div>
-                <Button type="button" onClick={handleAddTreatment} size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Tratamento
-                </Button>
-              </div>
 
-              {/* Treatments List */}
-              <div className="space-y-4">
-                {treatments.map((treatment, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3 relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="font-medium text-sm">Tratamento #{index + 1}</div>
-                    {treatments.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveTreatment(index)}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    )}
+                {/* Price table selection */}
+                <div className="flex flex-col gap-4">
+                  <div className="grid gap-2">
+                    <Label>Tipo de Tabela</Label>
+                    <Select
+                      value={priceTableType}
+                      onValueChange={(v: 'clinica' | 'operadora') => {
+                        setPriceTableType(v)
+                        setInsuranceProviderId('')
+                        setSearchTerm('')
+                        setSearchResults([])
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="clinica">Tabela da clínica (particular)</SelectItem>
+                        <SelectItem value="operadora">Operadora</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2 relative">
-                      <Label htmlFor={`description-${index}`}>
-                        Descrição <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id={`description-${index}`}
-                          value={searchTerm[index] || treatment.description}
-                          onChange={(e) => {
-                            handleTreatmentChange(index, 'description', e.target.value)
-                            handleSearchProcedure(index, e.target.value)
-                          }}
-                          onFocus={() => {
-                            if (searchResults[index]?.length > 0) {
-                              setShowResults({ ...showResults, [index]: true })
-                            }
-                          }}
-                          placeholder="Ex: Cáries, Implante"
-                          className="pl-9"
-                          required
-                        />
-                        {searching[index] && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Search Results Dropdown */}
-                      {showResults[index] && searchResults[index]?.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {searchResults[index].map((proc) => (
-                            <button
-                              key={proc.id}
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-muted transition-colors border-b last:border-0"
-                              onClick={() => handleSelectProcedure(index, proc)}
-                            >
-                              <div className="font-medium text-sm">{proc.description}</div>
-                              <div className="text-xs text-muted-foreground flex justify-between mt-1">
-                                <span>Código: {proc.code}</span>
-                                <span className="font-semibold text-primary">
-                                  {formatCurrency(proc.value)}
-                                </span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`categoryId-${index}`}>Categoria (Opcional)</Label>
+                  {priceTableType === 'operadora' && (
+                    <div className="grid gap-2">
+                      <Label>Operadora</Label>
                       <Select
-                        value={treatment.categoryId || undefined}
-                        onValueChange={(value) =>
-                          handleTreatmentChange(index, 'categoryId', value)
-                        }
+                        value={insuranceProviderId}
+                        onValueChange={setInsuranceProviderId}
+                        disabled={providersLoading}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Nenhuma categoria" />
+                          <SelectValue placeholder="Selecione uma operadora..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {clinic?.configuration?.categories?.map((cat: any) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              {cat.name}
+                          {providers.map((provider) => (
+                            <SelectItem key={provider.id} value={provider.id}>
+                              {provider.name}
+                              {provider.proceduresCount !== undefined && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  ({provider.proceduresCount} procedimentos)
+                                </span>
+                              )}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor={`unitValue-${index}`}>
-                        Valor Unitário (€) <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id={`unitValue-${index}`}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={treatment.unitValue}
-                        onChange={(e) =>
-                          handleTreatmentChange(index, 'unitValue', e.target.value)
-                        }
-                        placeholder="50.00"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`totalQuantity-${index}`}>
-                        Quantidade <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id={`totalQuantity-${index}`}
-                        type="number"
-                        min="1"
-                        value={treatment.totalQuantity}
-                        onChange={(e) =>
-                          handleTreatmentChange(index, 'totalQuantity', e.target.value)
-                        }
-                        placeholder="3"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Treatment Total */}
-                  {treatment.unitValue && treatment.totalQuantity && (
-                    <div className="text-sm text-right pt-2 border-t">
-                      <span className="text-muted-foreground">Total: </span>
-                      <span className="font-semibold text-primary">
-                        {formatCurrency(
-                          parseFloat(treatment.unitValue) * parseInt(treatment.totalQuantity)
-                        )}
-                      </span>
-                    </div>
                   )}
                 </div>
-              ))}
-            </div>
 
-              {/* Grand Total */}
-              <div className="border-2 border-primary/20 rounded-lg p-4 bg-primary/5">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">VALOR TOTAL PENDENTE:</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(totalPendingValue)}
-                  </span>
+                {/* Search for procedures */}
+                <div className="flex flex-col gap-2 mt-4">
+                  <Label>Adicionar procedimentos</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Pesquisar por código ou descrição..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                      disabled={priceTableType === 'operadora' && !insuranceProviderId}
+                    />
+                    {searching && (
+                      <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <ScrollArea className="h-40 border rounded-md">
+                      <div className="p-2 space-y-1">
+                        {searchResults.map((proc) => (
+                          <button
+                            key={proc.id}
+                            onClick={() => handleAddProcedure(proc)}
+                            className="w-full flex items-center justify-between p-2 hover:bg-accent rounded-md text-left"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">
+                                {proc.code} - {proc.description}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 ml-4">
+                              <span className="text-sm font-semibold whitespace-nowrap">
+                                {formatCurrency(proc.value)}
+                              </span>
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </div>
+
+                {/* Selected Treatments */}
+                <div className="flex flex-col gap-2 flex-1 min-h-0 mt-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Tratamentos adicionados ({selectedTreatments.length})</Label>
+                    <Badge variant="secondary">Total: {formatCurrency(totalPendingValue)}</Badge>
+                  </div>
+
+                  {/* Column Headers */}
+                  {selectedTreatments.length > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-t-md border-b text-xs font-semibold text-muted-foreground">
+                      <div className="flex-shrink-0 w-20">Código</div>
+                      <div className="flex-1">Descrição</div>
+                      <div className="flex-shrink-0 w-32">Categoria</div>
+                      <div className="flex-shrink-0 w-16 text-center">Qtd</div>
+                      <div className="flex-shrink-0 w-24 text-right">Valor</div>
+                      <div className="flex-shrink-0 w-28 text-right">Total</div>
+                      <div className="flex-shrink-0 w-9"></div>
+                    </div>
+                  )}
+
+                  <ScrollArea className="h-[250px] border rounded-md">
+                    <div className="p-2 space-y-2">
+                      {selectedTreatments.length === 0 ? (
+                        <div className="text-center text-muted-foreground text-sm py-8">
+                          Nenhum tratamento adicionado
+                        </div>
+                      ) : (
+                        selectedTreatments.map((treatment) => (
+                          <div
+                            key={treatment.id}
+                            className="flex items-center gap-2 p-3 bg-muted rounded-md"
+                          >
+                            {/* Code */}
+                            <div className="flex-shrink-0 w-20">
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {treatment.code}
+                              </Badge>
+                            </div>
+
+                            {/* Description */}
+                            <Input
+                              value={treatment.editedDescription}
+                              onChange={(e) =>
+                                handleUpdateDescription(treatment.id, e.target.value)
+                              }
+                              placeholder="Descrição"
+                              className="flex-1 h-9 text-sm"
+                            />
+
+                            {/* Category */}
+                            <div className="flex-shrink-0 w-32">
+                              <Select
+                                value={treatment.categoryId || undefined}
+                                onValueChange={(value) => handleUpdateCategory(treatment.id, value)}
+                              >
+                                <SelectTrigger className="h-9 text-sm">
+                                  <SelectValue placeholder="Categoria" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {clinic?.configuration?.categories?.map((cat: any) => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Quantity */}
+                            <div className="flex-shrink-0 w-16">
+                              <Input
+                                type="number"
+                                min="1"
+                                value={treatment.quantity}
+                                onChange={(e) =>
+                                  handleUpdateQuantity(treatment.id, parseInt(e.target.value) || 1)
+                                }
+                                className="w-full h-9 text-sm text-center"
+                                title="Quantidade"
+                              />
+                            </div>
+
+                            {/* Unit Value */}
+                            <div className="flex-shrink-0 w-24">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={treatment.editedValue}
+                                onChange={(e) =>
+                                  handleUpdateValue(treatment.id, parseFloat(e.target.value) || 0)
+                                }
+                                className="w-full h-9 text-sm text-right"
+                                title="Valor unitário"
+                              />
+                            </div>
+
+                            {/* Total */}
+                            <div className="flex-shrink-0 w-28 text-sm font-semibold h-9 flex items-center justify-end bg-background px-3 rounded border">
+                              {formatCurrency(treatment.editedValue * treatment.quantity)}
+                            </div>
+
+                            {/* Remove Button */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 flex-shrink-0"
+                              onClick={() => handleRemoveTreatment(treatment.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
                 </div>
               </div>
             </>
@@ -445,9 +545,16 @@ export function NewPendingPatientDialog({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || !patientCode || !patientName}
+            disabled={loading || !patientCode || !patientName || selectedTreatments.length === 0}
           >
-            {loading ? 'Salvando...' : 'Cadastrar Tratamentos'}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Cadastrar Tratamentos'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
