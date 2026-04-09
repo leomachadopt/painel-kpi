@@ -1267,6 +1267,39 @@ const revenueForecastApi = {
       next30Days: { count: number; value: number }
       overdue: { count: number; value: number }
     }>(`/revenue-forecast/${clinicId}/dashboard`),
+
+  getPendencies: (clinicId: string) =>
+    apiCall<{
+      pendencies: Array<{
+        patientCode: string
+        patientName: string
+        totalPayments: number
+        totalProcedures: number
+        balance: number
+      }>
+    }>(`/revenue-forecast/${clinicId}/pendencies`),
+
+  getPatientBalance: (clinicId: string, patientCode: string) =>
+    apiCall<{
+      patientCode: string
+      patientName: string
+      totalPayments: number
+      totalProcedures: number
+      balance: number
+      payments: Array<{
+        id: string
+        date: string
+        value: number
+        categoryId: string
+      }>
+      procedures: Array<{
+        id: string
+        procedureCode: string
+        procedureDescription: string
+        value: number
+        completedAt: string
+      }>
+    }>(`/revenue-forecast/${clinicId}/pendencies/${patientCode}`),
 }
 
 // ================================

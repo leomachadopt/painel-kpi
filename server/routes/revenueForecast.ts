@@ -627,4 +627,155 @@ router.get('/:clinicId/dashboard', async (req, res) => {
   }
 })
 
+// ================================
+// PATIENT PENDENCIES (BALANCE)
+// ================================
+
+/**
+ * Get patients with negative balance (procedures executed > payments received)
+ */
+router.get('/:clinicId/pendencies', async (req, res) => {
+  try {
+    const { clinicId } = req.params
+
+    if (!await canManageRevenueForecast(req, clinicId)) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Get all patients with their financial balance
+    const result = await query(`
+      WITH patient_payments AS (
+        SELECT
+          code as patient_code,
+          patient_name,
+          COALESCE(SUM(value), 0) as total_payments
+        FROM daily_financial_entries
+        WHERE clinic_id = $1
+          AND code IS NOT NULL
+          AND code != ''
+        GROUP BY code, patient_name
+      ),
+      patient_procedures AS (
+        SELECT
+          dce.code as patient_code,
+          dce.patient_name,
+          COALESCE(SUM(pp.price_at_creation), 0) as total_procedures
+        FROM plan_procedures pp
+        INNER JOIN daily_consultation_entries dce ON pp.consultation_entry_id = dce.id
+        WHERE dce.clinic_id = $1
+          AND pp.completed = true
+          AND dce.code IS NOT NULL
+          AND dce.code != ''
+        GROUP BY dce.code, dce.patient_name
+      )
+      SELECT
+        COALESCE(pay.patient_code, proc.patient_code) as patient_code,
+        COALESCE(pay.patient_name, proc.patient_name) as patient_name,
+        COALESCE(pay.total_payments, 0) as total_payments,
+        COALESCE(proc.total_procedures, 0) as total_procedures,
+        COALESCE(pay.total_payments, 0) - COALESCE(proc.total_procedures, 0) as balance
+      FROM patient_payments pay
+      FULL OUTER JOIN patient_procedures proc
+        ON pay.patient_code = proc.patient_code
+      WHERE COALESCE(pay.total_payments, 0) - COALESCE(proc.total_procedures, 0) < 0
+      ORDER BY balance ASC
+    `, [clinicId])
+
+    const pendencies = result.rows.map(row => ({
+      patientCode: row.patient_code,
+      patientName: row.patient_name,
+      totalPayments: parseFloat(row.total_payments),
+      totalProcedures: parseFloat(row.total_procedures),
+      balance: parseFloat(row.balance), // negative value
+    }))
+
+    res.json({ pendencies })
+  } catch (error: any) {
+    console.error('Get patient pendencies error:', error)
+    res.status(500).json({ error: 'Failed to fetch patient pendencies' })
+  }
+})
+
+/**
+ * Get detailed balance for a specific patient
+ */
+router.get('/:clinicId/pendencies/:patientCode', async (req, res) => {
+  try {
+    const { clinicId, patientCode } = req.params
+
+    if (!await canManageRevenueForecast(req, clinicId)) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Get patient payments
+    const paymentsResult = await query(`
+      SELECT
+        id,
+        date,
+        patient_name,
+        value,
+        category_id,
+        created_at
+      FROM daily_financial_entries
+      WHERE clinic_id = $1
+        AND code = $2
+      ORDER BY date DESC
+    `, [clinicId, patientCode])
+
+    const payments = paymentsResult.rows.map(row => ({
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      value: parseFloat(row.value),
+      categoryId: row.category_id,
+      createdAt: row.created_at,
+    }))
+
+    // Get patient procedures executed
+    const proceduresResult = await query(`
+      SELECT
+        pp.id,
+        pp.procedure_code,
+        pp.procedure_description,
+        pp.price_at_creation,
+        pp.completed_at,
+        pp.notes,
+        dce.patient_name
+      FROM plan_procedures pp
+      INNER JOIN daily_consultation_entries dce ON pp.consultation_entry_id = dce.id
+      WHERE dce.clinic_id = $1
+        AND dce.code = $2
+        AND pp.completed = true
+      ORDER BY pp.completed_at DESC
+    `, [clinicId, patientCode])
+
+    const procedures = proceduresResult.rows.map(row => ({
+      id: row.id,
+      procedureCode: row.procedure_code,
+      procedureDescription: row.procedure_description,
+      value: parseFloat(row.price_at_creation),
+      completedAt: row.completed_at,
+      notes: row.notes,
+      patientName: row.patient_name,
+    }))
+
+    const totalPayments = payments.reduce((sum, p) => sum + p.value, 0)
+    const totalProcedures = procedures.reduce((sum, p) => sum + p.value, 0)
+    const balance = totalPayments - totalProcedures
+
+    res.json({
+      patientCode,
+      patientName: payments[0]?.patientName || procedures[0]?.patientName || '',
+      totalPayments,
+      totalProcedures,
+      balance,
+      payments,
+      procedures,
+    })
+  } catch (error: any) {
+    console.error('Get patient balance detail error:', error)
+    res.status(500).json({ error: 'Failed to fetch patient balance detail' })
+  }
+})
+
 export default router

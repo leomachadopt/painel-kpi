@@ -11,6 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { RevenueForecastPlansSection } from '@/components/revenue-forecast/PlansSection'
 import { PendingTreatmentsSection } from '@/components/revenue-forecast/PendingTreatmentsSection'
 import { MonthlyCashFlowSection } from '@/components/revenue-forecast/MonthlyCashFlowSection'
+import { PendenciesSection } from '@/components/revenue-forecast/PendenciesSection'
 import { NewRevenuePlanDialog } from '@/components/revenue-forecast/NewRevenuePlanDialog'
 import { NewPendingPatientDialog } from '@/components/revenue-forecast/NewPendingPatientDialog'
 
@@ -182,10 +183,11 @@ export default function RevenueForecast() {
 
       {/* Tabs for different sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="cashflow">Fluxo de Caixa Mensal</TabsTrigger>
           <TabsTrigger value="revenues">Receitas Recorrentes</TabsTrigger>
           <TabsTrigger value="treatments">Tratamentos Pendentes</TabsTrigger>
+          <TabsTrigger value="pendencies">Pendências</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cashflow">
@@ -205,6 +207,13 @@ export default function RevenueForecast() {
             clinicId={clinicId!}
             refreshTrigger={refreshTrigger}
             onRefresh={handleRefresh}
+          />
+        </TabsContent>
+
+        <TabsContent value="pendencies">
+          <PendenciesSection
+            clinicId={clinicId!}
+            refreshTrigger={refreshTrigger}
           />
         </TabsContent>
       </Tabs>
