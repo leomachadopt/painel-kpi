@@ -268,9 +268,20 @@ export function RevenueForecastPlansSection({
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.patientCode && `#${plan.patientCode} • `}
-                        {plan.installmentCount} parcelas de {formatCurrency(plan.installmentValue)} •
-                        Total: {formatCurrency(plan.totalValue)}
-                        {plan.categoryName && ` • ${plan.categoryName}`}
+                        {(() => {
+                          // Calculate pending installments and remaining balance
+                          const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO').length || 0
+                          const pendingInstallments = plan.installmentCount - receivedInstallments
+                          const remainingBalance = plan.totalValue - (plan.alreadyPaidAmount || 0)
+
+                          return (
+                            <>
+                              {pendingInstallments} parcelas de {formatCurrency(plan.installmentValue)} •
+                              Saldo: {formatCurrency(remainingBalance)}
+                              {plan.categoryName && ` • ${plan.categoryName}`}
+                            </>
+                          )
+                        })()}
                       </div>
                       {plan.alreadyPaidAmount > 0 && (
                         <div className="text-xs text-green-600 font-medium mt-1">
