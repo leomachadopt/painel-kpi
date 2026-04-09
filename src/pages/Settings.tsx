@@ -1142,8 +1142,11 @@ export default function Settings() {
       // Recarregar a clínica completa do banco para garantir dados atualizados
       const updatedClinic = await clinicsApi.getById(clinic.id)
       await updateClinicConfig(clinic.id, updatedClinic.configuration)
-      // Atualizar o estado local também
-      setConfig(updatedClinic.configuration)
+      // Atualizar o estado local incluindo agendaEnabled (que vem na raiz da clínica, não em configuration)
+      setConfig({
+        ...updatedClinic.configuration,
+        agendaEnabled: updatedClinic.agendaEnabled
+      })
       toast.success('Configurações guardadas com sucesso!')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao guardar configurações')
