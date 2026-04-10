@@ -70,7 +70,7 @@ router.get('/:clinicId', async (req, res) => {
         id: row.id,
         code: row.code,
         description: row.description,
-        value: parseFloat(row.value || 0),
+        value: row.value ? parseFloat(row.value) : null,  // Manter NULL se não tiver valor
         type: 'clinica',
         procedureBaseId: row.id,
         insuranceProviderProcedureId: null,
@@ -78,11 +78,11 @@ router.get('/:clinicId', async (req, res) => {
       }))
     } else {
       // Busca da tabela de operadora
+      // Tentar primeiro de insurance_provider_procedures (procedimentos salvos)
       const searchCondition = search
         ? `AND (COALESCE(ipp.provider_code, pb.code) ILIKE $4 OR COALESCE(ipp.provider_description, pb.description) ILIKE $4)`
         : ''
 
-      // Filtro de aprovação: apenas para lançamento automático de lotes de fatura
       const approvalCondition = requireApproved === 'true'
         ? `AND ipp.active = true`
         : ''
@@ -92,7 +92,7 @@ router.get('/:clinicId', async (req, res) => {
         params.push(`%${search}%`)
       }
 
-      const result = await query(
+      let result = await query(
         `SELECT
           ipp.id as insurance_provider_procedure_id,
           pb.id as procedure_base_id,
@@ -112,16 +112,59 @@ router.get('/:clinicId', async (req, res) => {
         params
       )
 
-      procedures = result.rows.map(row => ({
-        id: row.insurance_provider_procedure_id,
-        code: row.code,
-        description: row.description,
-        value: parseFloat(row.value || 0),
-        type: 'operadora',
-        procedureBaseId: row.procedure_base_id,
-        insuranceProviderProcedureId: row.insurance_provider_procedure_id,
-        active: row.active // Indica se procedimento foi aprovado
-      }))
+      // Se não encontrou procedimentos salvos, buscar do upload (extracted_data)
+      if (result.rows.length === 0) {
+        const documentsResult = await query(
+          `SELECT extracted_data
+           FROM insurance_provider_documents
+           WHERE insurance_provider_id = $1
+             AND extracted_data IS NOT NULL
+             AND jsonb_array_length(extracted_data->'procedures') > 0
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [providerId]
+        )
+
+        if (documentsResult.rows.length > 0) {
+          const extractedData = documentsResult.rows[0].extracted_data
+          let extractedProcedures = extractedData.procedures || []
+
+          // Aplicar filtro de busca se fornecido
+          if (search) {
+            const searchLower = search.toLowerCase()
+            extractedProcedures = extractedProcedures.filter((proc: any) =>
+              (proc.code && proc.code.toLowerCase().includes(searchLower)) ||
+              (proc.description && proc.description.toLowerCase().includes(searchLower))
+            )
+          }
+
+          // Limitar resultados
+          extractedProcedures = extractedProcedures.slice(0, parseInt(limit as string, 10))
+
+          // Converter para formato esperado
+          procedures = extractedProcedures.map((proc: any) => ({
+            id: `temp-${proc.code}`,  // ID temporário
+            code: proc.code,
+            description: proc.description || '',
+            value: proc.value ? parseFloat(proc.value) : null,
+            type: 'operadora',
+            procedureBaseId: null,
+            insuranceProviderProcedureId: null,
+            active: false  // Procedimentos de upload não estão aprovados
+          }))
+        }
+      } else {
+        procedures = result.rows.map(row => ({
+          id: row.insurance_provider_procedure_id,
+          code: row.code,
+          description: row.description,
+          value: row.value ? parseFloat(row.value) : null,
+          type: 'operadora',
+          procedureBaseId: row.procedure_base_id,
+          insuranceProviderProcedureId: row.insurance_provider_procedure_id,
+          active: row.active
+        }))
+      }
     }
 
     res.json({
