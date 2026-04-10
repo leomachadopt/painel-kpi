@@ -39,7 +39,7 @@ import { UploadPDFDialog } from '@/components/advances/UploadPDFDialog'
 import { UploadJSONDialog } from '@/components/advances/UploadJSONDialog'
 import { ProcedureMappingReview } from '@/components/advances/ProcedureMappingReview'
 import { ManageProviderProceduresModal } from '@/components/advances/ManageProviderProceduresModal'
-import { FileText, Upload, FileCode, Settings } from 'lucide-react'
+import { FileText, Upload, FileCode, Settings, Database } from 'lucide-react'
 
 export default function InsuranceProviders() {
   const { user } = useAuthStore()
@@ -287,6 +287,55 @@ export default function InsuranceProviders() {
     }
   }
 
+  const handleCopyToBase = async (provider: InsuranceProvider) => {
+    if (!clinicId) return
+
+    // Confirmação
+    const confirmed = window.confirm(
+      `Deseja copiar todos os procedimentos aprovados de "${provider.name}" para a tabela base da clínica?\n\n` +
+      `Isso irá:\n` +
+      `- Criar novos procedimentos que não existem\n` +
+      `- Atualizar procedimentos customizados existentes\n` +
+      `- Manter procedimentos globais sem alteração\n` +
+      `- NÃO copiar valores de preço (apenas estrutura)`
+    )
+
+    if (!confirmed) return
+
+    try {
+      const token = localStorage.getItem('kpi_token')
+      const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
+      const response = await fetch(
+        `${API_BASE_URL}/procedures-management/provider/${provider.id}/copy-to-base`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ clinicId })
+        }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erro ao copiar procedimentos')
+      }
+
+      const result = await response.json()
+
+      toast.success(
+        `Procedimentos copiados com sucesso!\n\n` +
+        `Criados: ${result.summary.created}\n` +
+        `Atualizados: ${result.summary.updated}\n` +
+        `Ignorados (globais): ${result.summary.skipped}`
+      )
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao copiar procedimentos para tabela base')
+    }
+  }
+
   if (!canViewProviders) {
     return (
       <div className="container mx-auto p-6">
@@ -412,6 +461,17 @@ export default function InsuranceProviders() {
                             <FileText className="h-4 w-4 mr-1" />
                             Ver Pareamento
                           </Button>
+                          {canManageProviders && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyToBase(provider)}
+                              title="Copiar procedimentos aprovados para tabela base da clínica"
+                            >
+                              <Database className="h-4 w-4 mr-1" />
+                              Definir Tabela Base
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

@@ -495,6 +495,136 @@ router.patch('/provider/:providerId/procedure/:procedureId/toggle-approval', asy
 })
 
 /**
+ * POST /api/procedures-management/provider/:providerId/copy-to-base
+ * Copiar procedimentos de uma operadora para a tabela base da clínica
+ * (sem copiar valores de preço - apenas estrutura)
+ */
+router.post('/provider/:providerId/copy-to-base', async (req, res) => {
+  try {
+    const { providerId } = req.params
+    const { clinicId } = req.body
+
+    // Verificar permissões
+    if (!req.user || !req.user.sub) {
+      return res.status(401).json({ error: 'Não autenticado' })
+    }
+
+    if (req.user.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Sem permissão para acessar esta clínica' })
+    }
+
+    // Verificar se a operadora pertence à clínica
+    const providerCheck = await query(
+      'SELECT id, name FROM insurance_providers WHERE id = $1 AND clinic_id = $2',
+      [providerId, clinicId]
+    )
+
+    if (providerCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Operadora não encontrada' })
+    }
+
+    const provider = providerCheck.rows[0]
+
+    // Buscar todos os procedimentos da operadora
+    const proceduresResult = await query(
+      `SELECT
+        ipp.provider_code,
+        ipp.provider_description,
+        ipp.is_periciable,
+        ipp.procedure_base_id,
+        pb.code as base_code,
+        pb.description as base_description,
+        pb.category as base_category
+       FROM insurance_provider_procedures ipp
+       LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
+       WHERE ipp.insurance_provider_id = $1 AND ipp.active = true`,
+      [providerId]
+    )
+
+    if (proceduresResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Nenhum procedimento aprovado encontrado nesta operadora' })
+    }
+
+    let created = 0
+    let updated = 0
+    let skipped = 0
+
+    // Processar cada procedimento
+    for (const proc of proceduresResult.rows) {
+      const code = proc.provider_code
+      const description = proc.provider_description || proc.base_description || ''
+      const isPericiable = proc.is_periciable
+      const category = proc.base_category || null
+
+      // Verificar se já existe na tabela base
+      const existingCheck = await query(
+        'SELECT id, is_custom FROM procedure_base_table WHERE clinic_id = $1 AND code = $2',
+        [clinicId, code]
+      )
+
+      if (existingCheck.rows.length > 0) {
+        // Já existe - atualizar se for customizado
+        const existing = existingCheck.rows[0]
+
+        if (existing.is_custom) {
+          // Atualizar procedimento customizado
+          await query(
+            `UPDATE procedure_base_table
+             SET description = $1,
+                 is_periciable = $2,
+                 category = $3,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $4`,
+            [description, isPericiable, category, existing.id]
+          )
+          updated++
+        } else {
+          // Procedimento global - pular
+          skipped++
+        }
+      } else {
+        // Não existe - criar novo
+        const newId = `pb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+        await query(
+          `INSERT INTO procedure_base_table (
+            id, clinic_id, code, description, is_periciable,
+            category, default_value, active, is_custom, created_by_user_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            newId,
+            clinicId,
+            code,
+            description,
+            isPericiable,
+            category,
+            null, // Não copiar valor
+            true,
+            false, // Marcar como não-customizado (procedimento padrão da operadora)
+            req.user.sub
+          ]
+        )
+        created++
+      }
+    }
+
+    res.json({
+      message: 'Procedimentos copiados para a tabela base com sucesso',
+      summary: {
+        total: proceduresResult.rows.length,
+        created,
+        updated,
+        skipped,
+        providerName: provider.name
+      }
+    })
+  } catch (error: any) {
+    console.error('Error copying procedures to base:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
  * ========================================
  * GESTÃO DA TABELA BASE DA CLÍNICA
  * ========================================
