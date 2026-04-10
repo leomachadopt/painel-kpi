@@ -137,6 +137,7 @@ export function NewPendingPatientDialog({
           providerId: insuranceProviderId || undefined,
           search: searchTerm,
           limit: 20,
+          requireApproved: false, // Tratamentos pendentes não requerem aprovação
         })
         .then((data) =>
           setSearchResults(

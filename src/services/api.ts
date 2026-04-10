@@ -1474,6 +1474,7 @@ export const proceduresCatalogApi = {
       providerId?: string
       search?: string
       limit?: number
+      requireApproved?: boolean // Filtrar apenas aprovados (para lançamento automático de lotes)
     }
   ) => {
     const queryParams = new URLSearchParams()
@@ -1481,6 +1482,9 @@ export const proceduresCatalogApi = {
     if (params.providerId) queryParams.append('providerId', params.providerId)
     if (params.search) queryParams.append('search', params.search)
     if (params.limit) queryParams.append('limit', params.limit.toString())
+    if (params.requireApproved !== undefined) {
+      queryParams.append('requireApproved', params.requireApproved.toString())
+    }
 
     return apiCall<{
       type: string

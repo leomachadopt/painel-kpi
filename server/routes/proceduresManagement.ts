@@ -495,35 +495,27 @@ router.patch('/provider/:providerId/procedure/:procedureId/toggle-approval', asy
 })
 
 /**
- * POST /api/procedures-management/provider/:providerId/copy-to-base
- * Copiar procedimentos de uma operadora para a tabela base da clínica
- * (sem copiar valores de preço - apenas estrutura)
+ * Background job para copiar procedimentos
  */
-router.post('/provider/:providerId/copy-to-base', async (req, res) => {
+async function copyProceduresToBaseBackground(
+  providerId: string,
+  clinicId: string,
+  userId: string
+) {
   try {
-    const { providerId } = req.params
-    const { clinicId } = req.body
+    console.log(`🔄 [Background] Iniciando cópia de procedimentos: provider=${providerId}, clinic=${clinicId}`)
 
-    // Verificar permissões
-    if (!req.user || !req.user.sub) {
-      return res.status(401).json({ error: 'Não autenticado' })
-    }
-
-    if (req.user.clinicId !== clinicId) {
-      return res.status(403).json({ error: 'Sem permissão para acessar esta clínica' })
-    }
-
-    // Verificar se a operadora pertence à clínica
-    const providerCheck = await query(
+    const providerResult = await query(
       'SELECT id, name FROM insurance_providers WHERE id = $1 AND clinic_id = $2',
       [providerId, clinicId]
     )
 
-    if (providerCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Operadora não encontrada' })
+    if (providerResult.rows.length === 0) {
+      console.error(`❌ [Background] Operadora não encontrada: ${providerId}`)
+      return
     }
 
-    const provider = providerCheck.rows[0]
+    const provider = providerResult.rows[0]
 
     // Buscar procedimentos de três fontes possíveis (em ordem de prioridade):
     // 1. insurance_provider_procedures (procedimentos já salvos)
@@ -589,8 +581,11 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
     }
 
     if (procedures.length === 0) {
-      return res.status(400).json({ error: 'Nenhum procedimento encontrado nesta operadora. Faça upload de um JSON ou PDF primeiro.' })
+      console.error(`❌ [Background] Nenhum procedimento encontrado: provider=${providerId}`)
+      return
     }
+
+    console.log(`📊 [Background] Encontrados ${procedures.length} procedimentos para copiar`)
 
     let created = 0
     let updated = 0
@@ -601,7 +596,7 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
       const code = proc.code
       const description = proc.description || ''
       const isPericiable = proc.is_periciable || false
-      const category = null // Categoria será null por padrão
+      const category = null
 
       // Verificar se já existe na tabela base
       const existingCheck = await query(
@@ -610,11 +605,9 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
       )
 
       if (existingCheck.rows.length > 0) {
-        // Já existe - atualizar se for customizado
         const existing = existingCheck.rows[0]
 
         if (existing.is_custom) {
-          // Atualizar procedimento customizado
           await query(
             `UPDATE procedure_base_table
              SET description = $1,
@@ -626,11 +619,9 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
           )
           updated++
         } else {
-          // Procedimento global - pular
           skipped++
         }
       } else {
-        // Não existe - criar novo
         const newId = `pb-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
         await query(
@@ -645,28 +636,77 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
             description,
             isPericiable,
             category,
-            null, // Não copiar valor
+            null, // Valor sempre NULL - não copiar preços
             true,
-            false, // Marcar como não-customizado (procedimento padrão da operadora)
-            req.user.sub
+            false,
+            userId
           ]
         )
         created++
       }
     }
 
+    console.log(`✅ [Background] Cópia concluída: ${created} criados, ${updated} atualizados, ${skipped} pulados`)
+  } catch (error: any) {
+    console.error(`❌ [Background] Erro ao copiar procedimentos:`, error)
+  }
+}
+
+/**
+ * POST /api/procedures-management/provider/:providerId/copy-to-base
+ * Copiar procedimentos de uma operadora para a tabela base da clínica
+ * (sem copiar valores de preço - apenas estrutura)
+ */
+router.post('/provider/:providerId/copy-to-base', async (req, res) => {
+  try {
+    const { providerId } = req.params
+    const { clinicId } = req.body
+
+    // Verificar permissões
+    if (!req.user || !req.user.sub) {
+      return res.status(401).json({ error: 'Não autenticado' })
+    }
+
+    if (req.user.clinicId !== clinicId) {
+      return res.status(403).json({ error: 'Sem permissão para acessar esta clínica' })
+    }
+
+    // Verificar se a operadora pertence à clínica
+    const providerCheck = await query(
+      'SELECT id, name FROM insurance_providers WHERE id = $1 AND clinic_id = $2',
+      [providerId, clinicId]
+    )
+
+    if (providerCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Operadora não encontrada' })
+    }
+
+    const provider = providerCheck.rows[0]
+
+    // Desmarcar qualquer outra operadora como padrão desta clínica
+    await query(
+      'UPDATE insurance_providers SET is_default_for_clinic = false WHERE clinic_id = $1',
+      [clinicId]
+    )
+
+    // Marcar esta operadora como padrão
+    await query(
+      'UPDATE insurance_providers SET is_default_for_clinic = true WHERE id = $1',
+      [providerId]
+    )
+
+    // Executar cópia em background para evitar timeout
+    copyProceduresToBaseBackground(providerId, clinicId, req.user.sub)
+      .catch(err => console.error('Background copy error:', err))
+
+    // Responder imediatamente
     res.json({
-      message: 'Procedimentos copiados para a tabela base com sucesso',
-      summary: {
-        total: procedures.length,
-        created,
-        updated,
-        skipped,
-        providerName: provider.name
-      }
+      message: `"${provider.name}" definida como tabela padrão. Cópia de procedimentos em andamento.`,
+      providerName: provider.name,
+      status: 'processing'
     })
   } catch (error: any) {
-    console.error('Error copying procedures to base:', error)
+    console.error('Error initiating copy to base:', error)
     res.status(500).json({ error: error.message })
   }
 })

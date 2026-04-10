@@ -11,11 +11,13 @@ const router = Router()
  *   - providerId: obrigatório se type = 'operadora'
  *   - search: texto para filtrar por código ou descrição
  *   - limit: número máximo de resultados (padrão: 50)
+ *   - requireApproved: 'true' para filtrar apenas procedimentos aprovados (padrão: false)
+ *                      Usado APENAS para lançamento automático de lotes de fatura
  */
 router.get('/:clinicId', async (req, res) => {
   try {
     const { clinicId } = req.params
-    const { type, providerId, search, limit = '50' } = req.query
+    const { type, providerId, search, limit = '50', requireApproved = 'false' } = req.query
 
     // Verifica permissões
     if (!req.user || !req.user.sub) {
@@ -80,6 +82,11 @@ router.get('/:clinicId', async (req, res) => {
         ? `AND (COALESCE(ipp.provider_code, pb.code) ILIKE $4 OR COALESCE(ipp.provider_description, pb.description) ILIKE $4)`
         : ''
 
+      // Filtro de aprovação: apenas para lançamento automático de lotes de fatura
+      const approvalCondition = requireApproved === 'true'
+        ? `AND ipp.active = true`
+        : ''
+
       const params = [providerId, clinicId, parseInt(limit as string, 10)]
       if (search) {
         params.push(`%${search}%`)
@@ -91,13 +98,14 @@ router.get('/:clinicId', async (req, res) => {
           pb.id as procedure_base_id,
           COALESCE(ipp.provider_code, pb.code) as code,
           COALESCE(ipp.provider_description, pb.description) as description,
-          ipp.max_value as value
+          ipp.max_value as value,
+          ipp.active
          FROM insurance_provider_procedures ipp
          JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
          JOIN insurance_providers ip ON ipp.insurance_provider_id = ip.id
          WHERE ipp.insurance_provider_id = $1
            AND ip.clinic_id = $2
-           AND ipp.active = true
+           ${approvalCondition}
            ${searchCondition}
          ORDER BY code
          LIMIT $3`,
@@ -111,7 +119,8 @@ router.get('/:clinicId', async (req, res) => {
         value: parseFloat(row.value || 0),
         type: 'operadora',
         procedureBaseId: row.procedure_base_id,
-        insuranceProviderProcedureId: row.insurance_provider_procedure_id
+        insuranceProviderProcedureId: row.insurance_provider_procedure_id,
+        active: row.active // Indica se procedimento foi aprovado
       }))
     }
 

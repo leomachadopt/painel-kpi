@@ -126,6 +126,7 @@ export function AddProceduresModal({
         type: searchType,
         search: searchTerm,
         limit: '20',
+        requireApproved: 'false', // Agenda não requer aprovação de procedimentos
       })
 
       if (searchType === 'operadora' && selectedProviderId) {

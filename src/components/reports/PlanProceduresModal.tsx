@@ -133,6 +133,7 @@ export function PlanProceduresModal({
           providerId: insuranceProviderId || undefined,
           search: searchTerm,
           limit: 20,
+          requireApproved: false, // Planos não requerem aprovação de procedimentos
         })
         .then((data) => setSearchResults(data.procedures))
         .catch((err) => {
