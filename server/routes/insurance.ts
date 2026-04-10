@@ -301,12 +301,12 @@ router.post('/:providerId/upload-json', authRequired, uploadJSON.single('json'),
 
     const extractedData = { procedures: uniqueProcedures }
 
-    // Save document with PROCESSING status (will be updated to COMPLETED by background job)
+    // Save document with COMPLETED status immediately (no pairing needed)
     await client.query(
       `INSERT INTO insurance_provider_documents (
         id, insurance_provider_id, file_name, file_path, file_size, mime_type,
-        processed, processing_status, processing_progress, extracted_data, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, false, 'PROCESSING', 10, $7, $8)`,
+        processed, processing_status, processing_progress, extracted_data, created_by, processed_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, true, 'COMPLETED', 100, $7, $8, CURRENT_TIMESTAMP)`,
       [
         documentId,
         providerId,
@@ -319,19 +319,13 @@ router.post('/:providerId/upload-json', authRequired, uploadJSON.single('json'),
       ]
     )
 
-    console.log(`✅ Documento JSON salvo, iniciando processamento em background`)
-
-    // Process JSON in background to avoid timeout
-    processJSONDocument(documentId, uniqueProcedures, providerId, clinicId)
-      .catch(err => {
-        console.error('❌ Error processing JSON in background:', err)
-      })
+    console.log(`✅ Documento JSON salvo e concluído imediatamente (${uniqueProcedures.length} procedimentos)`)
 
     res.json({
       success: true,
       documentId,
       proceduresCount: uniqueProcedures.length,
-      message: `JSON enviado com sucesso. ${uniqueProcedures.length} procedimentos detectados. Processamento e pareamento automático em andamento.`
+      message: `JSON carregado com sucesso! ${uniqueProcedures.length} procedimentos disponíveis para busca.`
     })
 
   } catch (error: any) {
