@@ -525,54 +525,71 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
 
     const provider = providerCheck.rows[0]
 
-    // Buscar procedimentos de duas fontes possíveis:
-    // 1. insurance_provider_procedures (procedimentos já salvos/aprovados)
-    // 2. procedure_mappings (procedimentos extraídos de upload mas ainda não salvos)
+    // Buscar procedimentos de três fontes possíveis (em ordem de prioridade):
+    // 1. insurance_provider_procedures (procedimentos já salvos)
+    // 2. procedure_mappings (procedimentos de upload já mapeados)
+    // 3. insurance_provider_documents.extracted_data (procedimentos do upload JSON/PDF original)
 
-    // Primeiro: buscar procedimentos já salvos
+    let procedures: any[] = []
+
+    // Fonte 1: Procedimentos já salvos
     const savedProceduresResult = await query(
       `SELECT
         ipp.provider_code as code,
         ipp.provider_description as description,
-        ipp.is_periciable,
-        ipp.procedure_base_id,
-        pb.code as base_code,
-        pb.description as base_description,
-        pb.category as base_category,
-        'saved' as source
+        ipp.is_periciable
        FROM insurance_provider_procedures ipp
-       LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
        WHERE ipp.insurance_provider_id = $1`,
       [providerId]
     )
 
-    let proceduresResult = savedProceduresResult
-
-    // Se não houver procedimentos salvos, buscar dos mapeamentos (uploads)
-    if (savedProceduresResult.rows.length === 0) {
+    if (savedProceduresResult.rows.length > 0) {
+      procedures = savedProceduresResult.rows
+    } else {
+      // Fonte 2: Procedimentos em mapeamentos
       const mappingsResult = await query(
         `SELECT DISTINCT ON (pm.extracted_procedure_code)
           pm.extracted_procedure_code as code,
           pm.extracted_description as description,
-          pm.extracted_is_periciable as is_periciable,
-          pm.mapped_procedure_base_id as procedure_base_id,
-          pb.code as base_code,
-          pb.description as base_description,
-          pb.category as base_category,
-          'mapping' as source
+          pm.extracted_is_periciable as is_periciable
          FROM procedure_mappings pm
          JOIN insurance_provider_documents ipd ON pm.document_id = ipd.id
-         LEFT JOIN procedure_base_table pb ON pm.mapped_procedure_base_id = pb.id
          WHERE ipd.insurance_provider_id = $1
          ORDER BY pm.extracted_procedure_code, pm.created_at DESC`,
         [providerId]
       )
 
-      proceduresResult = mappingsResult
+      if (mappingsResult.rows.length > 0) {
+        procedures = mappingsResult.rows
+      } else {
+        // Fonte 3: Dados extraídos do upload original (JSON/PDF)
+        const documentsResult = await query(
+          `SELECT extracted_data
+           FROM insurance_provider_documents
+           WHERE insurance_provider_id = $1
+             AND extracted_data IS NOT NULL
+             AND jsonb_array_length(extracted_data->'procedures') > 0
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [providerId]
+        )
+
+        if (documentsResult.rows.length > 0) {
+          const extractedData = documentsResult.rows[0].extracted_data
+          const extractedProcedures = extractedData.procedures || []
+
+          // Converter formato do extracted_data para formato padronizado
+          procedures = extractedProcedures.map((proc: any) => ({
+            code: proc.code,
+            description: proc.description || '',
+            is_periciable: proc.isPericiable || false
+          }))
+        }
+      }
     }
 
-    if (proceduresResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Nenhum procedimento encontrado nesta operadora' })
+    if (procedures.length === 0) {
+      return res.status(400).json({ error: 'Nenhum procedimento encontrado nesta operadora. Faça upload de um JSON ou PDF primeiro.' })
     }
 
     let created = 0
@@ -580,11 +597,11 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
     let skipped = 0
 
     // Processar cada procedimento
-    for (const proc of proceduresResult.rows) {
+    for (const proc of procedures) {
       const code = proc.code
-      const description = proc.description || proc.base_description || ''
-      const isPericiable = proc.is_periciable
-      const category = proc.base_category || null
+      const description = proc.description || ''
+      const isPericiable = proc.is_periciable || false
+      const category = null // Categoria será null por padrão
 
       // Verificar se já existe na tabela base
       const existingCheck = await query(
@@ -641,7 +658,7 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
     res.json({
       message: 'Procedimentos copiados para a tabela base com sucesso',
       summary: {
-        total: proceduresResult.rows.length,
+        total: procedures.length,
         created,
         updated,
         skipped,
