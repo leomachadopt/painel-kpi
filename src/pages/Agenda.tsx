@@ -105,6 +105,7 @@ export default function Agenda() {
     cabinetId: '',
     appointmentTypeId: '',
     isNewPatient: false,
+    isOldPatientReturn: false,
     notes: '',
     // New patient fields
     newPatientName: '',
@@ -607,6 +608,7 @@ export default function Agenda() {
         cabinetId: newAppointment.cabinetId || null,
         appointmentTypeId: newAppointment.appointmentTypeId || null,
         isNewPatient: newAppointment.isNewPatient,
+        isOldPatientReturn: newAppointment.isOldPatientReturn,
         notes: newAppointment.notes,
       }
 
@@ -1275,25 +1277,51 @@ export default function Agenda() {
 
             {/* Checkbox Remarcação */}
             {!newAppointment.isNewPatient && (
-              <div className="flex items-center space-x-2 pb-2 border-b">
-                <input
-                  type="checkbox"
-                  id="is-reschedule-toggle"
-                  checked={isRescheduling}
-                  onChange={(e) => {
-                    setIsRescheduling(e.target.checked)
-                    // Clear patient selection when toggling
-                    setSelectedPatient(null)
-                    setPatientSearch('')
-                    setSelectedReschedule(null)
-                    setRescheduleSearch('')
-                  }}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="is-reschedule-toggle" className="font-semibold text-blue-600">
-                  📋 Remarcação (do banco)
-                </Label>
-              </div>
+              <>
+                <div className="flex items-center space-x-2 pb-2">
+                  <input
+                    type="checkbox"
+                    id="is-reschedule-toggle"
+                    checked={isRescheduling}
+                    onChange={(e) => {
+                      setIsRescheduling(e.target.checked)
+                      // Clear patient selection when toggling
+                      setSelectedPatient(null)
+                      setPatientSearch('')
+                      setSelectedReschedule(null)
+                      setRescheduleSearch('')
+                      // Clear old patient return when enabling reschedule
+                      if (e.target.checked) {
+                        setNewAppointment({ ...newAppointment, isOldPatientReturn: false })
+                      }
+                    }}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="is-reschedule-toggle" className="font-semibold text-blue-600">
+                    📋 Remarcação (do banco)
+                  </Label>
+                </div>
+
+                {/* Checkbox Retorno de Paciente Antigo */}
+                <div className="flex items-center space-x-2 pb-2 border-b">
+                  <input
+                    type="checkbox"
+                    id="is-old-patient-return-toggle"
+                    checked={newAppointment.isOldPatientReturn}
+                    disabled={isRescheduling}
+                    onChange={(e) => {
+                      setNewAppointment({ ...newAppointment, isOldPatientReturn: e.target.checked })
+                    }}
+                    className="h-4 w-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <Label
+                    htmlFor="is-old-patient-return-toggle"
+                    className={`font-semibold ${isRescheduling ? 'text-muted-foreground' : 'text-green-600'}`}
+                  >
+                    👴 Retorno de paciente antigo
+                  </Label>
+                </div>
+              </>
             )}
 
             {/* Conditional: New Patient Form OR Reschedule Search OR Existing Patient Search */}

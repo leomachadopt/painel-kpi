@@ -385,6 +385,7 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
       cabinetId,
       appointmentTypeId,
       isNewPatient,
+      isOldPatientReturn,
       notes,
       // New patient fields
       newPatientName,
@@ -542,6 +543,19 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
          WHERE id = $2 AND clinic_id = $3`,
         [appointmentId, rescheduledFrom, clinicId]
       )
+    }
+
+    // If this is an old patient return, increment the metric
+    if (isOldPatientReturn === true) {
+      await query(
+        `INSERT INTO daily_consultation_control_entries
+          (id, clinic_id, date, no_show, rescheduled, cancelled, old_patient_booking)
+         VALUES ($1, $2, $3, 0, 0, 0, 1)
+         ON CONFLICT (clinic_id, date)
+         DO UPDATE SET old_patient_booking = daily_consultation_control_entries.old_patient_booking + 1`,
+        [crypto.randomUUID(), clinicId, date]
+      )
+      console.log(`[APPOINTMENTS] Old patient return metric incremented for date: ${date}`)
     }
 
     res.status(201).json({
@@ -1058,7 +1072,7 @@ router.put('/:clinicId/:appointmentId', requirePermission('canEditAppointments')
   }
 })
 
-// Delete appointment
+// Delete appointment (contabiliza como cancelamento)
 router.delete('/:clinicId/:appointmentId', requirePermission('canEditAppointments'), async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
@@ -1076,7 +1090,19 @@ router.delete('/:clinicId/:appointmentId', requirePermission('canEditAppointment
       return res.status(404).json({ error: 'Appointment not found' })
     }
 
-    console.log('[APPOINTMENTS] Appointment deleted successfully:', appointmentId)
+    const deletedAppointment = result.rows[0]
+
+    // Incrementar métrica de cancelamento
+    await query(
+      `INSERT INTO daily_consultation_control_entries
+        (id, clinic_id, date, no_show, rescheduled, cancelled, old_patient_booking)
+       VALUES ($1, $2, $3, 0, 0, 1, 0)
+       ON CONFLICT (clinic_id, date)
+       DO UPDATE SET cancelled = daily_consultation_control_entries.cancelled + 1`,
+      [crypto.randomUUID(), clinicId, deletedAppointment.date]
+    )
+
+    console.log('[APPOINTMENTS] Appointment deleted and cancelled metric updated:', appointmentId)
 
     res.json({ message: 'Appointment deleted successfully' })
   } catch (error: any) {
