@@ -26,7 +26,7 @@ import {
   TableRow,
   TableFooter,
 } from '@/components/ui/table'
-import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye, Calendar as CalendarIcon } from 'lucide-react'
+import { Search, Loader2, CreditCard, Edit2, Trash2, CheckCircle2, XCircle, Eye, Calendar as CalendarIcon, FileSpreadsheet, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +63,9 @@ import useDataStore from '@/stores/useDataStore'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ViewAccountsPayableDialog } from '@/components/accounts-payable/ViewAccountsPayableDialog'
 import { EditAccountsPayableDialog } from '@/components/accounts-payable/EditAccountsPayableDialog'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 
 export default function AccountsPayable() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -272,6 +275,152 @@ export default function AccountsPayable() {
     }
   }
 
+  const exportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredEntries.map((entry) => {
+        const status = getStatusBadge(entry)
+        return {
+          [t('accountsPayable.description')]: entry.description,
+          [t('accountsPayable.supplier')]: entry.supplierName || '-',
+          [t('accountsPayable.category')]: entry.category || '-',
+          [t('accountsPayable.amount')]: entry.amount,
+          [t('accountsPayable.dueDate')]: format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR }),
+          [activeTab === 'paid' ? t('accountsPayable.paidDate') : t('accountsPayable.status')]:
+            activeTab === 'paid'
+              ? (entry.paidDate ? format(new Date(entry.paidDate), 'dd/MM/yyyy', { locale: ptBR }) : '-')
+              : status.label,
+        }
+      })
+
+      // Add total row
+      exportData.push({
+        [t('accountsPayable.description')]: '',
+        [t('accountsPayable.supplier')]: '',
+        [t('accountsPayable.category')]: t('accountsPayable.total'),
+        [t('accountsPayable.amount')]: totalAmount,
+        [t('accountsPayable.dueDate')]: '',
+        [activeTab === 'paid' ? t('accountsPayable.paidDate') : t('accountsPayable.status')]: '',
+      })
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData)
+
+      // Set column widths
+      const colWidths = [
+        { wch: 30 }, // Description
+        { wch: 20 }, // Supplier
+        { wch: 15 }, // Category
+        { wch: 15 }, // Amount
+        { wch: 12 }, // Due Date
+        { wch: 20 }, // Status/Paid Date
+      ]
+      ws['!cols'] = colWidths
+
+      // Create workbook
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, t('accountsPayable.title'))
+
+      // Generate file name
+      const fileName = `contas-a-pagar-${activeTab}-${format(new Date(), 'dd-MM-yyyy')}.xlsx`
+
+      // Save file
+      XLSX.writeFile(wb, fileName)
+      toast.success(t('accountsPayable.exportSuccess') || 'Exportação realizada com sucesso!')
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      toast.error(t('accountsPayable.exportError') || 'Erro ao exportar planilha')
+    }
+  }
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF()
+
+      // Add title
+      doc.setFontSize(18)
+      doc.text(t('accountsPayable.title'), 14, 20)
+
+      // Add subtitle with tab name and date
+      doc.setFontSize(11)
+      doc.text(
+        `${activeTab === 'paid' ? t('accountsPayable.paid') : t('accountsPayable.pending')} - ${format(new Date(), 'dd/MM/yyyy', { locale: ptBR })}`,
+        14,
+        28
+      )
+
+      // Prepare table data
+      const tableData = filteredEntries.map((entry) => {
+        const status = getStatusBadge(entry)
+        return [
+          entry.description,
+          entry.supplierName || '-',
+          entry.category || '-',
+          formatCurrency(entry.amount),
+          format(new Date(entry.dueDate), 'dd/MM/yyyy', { locale: ptBR }),
+          activeTab === 'paid'
+            ? (entry.paidDate ? format(new Date(entry.paidDate), 'dd/MM/yyyy', { locale: ptBR }) : '-')
+            : status.label,
+        ]
+      })
+
+      // Add table
+      autoTable(doc, {
+        head: [[
+          t('accountsPayable.description'),
+          t('accountsPayable.supplier'),
+          t('accountsPayable.category'),
+          t('accountsPayable.amount'),
+          t('accountsPayable.dueDate'),
+          activeTab === 'paid' ? t('accountsPayable.paidDate') : t('accountsPayable.status'),
+        ]],
+        body: tableData,
+        startY: 35,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [59, 130, 246], // Blue color matching app theme
+          textColor: 255,
+          fontStyle: 'bold',
+        },
+        footStyles: {
+          fillColor: [243, 244, 246],
+          textColor: 0,
+          fontStyle: 'bold',
+        },
+        foot: [[
+          '',
+          '',
+          t('accountsPayable.total'),
+          formatCurrency(totalAmount),
+          '',
+          '',
+        ]],
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 30 },
+        },
+      })
+
+      // Generate file name
+      const fileName = `contas-a-pagar-${activeTab}-${format(new Date(), 'dd-MM-yyyy')}.pdf`
+
+      // Save file
+      doc.save(fileName)
+      toast.success(t('accountsPayable.exportSuccess') || 'Exportação realizada com sucesso!')
+    } catch (error) {
+      console.error('Error exporting to PDF:', error)
+      toast.error(t('accountsPayable.exportError') || 'Erro ao exportar PDF')
+    }
+  }
+
   if (!clinicId) {
     return <div className="p-8">{t('errors.notFound')}</div>
   }
@@ -311,10 +460,36 @@ export default function AccountsPayable() {
         <TabsContent value="pending" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>{t('accountsPayable.pending')}</CardTitle>
-              <CardDescription>
-                {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
-              </CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{t('accountsPayable.pending')}</CardTitle>
+                  <CardDescription>
+                    {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToExcel}
+                    disabled={filteredEntries.length === 0}
+                    title="Exportar para Excel"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToPDF}
+                    disabled={filteredEntries.length === 0}
+                    title="Exportar para PDF"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4 mb-4">
@@ -459,10 +634,36 @@ export default function AccountsPayable() {
         <TabsContent value="paid" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>{t('accountsPayable.paid')}</CardTitle>
-              <CardDescription>
-                {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
-              </CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{t('accountsPayable.paid')}</CardTitle>
+                  <CardDescription>
+                    {filteredEntries.length} {filteredEntries.length === 1 ? t('accountsPayable.count') : t('accountsPayable.counts')} {filteredEntries.length === 1 ? t('accountsPayable.found') : t('accountsPayable.founds')}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToExcel}
+                    disabled={filteredEntries.length === 0}
+                    title="Exportar para Excel"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToPDF}
+                    disabled={filteredEntries.length === 0}
+                    title="Exportar para PDF"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4 mb-4">
