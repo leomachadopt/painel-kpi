@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import { Loader2, Upload, FileCode } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProcessingProgressIndicator } from './ProcessingProgressIndicator'
 
 interface UploadJSONDialogProps {
   providerId: string
@@ -30,6 +31,7 @@ export function UploadJSONDialog({
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewData, setPreviewData] = useState<any>(null)
+  const [uploadedDocumentId, setUploadedDocumentId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,13 +110,12 @@ export function UploadJSONDialog({
       }
 
       const data = await response.json()
-      toast.success(data.message || `JSON carregado com sucesso! ${data.proceduresCount || 0} procedimentos importados.`)
-      
-      // Fechar o dialog após upload bem-sucedido
-      // Os procedimentos podem ser visualizados em "Ver Pareamento"
+      toast.success(data.message || `JSON enviado! ${data.proceduresCount || 0} procedimentos detectados. Processamento iniciado.`)
+
+      // Salvar documentId para mostrar progresso
+      setUploadedDocumentId(data.documentId)
       setSelectedFile(null)
       setPreviewData(null)
-      onClose()
     } catch (err: any) {
       console.error('Error uploading JSON:', err)
       toast.error(err.message || 'Erro ao fazer upload do JSON')
@@ -123,17 +124,39 @@ export function UploadJSONDialog({
     }
   }
 
+  const handleComplete = () => {
+    toast.success('Processamento concluído! Procedimentos prontos para revisão.')
+    setUploadedDocumentId(null)
+    onClose()
+  }
+
+  const handleDialogClose = () => {
+    setUploadedDocumentId(null)
+    setSelectedFile(null)
+    setPreviewData(null)
+    onClose()
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Carregar JSON - {providerName}</DialogTitle>
           <DialogDescription>
-            Faça upload de um arquivo JSON com os procedimentos já extraídos
+            {uploadedDocumentId
+              ? 'Acompanhe o progresso do processamento'
+              : 'Faça upload de um arquivo JSON com os procedimentos já extraídos'
+            }
           </DialogDescription>
         </DialogHeader>
 
-        <Card className="border-dashed">
+        {uploadedDocumentId ? (
+          <ProcessingProgressIndicator
+            documentId={uploadedDocumentId}
+            onComplete={handleComplete}
+          />
+        ) : (
+          <Card className="border-dashed">
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="text-center">
@@ -249,33 +272,42 @@ export function UploadJSONDialog({
               </div>
             </CardContent>
           </Card>
+        )}
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={uploading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleUpload}
-            disabled={uploading || !selectedFile}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Carregando...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Carregar JSON
-              </>
-            )}
-          </Button>
+          {uploadedDocumentId ? (
+            <Button type="button" variant="outline" onClick={handleDialogClose}>
+              Fechar
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDialogClose}
+                disabled={uploading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleUpload}
+                disabled={uploading || !selectedFile}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Carregando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Carregar JSON
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -32,10 +32,13 @@ const stageIcons = {
 }
 
 const stageLabels = {
-  UPLOADING: 'Enviando PDF...',
+  UPLOADING: 'Enviando arquivo...',
+  CONVERTING: 'Convertendo PDF...',
   EXTRACTING: 'Extraindo procedimentos...',
+  PAIRING: 'Pareando com tabela base...',
   MATCHING: 'Pareando com tabela base...',
   SAVING: 'Salvando mapeamentos...',
+  PROCESSING: 'Processando...',
   COMPLETED: 'Concluído!',
   FAILED: 'Erro no processamento'
 }
