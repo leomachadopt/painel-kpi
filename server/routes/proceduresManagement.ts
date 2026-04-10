@@ -80,57 +80,118 @@ router.get('/provider/:providerId', async (req, res) => {
       params
     )
 
-    const total = parseInt(countResult.rows[0].total, 10)
+    let total = parseInt(countResult.rows[0].total, 10)
+    let procedures: any[] = []
 
-    // Buscar procedimentos com paginação
-    params.push(parseInt(limit as string, 10))
-    params.push(parseInt(offset as string, 10))
+    // Se não encontrou procedimentos salvos, buscar do upload (extracted_data)
+    if (total === 0) {
+      const documentsResult = await query(
+        `SELECT extracted_data
+         FROM insurance_provider_documents
+         WHERE insurance_provider_id = $1
+           AND extracted_data IS NOT NULL
+           AND jsonb_array_length(extracted_data->'procedures') > 0
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [providerId]
+      )
 
-    const result = await query(
-      `SELECT
-        ipp.id,
-        ipp.insurance_provider_id,
-        ipp.procedure_base_id,
-        ipp.provider_code,
-        ipp.provider_description,
-        ipp.is_periciable,
-        ipp.coverage_percentage,
-        ipp.max_value,
-        ipp.requires_authorization,
-        ipp.notes,
-        ipp.active,
-        ipp.created_at,
-        ipp.updated_at,
-        pb.code as base_code,
-        pb.description as base_description,
-        pb.default_value as base_default_value
-       FROM insurance_provider_procedures ipp
-       LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
-       ${whereClause}
-       ORDER BY ipp.provider_code, ipp.id
-       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-      params
-    )
+      if (documentsResult.rows.length > 0) {
+        const extractedData = documentsResult.rows[0].extracted_data
+        let extractedProcedures = extractedData.procedures || []
 
-    const procedures = result.rows.map(row => ({
-      id: row.id,
-      insuranceProviderId: row.insurance_provider_id,
-      procedureBaseId: row.procedure_base_id,
-      providerCode: row.provider_code,
-      providerDescription: row.provider_description,
-      isPericiable: row.is_periciable,
-      coveragePercentage: parseFloat(row.coverage_percentage || 0),
-      maxValue: row.max_value ? parseFloat(row.max_value) : null,
-      requiresAuthorization: row.requires_authorization,
-      notes: row.notes,
-      active: row.active,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      // Dados da tabela base (se vinculado)
-      baseCode: row.base_code,
-      baseDescription: row.base_description,
-      baseDefaultValue: row.base_default_value ? parseFloat(row.base_default_value) : null
-    }))
+        // Aplicar filtro de busca se fornecido
+        if (search) {
+          const searchLower = (search as string).toLowerCase()
+          extractedProcedures = extractedProcedures.filter((proc: any) =>
+            (proc.code && proc.code.toLowerCase().includes(searchLower)) ||
+            (proc.description && proc.description.toLowerCase().includes(searchLower))
+          )
+        }
+
+        // Aplicar filtro de aprovação (extracted_data sempre não aprovado)
+        if (approved === 'true') {
+          extractedProcedures = [] // Nenhum procedimento do extracted_data está aprovado
+        }
+
+        total = extractedProcedures.length
+
+        // Aplicar paginação
+        const limitNum = parseInt(limit as string, 10)
+        const offsetNum = parseInt(offset as string, 10)
+        extractedProcedures = extractedProcedures.slice(offsetNum, offsetNum + limitNum)
+
+        // Converter para formato esperado
+        procedures = extractedProcedures.map((proc: any) => ({
+          id: `temp-${proc.code}`,  // ID temporário
+          insuranceProviderId: providerId,
+          procedureBaseId: null,
+          providerCode: proc.code,
+          providerDescription: proc.description || '',
+          isPericiable: proc.isPericiable || false,
+          coveragePercentage: 0,
+          maxValue: proc.value ? parseFloat(proc.value) : null,
+          requiresAuthorization: false,
+          notes: null,
+          active: false, // Procedimentos de upload não estão aprovados
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          baseCode: null,
+          baseDescription: null,
+          baseDefaultValue: null
+        }))
+      }
+    } else {
+      // Buscar procedimentos salvos com paginação
+      params.push(parseInt(limit as string, 10))
+      params.push(parseInt(offset as string, 10))
+
+      const result = await query(
+        `SELECT
+          ipp.id,
+          ipp.insurance_provider_id,
+          ipp.procedure_base_id,
+          ipp.provider_code,
+          ipp.provider_description,
+          ipp.is_periciable,
+          ipp.coverage_percentage,
+          ipp.max_value,
+          ipp.requires_authorization,
+          ipp.notes,
+          ipp.active,
+          ipp.created_at,
+          ipp.updated_at,
+          pb.code as base_code,
+          pb.description as base_description,
+          pb.default_value as base_default_value
+         FROM insurance_provider_procedures ipp
+         LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
+         ${whereClause}
+         ORDER BY ipp.provider_code, ipp.id
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        params
+      )
+
+      procedures = result.rows.map(row => ({
+        id: row.id,
+        insuranceProviderId: row.insurance_provider_id,
+        procedureBaseId: row.procedure_base_id,
+        providerCode: row.provider_code,
+        providerDescription: row.provider_description,
+        isPericiable: row.is_periciable,
+        coveragePercentage: parseFloat(row.coverage_percentage || 0),
+        maxValue: row.max_value ? parseFloat(row.max_value) : null,
+        requiresAuthorization: row.requires_authorization,
+        notes: row.notes,
+        active: row.active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        // Dados da tabela base (se vinculado)
+        baseCode: row.base_code,
+        baseDescription: row.base_description,
+        baseDefaultValue: row.base_default_value ? parseFloat(row.base_default_value) : null
+      }))
+    }
 
     res.json({
       procedures,
