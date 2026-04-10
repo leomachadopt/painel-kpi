@@ -1234,47 +1234,47 @@ async function matchProcedureBase(
   clinicId: string
 ): Promise<{ baseId: string; isPericiable: boolean; adultsOnly: boolean } | null> {
   const client = await pool.connect()
-  
+
   try {
     // Step 1: Try exact code match (100% confidence)
     if (procedure.code) {
       // Try clinic-specific first, then global
       const codeMatch = await client.query(
-        `SELECT id, is_periciable, adults_only 
-         FROM procedure_base_table 
-         WHERE active = true 
-           AND code = $1 
+        `SELECT id, is_periciable
+         FROM procedure_base_table
+         WHERE active = true
+           AND code = $1
            AND (clinic_id = $2 OR clinic_id IS NULL)
          ORDER BY CASE WHEN clinic_id = $2 THEN 0 ELSE 1 END
          LIMIT 1`,
         [procedure.code, clinicId]
       )
-      
+
       if (codeMatch.rows.length > 0) {
         const base = codeMatch.rows[0]
         console.log(`   ✅ Match por código exato: ${procedure.code} → ${base.id}`)
         return {
           baseId: base.id,
           isPericiable: base.is_periciable || false,
-          adultsOnly: base.adults_only || false
+          adultsOnly: false // Default false (coluna não existe na tabela)
         }
       }
     }
-    
+
     // Step 2: Try exact description match (normalized, 100% confidence)
     if (procedure.description) {
       const normalizedDesc = normalizeText(procedure.description)
-      
+
       // Get all active procedures for clinic (global + clinic-specific)
       const allBaseProcedures = await client.query(
-        `SELECT id, description, is_periciable, adults_only, clinic_id
-         FROM procedure_base_table 
-         WHERE active = true 
+        `SELECT id, description, is_periciable, clinic_id
+         FROM procedure_base_table
+         WHERE active = true
            AND (clinic_id = $1 OR clinic_id IS NULL)
          ORDER BY CASE WHEN clinic_id = $1 THEN 0 ELSE 1 END`,
         [clinicId]
       )
-      
+
       // Compare normalized descriptions
       for (const base of allBaseProcedures.rows) {
         const baseNormalized = normalizeText(base.description || '')
@@ -1283,7 +1283,7 @@ async function matchProcedureBase(
           return {
             baseId: base.id,
             isPericiable: base.is_periciable || false,
-            adultsOnly: base.adults_only || false
+            adultsOnly: false // Default false (coluna não existe na tabela)
           }
         }
       }
@@ -2182,24 +2182,23 @@ router.post('/documents/:documentId/procedures/save-to-base', authRequired, asyn
       baseProcedureId = existingResult.rows[0].id
       await client.query(
         `UPDATE procedure_base_table
-         SET description = $1, is_periciable = $2, adults_only = $3, default_value = $4, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $5`,
-        [description, isPericiable || false, adultsOnly || false, value || null, baseProcedureId]
+         SET description = $1, is_periciable = $2, default_value = $3, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4`,
+        [description, isPericiable || false, value || null, baseProcedureId]
       )
     } else {
       // Create new procedure in base table
       baseProcedureId = uuidv4()
       await client.query(
         `INSERT INTO procedure_base_table (
-          id, clinic_id, code, description, is_periciable, adults_only, default_value, active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+          id, clinic_id, code, description, is_periciable, default_value, active
+        ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
         [
           baseProcedureId,
           saveAsGlobal ? null : clinicId,
           code,
           description,
           isPericiable || false,
-          adultsOnly || false,
           value || null
         ]
       )
@@ -2274,32 +2273,32 @@ router.post('/documents/:documentId/procedures/save-to-base', authRequired, asyn
 router.get('/procedures/base', authRequired, async (req, res) => {
   try {
     const { clinicId, code } = req.query
-    
-    let query = 'SELECT id, code, description, is_periciable, adults_only, default_value FROM procedure_base_table WHERE active = true'
+
+    let query = 'SELECT id, code, description, is_periciable, default_value FROM procedure_base_table WHERE active = true'
     const params: any[] = []
-    
+
     if (clinicId) {
       query += ' AND (clinic_id = $1 OR clinic_id IS NULL)'
       params.push(clinicId)
     } else {
       query += ' AND clinic_id IS NULL'
     }
-    
+
     if (code) {
       query += ` AND code = $${params.length + 1}`
       params.push(code)
     }
-    
+
     query += ' ORDER BY code'
-    
+
     const result = await pool.query(query, params)
-    
+
     res.json(result.rows.map(row => ({
       id: row.id,
       code: row.code,
       description: row.description,
       isPericiable: row.is_periciable,
-      adultsOnly: row.adults_only || false,
+      adultsOnly: false, // Default false
       defaultValue: row.default_value ? parseFloat(row.default_value) : null
     })))
   } catch (error) {
@@ -2650,7 +2649,6 @@ router.get('/documents/:documentId/mappings', authRequired, async (req, res) => 
         pbt.code as base_code,
         pbt.description as base_description,
         pbt.is_periciable as base_is_periciable,
-        pbt.adults_only as base_adults_only,
         u.name as reviewed_by_name
        FROM procedure_mappings pm
        LEFT JOIN procedure_base_table pbt ON pm.mapped_procedure_base_id = pbt.id
@@ -2699,7 +2697,6 @@ router.get('/documents/:documentId/mappings', authRequired, async (req, res) => 
           base_code: null,
           base_description: null,
           base_is_periciable: null,
-          base_adults_only: null,
           reviewed_by_name: null,
           is_unpaired: true // Flag to identify virtual mappings
         })
@@ -2712,8 +2709,8 @@ router.get('/documents/:documentId/mappings', authRequired, async (req, res) => 
     // Ensure extracted_adults_only is included (for older records it might be null)
     allMappings.forEach(row => {
       if (row.extracted_adults_only === null || row.extracted_adults_only === undefined) {
-        // If not set, use the base procedure's adults_only if mapped, otherwise default to false
-        row.extracted_adults_only = row.base_adults_only || false
+        // If not set, default to false
+        row.extracted_adults_only = false
       }
     })
 
@@ -3019,15 +3016,14 @@ router.post('/documents/:documentId/mappings/bulk-approve', authRequired, async 
           baseProcedureId = uuidv4()
           await client.query(
             `INSERT INTO procedure_base_table (
-              id, clinic_id, code, description, is_periciable, adults_only, default_value, active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+              id, clinic_id, code, description, is_periciable, default_value, active
+            ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
             [
               baseProcedureId,
               clinicId,
               updatedMapping.extracted_procedure_code,
               updatedMapping.extracted_description,
               finalIsPericiable,
-              finalAdultsOnly,
               updatedMapping.extracted_value || null
             ]
           )
@@ -3242,15 +3238,14 @@ router.post('/mappings/:mappingId/approve', authRequired, async (req, res) => {
         baseProcedureId = uuidv4()
         await client.query(
           `INSERT INTO procedure_base_table (
-            id, clinic_id, code, description, is_periciable, adults_only, default_value, active
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+            id, clinic_id, code, description, is_periciable, default_value, active
+          ) VALUES ($1, $2, $3, $4, $5, $6, true)`,
           [
             baseProcedureId,
             clinicId, // Clinic-specific
             mapping.extracted_procedure_code,
             mapping.extracted_description,
             mapping.extracted_is_periciable || false,
-            mapping.extracted_adults_only || false,
             mapping.extracted_value || null
           ]
         )
