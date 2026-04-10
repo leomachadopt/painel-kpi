@@ -525,7 +525,8 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
 
     const provider = providerCheck.rows[0]
 
-    // Buscar todos os procedimentos da operadora
+    // Buscar todos os procedimentos da operadora (aprovados ou não)
+    // Nota: aprovação (active) é apenas para lançamento em faturas, não para cópia de estrutura
     const proceduresResult = await query(
       `SELECT
         ipp.provider_code,
@@ -537,12 +538,12 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
         pb.category as base_category
        FROM insurance_provider_procedures ipp
        LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
-       WHERE ipp.insurance_provider_id = $1 AND ipp.active = true`,
+       WHERE ipp.insurance_provider_id = $1`,
       [providerId]
     )
 
     if (proceduresResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Nenhum procedimento aprovado encontrado nesta operadora' })
+      return res.status(400).json({ error: 'Nenhum procedimento encontrado nesta operadora' })
     }
 
     let created = 0
