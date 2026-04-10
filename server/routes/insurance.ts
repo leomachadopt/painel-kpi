@@ -301,12 +301,12 @@ router.post('/:providerId/upload-json', authRequired, uploadJSON.single('json'),
 
     const extractedData = { procedures: uniqueProcedures }
 
-    // Save document with extracted data
+    // Save document with PROCESSING status (will be updated to COMPLETED by background job)
     await client.query(
       `INSERT INTO insurance_provider_documents (
         id, insurance_provider_id, file_name, file_path, file_size, mime_type,
         processed, processing_status, processing_progress, extracted_data, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, true, 'COMPLETED', 100, $7, $8)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, false, 'PROCESSING', 10, $7, $8)`,
       [
         documentId,
         providerId,
@@ -319,97 +319,19 @@ router.post('/:providerId/upload-json', authRequired, uploadJSON.single('json'),
       ]
     )
 
-    console.log(`✅ Documento JSON salvo com sucesso: ${documentId}`)
-    console.log(`📊 ${uniqueProcedures.length} procedimentos salvos`)
+    console.log(`✅ Documento JSON salvo, iniciando processamento em background`)
 
-    // Auto-pair procedures with procedure_base_table (100% confidence only)
-    console.log(`🔗 Iniciando pareamento automático com tabela base...`)
-    let autoPairedCount = 0
-    let autoApprovedCount = 0
-    let unpariedCount = 0
-
-    try {
-      await client.query('BEGIN')
-
-      for (const proc of uniqueProcedures) {
-        const match = await matchProcedureBase(proc, clinicId)
-        
-        if (match) {
-          // Create procedure_mapping with 100% confidence
-          const mappingId = uuidv4()
-          
-          // Se encontrou match na tabela base, significa que foi aprovado anteriormente
-          // Então vamos criar o mapping e aprovar automaticamente
-          const procedureId = uuidv4()
-          
-          // Criar insurance_provider_procedure diretamente (auto-aprovação)
-          await client.query(
-            `INSERT INTO insurance_provider_procedures (
-              id, insurance_provider_id, procedure_base_id, provider_code,
-              provider_description, is_periciable, max_value, active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
-            [
-              procedureId,
-              providerId,
-              match.baseId, // Link to base table
-              proc.code,
-              proc.description || '',
-              match.isPericiable,
-              proc.value || null
-            ]
-          )
-          
-          // Criar procedure_mapping com status APPROVED
-          await client.query(
-            `INSERT INTO procedure_mappings (
-              id, document_id, extracted_procedure_code, extracted_description,
-              extracted_is_periciable, extracted_adults_only, extracted_value,
-              mapped_procedure_base_id, mapped_provider_procedure_id, confidence_score, status, notes, reviewed_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)`,
-            [
-              mappingId,
-              documentId,
-              proc.code,
-              proc.description || '',
-              match.isPericiable,
-              match.adultsOnly,
-              proc.value || null,
-              match.baseId, // Paired with base table
-              procedureId, // Link to insurance_provider_procedure
-              1.0, // 100% confidence
-              'APPROVED', // Auto-approved because it was already in base table
-              'Pareamento e aprovação automática (100% confiança - procedimento já aprovado anteriormente)'
-            ]
-          )
-          
-          autoPairedCount++
-          autoApprovedCount++
-        } else {
-          unpariedCount++
-        }
-      }
-
-      await client.query('COMMIT')
-
-      console.log(`✅ Pareamento automático concluído:`)
-      console.log(`   • ${autoPairedCount} procedimentos pareados automaticamente (100% confiança)`)
-      console.log(`   • ${autoApprovedCount} procedimentos aprovados automaticamente (já estavam na tabela base)`)
-      console.log(`   • ${unpariedCount} procedimentos não pareados (requerem IA ou pareamento manual)`)
-    } catch (pairingError: any) {
-      await client.query('ROLLBACK').catch(() => {})
-      console.error('❌ Erro no pareamento automático:', pairingError)
-      // Continue anyway - document is saved, just no automatic pairing
-      console.log('⚠️ Documento salvo, mas pareamento automático falhou. Procedimentos podem ser pareados manualmente.')
-    }
+    // Process JSON in background to avoid timeout
+    processJSONDocument(documentId, uniqueProcedures, providerId, clinicId)
+      .catch(err => {
+        console.error('❌ Error processing JSON in background:', err)
+      })
 
     res.json({
       success: true,
       documentId,
       proceduresCount: uniqueProcedures.length,
-      autoPairedCount,
-      autoApprovedCount,
-      unpariedCount,
-      message: `JSON carregado com sucesso. ${uniqueProcedures.length} procedimentos importados. ${autoPairedCount} pareados automaticamente, ${autoApprovedCount} aprovados automaticamente.`
+      message: `JSON enviado com sucesso. ${uniqueProcedures.length} procedimentos detectados. Processamento e pareamento automático em andamento.`
     })
 
   } catch (error: any) {
@@ -432,6 +354,141 @@ router.post('/:providerId/upload-json', authRequired, uploadJSON.single('json'),
     client.release()
   }
 })
+
+/**
+ * Process JSON document in background
+ * Auto-pairs procedures with procedure_base_table (100% confidence only)
+ */
+async function processJSONDocument(
+  documentId: string,
+  procedures: any[],
+  providerId: string,
+  clinicId: string
+) {
+  const client = await pool.connect()
+
+  try {
+    console.log(`🔗 [${documentId}] Iniciando pareamento automático de ${procedures.length} procedimentos...`)
+    await updateProgress(documentId, 20, 'PAIRING')
+
+    let autoPairedCount = 0
+    let autoApprovedCount = 0
+    let unpariedCount = 0
+
+    await client.query('BEGIN')
+
+    for (let i = 0; i < procedures.length; i++) {
+      const proc = procedures[i]
+
+      // Update progress every 10%
+      if (i % Math.max(1, Math.floor(procedures.length / 10)) === 0) {
+        const progress = 20 + Math.floor((i / procedures.length) * 70)
+        await updateProgress(documentId, progress, 'PAIRING')
+      }
+
+      try {
+        const match = await matchProcedureBase(proc, clinicId)
+
+        if (match) {
+          // Create procedure_mapping with 100% confidence
+          const mappingId = uuidv4()
+
+          // Se encontrou match na tabela base, significa que foi aprovado anteriormente
+          // Então vamos criar o mapping e aprovar automaticamente
+          const procedureId = uuidv4()
+
+          // Criar insurance_provider_procedure diretamente (auto-aprovação)
+          await client.query(
+            `INSERT INTO insurance_provider_procedures (
+              id, insurance_provider_id, procedure_base_id, provider_code,
+              provider_description, is_periciable, max_value, active
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+            [
+              procedureId,
+              providerId,
+              match.baseId, // Link to base table
+              proc.code,
+              proc.description || '',
+              match.isPericiable,
+              proc.value || null
+            ]
+          )
+
+          // Criar procedure_mapping com status APPROVED
+          await client.query(
+            `INSERT INTO procedure_mappings (
+              id, document_id, extracted_procedure_code, extracted_description,
+              extracted_is_periciable, extracted_adults_only, extracted_value,
+              mapped_procedure_base_id, mapped_provider_procedure_id, confidence_score, status, notes, reviewed_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)`,
+            [
+              mappingId,
+              documentId,
+              proc.code,
+              proc.description || '',
+              match.isPericiable,
+              match.adultsOnly,
+              proc.value || null,
+              match.baseId, // Paired with base table
+              procedureId, // Link to insurance_provider_procedure
+              1.0, // 100% confidence
+              'APPROVED', // Auto-approved because it was already in base table
+              'Pareamento e aprovação automática (100% confiança - procedimento já aprovado anteriormente)'
+            ]
+          )
+
+          autoPairedCount++
+          autoApprovedCount++
+        } else {
+          unpariedCount++
+        }
+      } catch (procError: any) {
+        console.error(`❌ Erro ao processar procedimento ${proc.code}:`, procError.message)
+        // Continue processing other procedures
+      }
+    }
+
+    await client.query('COMMIT')
+
+    console.log(`✅ [${documentId}] Pareamento automático concluído:`)
+    console.log(`   • ${autoPairedCount} procedimentos pareados automaticamente (100% confiança)`)
+    console.log(`   • ${autoApprovedCount} procedimentos aprovados automaticamente (já estavam na tabela base)`)
+    console.log(`   • ${unpariedCount} procedimentos não pareados (requerem IA ou pareamento manual)`)
+
+    // Mark document as completed
+    await updateProgress(documentId, 100, 'COMPLETED')
+    await pool.query(
+      `UPDATE insurance_provider_documents
+       SET processed = true,
+           processing_status = 'COMPLETED',
+           processed_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [documentId]
+    )
+
+    console.log(`✅ [${documentId}] Processamento concluído com sucesso`)
+
+  } catch (error: any) {
+    await client.query('ROLLBACK').catch(() => {})
+    console.error(`❌ [${documentId}] Erro no processamento:`, error)
+
+    // Mark document as failed
+    await pool.query(
+      `UPDATE insurance_provider_documents
+       SET processing_status = 'FAILED',
+           processed_at = CURRENT_TIMESTAMP,
+           extracted_data = jsonb_set(
+             COALESCE(extracted_data, '{}'::jsonb),
+             '{error}',
+             to_jsonb($2::text)
+           )
+       WHERE id = $1`,
+      [documentId, error.message]
+    )
+  } finally {
+    client.release()
+  }
+}
 
 /**
  * Update processing progress
