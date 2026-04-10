@@ -178,7 +178,7 @@ export function AddProceduresModal({
         ...procedure,
         quantity: 1,
         editableDescription: procedure.description,
-        editableValue: procedure.value,
+        editableValue: procedure.value !== null ? procedure.value : 0,
         toothRegion: toothRegion
       }])
     }
@@ -388,7 +388,7 @@ export function AddProceduresModal({
                       <div className="text-xs text-muted-foreground">{procedure.description}</div>
                     </div>
                     <div className="text-sm font-semibold text-primary ml-2">
-                      €{procedure.value.toFixed(2)}
+                      {procedure.value !== null ? `€${procedure.value.toFixed(2)}` : '-'}
                     </div>
                   </button>
                 ))}
