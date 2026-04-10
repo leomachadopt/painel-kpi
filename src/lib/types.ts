@@ -773,6 +773,7 @@ export interface InsuranceProvider {
   notes?: string | null
   createdAt: string
   updatedAt: string
+  isDefaultForClinic?: boolean
 }
 
 export interface ProcedureBase {

@@ -126,7 +126,7 @@ router.get('/insurance-providers/:clinicId', async (req, res) => {
     }
 
     const result = await query(
-      `SELECT id, clinic_id, name, code, contact_name, contact_email, contact_phone, notes, created_at, updated_at
+      `SELECT id, clinic_id, name, code, contact_name, contact_email, contact_phone, notes, created_at, updated_at, is_default_for_clinic
        FROM insurance_providers
        WHERE clinic_id = $1
        ORDER BY name ASC`,
@@ -145,6 +145,7 @@ router.get('/insurance-providers/:clinicId', async (req, res) => {
         notes: row.notes,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        isDefaultForClinic: row.is_default_for_clinic || false,
       }))
     )
   } catch (error) {

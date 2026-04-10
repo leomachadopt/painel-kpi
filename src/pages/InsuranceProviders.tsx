@@ -22,6 +22,7 @@ import {
 import { Search, Plus, Edit, Trash2, Loader2 } from 'lucide-react'
 import useAuthStore from '@/stores/useAuthStore'
 import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -427,7 +428,16 @@ export default function InsuranceProviders() {
                 <TableBody>
                   {filteredProviders.map((provider) => (
                     <TableRow key={provider.id}>
-                      <TableCell className="font-medium">{provider.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {provider.name}
+                          {provider.isDefaultForClinic && (
+                            <Badge variant="secondary" className="text-xs">
+                              Tabela Padrão
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{provider.code || '-'}</TableCell>
                       <TableCell className="text-center">
                         <span className="font-semibold text-green-600">
