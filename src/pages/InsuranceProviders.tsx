@@ -290,14 +290,26 @@ export default function InsuranceProviders() {
   const handleCopyToBase = async (provider: InsuranceProvider) => {
     if (!clinicId) return
 
-    // Confirmação
+    // Perguntar se quer limpar procedimentos antigos primeiro
+    const cleanFirst = window.confirm(
+      `IMPORTANTE: Deseja LIMPAR a tabela base antes de copiar?\n\n` +
+      `SIM = Remove procedimentos antigos (recomendado se tem valores incorretos)\n` +
+      `NÃO = Mantém procedimentos existentes e adiciona/atualiza apenas\n\n` +
+      `Clique OK para LIMPAR, Cancelar para MANTER`
+    )
+
+    // Confirmação final
     const confirmed = window.confirm(
-      `Deseja copiar todos os procedimentos aprovados de "${provider.name}" para a tabela base da clínica?\n\n` +
+      `Definir "${provider.name}" como tabela padrão da clínica?\n\n` +
+      `${cleanFirst ? '⚠️ ATENÇÃO: Irá DELETAR procedimentos não-customizados existentes\n\n' : ''}` +
       `Isso irá:\n` +
+      `${cleanFirst ? '- Deletar procedimentos copiados anteriormente\n' : ''}` +
+      `- Copiar TODOS os procedimentos (não precisa aprovar)\n` +
       `- Criar novos procedimentos que não existem\n` +
       `- Atualizar procedimentos customizados existentes\n` +
       `- Manter procedimentos globais sem alteração\n` +
-      `- NÃO copiar valores de preço (apenas estrutura)`
+      `- NÃO copiar valores de preço (apenas estrutura)\n` +
+      `- Marcar "${provider.name}" como tabela padrão`
     )
 
     if (!confirmed) return
@@ -314,7 +326,7 @@ export default function InsuranceProviders() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ clinicId })
+          body: JSON.stringify({ clinicId, cleanFirst })
         }
       )
 
@@ -325,12 +337,7 @@ export default function InsuranceProviders() {
 
       const result = await response.json()
 
-      toast.success(
-        `Procedimentos copiados com sucesso!\n\n` +
-        `Criados: ${result.summary.created}\n` +
-        `Atualizados: ${result.summary.updated}\n` +
-        `Ignorados (globais): ${result.summary.skipped}`
-      )
+      toast.success(result.message || 'Cópia de procedimentos iniciada!')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao copiar procedimentos para tabela base')
     }
