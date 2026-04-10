@@ -38,7 +38,8 @@ import { ExtractedProceduresView } from '@/components/advances/ExtractedProcedur
 import { UploadPDFDialog } from '@/components/advances/UploadPDFDialog'
 import { UploadJSONDialog } from '@/components/advances/UploadJSONDialog'
 import { ProcedureMappingReview } from '@/components/advances/ProcedureMappingReview'
-import { FileText, Upload, FileCode } from 'lucide-react'
+import { ManageProviderProceduresModal } from '@/components/advances/ManageProviderProceduresModal'
+import { FileText, Upload, FileCode, Settings } from 'lucide-react'
 
 export default function InsuranceProviders() {
   const { user } = useAuthStore()
@@ -63,6 +64,8 @@ export default function InsuranceProviders() {
   const [showMappingReview, setShowMappingReview] = useState(false)
   const [selectedMappingDocumentId, setSelectedMappingDocumentId] = useState<string | null>(null)
   const [selectedMappingProvider, setSelectedMappingProvider] = useState<InsuranceProvider | null>(null)
+  const [showManageProcedures, setShowManageProcedures] = useState(false)
+  const [manageProceduresProvider, setManageProceduresProvider] = useState<InsuranceProvider | null>(null)
   const [providerProcedureCounts, setProviderProcedureCounts] = useState<Record<string, {
     approved: number
     unapproved: number
@@ -418,6 +421,17 @@ export default function InsuranceProviders() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => {
+                                  setManageProceduresProvider(provider)
+                                  setShowManageProcedures(true)
+                                }}
+                                title="Gerenciar tabela de procedimentos"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleEdit(provider)}
                               >
                                 <Edit className="h-4 w-4" />
@@ -525,6 +539,23 @@ export default function InsuranceProviders() {
             setSelectedMappingDocumentId(null)
             setSelectedMappingProvider(null)
             loadProcedureCounts() // Recarregar contagens
+          }}
+        />
+      )}
+
+      {/* Manage Provider Procedures Dialog */}
+      {showManageProcedures && manageProceduresProvider && clinicId && (
+        <ManageProviderProceduresModal
+          open={showManageProcedures}
+          onClose={() => {
+            setShowManageProcedures(false)
+            setManageProceduresProvider(null)
+          }}
+          providerId={manageProceduresProvider.id}
+          providerName={manageProceduresProvider.name}
+          clinicId={clinicId}
+          onUpdate={() => {
+            loadProcedureCounts() // Recarregar contagens quando houver alterações
           }}
         />
       )}

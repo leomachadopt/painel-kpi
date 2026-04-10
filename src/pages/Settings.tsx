@@ -29,6 +29,7 @@ import { FirstConsultationTypesSettings } from '@/components/settings/FirstConsu
 import { LanguageSettings } from '@/components/settings/LanguageSettings'
 import { AppointmentTypesEditor } from '@/components/settings/AppointmentTypesEditor'
 import { ClinicScheduleEditor } from '@/components/settings/ClinicScheduleEditor'
+import { ManageClinicProceduresModal } from '@/components/settings/ManageClinicProceduresModal'
 import { MONTHS } from '@/lib/types'
 import { dailyEntriesApi } from '@/services/api'
 import { OrderItem } from '@/lib/types'
@@ -959,6 +960,49 @@ const AppointmentTypesEditor = ({
   )
 }
 
+const ProceduresBaseTab = ({
+  clinicId,
+  clinicName,
+  canManageConfig
+}: {
+  clinicId: string
+  clinicName: string
+  canManageConfig: boolean
+}) => {
+  const [showModal, setShowModal] = useState(false)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Tabela Base de Procedimentos</CardTitle>
+        <CardDescription>
+          Gerencie os procedimentos da tabela base da clínica. Estes procedimentos podem ser utilizados como referência nas tabelas de operadoras e planos de tratamento.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="text-center p-8">
+          <p className="text-sm text-muted-foreground mb-4">
+            Clique no botão abaixo para abrir o gerenciador de procedimentos base
+          </p>
+          <Button
+            onClick={() => setShowModal(true)}
+            disabled={!canManageConfig}
+          >
+            Gerenciar Procedimentos Base
+          </Button>
+        </div>
+
+        <ManageClinicProceduresModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          clinicId={clinicId}
+          clinicName={clinicName}
+        />
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function Settings() {
   const { t, locale } = useTranslation()
   const { user } = useAuthStore()
@@ -1230,6 +1274,7 @@ export default function Settings() {
           <TabsTrigger value="paymentSources" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Fontes de Recebimento</TabsTrigger>
           <TabsTrigger value="alignerBrands" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Marcas de Alinhadores</TabsTrigger>
           <TabsTrigger value="orderItems" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Itens</TabsTrigger>
+          <TabsTrigger value="proceduresBase" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Procedimentos Base</TabsTrigger>
           <TabsTrigger value="consultationTypes" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Tipos de 1ª Consulta</TabsTrigger>
           <TabsTrigger value="cabinets" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">{t('sidebar.cabinets')}</TabsTrigger>
           <TabsTrigger value="doctors" className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0">Médicos</TabsTrigger>
@@ -1377,6 +1422,10 @@ export default function Settings() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="proceduresBase">
+          <ProceduresBaseTab clinicId={clinic.id} clinicName={clinic.name} canManageConfig={canManageConfig} />
         </TabsContent>
 
         <TabsContent value="cabinets">

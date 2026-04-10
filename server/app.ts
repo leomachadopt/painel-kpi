@@ -30,6 +30,7 @@ import appointmentsRoutes from './routes/appointments.js'
 import clinicScheduleRoutes from './routes/clinicSchedule.js'
 import planProceduresRoutes from './routes/planProcedures.js'
 import proceduresCatalogRoutes from './routes/proceduresCatalog.js'
+import proceduresManagementRoutes from './routes/proceduresManagement.js'
 import dashboardMetricsRoutes from './routes/dashboardMetrics.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
@@ -153,6 +154,7 @@ export function createApp() {
   app.use('/api/clinic-schedule', clinicScheduleRoutes)
   app.use('/api/plan-procedures', planProceduresRoutes)
   app.use('/api/procedures-catalog', proceduresCatalogRoutes)
+  app.use('/api/procedures-management', proceduresManagementRoutes)
   app.use('/api/clinics', dashboardMetricsRoutes)
 
   // Public routes (no authentication required)
