@@ -40,42 +40,109 @@ router.get('/:clinicId', async (req, res) => {
     let procedures = []
 
     if (type === 'clinica') {
-      // Busca da tabela base da clínica
-      const searchCondition = search
-        ? `AND (pb.code ILIKE $3 OR pb.description ILIKE $3)`
-        : ''
-
-      const params = [clinicId, parseInt(limit as string, 10)]
-      if (search) {
-        params.push(`%${search}%`)
-      }
-
-      const result = await query(
-        `SELECT
-          pb.id,
-          pb.code,
-          pb.description,
-          pb.default_value as value,
-          pb.is_custom
-         FROM procedure_base_table pb
-         WHERE (pb.clinic_id = $1 OR pb.clinic_id IS NULL)
-           AND pb.active = true
-           ${searchCondition}
-         ORDER BY pb.code
-         LIMIT $2`,
-        params
+      // Busca da operadora padrão da clínica (is_default_for_clinic = true)
+      // Primeiro, encontrar a operadora padrão
+      const defaultProviderResult = await query(
+        `SELECT id FROM insurance_providers
+         WHERE clinic_id = $1 AND is_default_for_clinic = true
+         LIMIT 1`,
+        [clinicId]
       )
 
-      procedures = result.rows.map(row => ({
-        id: row.id,
-        code: row.code,
-        description: row.description,
-        value: row.value ? parseFloat(row.value) : null,  // Manter NULL se não tiver valor
-        type: 'clinica',
-        procedureBaseId: row.id,
-        insuranceProviderProcedureId: null,
-        isCustom: row.is_custom || false
-      }))
+      if (defaultProviderResult.rows.length === 0) {
+        // Nenhuma operadora marcada como padrão
+        procedures = []
+      } else {
+        const defaultProviderId = defaultProviderResult.rows[0].id
+
+        // Buscar procedimentos da operadora padrão (mesmo código da operadora)
+        const searchCondition = search
+          ? `AND (COALESCE(ipp.provider_code, pb.code) ILIKE $4 OR COALESCE(ipp.provider_description, pb.description) ILIKE $4)`
+          : ''
+
+        const approvalCondition = requireApproved === 'true'
+          ? `AND ipp.active = true`
+          : ''
+
+        const params = [defaultProviderId, clinicId, parseInt(limit as string, 10)]
+        if (search) {
+          params.push(`%${search}%`)
+        }
+
+        let result = await query(
+          `SELECT
+            ipp.id as insurance_provider_procedure_id,
+            pb.id as procedure_base_id,
+            COALESCE(ipp.provider_code, pb.code) as code,
+            COALESCE(ipp.provider_description, pb.description) as description,
+            ipp.max_value as value,
+            ipp.active
+           FROM insurance_provider_procedures ipp
+           LEFT JOIN procedure_base_table pb ON ipp.procedure_base_id = pb.id
+           JOIN insurance_providers ip ON ipp.insurance_provider_id = ip.id
+           WHERE ipp.insurance_provider_id = $1
+             AND ip.clinic_id = $2
+             ${approvalCondition}
+             ${searchCondition}
+           ORDER BY code
+           LIMIT $3`,
+          params
+        )
+
+        // Se não encontrou procedimentos salvos, buscar do upload (extracted_data)
+        if (result.rows.length === 0) {
+          const documentsResult = await query(
+            `SELECT extracted_data
+             FROM insurance_provider_documents
+             WHERE insurance_provider_id = $1
+               AND extracted_data IS NOT NULL
+               AND jsonb_array_length(extracted_data->'procedures') > 0
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [defaultProviderId]
+          )
+
+          if (documentsResult.rows.length > 0) {
+            const extractedData = documentsResult.rows[0].extracted_data
+            let extractedProcedures = extractedData.procedures || []
+
+            // Aplicar filtro de busca se fornecido
+            if (search) {
+              const searchLower = search.toLowerCase()
+              extractedProcedures = extractedProcedures.filter((proc: any) =>
+                (proc.code && proc.code.toLowerCase().includes(searchLower)) ||
+                (proc.description && proc.description.toLowerCase().includes(searchLower))
+              )
+            }
+
+            // Limitar resultados
+            extractedProcedures = extractedProcedures.slice(0, parseInt(limit as string, 10))
+
+            // Converter para formato esperado
+            procedures = extractedProcedures.map((proc: any) => ({
+              id: `temp-${proc.code}`,  // ID temporário
+              code: proc.code,
+              description: proc.description || '',
+              value: proc.value ? parseFloat(proc.value) : null,
+              type: 'clinica',
+              procedureBaseId: null,
+              insuranceProviderProcedureId: null,
+              active: false
+            }))
+          }
+        } else {
+          procedures = result.rows.map(row => ({
+            id: row.insurance_provider_procedure_id,
+            code: row.code,
+            description: row.description,
+            value: row.value ? parseFloat(row.value) : null,
+            type: 'clinica',
+            procedureBaseId: row.procedure_base_id,
+            insuranceProviderProcedureId: row.insurance_provider_procedure_id,
+            active: row.active
+          }))
+        }
+      }
     } else {
       // Busca da tabela de operadora
       // Tentar primeiro de insurance_provider_procedures (procedimentos salvos)

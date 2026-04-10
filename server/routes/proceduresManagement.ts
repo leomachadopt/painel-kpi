@@ -683,18 +683,6 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
 
     const provider = providerCheck.rows[0]
 
-    // Se cleanFirst=true, limpar procedimentos não-customizados da tabela base
-    if (cleanFirst) {
-      console.log(`🧹 Limpando procedimentos não-customizados da clínica ${clinicId}`)
-      const deleteResult = await query(
-        `DELETE FROM procedure_base_table
-         WHERE clinic_id = $1 AND is_custom = false
-         RETURNING id`,
-        [clinicId]
-      )
-      console.log(`✅ ${deleteResult.rowCount} procedimentos removidos`)
-    }
-
     // Desmarcar qualquer outra operadora como padrão desta clínica
     await query(
       'UPDATE insurance_providers SET is_default_for_clinic = false WHERE clinic_id = $1',
@@ -707,16 +695,12 @@ router.post('/provider/:providerId/copy-to-base', async (req, res) => {
       [providerId]
     )
 
-    // Executar cópia em background para evitar timeout
-    copyProceduresToBaseBackground(providerId, clinicId, req.user.sub)
-      .catch(err => console.error('Background copy error:', err))
+    console.log(`✅ "${provider.name}" definida como tabela padrão da clínica ${clinicId}`)
 
-    // Responder imediatamente
     res.json({
-      message: `"${provider.name}" definida como tabela padrão. Cópia de procedimentos em andamento.`,
+      message: `"${provider.name}" definida como tabela padrão da clínica!`,
       providerName: provider.name,
-      status: 'processing',
-      cleaned: cleanFirst
+      status: 'completed'
     })
   } catch (error: any) {
     console.error('Error initiating copy to base:', error)
