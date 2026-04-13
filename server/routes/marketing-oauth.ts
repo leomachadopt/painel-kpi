@@ -698,97 +698,102 @@ router.get('/meta/audience', requirePermission('canViewMarketing'), async (req: 
 
     const apiVersion = process.env.META_API_VERSION || 'v21.0'
 
-    // Fetch audience demographics using follower_demographics (lifetime metric)
-    const audienceUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/insights`)
-    audienceUrl.searchParams.set('access_token', access_token)
-    audienceUrl.searchParams.set('metric', 'follower_demographics')
-    audienceUrl.searchParams.set('period', 'lifetime')
-    audienceUrl.searchParams.set('metric_type', 'total_value')
-
-    console.log('Fetching audience demographics from:', audienceUrl.toString().replace(access_token, 'TOKEN'))
-    const audienceResponse = await fetch(audienceUrl.toString())
-    const audienceData = await audienceResponse.json()
-
-    console.log('Audience API response:', JSON.stringify(audienceData, null, 2))
-
-    if (audienceData.error) {
-      console.error('Audience API error:', audienceData.error)
-      throw new Error(audienceData.error.message || 'Failed to fetch audience data')
-    }
-
+    // Fetch audience demographics using follower_demographics with breakdowns
+    // Need to make separate calls for different breakdown combinations
     const demographics = {
       gender_age: {},
       cities: {},
       countries: {},
     }
 
-    // Process follower_demographics response
-    // Format: { data: [{ name: "follower_demographics", period: "lifetime", values: [...], total_value: {...} }] }
-    if (audienceData.data && audienceData.data.length > 0) {
-      const followerDemo = audienceData.data[0]
+    // 1. Fetch gender + age breakdown
+    const genderAgeUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/insights`)
+    genderAgeUrl.searchParams.set('access_token', access_token)
+    genderAgeUrl.searchParams.set('metric', 'follower_demographics')
+    genderAgeUrl.searchParams.set('period', 'lifetime')
+    genderAgeUrl.searchParams.set('breakdown', 'age,gender')
+    genderAgeUrl.searchParams.set('metric_type', 'total_value')
 
-      // Check if total_value exists and has breakdowns
-      if (followerDemo.total_value?.breakdowns) {
-        for (const breakdown of followerDemo.total_value.breakdowns) {
-          const dimensionKeys = breakdown.dimension_keys || []
+    console.log('Fetching gender-age demographics from:', genderAgeUrl.toString().replace(access_token, 'TOKEN'))
+    const genderAgeResponse = await fetch(genderAgeUrl.toString())
+    const genderAgeData = await genderAgeResponse.json()
 
+    console.log('Gender-Age API response:', JSON.stringify(genderAgeData, null, 2))
+
+    if (genderAgeData.error) {
+      console.error('Gender-Age API error:', genderAgeData.error)
+      throw new Error(genderAgeData.error.message || 'Failed to fetch gender-age data')
+    }
+
+    // Process gender-age breakdown
+    if (genderAgeData.data && genderAgeData.data.length > 0) {
+      const metric = genderAgeData.data[0]
+
+      if (metric.total_value?.breakdowns) {
+        for (const breakdown of metric.total_value.breakdowns) {
           for (const result of breakdown.results || []) {
-            const dims = result.dimension_values || []
-            const value = result.value || 0
-
-            // Gender-Age breakdown (e.g., dimension_keys: ["age", "gender"])
-            if (dimensionKeys.includes('age') && dimensionKeys.includes('gender')) {
-              const ageIdx = dimensionKeys.indexOf('age')
-              const genderIdx = dimensionKeys.indexOf('gender')
-              const age = dims[ageIdx]
-              const gender = dims[genderIdx]
-              if (age && gender) {
-                // Format: "M.18-24", "F.25-34", etc.
-                const key = `${gender}.${age}`
-                demographics.gender_age[key] = value
-              }
-            }
-
-            // City breakdown
-            if (dimensionKeys.includes('city')) {
-              const cityIdx = dimensionKeys.indexOf('city')
-              const city = dims[cityIdx]
-              if (city) {
-                demographics.cities[city] = (demographics.cities[city] || 0) + value
-              }
-            }
-
-            // Country breakdown
-            if (dimensionKeys.includes('country')) {
-              const countryIdx = dimensionKeys.indexOf('country')
-              const country = dims[countryIdx]
-              if (country) {
-                demographics.countries[country] = (demographics.countries[country] || 0) + value
-              }
+            const dimValues = result.dimension_values || []
+            // dimension_values should be ["age_range", "gender_code"]
+            if (dimValues.length === 2) {
+              const [age, gender] = dimValues
+              const key = `${gender}.${age}`
+              demographics.gender_age[key] = result.value || 0
             }
           }
         }
       }
+    }
 
-      // Fallback: check values array (older format or different breakdowns)
-      if (followerDemo.values && followerDemo.values.length > 0) {
-        for (const valueObj of followerDemo.values) {
-          if (valueObj.value && typeof valueObj.value === 'object') {
-            // Try to extract demographics from value object
-            for (const [key, val] of Object.entries(valueObj.value)) {
-              // Gender-age format: "M.18-24"
-              if (key.match(/^[MFU]\.\d+-\d+$/)) {
-                demographics.gender_age[key] = val as number
-              }
-              // City names
-              else if (key.match(/^[A-Z]/)) {
-                const isCountryCode = key.length === 2
-                if (isCountryCode) {
-                  demographics.countries[key] = (demographics.countries[key] || 0) + (val as number)
-                } else {
-                  demographics.cities[key] = (demographics.cities[key] || 0) + (val as number)
-                }
-              }
+    // 2. Fetch city breakdown
+    const cityUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/insights`)
+    cityUrl.searchParams.set('access_token', access_token)
+    cityUrl.searchParams.set('metric', 'follower_demographics')
+    cityUrl.searchParams.set('period', 'lifetime')
+    cityUrl.searchParams.set('breakdown', 'city')
+    cityUrl.searchParams.set('metric_type', 'total_value')
+
+    console.log('Fetching city demographics from:', cityUrl.toString().replace(access_token, 'TOKEN'))
+    const cityResponse = await fetch(cityUrl.toString())
+    const cityData = await cityResponse.json()
+
+    if (!cityData.error && cityData.data && cityData.data.length > 0) {
+      const metric = cityData.data[0]
+
+      if (metric.total_value?.breakdowns) {
+        for (const breakdown of metric.total_value.breakdowns) {
+          for (const result of breakdown.results || []) {
+            const dimValues = result.dimension_values || []
+            if (dimValues.length === 1) {
+              const city = dimValues[0]
+              demographics.cities[city] = result.value || 0
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Fetch country breakdown
+    const countryUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/insights`)
+    countryUrl.searchParams.set('access_token', access_token)
+    countryUrl.searchParams.set('metric', 'follower_demographics')
+    countryUrl.searchParams.set('period', 'lifetime')
+    countryUrl.searchParams.set('breakdown', 'country')
+    countryUrl.searchParams.set('metric_type', 'total_value')
+
+    console.log('Fetching country demographics from:', countryUrl.toString().replace(access_token, 'TOKEN'))
+    const countryResponse = await fetch(countryUrl.toString())
+    const countryData = await countryResponse.json()
+
+    if (!countryData.error && countryData.data && countryData.data.length > 0) {
+      const metric = countryData.data[0]
+
+      if (metric.total_value?.breakdowns) {
+        for (const breakdown of metric.total_value.breakdowns) {
+          for (const result of breakdown.results || []) {
+            const dimValues = result.dimension_values || []
+            if (dimValues.length === 1) {
+              const country = dimValues[0]
+              demographics.countries[country] = result.value || 0
             }
           }
         }
