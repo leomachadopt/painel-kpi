@@ -158,11 +158,15 @@ router.put('/integrations/:clinicId/meta', requirePermission('canEditMarketing')
       tokenExpiresAt,
       igBusinessId,
       facebookPageId,
+      pageName,
+      instagramUsername,
     } = req.body || {}
 
     const metadata = {
       igBusinessId: igBusinessId || null,
       facebookPageId: facebookPageId || null,
+      pageName: pageName || null,
+      instagramUsername: instagramUsername || null,
     }
 
     await query(
@@ -298,98 +302,6 @@ router.delete('/integrations/:clinicId/:provider', requirePermission('canEditMar
   }
 })
 
-// ================================
-// OAUTH - META
-// ================================
-
-// Build auth URL via API call (so Authorization header is included). Frontend should use this.
-router.get('/oauth/meta/url/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
-  try {
-    const { clinicId } = req.params
-    if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
-    if (!canManageClinic(req, clinicId)) return res.status(403).json({ error: 'Forbidden' })
-    const returnTo = safeReturnTo(req.query.returnTo as string | undefined)
-    const url = buildMetaOAuthUrl(clinicId, returnTo)
-    res.json({ url })
-  } catch (error: any) {
-    res.status(500).json({ error: error?.message || 'Failed to build Meta OAuth URL' })
-  }
-})
-
-router.get('/oauth/meta/start/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
-  try {
-    const { clinicId } = req.params
-    if (!canManageClinic(req, clinicId)) {
-      const url = new URL(safeReturnTo(req.query.returnTo as string | undefined))
-      url.searchParams.set('oauth', 'meta')
-      url.searchParams.set('result', 'error')
-      url.searchParams.set('message', 'Apenas o gestor da clínica pode conectar integrações.')
-      return res.redirect(url.toString())
-    }
-    const returnTo = safeReturnTo(req.query.returnTo as string | undefined)
-
-    try {
-      res.redirect(buildMetaOAuthUrl(clinicId, returnTo))
-    } catch {
-      const url = new URL(returnTo)
-      url.searchParams.set('oauth', 'meta')
-      url.searchParams.set('result', 'error')
-      url.searchParams.set(
-        'message',
-        'Integração Meta não configurada no servidor (META_APP_ID/META_REDIRECT_URI).'
-      )
-      return res.redirect(url.toString())
-    }
-  } catch (error) {
-    console.error('Meta oauth start error:', error)
-    res.status(500).json({ error: 'Failed to start Meta OAuth' })
-  }
-})
-
-router.get('/oauth/meta/callback', async (req, res) => {
-  try {
-    const { code, state } = req.query as { code?: string; state?: string }
-    if (!code || !state) return res.status(400).send('Missing code/state')
-
-    const payload = consumeOAuthState(state)
-    if (!payload || payload.provider !== 'META') return res.status(400).send('Invalid state')
-
-    const redirectUri = process.env.META_REDIRECT_URI
-    if (!redirectUri) return res.status(500).send('META_REDIRECT_URI not configured')
-
-    const token = await exchangeMetaCodeForToken(code, redirectUri)
-    const pages = await fetchMetaPages(token.accessToken)
-
-    const tokenExpiresAt = new Date(Date.now() + token.expiresIn * 1000)
-
-    // If there is exactly one usable IG business account, auto-select it.
-    const candidates = pages.filter((p) => p.igBusinessId)
-    const auto = candidates.length === 1 ? candidates[0] : null
-
-    await upsertMetaIntegration({
-      clinicId: payload.clinicId,
-      accessToken: token.accessToken,
-      tokenExpiresAt,
-      pages,
-      selectedPageId: auto?.pageId || null,
-      selectedIgBusinessId: auto?.igBusinessId || null,
-    })
-
-    const url = new URL(payload.returnTo)
-    url.searchParams.set('oauth', 'meta')
-    url.searchParams.set('result', 'success')
-    url.searchParams.set('needsSelection', auto ? '0' : '1')
-    res.redirect(url.toString())
-  } catch (error) {
-    console.error('Meta oauth callback error:', error)
-    const base = frontendBaseUrl()
-    const url = new URL(`${base}/configuracoes`)
-    url.searchParams.set('oauth', 'meta')
-    url.searchParams.set('result', 'error')
-    url.searchParams.set('message', 'Falha ao conectar Meta')
-    res.redirect(url.toString())
-  }
-})
 
 router.get('/meta/assets/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
   try {
@@ -792,6 +704,421 @@ router.post('/run/:clinicId', requirePermission('canEditMarketing'), async (req:
   } catch (error) {
     console.error('Run marketing job error:', error)
     res.status(500).json({ error: 'Failed to run marketing job' })
+  }
+})
+
+// ================================
+// LEADS - Instagram/Facebook DMs
+// ================================
+
+router.get('/leads/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
+    if (!canReadClinic(req, clinicId)) return res.status(403).json({ error: 'Forbidden' })
+
+    const { status, source } = req.query as { status?: string; source?: string }
+
+    const params: any[] = [clinicId]
+    let where = `clinic_id = $1`
+
+    if (status) {
+      params.push(status)
+      where += ` AND status = $${params.length}`
+    }
+    if (source) {
+      params.push(source)
+      where += ` AND source = $${params.length}`
+    }
+
+    const result = await query(
+      `SELECT id, clinic_id, source, name, phone, email, message,
+              instagram_user_id, instagram_username, conversation_id,
+              status, assigned_to, notes, metadata, created_at, updated_at
+       FROM marketing_leads
+       WHERE ${where}
+       ORDER BY created_at DESC`,
+      params
+    )
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Get leads error:', error)
+    res.status(500).json({ error: 'Failed to fetch leads' })
+  }
+})
+
+router.post('/leads/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const {
+      source,
+      name,
+      phone,
+      email,
+      message,
+      instagramUserId,
+      instagramUsername,
+      conversationId,
+      status = 'NEW',
+      assignedTo,
+      notes,
+      metadata = {},
+    } = req.body || {}
+
+    if (!source || !['INSTAGRAM_DM', 'FACEBOOK_DM', 'WHATSAPP', 'MANUAL'].includes(source)) {
+      return res.status(400).json({ error: 'Valid source is required' })
+    }
+
+    const id = `lead-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+    const result = await query(
+      `INSERT INTO marketing_leads
+        (id, clinic_id, source, name, phone, email, message,
+         instagram_user_id, instagram_username, conversation_id,
+         status, assigned_to, notes, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
+       RETURNING *`,
+      [
+        id,
+        clinicId,
+        source,
+        name || null,
+        phone || null,
+        email || null,
+        message || null,
+        instagramUserId || null,
+        instagramUsername || null,
+        conversationId || null,
+        status,
+        assignedTo || null,
+        notes || null,
+        JSON.stringify(metadata),
+      ]
+    )
+
+    res.status(201).json(result.rows[0])
+  } catch (error: any) {
+    console.error('Create lead error:', error)
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Lead already exists for this conversation' })
+    }
+    res.status(500).json({ error: 'Failed to create lead' })
+  }
+})
+
+router.put('/leads/:clinicId/:leadId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId, leadId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const { status, assignedTo, notes, name, phone, email } = req.body || {}
+
+    const result = await query(
+      `UPDATE marketing_leads
+       SET status = COALESCE($1, status),
+           assigned_to = COALESCE($2, assigned_to),
+           notes = COALESCE($3, notes),
+           name = COALESCE($4, name),
+           phone = COALESCE($5, phone),
+           email = COALESCE($6, email),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7 AND clinic_id = $8
+       RETURNING *`,
+      [status ?? null, assignedTo ?? null, notes ?? null, name ?? null, phone ?? null, email ?? null, leadId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Lead not found' })
+    }
+
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Update lead error:', error)
+    res.status(500).json({ error: 'Failed to update lead' })
+  }
+})
+
+router.delete('/leads/:clinicId/:leadId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId, leadId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const result = await query(
+      `DELETE FROM marketing_leads WHERE id = $1 AND clinic_id = $2 RETURNING id`,
+      [leadId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Lead not found' })
+    }
+
+    res.json({ message: 'Lead deleted' })
+  } catch (error) {
+    console.error('Delete lead error:', error)
+    res.status(500).json({ error: 'Failed to delete lead' })
+  }
+})
+
+// ================================
+// STORIES - Instagram Stories Metrics
+// ================================
+
+router.get('/stories/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
+    if (!canReadClinic(req, clinicId)) return res.status(403).json({ error: 'Forbidden' })
+
+    const { start, end } = req.query as { start?: string; end?: string }
+
+    const params: any[] = [clinicId]
+    let where = `clinic_id = $1`
+
+    if (start) {
+      params.push(start)
+      where += ` AND metric_date >= $${params.length}`
+    }
+    if (end) {
+      params.push(end)
+      where += ` AND metric_date <= $${params.length}`
+    }
+
+    const result = await query(
+      `SELECT id, clinic_id, provider, story_id, media_type, media_url,
+              posted_at, expires_at, metric_date,
+              impressions, reach, replies, exits, taps_forward, taps_back,
+              metadata, created_at
+       FROM marketing_stories_metrics
+       WHERE ${where}
+       ORDER BY posted_at DESC, metric_date DESC`,
+      params
+    )
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Get stories error:', error)
+    res.status(500).json({ error: 'Failed to fetch stories metrics' })
+  }
+})
+
+router.post('/stories/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const {
+      provider = 'META',
+      storyId,
+      mediaType,
+      mediaUrl,
+      postedAt,
+      expiresAt,
+      metricDate,
+      impressions = 0,
+      reach = 0,
+      replies = 0,
+      exits = 0,
+      tapsForward = 0,
+      tapsBack = 0,
+      metadata = {},
+    } = req.body || {}
+
+    if (!storyId || !metricDate) {
+      return res.status(400).json({ error: 'storyId and metricDate are required' })
+    }
+
+    const result = await query(
+      `INSERT INTO marketing_stories_metrics
+        (clinic_id, provider, story_id, media_type, media_url, posted_at, expires_at,
+         metric_date, impressions, reach, replies, exits, taps_forward, taps_back, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb)
+       ON CONFLICT (clinic_id, provider, story_id, metric_date)
+       DO UPDATE SET
+         impressions = EXCLUDED.impressions,
+         reach = EXCLUDED.reach,
+         replies = EXCLUDED.replies,
+         exits = EXCLUDED.exits,
+         taps_forward = EXCLUDED.taps_forward,
+         taps_back = EXCLUDED.taps_back,
+         metadata = EXCLUDED.metadata
+       RETURNING *`,
+      [
+        clinicId,
+        provider,
+        storyId,
+        mediaType || null,
+        mediaUrl || null,
+        postedAt ? new Date(postedAt) : null,
+        expiresAt ? new Date(expiresAt) : null,
+        metricDate,
+        impressions,
+        reach,
+        replies,
+        exits,
+        tapsForward,
+        tapsBack,
+        JSON.stringify(metadata),
+      ]
+    )
+
+    res.status(201).json(result.rows[0])
+  } catch (error) {
+    console.error('Create/update story metrics error:', error)
+    res.status(500).json({ error: 'Failed to save story metrics' })
+  }
+})
+
+// ================================
+// REPORTS - Monthly PDF Reports
+// ================================
+
+router.get('/reports/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
+    if (!canReadClinic(req, clinicId)) return res.status(403).json({ error: 'Forbidden' })
+
+    const result = await query(
+      `SELECT id, clinic_id, report_month, report_type, period_start, period_end,
+              pdf_url, pdf_size, generated_at, generated_by, sent_at, sent_to,
+              report_data, metadata
+       FROM marketing_reports
+       WHERE clinic_id = $1
+       ORDER BY report_month DESC`,
+      [clinicId]
+    )
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Get reports error:', error)
+    res.status(500).json({ error: 'Failed to fetch reports' })
+  }
+})
+
+router.post('/reports/:clinicId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const {
+      reportMonth,
+      reportType = 'MONTHLY',
+      periodStart,
+      periodEnd,
+      pdfUrl,
+      pdfSize,
+      generatedBy,
+      sentTo,
+      reportData = {},
+      metadata = {},
+    } = req.body || {}
+
+    if (!reportMonth) {
+      return res.status(400).json({ error: 'reportMonth is required (YYYY-MM-DD)' })
+    }
+
+    const result = await query(
+      `INSERT INTO marketing_reports
+        (clinic_id, report_month, report_type, period_start, period_end,
+         pdf_url, pdf_size, generated_by, sent_to, report_data, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb)
+       ON CONFLICT (clinic_id, report_month, report_type)
+       DO UPDATE SET
+         pdf_url = EXCLUDED.pdf_url,
+         pdf_size = EXCLUDED.pdf_size,
+         generated_at = CURRENT_TIMESTAMP,
+         generated_by = EXCLUDED.generated_by,
+         report_data = EXCLUDED.report_data,
+         metadata = EXCLUDED.metadata
+       RETURNING *`,
+      [
+        clinicId,
+        reportMonth,
+        reportType,
+        periodStart || null,
+        periodEnd || null,
+        pdfUrl || null,
+        pdfSize || null,
+        generatedBy || null,
+        sentTo || null,
+        JSON.stringify(reportData),
+        JSON.stringify(metadata),
+      ]
+    )
+
+    res.status(201).json(result.rows[0])
+  } catch (error) {
+    console.error('Create/update report error:', error)
+    res.status(500).json({ error: 'Failed to create report' })
+  }
+})
+
+router.put('/reports/:clinicId/:reportId/send', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId, reportId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const { sentTo } = req.body || {}
+
+    if (!sentTo) {
+      return res.status(400).json({ error: 'sentTo (email list) is required' })
+    }
+
+    const result = await query(
+      `UPDATE marketing_reports
+       SET sent_at = CURRENT_TIMESTAMP,
+           sent_to = $1
+       WHERE id = $2 AND clinic_id = $3
+       RETURNING *`,
+      [sentTo, reportId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' })
+    }
+
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Mark report as sent error:', error)
+    res.status(500).json({ error: 'Failed to update report' })
+  }
+})
+
+router.delete('/reports/:clinicId/:reportId', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId, reportId } = req.params
+    if (!canManageClinic(req, clinicId)) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
+    const result = await query(
+      `DELETE FROM marketing_reports WHERE id = $1 AND clinic_id = $2 RETURNING id`,
+      [reportId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' })
+    }
+
+    res.json({ message: 'Report deleted' })
+  } catch (error) {
+    console.error('Delete report error:', error)
+    res.status(500).json({ error: 'Failed to delete report' })
   }
 })
 

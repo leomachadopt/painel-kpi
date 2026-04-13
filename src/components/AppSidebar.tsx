@@ -450,6 +450,21 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
+              {activeClinicId && (user?.role === 'GESTOR_CLINICA' || canView('canViewMarketing')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Marketing"
+                    isActive={location.pathname.includes('/marketing')}
+                  >
+                    <Link to={`/marketing/${activeClinicId}`}>
+                      <TrendingUp />
+                      <span>Marketing</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               {(user?.role === 'GESTOR_CLINICA' || canEdit('canEditClinicConfig')) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton

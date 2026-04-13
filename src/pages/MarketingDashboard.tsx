@@ -8,6 +8,9 @@ import { Loader2, TrendingUp, Users, Eye, Heart, Calendar, AlertCircle, BarChart
 import { format, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { MarketingLeadsContent } from '@/components/marketing/MarketingLeadsContent'
+import { MarketingStoriesContent } from '@/components/marketing/MarketingStoriesContent'
+import { MarketingReportsContent } from '@/components/marketing/MarketingReportsContent'
 
 interface MetaInsights {
   impressions: number
@@ -993,237 +996,17 @@ export default function MarketingDashboard() {
 
         {/* LEADS */}
         <TabsContent value="leads" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestão de Leads do Instagram</CardTitle>
-              <CardDescription>
-                Captura e gerenciamento de mensagens diretas de potenciais pacientes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6 py-4">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-purple-600" />
-                    Recurso Avançado: Captura Automática de DMs
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Este recurso usa Webhooks da Meta para capturar automaticamente mensagens diretas do Instagram
-                    de pessoas interessadas em tratamentos, criando leads no sistema.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">✨ Funcionalidades:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Captura automática de DMs</li>
-                        <li>• Classificação de leads (Novo, Qualificado, Convertido)</li>
-                        <li>• Atribuição para equipe de vendas</li>
-                        <li>• Histórico de conversas</li>
-                        <li>• Alertas em tempo real</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">🔧 Requisitos Técnicos:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Webhook configurado na Meta</li>
-                        <li>• Permissões instagram_manage_messages</li>
-                        <li>• URL pública para callbacks</li>
-                        <li>• Processamento assíncrono</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Preview: Lista de Leads</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center text-muted-foreground py-8">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm">
-                        Aqui aparecerá a lista de leads capturados automaticamente via DM do Instagram,
-                        com opções de filtro por status, data e responsável.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+          {user?.clinicId && <MarketingLeadsContent clinicId={user.clinicId} />}
         </TabsContent>
 
         {/* STORIES */}
         <TabsContent value="stories" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Análise de Stories do Instagram</CardTitle>
-              <CardDescription>
-                Métricas detalhadas de performance de conteúdo efêmero
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6 py-4">
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <Video className="h-5 w-5 text-orange-600" />
-                    Análise Avançada de Stories
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Acompanhe a performance dos seus Stories com métricas detalhadas de visualização,
-                    engajamento e interação.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">📊 Métricas Disponíveis:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Visualizações totais</li>
-                        <li>• Taxa de conclusão</li>
-                        <li>• Alcance único</li>
-                        <li>• Saídas antecipadas</li>
-                        <li>• Respostas/reações</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">🎯 Interações:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Cliques em links</li>
-                        <li>• Cliques em stickers</li>
-                        <li>• Compartilhamentos</li>
-                        <li>• Navegação para frente/trás</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">⏰ Insights:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Melhor horário</li>
-                        <li>• Tipo de conteúdo ideal</li>
-                        <li>• Duração ótima</li>
-                        <li>• Comparação temporal</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Preview: Stories Recentes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center text-muted-foreground py-6">
-                        <p className="text-sm">Lista dos últimos 50 stories com métricas individuais</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Preview: Gráfico de Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center text-muted-foreground py-6">
-                        <p className="text-sm">Evolução de visualizações e engajamento ao longo do tempo</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {user?.clinicId && <MarketingStoriesContent clinicId={user.clinicId} />}
         </TabsContent>
 
         {/* RELATÓRIOS */}
         <TabsContent value="reports" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Relatórios Executivos Automatizados</CardTitle>
-              <CardDescription>
-                Geração automática de relatórios em PDF com análises mensais de performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6 py-4">
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    Sistema de Relatórios Inteligentes
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Relatórios mensais automáticos em PDF com análise completa de todas as métricas de marketing,
-                    comparações mês a mês e recomendações baseadas em dados.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">📄 Conteúdo do Relatório:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Resumo executivo com KPIs principais</li>
-                        <li>• Análise de posts mais engajados</li>
-                        <li>• Demografia atualizada da audiência</li>
-                        <li>• Conversões e ROI de campanhas</li>
-                        <li>• Evolução de seguidores</li>
-                        <li>• Comparação com período anterior</li>
-                        <li>• Recomendações de melhorias</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">🤖 Automação:</h4>
-                      <ul className="space-y-1 text-muted-foreground">
-                        <li>• Geração automática no dia 1 de cada mês</li>
-                        <li>• Envio por email para stakeholders</li>
-                        <li>• Armazenamento no histórico</li>
-                        <li>• Alertas de queda de performance</li>
-                        <li>• Notificações de conquistas</li>
-                        <li>• Exportação em PDF e Excel</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Relatório Mensal</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-6">
-                        <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <Button variant="outline" size="sm" disabled>
-                          Gerar Relatório Março 2026
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Histórico</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-6 text-muted-foreground text-xs">
-                        <p>Fevereiro 2026</p>
-                        <p>Janeiro 2026</p>
-                        <p>Dezembro 2025</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Configurações</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-6 text-muted-foreground text-xs">
-                        <p>Frequência: Mensal</p>
-                        <p>Formato: PDF + Excel</p>
-                        <p>Email: Automático</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {user?.clinicId && <MarketingReportsContent clinicId={user.clinicId} />}
         </TabsContent>
       </Tabs>
     </div>

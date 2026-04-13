@@ -995,10 +995,6 @@ export const marketingApi = {
       }),
   },
   oauth: {
-    metaUrl: (clinicId: string, returnTo: string) =>
-      apiCall<{ url: string }>(
-        `/marketing/oauth/meta/url/${clinicId}?returnTo=${encodeURIComponent(returnTo)}`,
-      ),
     googleUrl: (clinicId: string, returnTo: string) =>
       apiCall<{ url: string }>(
         `/marketing/oauth/google/url/${clinicId}?returnTo=${encodeURIComponent(returnTo)}`,
@@ -1054,6 +1050,61 @@ export const marketingApi = {
     runClinic: (clinicId: string) =>
       apiCall<{ message: string; date: string }>(`/marketing/run/${clinicId}`, {
         method: 'POST',
+      }),
+  },
+  leads: {
+    list: (clinicId: string, filters?: { status?: string; source?: string }) => {
+      const params = new URLSearchParams()
+      if (filters?.status) params.set('status', filters.status)
+      if (filters?.source) params.set('source', filters.source)
+      const qs = params.toString() ? `?${params.toString()}` : ''
+      return apiCall<any[]>(`/marketing/leads/${clinicId}${qs}`)
+    },
+    create: (clinicId: string, payload: any) =>
+      apiCall<any>(`/marketing/leads/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    update: (clinicId: string, leadId: string, payload: any) =>
+      apiCall<any>(`/marketing/leads/${clinicId}/${leadId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    delete: (clinicId: string, leadId: string) =>
+      apiCall<{ message: string }>(`/marketing/leads/${clinicId}/${leadId}`, {
+        method: 'DELETE',
+      }),
+  },
+  stories: {
+    list: (clinicId: string, start?: string, end?: string) => {
+      const params = new URLSearchParams()
+      if (start) params.set('start', start)
+      if (end) params.set('end', end)
+      const qs = params.toString() ? `?${params.toString()}` : ''
+      return apiCall<any[]>(`/marketing/stories/${clinicId}${qs}`)
+    },
+    create: (clinicId: string, payload: any) =>
+      apiCall<any>(`/marketing/stories/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
+  reports: {
+    list: (clinicId: string) =>
+      apiCall<any[]>(`/marketing/reports/${clinicId}`),
+    create: (clinicId: string, payload: any) =>
+      apiCall<any>(`/marketing/reports/${clinicId}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    markAsSent: (clinicId: string, reportId: string, sentTo: string) =>
+      apiCall<any>(`/marketing/reports/${clinicId}/${reportId}/send`, {
+        method: 'PUT',
+        body: JSON.stringify({ sentTo }),
+      }),
+    delete: (clinicId: string, reportId: string) =>
+      apiCall<{ message: string }>(`/marketing/reports/${clinicId}/${reportId}`, {
+        method: 'DELETE',
       }),
   },
 }

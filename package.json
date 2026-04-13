@@ -20,7 +20,8 @@
     "db:migrate": "tsx server/migrate.ts",
     "db:seed": "tsx server/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "db:migrate:marketing": "tsx server/migrate-marketing.ts"
+    "db:migrate:marketing": "tsx server/migrate-marketing.ts",
+    "db:migrate:tokens": "tsx server/migrate-marketing-tokens.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

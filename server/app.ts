@@ -13,6 +13,7 @@ import dailyEntriesRoutes from './routes/dailyEntries.js'
 import patientRoutes from './routes/patients.js'
 import configRoutes from './routes/config.js'
 import marketingRoutes from './routes/marketing.js'
+import marketingOAuthRoutes from './routes/marketing-oauth.js'
 import adminRoutes from './routes/admin.js'
 import targetsRoutes from './routes/targets.js'
 import collaboratorsRoutes from './routes/collaborators.js'
@@ -137,6 +138,7 @@ export function createApp() {
   app.use('/api/daily-entries', dailyEntriesRoutes)
   app.use('/api/patients', patientRoutes)
   app.use('/api/config', configRoutes)
+  app.use('/api/marketing', marketingOAuthRoutes)
   app.use('/api/marketing', marketingRoutes)
   app.use('/api/admin', adminRoutes)
   app.use('/api/targets', targetsRoutes)

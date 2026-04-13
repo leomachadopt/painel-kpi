@@ -65,6 +65,16 @@ export function MarketingSettings({
     () => getIntegration(integrations, 'META')?.status || 'DISCONNECTED',
     [integrations],
   )
+
+  const metaInfo = useMemo(() => {
+    const meta = getIntegration(integrations, 'META')
+    if (!meta || meta.status !== 'CONNECTED') return null
+    const metadata = meta.metadata || {}
+    return {
+      pageName: metadata.pageName,
+      instagramUsername: metadata.instagramUsername,
+    }
+  }, [integrations])
   const gbpStatus = useMemo(
     () => getIntegration(integrations, 'GBP')?.status || 'DISCONNECTED',
     [integrations],
@@ -115,8 +125,11 @@ export function MarketingSettings({
               ? `${meta.metadata.facebookPageId}::${meta.metadata.igBusinessId}`
               : ''
           setMetaSelectedKey(selectedKey)
-        } catch {
-          // ignore
+        } catch (e) {
+          // ignore - assets endpoint may not exist if using manual mode
+          console.log('Could not load Meta assets (expected if using manual mode):', e)
+          setMetaAssets([])
+          setMetaSelectedKey('')
         }
       } else {
         setMetaAssets([])
@@ -182,15 +195,8 @@ export function MarketingSettings({
 
   const connectMeta = () => {
     if (!requireManage()) return
-    const returnTo = `${window.location.origin}/configuracoes`
-    marketingApi.oauth
-      .metaUrl(clinicId, returnTo)
-      .then(({ url }) => {
-        window.location.href = url
-      })
-      .catch((e: any) => {
-        toast.error(e?.message || 'Erro ao iniciar OAuth da Meta')
-      })
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+    window.location.href = `${API_URL}/marketing/oauth/meta/start?clinic_id=${clinicId}`
   }
 
   const connectGoogle = () => {
@@ -261,6 +267,8 @@ export function MarketingSettings({
         facebookPageId: metaForm.facebookPageId || null,
         accessToken: metaForm.accessToken || null,
         status: 'CONNECTED',
+        pageName: 'Clínica Cristiane Martins', // TODO: Add field or fetch from API
+        instagramUsername: 'clinicacristianemartins', // TODO: Add field or fetch from API
       })
       toast.success('Integração Meta guardada')
       await load()
@@ -366,7 +374,27 @@ export function MarketingSettings({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground">Status: {metaStatus}</div>
+          <div className="space-y-1">
+            <div className="text-sm text-muted-foreground">Status: {metaStatus}</div>
+            {metaInfo && (
+              <div className="text-sm space-y-1">
+                {metaInfo.pageName && (
+                  <div className="text-muted-foreground">
+                    📄 Página: <span className="font-medium text-foreground">{metaInfo.pageName}</span>
+                  </div>
+                )}
+                {metaInfo.instagramUsername ? (
+                  <div className="text-muted-foreground">
+                    📸 Instagram: <span className="font-medium text-foreground">@{metaInfo.instagramUsername}</span>
+                  </div>
+                ) : metaInfo.pageName && (
+                  <div className="text-sm text-orange-600 dark:text-orange-400">
+                    ⚠️ Nenhuma conta Instagram Business vinculada a esta página
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
               Conecte via Meta para listar automaticamente as Páginas e o Instagram Business.

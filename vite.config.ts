@@ -42,6 +42,57 @@ export default defineConfig(({ mode }) => {
     build: {
       minify: mode !== 'development',
       sourcemap: mode === 'development',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // React core
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+
+            // UI libraries - Radix UI components
+            'vendor-radix': [
+              '@radix-ui/react-accordion',
+              '@radix-ui/react-alert-dialog',
+              '@radix-ui/react-avatar',
+              '@radix-ui/react-checkbox',
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-label',
+              '@radix-ui/react-popover',
+              '@radix-ui/react-select',
+              '@radix-ui/react-separator',
+              '@radix-ui/react-slider',
+              '@radix-ui/react-switch',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-toast',
+              '@radix-ui/react-tooltip',
+            ],
+
+            // Charts
+            'vendor-charts': ['recharts'],
+
+            // Forms
+            'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+
+            // Data fetching
+            'vendor-query': ['@tanstack/react-query'],
+
+            // PDF generation (only loaded when needed)
+            'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+
+            // Excel generation (only loaded when needed)
+            'vendor-excel': ['xlsx', 'xlsx-js-style', 'exceljs'],
+
+            // OCR and PDF parsing (heavy - only loaded when needed)
+            'vendor-ocr': ['tesseract.js', 'pdf-parse', 'pdf2pic', 'pdf-to-png-converter', 'pdfjs-dist'],
+
+            // OpenAI (only loaded when needed)
+            'vendor-ai': ['openai'],
+
+            // Utilities
+            'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge', 'class-variance-authority'],
+          },
+        },
+      },
       rolldownOptions: {
         onwarn(warning, warn) {
           if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
@@ -50,6 +101,8 @@ export default defineConfig(({ mode }) => {
           warn(warning)
         },
       },
+      // Aumentar o limite de warning para chunks grandes esperados
+      chunkSizeWarningLimit: 1000,
     },
     plugins: [react()],
     define: {
