@@ -52,6 +52,13 @@ O Marketing Hub é um módulo completo de análise e gestão de marketing digita
   - **Top 10 cidades:** Lista ranking com contagem de seguidores
   - **Top 10 países:** Lista ranking com contagem de seguidores
   - Dados processados e agregados do Instagram
+- **Implementação técnica:**
+  - 3 requisições separadas para `follower_demographics`:
+    1. `breakdown=age,gender` → distribuição por gênero e idade
+    2. `breakdown=city` → top cidades
+    3. `breakdown=country` → top países
+  - Processa `total_value.breakdowns` da API v21.0
+  - Consolida em estrutura unificada para o frontend
 
 ### 4. **Conversões** (Totalmente Funcional)
 - **Endpoint:** `GET /api/marketing/conversions`
