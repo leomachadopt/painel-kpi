@@ -878,8 +878,8 @@ router.get('/conversions', requirePermission('canViewMarketing'), async (req: Au
       `SELECT source, COUNT(*) as count
        FROM appointments
        WHERE clinic_id = $1
-         AND appointment_date >= $2::date
-         AND appointment_date <= $3::date
+         AND date >= $2::date
+         AND date <= $3::date
          AND source IS NOT NULL
        GROUP BY source
        ORDER BY count DESC`,
@@ -899,24 +899,13 @@ router.get('/conversions', requirePermission('canViewMarketing'), async (req: Au
       [clinic_id, sinceDate, untilDate]
     )
 
-    // Calculate conversion rate (appointments that resulted in new patients)
-    const conversionResult = await query(
-      `SELECT
-         COUNT(DISTINCT a.id) FILTER (WHERE p.id IS NOT NULL) as converted_appointments,
-         COUNT(DISTINCT a.id) as total_appointments
-       FROM appointments a
-       LEFT JOIN patients p ON p.email = a.patient_email
-         AND p.clinic_id = a.clinic_id
-         AND DATE(p.created_at) = DATE(a.appointment_date)
-       WHERE a.clinic_id = $1
-         AND a.appointment_date >= $2::date
-         AND a.appointment_date <= $3::date
-         AND a.source IS NOT NULL`,
-      [clinic_id, sinceDate, untilDate]
-    )
+    // Calculate conversion rate (ratio of patients to appointments)
+    // Note: Simplified calculation as appointments don't have patient_id for accurate JOIN
+    const totalPatients = patientsResult.rows.reduce((sum: number, row: any) => sum + parseInt(row.count), 0)
+    const totalAppointments = appointmentsResult.rows.reduce((sum: number, row: any) => sum + parseInt(row.count), 0)
 
-    const conversionRate = conversionResult.rows[0]?.total_appointments > 0
-      ? ((conversionResult.rows[0].converted_appointments / conversionResult.rows[0].total_appointments) * 100).toFixed(2)
+    const conversionRate = totalAppointments > 0
+      ? ((totalPatients / totalAppointments) * 100).toFixed(2)
       : '0'
 
     res.json({
@@ -924,8 +913,8 @@ router.get('/conversions', requirePermission('canViewMarketing'), async (req: Au
       appointments_by_source: appointmentsResult.rows,
       daily_trend: dailyTrendResult.rows,
       conversion_rate: conversionRate,
-      total_patients: patientsResult.rows.reduce((sum: number, row: any) => sum + parseInt(row.count), 0),
-      total_appointments: appointmentsResult.rows.reduce((sum: number, row: any) => sum + parseInt(row.count), 0),
+      total_patients: totalPatients,
+      total_appointments: totalAppointments,
     })
   } catch (error: any) {
     console.error('Get conversions error:', error)
