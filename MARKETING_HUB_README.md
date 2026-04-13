@@ -192,11 +192,17 @@ O Marketing Hub é um módulo completo de análise e gestão de marketing digita
 ✅ `like_count` - Curtidas por post
 ✅ `comments_count` - Comentários por post
 ✅ `saved` - Salvos por post
+✅ `follower_demographics` - Demografia de seguidores (gênero, idade, cidade, país)
 
 ### Limitações da API:
 ⚠️ Máximo 30 dias por requisição (resolvido salvando diariamente)
 ⚠️ Necessário Instagram Business Account
 ⚠️ Token expira em ~60 dias (implementado long-lived token)
+
+### Métricas Descontinuadas (removidas da API):
+❌ `audience_gender_age` → substituída por `follower_demographics`
+❌ `audience_city` → substituída por `follower_demographics`
+❌ `audience_country` → substituída por `follower_demographics`
 
 ## 🔐 Segurança
 
