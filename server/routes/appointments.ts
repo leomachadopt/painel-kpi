@@ -35,14 +35,18 @@ async function canDoctorEditAppointment(
   clinicId: string,
   doctorId: string | null
 ): Promise<boolean> {
+  console.log('[canDoctorEditAppointment] Input:', { userId, role, clinicId, doctorId })
+
   // GESTOR_CLINICA and MENTOR can edit all appointments
   if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    console.log('[canDoctorEditAppointment] GESTOR/MENTOR - returning true')
     return true
   }
 
   // MEDICO can only edit their own appointments
   if (role === 'MEDICO') {
     if (!doctorId) {
+      console.log('[canDoctorEditAppointment] MEDICO with no doctorId - returning true')
       // Appointment has no doctor assigned - allow if the doctor is creating it for themselves
       return true
     }
@@ -53,10 +57,13 @@ async function canDoctorEditAppointment(
       [doctorId, userId]
     )
 
-    return doctorCheck.rows.length > 0
+    const result = doctorCheck.rows.length > 0
+    console.log('[canDoctorEditAppointment] MEDICO doctor check - rows:', doctorCheck.rows.length, 'result:', result)
+    return result
   }
 
   // COLABORADOR can edit if they have permission (already checked by middleware)
+  console.log('[canDoctorEditAppointment] COLABORADOR - returning true')
   return true
 }
 
@@ -446,11 +453,14 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
 
     // Validate if doctor can create appointment for this doctorId
     const { userId, role } = getUserInfo(req as any)
+    console.log('[APPOINTMENTS] Create - userId:', userId, 'role:', role, 'doctorId:', doctorId)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, doctorId || null)
+    console.log('[APPOINTMENTS] Create - canEdit:', canEdit)
 
     if (!canEdit) {
       return res.status(403).json({
-        error: 'Médicos só podem criar agendamentos para si mesmos'
+        error: 'Médicos só podem criar agendamentos para si mesmos',
+        debug: { userId, role, doctorId }
       })
     }
 
