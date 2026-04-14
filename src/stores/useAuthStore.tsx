@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { User } from '@/lib/types'
 import { authApi } from '@/services/api'
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return user
   }
 
-  const refreshPermissions = async () => {
+  const refreshPermissions = useCallback(async () => {
     try {
       const { permissions } = await authApi.getPermissions()
       if (user) {
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Failed to refresh permissions:', error)
     }
-  }
+  }, [user])
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser)

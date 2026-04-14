@@ -43,19 +43,14 @@ export default function Inputs() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { getClinic } = useDataStore()
-  const { user, refreshPermissions } = useAuthStore()
+  const { user } = useAuthStore()
   const { canEdit } = usePermissions()
 
   // Ler parâmetros da URL
   const tabParam = searchParams.get('tab')
   const codeParam = searchParams.get('code')
 
-  // Refresh permissions when component mounts if user is a collaborator
-  useEffect(() => {
-    if (user && (user.role === 'COLABORADOR' || user.role === 'MEDICO') && refreshPermissions) {
-      refreshPermissions()
-    }
-  }, [user?.role, refreshPermissions])
+  // Note: refreshPermissions is already called by usePermissions hook on mount
 
   const clinic = clinicId ? getClinic(clinicId) : undefined
 
