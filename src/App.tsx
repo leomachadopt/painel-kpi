@@ -41,6 +41,7 @@ const MarketingDashboard = lazy(() => import('@/pages/MarketingDashboard'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const About = lazy(() => import('@/pages/About'))
+const DataDeletion = lazy(() => import('@/pages/DataDeletion'))
 const NotFound = lazy(() => import('@/pages/NotFound'))
 
 // Loading fallback component
@@ -69,6 +70,7 @@ const App = () => (
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/data-deletion" element={<DataDeletion />} />
 
                 <Route element={<Layout />}>
                   <Route path="/" element={<Navigate to="/login" replace />} />

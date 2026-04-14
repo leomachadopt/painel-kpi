@@ -1122,6 +1122,79 @@ router.delete('/reports/:clinicId/:reportId', requirePermission('canEditMarketin
   }
 })
 
+// ================================
+// DATA DELETION CALLBACK - META
+// ================================
+
+router.post('/meta/data-deletion', async (req, res) => {
+  try {
+    const { signed_request } = req.body
+
+    if (!signed_request) {
+      return res.status(400).json({ error: 'signed_request is required' })
+    }
+
+    // Parse signed_request (format: encoded_signature.payload)
+    const [encodedSig, payload] = signed_request.split('.')
+
+    if (!encodedSig || !payload) {
+      return res.status(400).json({ error: 'Invalid signed_request format' })
+    }
+
+    // Decode payload
+    const payloadBuffer = Buffer.from(payload, 'base64')
+    const data = JSON.parse(payloadBuffer.toString('utf8'))
+
+    // Verify signature with App Secret
+    const crypto = await import('crypto')
+    const appSecret = process.env.META_APP_SECRET
+
+    if (!appSecret) {
+      console.error('META_APP_SECRET not configured')
+      return res.status(500).json({ error: 'Server configuration error' })
+    }
+
+    const expectedSig = crypto
+      .createHmac('sha256', appSecret)
+      .update(payload)
+      .digest('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+
+    if (encodedSig !== expectedSig) {
+      return res.status(401).json({ error: 'Invalid signature' })
+    }
+
+    // Extract user_id from data
+    const userId = data.user_id
+
+    // Generate unique confirmation code
+    const confirmationCode = `deletion-${userId}-${Date.now()}`
+
+    // Log deletion request (in production, you would queue this for processing)
+    console.log(`Data deletion request received for Facebook user: ${userId}`)
+    console.log(`Confirmation code: ${confirmationCode}`)
+
+    // TODO: Implement actual data deletion logic
+    // 1. Find clinic_integrations with this external_account_id
+    // 2. Delete all related marketing data (metrics, leads, stories, reports)
+    // 3. Delete the integration record
+    // 4. Send confirmation email to clinic owner
+
+    // Return status URL and confirmation code as per Meta requirements
+    const statusUrl = `${frontendBaseUrl()}/data-deletion-status?code=${confirmationCode}`
+
+    res.json({
+      url: statusUrl,
+      confirmation_code: confirmationCode,
+    })
+  } catch (error) {
+    console.error('Meta data deletion callback error:', error)
+    res.status(500).json({ error: 'Failed to process data deletion request' })
+  }
+})
+
 export default router
 
 
