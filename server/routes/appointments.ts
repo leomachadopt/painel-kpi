@@ -16,6 +16,15 @@ router.use((req, res, next) => {
 router.use(authRequired)
 
 /**
+ * Helper to extract user info from request
+ */
+function getUserInfo(req: any): { userId: string; role: string } {
+  const userId = req.user?.id || req.auth?.sub
+  const role = req.user?.role || req.auth?.role
+  return { userId, role }
+}
+
+/**
  * Helper function to check if a doctor can edit an appointment
  * MEDICO can only edit their own appointments
  * GESTOR_CLINICA and MENTOR can edit all appointments
@@ -436,8 +445,7 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
     }
 
     // Validate if doctor can create appointment for this doctorId
-    const userId = (req as any).user?.id || (req as any).auth?.sub
-    const role = (req as any).user?.role || (req as any).auth?.role
+    const { userId, role } = getUserInfo(req as any)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, doctorId || null)
 
     if (!canEdit) {
@@ -494,7 +502,7 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
     }
 
     const appointmentId = crypto.randomUUID()
-    const userId = (req as any).user?.id || null
+    const createdByUserId = (req as any).user?.id || null
     let finalPatientName = patientName
     let finalPatientCode = patientCode
     let consultationEntryId: string | null = null
@@ -576,7 +584,7 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
         'scheduled',
         isNewPatient !== undefined ? isNewPatient : true,
         notes || null,
-        userId,
+        createdByUserId,
         consultationEntryId, // Link to consultation entry
         rescheduledFrom || null,
       ]
@@ -637,8 +645,7 @@ router.patch('/:clinicId/:appointmentId/status', requirePermission('canEditAppoi
     }
 
     // Validate if doctor can edit this appointment
-    const userId = (req as any).user?.id || (req as any).auth?.sub
-    const role = (req as any).user?.role || (req as any).auth?.role
+    const { userId, role } = getUserInfo(req as any)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
 
     if (!canEdit) {
@@ -708,8 +715,7 @@ router.patch('/:clinicId/:appointmentId', requirePermission('canEditAppointments
     const currentAppointment = current.rows[0]
 
     // Validate if doctor can edit this appointment
-    const userId = (req as any).user?.id || (req as any).auth?.sub
-    const role = (req as any).user?.role || (req as any).auth?.role
+    const { userId, role } = getUserInfo(req as any)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, currentAppointment.doctor_id)
 
     if (!canEdit) {
@@ -1046,8 +1052,7 @@ router.put('/:clinicId/:appointmentId', requirePermission('canEditAppointments')
     }
 
     // Validate if doctor can edit this appointment
-    const userId = (req as any).user?.id || (req as any).auth?.sub
-    const role = (req as any).user?.role || (req as any).auth?.role
+    const { userId, role } = getUserInfo(req as any)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
 
     if (!canEdit) {
@@ -1190,8 +1195,7 @@ router.delete('/:clinicId/:appointmentId', requirePermission('canEditAppointment
     }
 
     // Validate if doctor can delete this appointment
-    const userId = (req as any).user?.id || (req as any).auth?.sub
-    const role = (req as any).user?.role || (req as any).auth?.role
+    const { userId, role } = getUserInfo(req as any)
     const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
 
     if (!canEdit) {
