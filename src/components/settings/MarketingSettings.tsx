@@ -20,7 +20,7 @@ function getIntegration(integrations: ClinicIntegration[], provider: ClinicInteg
   return integrations.find((i) => i.provider === provider)
 }
 
-type MetaPageAsset = { pageId: string; name: string; igBusinessId?: string | null }
+type MetaPageAsset = { pageId: string; name: string; igBusinessId?: string | null; igUsername?: string | null }
 type GbpLocation = {
   accountId: string
   locationId: string
@@ -232,7 +232,16 @@ export function MarketingSettings({
     const [facebookPageId, igBusinessId] = metaSelectedKey.split('::')
     setLoading(true)
     try {
-      await marketingApi.meta.select(clinicId, { facebookPageId, igBusinessId })
+      // Encontrar a página selecionada para obter username e nome
+      const selectedPage = metaAssets.find(
+        (p) => p.pageId === facebookPageId && p.igBusinessId === igBusinessId
+      )
+      await marketingApi.meta.select(clinicId, {
+        facebookPageId,
+        igBusinessId,
+        igUsername: selectedPage?.igUsername || null,
+        pageName: selectedPage?.name || null,
+      })
       toast.success('Página/Instagram selecionados')
       await load()
     } catch (e: any) {

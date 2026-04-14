@@ -11,6 +11,7 @@ export type MetaPageAsset = {
   pageId: string
   name: string
   igBusinessId?: string | null
+  igUsername?: string | null
 }
 
 export async function exchangeMetaCodeForToken(code: string, redirectUri: string) {
@@ -55,7 +56,7 @@ export async function exchangeMetaCodeForToken(code: string, redirectUri: string
 
 export async function fetchMetaPages(accessToken: string): Promise<MetaPageAsset[]> {
   const url = new URL(graphUrl('/me/accounts'))
-  url.searchParams.set('fields', 'id,name,instagram_business_account')
+  url.searchParams.set('fields', 'id,name,instagram_business_account{id,username}')
   url.searchParams.set('access_token', accessToken)
 
   const res = await fetch(url.toString())
@@ -65,13 +66,18 @@ export async function fetchMetaPages(accessToken: string): Promise<MetaPageAsset
   }
 
   const json = (await res.json()) as {
-    data?: Array<{ id: string; name: string; instagram_business_account?: { id: string } }>
+    data?: Array<{
+      id: string
+      name: string
+      instagram_business_account?: { id: string; username?: string }
+    }>
   }
 
   return (json.data || []).map((p) => ({
     pageId: p.id,
     name: p.name,
     igBusinessId: p.instagram_business_account?.id || null,
+    igUsername: p.instagram_business_account?.username || null,
   }))
 }
 
@@ -129,22 +135,39 @@ export async function updateMetaSelection(opts: {
   clinicId: string
   facebookPageId: string
   igBusinessId: string
+  igUsername?: string | null
+  pageName?: string | null
 }) {
   const current = await getMetaIntegration(opts.clinicId)
   if (!current) throw new Error('META integration not configured')
 
+  // Validar a seleção contra metadata.pages se existirem,
+  // mas não bloquear se pages ainda não estiver populado (compatibilidade retroativa)
   const pages: MetaPageAsset[] = current.metadata?.pages || []
-  const found = pages.find(
-    (p) => p.pageId === opts.facebookPageId && (p.igBusinessId || '') === opts.igBusinessId
-  )
-  if (!found) {
-    throw new Error('Invalid selection (page/IG not found)')
+  if (pages.length > 0) {
+    const found = pages.find(
+      (p) => p.pageId === opts.facebookPageId && (p.igBusinessId || '') === opts.igBusinessId
+    )
+    if (!found) {
+      throw new Error('Invalid selection (page/IG not found in stored pages)')
+    }
   }
 
   const newMeta = {
     ...(current.metadata || {}),
     facebookPageId: opts.facebookPageId,
     igBusinessId: opts.igBusinessId,
+    // Usar o valor passado; se não vier, tentar obter de pages; se não, manter o atual
+    instagramUsername:
+      opts.igUsername ??
+      pages.find((p) => p.pageId === opts.facebookPageId)?.igUsername ??
+      current.metadata?.instagramUsername ??
+      null,
+    pageName:
+      opts.pageName ??
+      pages.find((p) => p.pageId === opts.facebookPageId)?.name ??
+      current.metadata?.pageName ??
+      null,
   }
 
   await query(

@@ -160,10 +160,18 @@ router.get('/oauth/meta/callback', async (req, res) => {
 
     console.log('Meta Pages Data:', JSON.stringify(pagesData, null, 2))
 
-    let pageId = null
-    let pageName = null
-    let instagramId = null
-    let instagramUsername = null
+    let pageId: string | null = null
+    let pageName: string | null = null
+    let instagramId: string | null = null
+    let instagramUsername: string | null = null
+
+    // Mapear TODAS as páginas para guardar no metadata
+    const allPages = (pagesData.data || []).map((p: any) => ({
+      pageId: p.id,
+      name: p.name,
+      igBusinessId: p.instagram_business_account?.id || null,
+      igUsername: p.instagram_business_account?.username || null,
+    }))
 
     // Get first page with Instagram connected
     if (pagesData.data && pagesData.data.length > 0) {
@@ -197,6 +205,7 @@ router.get('/oauth/meta/callback', async (req, res) => {
       pageName: pageName,
       igBusinessId: instagramId,
       instagramUsername: instagramUsername,
+      pages: allPages,
     }
 
     await query(

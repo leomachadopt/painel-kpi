@@ -326,11 +326,11 @@ router.post('/meta/select/:clinicId', requirePermission('canEditMarketing'), asy
     if (!canManageClinic(req, clinicId)) {
       return res.status(403).json({ error: 'Forbidden' })
     }
-    const { facebookPageId, igBusinessId } = req.body || {}
+    const { facebookPageId, igBusinessId, igUsername, pageName } = req.body || {}
     if (!facebookPageId || !igBusinessId) {
       return res.status(400).json({ error: 'facebookPageId and igBusinessId are required' })
     }
-    await updateMetaSelection({ clinicId, facebookPageId, igBusinessId })
+    await updateMetaSelection({ clinicId, facebookPageId, igBusinessId, igUsername, pageName })
     res.json({ message: 'Meta selection saved' })
   } catch (error: any) {
     console.error('Meta selection error:', error)
