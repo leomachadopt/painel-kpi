@@ -403,19 +403,52 @@ router.post('/financial/:clinicId', async (req, res) => {
   const { clinicId } = req.params
   const { isBillingEntry } = req.body
 
+  console.log('[Financial Entry] POST request:', {
+    clinicId,
+    user: req.user ? { sub: req.user.sub, role: req.user.role } : null,
+    bodyKeys: Object.keys(req.body)
+  })
+
   // Use different permission check depending on entry type
   const hasPermission = isBillingEntry
     ? await canEditBilling(req, clinicId)
     : await canEditFinancial(req, clinicId)
 
   if (!hasPermission) {
+    console.error('[Financial Entry] Permission denied:', { user: req.user, clinicId })
     return res.status(403).json({ error: 'Forbidden' })
   }
 
   try {
     const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
+
+    // Validate required fields
+    if (!date) {
+      return res.status(400).json({ error: 'Missing required field: date' })
+    }
+    if (!categoryId) {
+      return res.status(400).json({ error: 'Missing required field: categoryId' })
+    }
+    if (value === undefined || value === null) {
+      return res.status(400).json({ error: 'Missing required field: value' })
+    }
+
     const entryId =
       id || `financial-${clinicId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+    console.log('[Financial Entry] Inserting:', {
+      entryId,
+      clinicId,
+      date,
+      patientName,
+      code,
+      categoryId,
+      value,
+      cabinetId,
+      doctorId,
+      paymentSourceId,
+      isBillingEntry
+    })
 
     const result = await query(
       `INSERT INTO daily_financial_entries
@@ -438,11 +471,21 @@ router.post('/financial/:clinicId', async (req, res) => {
       isBillingEntry: result.rows[0].is_billing_entry || false,
     })
   } catch (error: any) {
-    console.error('Create financial entry error:', error)
+    console.error('[Financial Entry] Create error:', {
+      message: error.message,
+      detail: error.detail,
+      code: error.code,
+      constraint: error.constraint,
+      table: error.table,
+      column: error.column,
+      stack: error.stack
+    })
     res.status(500).json({
       error: 'Failed to create financial entry',
       message: error.message,
-      detail: error.detail || error.toString()
+      detail: error.detail || error.toString(),
+      code: error.code,
+      constraint: error.constraint
     })
   }
 })
