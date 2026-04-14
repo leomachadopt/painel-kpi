@@ -71,6 +71,15 @@ export async function fetchMetaPages(accessToken: string): Promise<MetaPageAsset
       name: string
       instagram_business_account?: { id: string; username?: string }
     }>
+    error?: { message: string; code: number; type?: string; fbtrace_id?: string }
+  }
+
+  // A Graph API às vezes retorna HTTP 200 com um objeto { error: {...} } no body
+  // em vez de um status 4xx. Verificar e lançar erro explícito.
+  if (json.error) {
+    throw new Error(
+      `Meta Graph API error (code ${json.error.code}): ${json.error.message}`
+    )
   }
 
   return (json.data || []).map((p) => ({

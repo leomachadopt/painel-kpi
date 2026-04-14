@@ -160,6 +160,17 @@ router.get('/oauth/meta/callback', async (req, res) => {
 
     console.log('Meta Pages Data:', JSON.stringify(pagesData, null, 2))
 
+    // Verificar se a Graph API retornou um erro (pode vir com HTTP 200)
+    if (!pagesResponse.ok || pagesData.error) {
+      console.error('❌ Meta Pages API returned an error:', {
+        httpStatus: pagesResponse.status,
+        error: pagesData.error,
+      })
+      // Não lançar exceção aqui para não bloquear o OAuth completamente.
+      // Guardamos o token com pages:[] e o utilizador pode selecionar manualmente.
+      // O erro ficará visível nos logs do servidor.
+    }
+
     let pageId: string | null = null
     let pageName: string | null = null
     let instagramId: string | null = null
@@ -1219,6 +1230,87 @@ router.post('/meta/collect', async (req, res) => {
   } catch (error) {
     console.error('Meta collect error:', error)
     res.status(500).json({ error: 'Failed to collect Meta metrics' })
+  }
+})
+
+// GET /api/marketing/oauth/meta/diagnose?clinic_id=X
+// Endpoint de diagnóstico: testa o token guardado contra a Graph API e retorna resultado raw
+router.get('/oauth/meta/diagnose', requirePermission('canEditMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinic_id } = req.query as { clinic_id?: string }
+    if (!clinic_id) {
+      return res.status(400).json({ error: 'clinic_id is required' })
+    }
+
+    // Buscar a integração guardada
+    const result = await query(
+      `SELECT access_token, token_expires_at, metadata, status, updated_at
+       FROM clinic_integrations
+       WHERE clinic_id = $1 AND provider = 'META'`,
+      [clinic_id]
+    )
+
+    if (result.rows.length === 0) {
+      return res.json({ hasIntegration: false })
+    }
+
+    const row = result.rows[0]
+    const { decryptIfNeeded } = await import('../security/crypto.js')
+    const accessToken = decryptIfNeeded(row.access_token)
+
+    if (!accessToken) {
+      return res.json({
+        hasIntegration: true,
+        hasToken: false,
+        status: row.status,
+        metadata: row.metadata,
+        updatedAt: row.updated_at,
+      })
+    }
+
+    const apiVersion = process.env.META_API_VERSION || 'v21.0'
+
+    // 1. Verificar o token via /debug_token
+    const appId = process.env.META_APP_ID
+    const appSecret = process.env.META_APP_SECRET
+    let tokenDebug: any = null
+    if (appId && appSecret) {
+      const debugUrl = new URL(`https://graph.facebook.com/${apiVersion}/debug_token`)
+      debugUrl.searchParams.set('input_token', accessToken)
+      debugUrl.searchParams.set('access_token', `${appId}|${appSecret}`)
+      const debugRes = await fetch(debugUrl.toString())
+      tokenDebug = await debugRes.json()
+    }
+
+    // 2. Tentar buscar as páginas
+    const pagesUrl = new URL(`https://graph.facebook.com/${apiVersion}/me/accounts`)
+    pagesUrl.searchParams.set('access_token', accessToken)
+    pagesUrl.searchParams.set('fields', 'id,name,instagram_business_account{id,username}')
+    const pagesRes = await fetch(pagesUrl.toString())
+    const pagesData = await pagesRes.json()
+
+    // 3. Tentar buscar info básica do utilizador
+    const meUrl = new URL(`https://graph.facebook.com/${apiVersion}/me`)
+    meUrl.searchParams.set('access_token', accessToken)
+    meUrl.searchParams.set('fields', 'id,name')
+    const meRes = await fetch(meUrl.toString())
+    const meData = await meRes.json()
+
+    res.json({
+      hasIntegration: true,
+      hasToken: true,
+      status: row.status,
+      tokenExpiresAt: row.token_expires_at,
+      updatedAt: row.updated_at,
+      metadata: row.metadata,
+      tokenDebug: tokenDebug?.data || tokenDebug,
+      meData,
+      pagesHttpStatus: pagesRes.status,
+      pagesData,
+    })
+  } catch (error: any) {
+    console.error('Meta diagnose error:', error)
+    res.status(500).json({ error: error?.message || 'Diagnose failed' })
   }
 })
 
