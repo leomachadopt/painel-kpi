@@ -254,41 +254,39 @@ export function PendingTreatmentsSection({
                             <div>{getStatusBadge(treatment.status)}</div>
                             <div className="flex justify-end gap-1">
                               {!isCompleted && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      // Initialize with current date/time
-                                      const now = new Date()
-                                      const dateStr = now.toISOString().split('T')[0]
-                                      const timeStr = now.toTimeString().slice(0, 5)
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Initialize with current date/time
+                                    const now = new Date()
+                                    const dateStr = now.toISOString().split('T')[0]
+                                    const timeStr = now.toTimeString().slice(0, 5)
 
-                                      setCompleteDialog({
-                                        treatmentId: treatment.id,
-                                        description: treatment.description,
-                                        pendingQuantity: treatment.pendingQuantity,
-                                        unitValue: treatment.unitValue,
-                                      })
-                                      setCompletedQuantity('')
-                                      setExecutionDate(dateStr)
-                                      setExecutionTime(timeStr)
-                                      setExecutionNotes('')
-                                    }}
-                                    title="Marcar como realizado"
-                                  >
-                                    <Check className="w-4 h-4 text-green-600" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setDeleteConfirm(treatment.id)}
-                                    title="Excluir tratamento"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  </Button>
-                                </>
+                                    setCompleteDialog({
+                                      treatmentId: treatment.id,
+                                      description: treatment.description,
+                                      pendingQuantity: treatment.pendingQuantity,
+                                      unitValue: treatment.unitValue,
+                                    })
+                                    setCompletedQuantity('')
+                                    setExecutionDate(dateStr)
+                                    setExecutionTime(timeStr)
+                                    setExecutionNotes('')
+                                  }}
+                                  title="Marcar como realizado"
+                                >
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
                               )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteConfirm(treatment.id)}
+                                title="Excluir tratamento"
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
                             </div>
                           </div>
                         )
