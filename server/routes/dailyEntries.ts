@@ -4,6 +4,23 @@ import { getUserPermissions, requirePermission } from '../middleware/permissions
 
 const router = Router()
 
+// Debug endpoint - temporário
+router.get('/debug/:clinicId', async (req, res) => {
+  res.json({
+    clinicId: req.params.clinicId,
+    hasUser: !!req.user,
+    hasAuth: !!req.auth,
+    user: req.user ? {
+      sub: req.user.sub,
+      role: req.user.role,
+      clinicId: req.user.clinicId
+    } : null,
+    headers: {
+      authorization: req.headers.authorization ? 'Bearer ***' : null
+    }
+  })
+})
+
 /**
  * Helper function to check if user can create/edit financial entries
  * GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial permission
