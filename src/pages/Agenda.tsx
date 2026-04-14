@@ -52,10 +52,11 @@ export default function Agenda() {
   const [clinicSchedules, setClinicSchedules] = useState<any[]>([])
   const [sources, setSources] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedDoctor, setSelectedDoctor] = useState<string>('')
+  const [selectedDoctors, setSelectedDoctors] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<'day' | '3days' | 'week'>('day')
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<string>('')
+  const [selectedDoctorForAppointment, setSelectedDoctorForAppointment] = useState<string>('')
   const [reloadTrigger, setReloadTrigger] = useState(0)
 
   // Drag & Resize state
@@ -282,7 +283,8 @@ export default function Agenda() {
   }
 
   useEffect(() => {
-    if (!clinicId || !selectedDoctor) {
+    if (!clinicId || selectedDoctors.length === 0) {
+      setAppointments([])
       return
     }
 
@@ -294,22 +296,25 @@ export default function Agenda() {
         const dates = getDateRange()
         const allAppointments: any[] = []
 
-        // Load appointments for each date in range
+        // Load appointments for each date and each doctor
         for (const date of dates) {
           const dateStr = format(date, 'yyyy-MM-dd')
-          const url = `/api/appointments/${clinicId}?date=${dateStr}&doctorId=${selectedDoctor}`
 
-          const response = await fetch(url, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
-            },
-            signal: abortController.signal,
-          })
+          for (const doctorId of selectedDoctors) {
+            const url = `/api/appointments/${clinicId}?date=${dateStr}&doctorId=${doctorId}`
 
-          const data = await response.json()
+            const response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+              },
+              signal: abortController.signal,
+            })
 
-          if (data.appointments) {
-            allAppointments.push(...data.appointments)
+            const data = await response.json()
+
+            if (data.appointments) {
+              allAppointments.push(...data.appointments)
+            }
           }
         }
 
@@ -339,7 +344,7 @@ export default function Agenda() {
     return () => {
       abortController.abort()
     }
-  }, [clinicId, selectedDate, selectedDoctor, reloadTrigger, viewMode])
+  }, [clinicId, selectedDate, selectedDoctors, reloadTrigger, viewMode])
 
   const loadDoctors = async () => {
     if (!clinic?.configuration?.doctors) return
@@ -352,14 +357,14 @@ export default function Agenda() {
       // Show all doctors
       setDoctors(allDoctors)
       if (allDoctors.length > 0) {
-        setSelectedDoctor(allDoctors[0].id)
+        setSelectedDoctors([allDoctors[0].id])
       }
     } else if (user?.role === 'MEDICO') {
       // MEDICO can only see their own agenda - find doctor by email
       const userDoctor = allDoctors.find((d: any) => d.email === user.email)
       if (userDoctor) {
         setDoctors([userDoctor])
-        setSelectedDoctor(userDoctor.id)
+        setSelectedDoctors([userDoctor.id])
       } else {
         setDoctors([])
       }
@@ -367,7 +372,7 @@ export default function Agenda() {
       // COLABORADOR - show all doctors (permissions will be handled by backend)
       setDoctors(allDoctors)
       if (allDoctors.length > 0) {
-        setSelectedDoctor(allDoctors[0].id)
+        setSelectedDoctors([allDoctors[0].id])
       }
     }
   }
@@ -529,14 +534,18 @@ export default function Agenda() {
     setSelectedDate(addDays(selectedDate, daysToAdd))
   }
 
-  const handleSlotClick = (timeStr: string, date: Date) => {
-    if (!selectedDoctor) {
-      toast.error('Selecione um médico primeiro')
+  const handleSlotClick = (timeStr: string, date: Date, doctorId?: string) => {
+    if (selectedDoctors.length === 0) {
+      toast.error('Selecione pelo menos um médico primeiro')
       return
     }
 
+    // Use the provided doctorId or default to the first selected doctor
+    const targetDoctorId = doctorId || selectedDoctors[0]
+
     setSelectedDate(date) // Update selected date for the new appointment
     setSelectedSlot(timeStr)
+    setSelectedDoctorForAppointment(targetDoctorId)
     setSelectedPatient(null)
     setPatientSearch('')
     setPatientResults([])
@@ -545,6 +554,7 @@ export default function Agenda() {
       cabinetId: '',
       appointmentTypeId: '',
       isNewPatient: false,
+      isOldPatientReturn: false,
       notes: '',
       newPatientName: '',
       newPatientWhatsapp: '',
@@ -570,7 +580,7 @@ export default function Agenda() {
   }
 
   const createAppointment = async () => {
-    if (!clinicId || !selectedDoctor || !selectedSlot || !newAppointment.scheduledEnd) {
+    if (!clinicId || !selectedDoctorForAppointment || !selectedSlot || !newAppointment.scheduledEnd) {
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
@@ -604,7 +614,7 @@ export default function Agenda() {
         date: format(selectedDate, 'yyyy-MM-dd'),
         scheduledStart: selectedSlot,
         scheduledEnd: newAppointment.scheduledEnd,
-        doctorId: selectedDoctor,
+        doctorId: selectedDoctorForAppointment,
         cabinetId: newAppointment.cabinetId || null,
         appointmentTypeId: newAppointment.appointmentTypeId || null,
         isNewPatient: newAppointment.isNewPatient,
@@ -901,7 +911,6 @@ export default function Agenda() {
   }
 
   const timeSlots = generateTimeSlots()
-  const selectedDoctorData = doctors.find((d) => d.id === selectedDoctor)
 
   const handleReloadData = async () => {
     try {
@@ -935,19 +944,49 @@ export default function Agenda() {
           {/* Doctor Selector and View Mode */}
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label>Médico</Label>
-              <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o médico" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((doc) => (
-                    <SelectItem key={doc.id} value={doc.id}>
-                      {doc.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Médicos</Label>
+                {doctors.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => {
+                      if (selectedDoctors.length === doctors.length) {
+                        setSelectedDoctors([])
+                      } else {
+                        setSelectedDoctors(doctors.map(d => d.id))
+                      }
+                    }}
+                  >
+                    {selectedDoctors.length === doctors.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                  </Button>
+                )}
+              </div>
+              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                {doctors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum médico disponível</p>
+                ) : (
+                  doctors.map((doc) => (
+                    <div key={doc.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`doctor-${doc.id}`}
+                        checked={selectedDoctors.includes(doc.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedDoctors([...selectedDoctors, doc.id])
+                          } else {
+                            setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal">
+                        {doc.name}
+                      </Label>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="w-48">
@@ -1007,9 +1046,9 @@ export default function Agenda() {
           </Button>
 
           {/* Calendar Grid */}
-          {!selectedDoctor ? (
+          {selectedDoctors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Selecione um médico para ver a agenda
+              Selecione pelo menos um médico para ver a agenda
             </div>
           ) : loading ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -1018,7 +1057,9 @@ export default function Agenda() {
           ) : (
             <div className="border rounded-lg overflow-hidden">
               <div className="bg-muted px-4 py-2 font-medium">
-                {selectedDoctorData?.name}
+                {selectedDoctors.length === 1
+                  ? doctors.find(d => d.id === selectedDoctors[0])?.name
+                  : `${selectedDoctors.length} médicos selecionados`}
               </div>
 
               {/* Multi-day Grid */}
@@ -1162,6 +1203,11 @@ export default function Agenda() {
                         <div className="font-medium text-sm">
                           {appointment.patientName}
                         </div>
+                        {selectedDoctors.length > 1 && appointment.doctor && (
+                          <div className="text-[10px] font-semibold text-primary bg-primary/10 inline-block px-1.5 py-0.5 rounded mt-0.5">
+                            {appointment.doctor.name}
+                          </div>
+                        )}
                         {appointment.patientCode && (
                           <div className="text-xs text-muted-foreground">
                             Código: {appointment.patientCode}
@@ -1246,6 +1292,9 @@ export default function Agenda() {
             <DialogTitle>Novo Agendamento</DialogTitle>
             <DialogDescription>
               {selectedSlot} - {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+              {selectedDoctorForAppointment && (
+                <> • Médico: {doctors.find(d => d.id === selectedDoctorForAppointment)?.name}</>
+              )}
             </DialogDescription>
           </DialogHeader>
 
