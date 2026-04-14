@@ -247,7 +247,7 @@ export async function getUserPermissions(
     canManageInsuranceProviders: Boolean(perms.can_manage_insurance_providers),
     hasSpecialAccountsPayableAccess: Boolean(perms.has_special_accounts_payable_access),
     canViewAllDoctorsConsultations: Boolean(perms.can_view_all_doctors_consultations),
-    canViewAppointments: perms.can_view_appointments !== false, // Default true
+    canViewAppointments: Boolean(perms.can_view_appointments),
     canEditAppointments: Boolean(perms.can_edit_appointments),
   }
   

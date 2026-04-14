@@ -149,7 +149,7 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canManageInsuranceProviders: row.can_manage_insurance_providers || false,
         hasSpecialAccountsPayableAccess: row.has_special_accounts_payable_access || false,
         canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
-        canViewAppointments: row.can_view_appointments !== false, // Default true
+        canViewAppointments: Boolean(row.can_view_appointments),
         canEditAppointments: Boolean(row.can_edit_appointments),
       },
     }))
@@ -346,7 +346,7 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canManageInsuranceProviders: row.can_manage_insurance_providers || false,
         hasSpecialAccountsPayableAccess: row.has_special_accounts_payable_access || false,
         canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
-        canViewAppointments: row.can_view_appointments !== false, // Default true
+        canViewAppointments: Boolean(row.can_view_appointments),
         canEditAppointments: Boolean(row.can_edit_appointments),
       },
     }
