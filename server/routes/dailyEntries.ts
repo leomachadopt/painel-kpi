@@ -499,7 +499,7 @@ router.post('/financial/:clinicId', async (req, res) => {
       isBillingEntry: result.rows[0].is_billing_entry || false,
     })
   } catch (error: any) {
-    console.error('[Financial Entry] FATAL ERROR:', {
+    const errorDetails = {
       name: error.name,
       message: error.message,
       detail: error.detail,
@@ -509,31 +509,37 @@ router.post('/financial/:clinicId', async (req, res) => {
       column: error.column,
       hint: error.hint,
       where: error.where,
-      stack: error.stack?.split('\n').slice(0, 3)
-    })
+      stack: error.stack?.split('\n').slice(0, 3).join(' | ')
+    }
+
+    console.error('[Financial Entry] FATAL ERROR:', errorDetails)
 
     // More specific error messages
     if (error.code === '23503') {
       return res.status(400).json({
         error: 'Invalid reference',
         message: `One of the referenced values (category, cabinet, doctor, or payment source) does not exist`,
-        constraint: error.constraint
+        constraint: error.constraint,
+        debugInfo: errorDetails
       })
     }
 
     if (error.code === '23505') {
       return res.status(409).json({
         error: 'Duplicate entry',
-        message: 'An entry with this ID already exists'
+        message: 'An entry with this ID already exists',
+        debugInfo: errorDetails
       })
     }
 
+    // Return full error details to help debug
     res.status(500).json({
       error: 'Failed to create financial entry',
       message: error.message,
       detail: error.detail || error.toString(),
       code: error.code,
-      constraint: error.constraint
+      constraint: error.constraint,
+      debugInfo: errorDetails
     })
   }
 })
