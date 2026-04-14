@@ -60,7 +60,7 @@ export default function MarketingDashboard() {
   const [conversionsData, setConversionsData] = useState<any>(null)
   const [loadingConversions, setLoadingConversions] = useState(false)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+  const API_URL = import.meta.env.VITE_API_URL || '/api'
 
   useEffect(() => {
     if (user?.clinicId) {

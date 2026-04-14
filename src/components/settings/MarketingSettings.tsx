@@ -195,7 +195,7 @@ export function MarketingSettings({
 
   const connectMeta = () => {
     if (!requireManage()) return
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+    const API_URL = import.meta.env.VITE_API_URL || '/api'
     window.location.href = `${API_URL}/marketing/oauth/meta/start?clinic_id=${clinicId}`
   }
 

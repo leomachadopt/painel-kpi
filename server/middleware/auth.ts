@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from 'express'
 import { verifyAuthToken, type AuthTokenPayload } from '../auth/token.js'
+import '../express.js'
 
-export type AuthedRequest = Request & { auth?: AuthTokenPayload }
+export type AuthedRequest = Request
 
 export function authOptional(req: AuthedRequest, _res: Response, next: NextFunction) {
   const header = req.headers.authorization
