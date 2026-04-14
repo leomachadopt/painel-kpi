@@ -443,11 +443,20 @@ router.post('/financial/:clinicId', async (req, res) => {
     if (!date) {
       return res.status(400).json({ error: 'Missing required field: date' })
     }
+    if (!patientName) {
+      return res.status(400).json({ error: 'Missing required field: patientName' })
+    }
+    if (!code) {
+      return res.status(400).json({ error: 'Missing required field: code' })
+    }
     if (!categoryId) {
       return res.status(400).json({ error: 'Missing required field: categoryId' })
     }
     if (value === undefined || value === null) {
       return res.status(400).json({ error: 'Missing required field: value' })
+    }
+    if (!cabinetId) {
+      return res.status(400).json({ error: 'Missing required field: cabinetId' })
     }
 
     const entryId =
