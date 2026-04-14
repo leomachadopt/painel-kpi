@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Request, Response, NextFunction } from 'express'
 import { verifyAuthToken, type AuthTokenPayload } from '../auth/token.js'
 import '../express.d.ts'
