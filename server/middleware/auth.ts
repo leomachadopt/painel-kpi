@@ -2,12 +2,10 @@ import type { Request, Response, NextFunction } from 'express'
 import { verifyAuthToken, type AuthTokenPayload } from '../auth/token.js'
 import '../express.d.ts'
 
-export type AuthedRequest = Request & {
-  auth?: AuthTokenPayload
-  user?: AuthTokenPayload
-}
+// Use Request directly - it's already extended by express.d.ts
+export type AuthedRequest = Request
 
-export function authOptional(req: AuthedRequest, _res: Response, next: NextFunction): void {
+export function authOptional(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization
   if (header && header.startsWith('Bearer ')) {
     const token = header.slice('Bearer '.length).trim()
@@ -20,7 +18,7 @@ export function authOptional(req: AuthedRequest, _res: Response, next: NextFunct
   next()
 }
 
-export function authRequired(req: AuthedRequest, res: Response, next: NextFunction): void {
+export function authRequired(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization
   if (!header || !header.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing Authorization header' })
