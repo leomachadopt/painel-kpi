@@ -59,4 +59,48 @@ router.post('/migrate', async (req, res) => {
   }
 })
 
+// Run specific migration endpoint
+router.post('/migrate/:migrationNumber', async (req, res) => {
+  try {
+    const { migrationNumber } = req.params
+    console.log(`Running specific migration: ${migrationNumber}...`)
+
+    const migrationsDir = path.join(__dirname, '..', 'migrations')
+    const migrationFile = fs.readdirSync(migrationsDir)
+      .filter(f => f.startsWith(migrationNumber + '_'))
+      .sort()
+      [0]
+
+    if (!migrationFile) {
+      return res.status(404).json({
+        success: false,
+        error: 'Migration not found',
+        message: `No migration file found starting with ${migrationNumber}_`
+      })
+    }
+
+    const filePath = path.join(migrationsDir, migrationFile)
+    const sql = fs.readFileSync(filePath, 'utf-8')
+
+    console.log(`➡️  Applying migration: ${migrationFile}`)
+    await query(sql)
+
+    console.log(`✅ Migration ${migrationFile} completed successfully!`)
+
+    res.json({
+      success: true,
+      message: `Migration ${migrationFile} completed successfully`,
+      migration: migrationFile
+    })
+  } catch (error: any) {
+    console.error('❌ Migration failed:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Migration failed',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
+  }
+})
+
 export default router
