@@ -415,28 +415,28 @@ router.get('/financial/:clinicId', async (req, res) => {
 })
 
 router.post('/financial/:clinicId', async (req, res) => {
-  // Check if user can create financial entries
-  // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial or canEditBilling (depending on isBillingEntry)
-  const { clinicId } = req.params
-  const { isBillingEntry } = req.body
-
-  console.log('[Financial Entry] POST request:', {
-    clinicId,
-    user: req.user ? { sub: req.user.sub, role: req.user.role } : null,
-    bodyKeys: Object.keys(req.body)
-  })
-
-  // Use different permission check depending on entry type
-  const hasPermission = isBillingEntry
-    ? await canEditBilling(req, clinicId)
-    : await canEditFinancial(req, clinicId)
-
-  if (!hasPermission) {
-    console.error('[Financial Entry] Permission denied:', { user: req.user, clinicId })
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-
   try {
+    // Check if user can create financial entries
+    // GESTOR_CLINICA always can, COLABORADOR needs canEditFinancial or canEditBilling (depending on isBillingEntry)
+    const { clinicId } = req.params
+    const { isBillingEntry } = req.body
+
+    console.log('[Financial Entry] POST request:', {
+      clinicId,
+      user: req.user ? { sub: req.user.sub, role: req.user.role } : null,
+      bodyKeys: Object.keys(req.body)
+    })
+
+    // Use different permission check depending on entry type
+    const hasPermission = isBillingEntry
+      ? await canEditBilling(req, clinicId)
+      : await canEditFinancial(req, clinicId)
+
+    if (!hasPermission) {
+      console.error('[Financial Entry] Permission denied:', { user: req.user, clinicId })
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+
     const { id, date, patientName, code, categoryId, value, cabinetId, doctorId, paymentSourceId } = req.body
 
     // Validate required fields
@@ -484,6 +484,8 @@ router.post('/financial/:clinicId', async (req, res) => {
       [entryId, clinicId, date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null, isBillingEntry || false]
     )
 
+    console.log('[Financial Entry] Insert successful:', { entryId })
+
     res.status(201).json({
       id: result.rows[0].id,
       date: result.rows[0].date,
@@ -497,15 +499,35 @@ router.post('/financial/:clinicId', async (req, res) => {
       isBillingEntry: result.rows[0].is_billing_entry || false,
     })
   } catch (error: any) {
-    console.error('[Financial Entry] Create error:', {
+    console.error('[Financial Entry] FATAL ERROR:', {
+      name: error.name,
       message: error.message,
       detail: error.detail,
       code: error.code,
       constraint: error.constraint,
       table: error.table,
       column: error.column,
-      stack: error.stack
+      hint: error.hint,
+      where: error.where,
+      stack: error.stack?.split('\n').slice(0, 3)
     })
+
+    // More specific error messages
+    if (error.code === '23503') {
+      return res.status(400).json({
+        error: 'Invalid reference',
+        message: `One of the referenced values (category, cabinet, doctor, or payment source) does not exist`,
+        constraint: error.constraint
+      })
+    }
+
+    if (error.code === '23505') {
+      return res.status(409).json({
+        error: 'Duplicate entry',
+        message: 'An entry with this ID already exists'
+      })
+    }
+
     res.status(500).json({
       error: 'Failed to create financial entry',
       message: error.message,
