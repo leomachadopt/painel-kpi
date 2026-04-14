@@ -266,6 +266,18 @@ export const RESOURCE_PERMISSIONS: ResourceConfig[] = [
       delete: ['canEditConsultationControl'],
     },
   },
+  {
+    id: 'appointments',
+    name: 'Agendamentos',
+    description: 'Agenda clínica',
+    actions: 'Visualização + Criação + Edição + Exclusão',
+    mapsTo: {
+      view: ['canViewAppointments'],
+      edit: ['canEditAppointments'],
+      create: ['canEditAppointments'],
+      delete: ['canEditAppointments'],
+    },
+  },
 ]
 
 /**
@@ -325,6 +337,8 @@ export function mapResourcePermissionsToLegacy(
     canBillAdvances: false,
     canManageInsuranceProviders: false,
     canViewAllDoctorsConsultations: false,
+    canViewAppointments: false,
+    canEditAppointments: false,
   }
 
   for (const [resourceId, level] of Object.entries(resourcePermissions)) {

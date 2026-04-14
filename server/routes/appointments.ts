@@ -15,6 +15,42 @@ router.use((req, res, next) => {
 // Apply authentication to all appointment routes
 router.use(authRequired)
 
+/**
+ * Helper function to check if a doctor can edit an appointment
+ * MEDICO can only edit their own appointments
+ * GESTOR_CLINICA and MENTOR can edit all appointments
+ */
+async function canDoctorEditAppointment(
+  userId: string,
+  role: string,
+  clinicId: string,
+  doctorId: string | null
+): Promise<boolean> {
+  // GESTOR_CLINICA and MENTOR can edit all appointments
+  if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+    return true
+  }
+
+  // MEDICO can only edit their own appointments
+  if (role === 'MEDICO') {
+    if (!doctorId) {
+      // Appointment has no doctor assigned - allow if the doctor is creating it for themselves
+      return true
+    }
+
+    // Check if the doctorId matches the logged-in user's doctor record
+    const doctorCheck = await query(
+      `SELECT id FROM clinic_doctors WHERE id = $1 AND email = (SELECT email FROM users WHERE id = $2)`,
+      [doctorId, userId]
+    )
+
+    return doctorCheck.rows.length > 0
+  }
+
+  // COLABORADOR can edit if they have permission (already checked by middleware)
+  return true
+}
+
 // Helper function to update metrics based on appointment status changes
 async function updateMetricsOnStatusChange(
   clinicId: string,
@@ -399,6 +435,17 @@ router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, 
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
+    // Validate if doctor can create appointment for this doctorId
+    const userId = (req as any).user?.id || (req as any).auth?.sub
+    const role = (req as any).user?.role || (req as any).auth?.role
+    const canEdit = await canDoctorEditAppointment(userId, role, clinicId, doctorId || null)
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: 'Médicos só podem criar agendamentos para si mesmos'
+      })
+    }
+
     // Validate patient data based on type
     if (isNewPatient) {
       if (!newPatientName || !newPatientWhatsapp || !sourceId) {
@@ -589,6 +636,17 @@ router.patch('/:clinicId/:appointmentId/status', requirePermission('canEditAppoi
       return res.status(404).json({ error: 'Appointment not found' })
     }
 
+    // Validate if doctor can edit this appointment
+    const userId = (req as any).user?.id || (req as any).auth?.sub
+    const role = (req as any).user?.role || (req as any).auth?.role
+    const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: 'Médicos só podem editar seus próprios agendamentos'
+      })
+    }
+
     const previousStatus = current.rows[0].status
 
     // Update appointment
@@ -648,6 +706,27 @@ router.patch('/:clinicId/:appointmentId', requirePermission('canEditAppointments
     }
 
     const currentAppointment = current.rows[0]
+
+    // Validate if doctor can edit this appointment
+    const userId = (req as any).user?.id || (req as any).auth?.sub
+    const role = (req as any).user?.role || (req as any).auth?.role
+    const canEdit = await canDoctorEditAppointment(userId, role, clinicId, currentAppointment.doctor_id)
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: 'Médicos só podem editar seus próprios agendamentos'
+      })
+    }
+
+    // If trying to change doctorId, validate the new doctor
+    if (doctorId !== undefined && doctorId !== currentAppointment.doctor_id) {
+      const canEditNewDoctor = await canDoctorEditAppointment(userId, role, clinicId, doctorId)
+      if (!canEditNewDoctor) {
+        return res.status(403).json({
+          error: 'Médicos só podem atribuir agendamentos para si mesmos'
+        })
+      }
+    }
 
     // Check if date/time changed (this is a reschedule for metrics)
     const isReschedule =
@@ -956,6 +1035,27 @@ router.put('/:clinicId/:appointmentId', requirePermission('canEditAppointments')
 
     console.log('[APPOINTMENTS] Updating appointment:', appointmentId, req.body)
 
+    // Get current appointment to validate permissions
+    const current = await query(
+      `SELECT doctor_id FROM appointments WHERE id = $1 AND clinic_id = $2`,
+      [appointmentId, clinicId]
+    )
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' })
+    }
+
+    // Validate if doctor can edit this appointment
+    const userId = (req as any).user?.id || (req as any).auth?.sub
+    const role = (req as any).user?.role || (req as any).auth?.role
+    const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: 'Médicos só podem editar seus próprios agendamentos'
+      })
+    }
+
     // Build update query dynamically based on provided fields
     const updates: string[] = []
     const values: any[] = []
@@ -1078,6 +1178,27 @@ router.delete('/:clinicId/:appointmentId', requirePermission('canEditAppointment
     const { clinicId, appointmentId } = req.params
 
     console.log('[APPOINTMENTS] Deleting appointment:', appointmentId)
+
+    // Get current appointment to validate permissions
+    const current = await query(
+      `SELECT doctor_id FROM appointments WHERE id = $1 AND clinic_id = $2`,
+      [appointmentId, clinicId]
+    )
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' })
+    }
+
+    // Validate if doctor can delete this appointment
+    const userId = (req as any).user?.id || (req as any).auth?.sub
+    const role = (req as any).user?.role || (req as any).auth?.role
+    const canEdit = await canDoctorEditAppointment(userId, role, clinicId, current.rows[0].doctor_id)
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: 'Médicos só podem excluir seus próprios agendamentos'
+      })
+    }
 
     const result = await query(
       `DELETE FROM appointments
