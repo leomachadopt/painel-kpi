@@ -207,6 +207,10 @@ router.get('/oauth/meta/callback', async (req, res) => {
       }
     } else {
       console.log('❌ No Facebook pages found')
+      console.log('⚠️  POSSIBLE CAUSE: Meta App may be in Development Mode')
+      console.log('   Solution 1: Add this user as a Tester in the Meta App settings')
+      console.log('   Solution 2: Switch the Meta App to Live Mode at https://developers.facebook.com')
+      console.log('   Solution 3: User account is not an admin of any Facebook Page')
     }
 
     // 4. Save to database (clinic_integrations table)

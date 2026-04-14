@@ -162,11 +162,30 @@ router.put('/integrations/:clinicId/meta', requirePermission('canEditMarketing')
       instagramUsername,
     } = req.body || {}
 
+    // Buscar o registro atual para preservar campos não enviados
+    const existingResult = await query(
+      `SELECT access_token, token_expires_at, metadata
+       FROM clinic_integrations
+       WHERE clinic_id = $1 AND provider = 'META'`,
+      [clinicId]
+    )
+
+    const existing = existingResult.rows[0]
+    const existingMetadata = existing?.metadata || {}
+
+    // Preservar access_token e tokenExpiresAt se não forem enviados
+    const finalAccessToken = accessToken !== undefined ? accessToken : existing?.access_token
+    const finalTokenExpiresAt = tokenExpiresAt !== undefined
+      ? (tokenExpiresAt ? new Date(tokenExpiresAt) : null)
+      : existing?.token_expires_at
+
+    // Mesclar metadata preservando campos não enviados
     const metadata = {
-      igBusinessId: igBusinessId || null,
-      facebookPageId: facebookPageId || null,
-      pageName: pageName || null,
-      instagramUsername: instagramUsername || null,
+      igBusinessId: igBusinessId !== undefined ? igBusinessId : existingMetadata.igBusinessId,
+      facebookPageId: facebookPageId !== undefined ? facebookPageId : existingMetadata.facebookPageId,
+      pageName: pageName !== undefined ? pageName : existingMetadata.pageName,
+      instagramUsername: instagramUsername !== undefined ? instagramUsername : existingMetadata.instagramUsername,
+      pages: existingMetadata.pages || [], // Preservar pages sempre
     }
 
     await query(
@@ -178,15 +197,16 @@ router.put('/integrations/:clinicId/meta', requirePermission('canEditMarketing')
          access_token = EXCLUDED.access_token,
          token_expires_at = EXCLUDED.token_expires_at,
          external_account_id = EXCLUDED.external_account_id,
-         metadata = EXCLUDED.metadata
+         metadata = EXCLUDED.metadata,
+         updated_at = CURRENT_TIMESTAMP
       `,
       [
         integrationId(clinicId, 'META'),
         clinicId,
         status,
-        accessToken || null,
-        tokenExpiresAt ? new Date(tokenExpiresAt) : null,
-        igBusinessId || null,
+        finalAccessToken,
+        finalTokenExpiresAt,
+        igBusinessId !== undefined ? igBusinessId : existingMetadata.igBusinessId,
         JSON.stringify(metadata),
       ]
     )
