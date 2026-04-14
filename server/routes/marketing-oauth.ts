@@ -215,12 +215,31 @@ router.get('/oauth/meta/callback', async (req, res) => {
 
     // 4. Save to database (clinic_integrations table)
     const integrationId = `meta-${clinic_id}-${Date.now()}`
+
+    // Buscar integração existente para preservar dados quando pages retornar vazio
+    const existingIntegration = await query(
+      `SELECT metadata FROM clinic_integrations
+       WHERE clinic_id = $1 AND provider = 'META'`,
+      [clinic_id]
+    )
+    const existingMetadata = existingIntegration.rows[0]?.metadata || {}
+
+    // Warning quando pages estiver vazio (possível Dev Mode)
+    if (allPages.length === 0) {
+      console.warn('[OAuth Meta] Nenhuma página retornada pela API Meta (possível Dev Mode).')
+      console.warn('[OAuth Meta] Preservando dados existentes do banco:', {
+        facebookPageId: existingMetadata.facebookPageId,
+        instagramUsername: existingMetadata.instagramUsername,
+      })
+    }
+
+    // Usar valores existentes como fallback quando os novos forem null
     const metadata = {
-      facebookPageId: pageId,
-      pageName: pageName,
-      igBusinessId: instagramId,
-      instagramUsername: instagramUsername,
-      pages: allPages,
+      facebookPageId: pageId || existingMetadata.facebookPageId || null,
+      pageName: pageName || existingMetadata.pageName || null,
+      igBusinessId: instagramId || existingMetadata.igBusinessId || null,
+      instagramUsername: instagramUsername || existingMetadata.instagramUsername || null,
+      pages: allPages.length > 0 ? allPages : (existingMetadata.pages || []),
     }
 
     await query(
@@ -235,7 +254,7 @@ router.get('/oauth/meta/callback', async (req, res) => {
          external_account_id = EXCLUDED.external_account_id,
          metadata = EXCLUDED.metadata,
          updated_at = CURRENT_TIMESTAMP`,
-      [integrationId, clinic_id, accessToken, expiresAt, instagramId, JSON.stringify(metadata)]
+      [integrationId, clinic_id, accessToken, expiresAt, instagramId || existingMetadata.igBusinessId, JSON.stringify(metadata)]
     )
 
     // 5. Redirect to frontend
