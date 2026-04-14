@@ -7,6 +7,26 @@ import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl } from
 const router = Router()
 
 /**
+ * Helper function to format date to YYYY-MM-DD
+ * Input type="date" requires exactly this format
+ */
+function formatDateForInput(date: any): string | null {
+  if (!date) return null
+  if (typeof date === 'string') {
+    // If already a string, extract just the date part (YYYY-MM-DD)
+    return date.split('T')[0]
+  }
+  if (date instanceof Date) {
+    // Convert Date object to YYYY-MM-DD
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  return null
+}
+
+/**
  * Helper function to check if user can edit patients
  * GESTOR_CLINICA and MENTOR always can, COLABORADOR needs canEditPatients permission
  */
@@ -64,7 +84,7 @@ router.get('/:clinicId', async (req, res) => {
       name: row.name,
       email: row.email,
       phone: row.phone,
-      birthDate: row.birth_date,
+      birthDate: formatDateForInput(row.birth_date),
       notes: row.notes,
       createdAt: row.created_at,
     }))
@@ -168,7 +188,7 @@ router.get('/:clinicId/code/:code', async (req, res) => {
         name: row.name,
         email: row.email,
         phone: row.phone,
-        birthDate: row.birth_date,
+        birthDate: formatDateForInput(row.birth_date),
         notes: row.notes,
         createdAt: row.created_at,
       })
@@ -267,7 +287,16 @@ router.post('/:clinicId', async (req, res) => {
       `INSERT INTO patients (id, clinic_id, code, name, email, phone, birth_date, notes)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, code, name, email, phone, birth_date, notes, created_at`,
-      [patientId, clinicId, code, name.trim(), email || null, phone || null, birthDate || null, notes || null]
+      [
+        patientId,
+        clinicId,
+        code,
+        name.trim(),
+        email || null,
+        phone || null,
+        birthDate && birthDate.trim() !== '' ? birthDate : null,
+        notes || null
+      ]
     )
 
     const row = result.rows[0]
@@ -277,7 +306,7 @@ router.post('/:clinicId', async (req, res) => {
       name: row.name,
       email: row.email,
       phone: row.phone,
-      birthDate: row.birth_date,
+      birthDate: formatDateForInput(row.birth_date),
       notes: row.notes,
       createdAt: row.created_at,
     })
@@ -540,7 +569,16 @@ router.put('/:clinicId/:patientId', async (req, res) => {
          SET code = COALESCE($1, code), name = $2, email = $3, phone = $4, birth_date = $5, notes = $6
          WHERE id = $7 AND clinic_id = $8
          RETURNING id, code, name, email, phone, birth_date, notes, created_at`,
-        [code || null, name.trim(), email || null, phone || null, birthDate || null, notes || null, patientId, clinicIdParam]
+        [
+          code || null,
+          name.trim(),
+          email || null,
+          phone || null,
+          birthDate && birthDate.trim() !== '' ? birthDate : null,
+          notes || null,
+          patientId,
+          clinicIdParam
+        ]
       )
 
       const row = result.rows[0]
@@ -586,7 +624,7 @@ router.put('/:clinicId/:patientId', async (req, res) => {
         name: row.name,
         email: row.email,
         phone: row.phone,
-        birthDate: row.birth_date,
+        birthDate: formatDateForInput(row.birth_date),
         notes: row.notes,
         createdAt: row.created_at,
       })
