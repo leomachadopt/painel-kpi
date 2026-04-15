@@ -10,6 +10,7 @@ import {
   getMetaIntegration,
   updateMetaSelection,
   upsertMetaIntegration,
+  verifyMetaPageAccess,
 } from '../marketing/meta.js'
 import {
   ensureGoogleAccessToken,
@@ -429,6 +430,98 @@ router.get('/meta/diagnose/:clinicId', async (req: AuthedRequest, res) => {
   } catch (error: any) {
     console.error('Meta diagnose error:', error)
     res.status(500).json({ error: error.message })
+  }
+})
+
+// Verificar acesso a uma página específica (Dev Mode workaround)
+router.post('/meta/verify-page/:clinicId', async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    const { facebookPageId } = req.body
+
+    if (!facebookPageId) {
+      return res.status(400).json({ error: 'facebookPageId is required' })
+    }
+
+    const integ = await getMetaIntegration(clinicId)
+    if (!integ?.accessToken) {
+      return res.status(400).json({ error: 'Meta integration not found or token missing' })
+    }
+
+    console.log(`[Meta Verify Page] Attempting to access page ${facebookPageId} for clinic ${clinicId}`)
+
+    const pageData = await verifyMetaPageAccess(integ.accessToken, facebookPageId)
+
+    console.log(`[Meta Verify Page] Successfully accessed page:`, {
+      pageId: pageData.pageId,
+      name: pageData.name,
+      hasInstagram: !!pageData.igBusinessId,
+    })
+
+    res.json({
+      success: true,
+      page: pageData,
+      message: 'Page is accessible with your OAuth token',
+    })
+  } catch (error: any) {
+    console.error('[Meta Verify Page] Error:', error)
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to verify page access',
+    })
+  }
+})
+
+// Salvar página verificada manualmente (Dev Mode workaround)
+router.post('/meta/save-verified-page/:clinicId', async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    const { facebookPageId } = req.body
+
+    if (!facebookPageId) {
+      return res.status(400).json({ error: 'facebookPageId is required' })
+    }
+
+    const integ = await getMetaIntegration(clinicId)
+    if (!integ?.accessToken) {
+      return res.status(400).json({ error: 'Meta integration not found or token missing' })
+    }
+
+    // Primeiro verificar se podemos acessar a página
+    const pageData = await verifyMetaPageAccess(integ.accessToken, facebookPageId)
+
+    if (!pageData.igBusinessId) {
+      return res.status(400).json({
+        error: 'This Facebook Page does not have an Instagram Business Account connected',
+      })
+    }
+
+    // Salvar usando updateMetaSelection
+    await updateMetaSelection({
+      clinicId,
+      facebookPageId: pageData.pageId,
+      igBusinessId: pageData.igBusinessId,
+      igUsername: pageData.igUsername,
+      pageName: pageData.name,
+    })
+
+    console.log(`[Meta Save Verified Page] Successfully saved page for clinic ${clinicId}:`, {
+      pageId: pageData.pageId,
+      name: pageData.name,
+      igUsername: pageData.igUsername,
+    })
+
+    res.json({
+      success: true,
+      page: pageData,
+      message: 'Page saved successfully',
+    })
+  } catch (error: any) {
+    console.error('[Meta Save Verified Page] Error:', error)
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Failed to save page',
+    })
   }
 })
 

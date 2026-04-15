@@ -140,6 +140,41 @@ export async function getMetaIntegration(clinicId: string) {
   }
 }
 
+export async function verifyMetaPageAccess(
+  accessToken: string,
+  facebookPageId: string
+): Promise<MetaPageAsset> {
+  const url = new URL(graphUrl(`/${facebookPageId}`))
+  url.searchParams.set('fields', 'id,name,instagram_business_account{id,username}')
+  url.searchParams.set('access_token', accessToken)
+
+  const res = await fetch(url.toString())
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Cannot access page ${facebookPageId}: ${body}`)
+  }
+
+  const json = (await res.json()) as {
+    id: string
+    name: string
+    instagram_business_account?: { id: string; username?: string }
+    error?: { message: string; code: number }
+  }
+
+  if (json.error) {
+    throw new Error(
+      `Meta Graph API error accessing page (code ${json.error.code}): ${json.error.message}`
+    )
+  }
+
+  return {
+    pageId: json.id,
+    name: json.name,
+    igBusinessId: json.instagram_business_account?.id || null,
+    igUsername: json.instagram_business_account?.username || null,
+  }
+}
+
 export async function updateMetaSelection(opts: {
   clinicId: string
   facebookPageId: string

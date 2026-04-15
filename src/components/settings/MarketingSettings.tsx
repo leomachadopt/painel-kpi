@@ -49,6 +49,8 @@ export function MarketingSettings({
     facebookPageId: '',
     accessToken: '',
   })
+  const [manualPageId, setManualPageId] = useState('')
+  const [verifiedPage, setVerifiedPage] = useState<MetaPageAsset | null>(null)
   const [gbpForm, setGbpForm] = useState({
     locationId: '',
     refreshToken: '',
@@ -288,6 +290,63 @@ export function MarketingSettings({
     }
   }
 
+  const verifyManualPage = async () => {
+    if (!requireManage()) return
+    if (!manualPageId.trim()) {
+      toast.error('Por favor, insira um Facebook Page ID')
+      return
+    }
+    setLoading(true)
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || '/api'
+      const response = await fetch(`${API_URL}/marketing/meta/verify-page/${clinicId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facebookPageId: manualPageId.trim() }),
+        credentials: 'include',
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Falha ao verificar página')
+
+      setVerifiedPage(data.page)
+      toast.success(`Página verificada: ${data.page.name}`)
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao verificar página')
+      setVerifiedPage(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveManualPage = async () => {
+    if (!requireManage()) return
+    if (!manualPageId.trim()) {
+      toast.error('Por favor, insira um Facebook Page ID')
+      return
+    }
+    setLoading(true)
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || '/api'
+      const response = await fetch(`${API_URL}/marketing/meta/save-verified-page/${clinicId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facebookPageId: manualPageId.trim() }),
+        credentials: 'include',
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Falha ao guardar página')
+
+      toast.success(`Página guardada: ${data.page.name}`)
+      setVerifiedPage(null)
+      setManualPageId('')
+      await load()
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao guardar página')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const saveGbp = async () => {
     if (!requireManage()) return
     setLoading(true)
@@ -424,6 +483,88 @@ export function MarketingSettings({
               </Button>
             </div>
           </div>
+
+          {metaStatus === 'CONNECTED' && metaAssets.length === 0 && (
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="rounded-full bg-orange-100 p-1">
+                  <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <h4 className="font-semibold text-orange-900">Development Mode - Workaround de OAuth</h4>
+                  <p className="text-sm text-orange-800">
+                    A API Meta retornou 0 páginas. Isto acontece quando o App está em Development Mode.
+                    Como workaround, você pode inserir manualmente o <strong>Facebook Page ID</strong> para testar
+                    se o seu token OAuth consegue aceder à página.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="manualPageId" className="text-sm font-medium text-orange-900">
+                      Facebook Page ID
+                    </Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        id="manualPageId"
+                        placeholder="Ex: 472388446247835"
+                        value={manualPageId}
+                        onChange={(e) => setManualPageId(e.target.value)}
+                        disabled={loading}
+                        className="flex-1"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={verifyManualPage}
+                          disabled={loading || !manualPageId.trim()}
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                        >
+                          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          Verificar
+                        </Button>
+                        {verifiedPage && (
+                          <Button
+                            onClick={saveManualPage}
+                            disabled={loading}
+                            size="sm"
+                            className="gap-2"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                            Guardar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {verifiedPage && (
+                      <div className="rounded bg-green-50 border border-green-200 p-3 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-semibold text-green-900">Página Verificada</span>
+                        </div>
+                        <p className="text-sm text-green-800">
+                          <strong>Nome:</strong> {verifiedPage.name}
+                        </p>
+                        {verifiedPage.igBusinessId && (
+                          <>
+                            <p className="text-sm text-green-800">
+                              <strong>Instagram:</strong> @{verifiedPage.igUsername || verifiedPage.igBusinessId}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-orange-700">
+                      <strong>Como encontrar seu Page ID:</strong> Acesse sua Página no Facebook → Configurações →
+                      O ID aparece na URL ou na seção "Sobre".
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {metaAssets.length > 0 && (
             <div className="space-y-2">

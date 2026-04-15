@@ -216,30 +216,21 @@ router.get('/oauth/meta/callback', async (req, res) => {
     // 4. Save to database (clinic_integrations table)
     const integrationId = `meta-${clinic_id}-${Date.now()}`
 
-    // Buscar integração existente para preservar dados quando pages retornar vazio
-    const existingIntegration = await query(
-      `SELECT metadata FROM clinic_integrations
-       WHERE clinic_id = $1 AND provider = 'META'`,
-      [clinic_id]
-    )
-    const existingMetadata = existingIntegration.rows[0]?.metadata || {}
-
     // Warning quando pages estiver vazio (possível Dev Mode)
     if (allPages.length === 0) {
       console.warn('[OAuth Meta] Nenhuma página retornada pela API Meta (possível Dev Mode).')
-      console.warn('[OAuth Meta] Preservando dados existentes do banco:', {
-        facebookPageId: existingMetadata.facebookPageId,
-        instagramUsername: existingMetadata.instagramUsername,
-      })
+      console.warn('[OAuth Meta] Sugestão: Use o "Development Mode Workaround" no frontend')
+      console.warn('[OAuth Meta] para inserir manualmente o Facebook Page ID e testar acesso.')
     }
 
-    // Usar valores existentes como fallback quando os novos forem null
+    // Salvar apenas os dados retornados pela API (sem preservar dados antigos)
+    // Se utilizador quiser outro perfil, precisa começar do zero
     const metadata = {
-      facebookPageId: pageId || existingMetadata.facebookPageId || null,
-      pageName: pageName || existingMetadata.pageName || null,
-      igBusinessId: instagramId || existingMetadata.igBusinessId || null,
-      instagramUsername: instagramUsername || existingMetadata.instagramUsername || null,
-      pages: allPages.length > 0 ? allPages : (existingMetadata.pages || []),
+      facebookPageId: pageId,
+      pageName: pageName,
+      igBusinessId: instagramId,
+      instagramUsername: instagramUsername,
+      pages: allPages,
     }
 
     await query(
