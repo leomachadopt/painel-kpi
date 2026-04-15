@@ -372,6 +372,66 @@ router.post('/meta/select/:clinicId', requirePermission('canEditMarketing'), asy
   }
 })
 
+// Endpoint de diagnóstico - verificar estado completo da integração Meta
+router.get('/meta/diagnose/:clinicId', async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    const diagnosis: any = { clinicId }
+
+    // 1. Verificar integração no banco
+    const integ = await getMetaIntegration(clinicId)
+    diagnosis.hasIntegration = !!integ
+    diagnosis.hasToken = !!integ?.accessToken
+    diagnosis.metadata = integ?.metadata || null
+
+    if (!integ?.accessToken) {
+      return res.json(diagnosis)
+    }
+
+    // 2. Testar fetchMetaPages (API Meta)
+    try {
+      const pagesFromApi = await fetchMetaPages(integ.accessToken)
+      diagnosis.fetchMetaPagesResult = {
+        success: true,
+        count: pagesFromApi.length,
+        pages: pagesFromApi,
+      }
+    } catch (error: any) {
+      diagnosis.fetchMetaPagesResult = {
+        success: false,
+        error: error.message,
+      }
+    }
+
+    // 3. Simular o endpoint /meta/assets (com fallback)
+    let finalPages = diagnosis.fetchMetaPagesResult?.pages || []
+    if (finalPages.length === 0 && integ.metadata?.facebookPageId) {
+      const fallbackPage = {
+        pageId: integ.metadata.facebookPageId,
+        name: integ.metadata.pageName || integ.metadata.facebookPageId,
+        igBusinessId: integ.metadata.igBusinessId || null,
+        igUsername: integ.metadata.instagramUsername || null,
+        _source: 'fallback_from_database',
+      }
+      finalPages = [fallbackPage]
+      diagnosis.usedFallback = true
+    } else {
+      diagnosis.usedFallback = false
+    }
+
+    diagnosis.finalPagesReturned = {
+      count: finalPages.length,
+      pages: finalPages,
+      pagesWithInstagram: finalPages.filter((p: any) => p.igBusinessId).length,
+    }
+
+    res.json(diagnosis)
+  } catch (error: any) {
+    console.error('Meta diagnose error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // ================================
 // OAUTH - GOOGLE (GBP)
 // ================================
