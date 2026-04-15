@@ -332,7 +332,21 @@ router.get('/meta/assets/:clinicId', requirePermission('canViewMarketing'), asyn
     if (!integ?.accessToken) {
       return res.status(404).json({ error: 'META integration not configured' })
     }
-    const pages = await fetchMetaPages(integ.accessToken)
+
+    // Tentar buscar páginas da API Meta
+    let pages = await fetchMetaPages(integ.accessToken)
+
+    // Se API Meta retornou vazio (Dev Mode ou sem páginas), usar dados do banco como fallback
+    if (pages.length === 0 && integ.metadata?.facebookPageId) {
+      console.warn('[Meta Assets] API returned 0 pages. Using stored metadata as fallback.')
+      pages = [{
+        pageId: integ.metadata.facebookPageId,
+        name: integ.metadata.pageName || integ.metadata.facebookPageId,
+        igBusinessId: integ.metadata.igBusinessId || null,
+        igUsername: integ.metadata.instagramUsername || null,
+      }]
+    }
+
     res.json({ pages })
   } catch (error) {
     console.error('Get meta assets error:', error)
