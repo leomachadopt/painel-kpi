@@ -125,6 +125,165 @@ async function collectPostsMetrics(clinic_id: string, access_token: string, inst
 }
 
 /**
+ * Coleta métricas de stories recentes do Instagram (antes que expirem em 24h)
+ */
+async function collectStoriesMetrics(clinic_id: string, access_token: string, instagram_id: string, metricDate: string, apiVersion: string) {
+  try {
+    // Buscar stories disponíveis (apenas últimas 24h)
+    const storiesUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/stories`)
+    storiesUrl.searchParams.set('access_token', access_token)
+    storiesUrl.searchParams.set('fields', 'id,media_type,media_url,timestamp')
+
+    const storiesResponse = await fetch(storiesUrl.toString())
+    const storiesData = await storiesResponse.json()
+
+    if (storiesData.error || !storiesData.data) {
+      // Não é erro - pode simplesmente não ter stories ativas
+      return 0
+    }
+
+    let savedStories = 0
+
+    for (const story of storiesData.data) {
+      try {
+        // Buscar insights do story
+        const insightsUrl = new URL(`https://graph.facebook.com/${apiVersion}/${story.id}/insights`)
+        insightsUrl.searchParams.set('access_token', access_token)
+        insightsUrl.searchParams.set('metric', 'impressions,reach,replies,exits,taps_forward,taps_back')
+
+        const insightsResponse = await fetch(insightsUrl.toString())
+        const insightsData = await insightsResponse.json()
+
+        const insights = {
+          impressions: 0,
+          reach: 0,
+          replies: 0,
+          exits: 0,
+          taps_forward: 0,
+          taps_back: 0,
+        }
+
+        if (insightsData.data) {
+          for (const metric of insightsData.data) {
+            if (metric.name === 'impressions' && metric.values?.[0]?.value != null) {
+              insights.impressions = metric.values[0].value
+            }
+            if (metric.name === 'reach' && metric.values?.[0]?.value != null) {
+              insights.reach = metric.values[0].value
+            }
+            if (metric.name === 'replies' && metric.values?.[0]?.value != null) {
+              insights.replies = metric.values[0].value
+            }
+            if (metric.name === 'exits' && metric.values?.[0]?.value != null) {
+              insights.exits = metric.values[0].value
+            }
+            if (metric.name === 'taps_forward' && metric.values?.[0]?.value != null) {
+              insights.taps_forward = metric.values[0].value
+            }
+            if (metric.name === 'taps_back' && metric.values?.[0]?.value != null) {
+              insights.taps_back = metric.values[0].value
+            }
+          }
+        }
+
+        // Calcular expires_at (24h após posted_at)
+        const postedAt = new Date(story.timestamp)
+        const expiresAt = new Date(postedAt.getTime() + 24 * 60 * 60 * 1000)
+
+        // Salvar snapshot no banco
+        await query(
+          `INSERT INTO marketing_stories_metrics
+            (clinic_id, provider, story_id, media_type, media_url, posted_at, expires_at,
+             metric_date, impressions, reach, replies, exits, taps_forward, taps_back)
+           VALUES ($1, 'META', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+           ON CONFLICT (clinic_id, provider, story_id, metric_date)
+           DO UPDATE SET
+             impressions = EXCLUDED.impressions,
+             reach = EXCLUDED.reach,
+             replies = EXCLUDED.replies,
+             exits = EXCLUDED.exits,
+             taps_forward = EXCLUDED.taps_forward,
+             taps_back = EXCLUDED.taps_back`,
+          [
+            clinic_id,
+            story.id,
+            story.media_type,
+            story.media_url || '',
+            story.timestamp,
+            expiresAt.toISOString(),
+            metricDate,
+            insights.impressions,
+            insights.reach,
+            insights.replies,
+            insights.exits,
+            insights.taps_forward,
+            insights.taps_back
+          ]
+        )
+
+        savedStories++
+      } catch (error: any) {
+        // Insights podem falhar - ignorar silenciosamente
+        console.debug(`    Skipped story ${story.id}: ${error.message}`)
+      }
+    }
+
+    return savedStories
+  } catch (error: any) {
+    console.error(`  ❌ Failed to collect stories metrics for clinic ${clinic_id}: ${error.message}`)
+    return 0
+  }
+}
+
+/**
+ * Coleta dados demográficos da audiência do Instagram
+ */
+async function collectAudienceDemographics(clinic_id: string, access_token: string, instagram_id: string, metricDate: string, apiVersion: string) {
+  try {
+    // Buscar demographics lifetime insights
+    const demographicsUrl = new URL(`https://graph.facebook.com/${apiVersion}/${instagram_id}/insights`)
+    demographicsUrl.searchParams.set('access_token', access_token)
+    demographicsUrl.searchParams.set('metric', 'audience_gender_age,audience_city,audience_country')
+    demographicsUrl.searchParams.set('period', 'lifetime')
+
+    const demographicsResponse = await fetch(demographicsUrl.toString())
+    const demographicsData = await demographicsResponse.json()
+
+    if (demographicsData.error || !demographicsData.data) {
+      return false
+    }
+
+    // Processar dados demográficos
+    const demographics: any = {}
+
+    for (const metric of demographicsData.data) {
+      if (metric.name === 'audience_gender_age' && metric.values?.[0]?.value) {
+        demographics.genderAge = metric.values[0].value
+      }
+      if (metric.name === 'audience_city' && metric.values?.[0]?.value) {
+        demographics.city = metric.values[0].value
+      }
+      if (metric.name === 'audience_country' && metric.values?.[0]?.value) {
+        demographics.country = metric.values[0].value
+      }
+    }
+
+    // Salvar no metadata da marketing_metrics_daily
+    await query(
+      `UPDATE marketing_metrics_daily
+       SET metadata = metadata || $1::jsonb
+       WHERE clinic_id = $2 AND provider = 'META' AND metric_date = $3`,
+      [JSON.stringify({ demographics }), clinic_id, metricDate]
+    )
+
+    return true
+  } catch (error: any) {
+    console.error(`  ❌ Failed to collect demographics for clinic ${clinic_id}: ${error.message}`)
+    return false
+  }
+}
+
+/**
  * Coleta métricas do Instagram para todas as clínicas com Meta conectado
  */
 async function collectMetaMetrics() {
@@ -243,6 +402,18 @@ async function collectMetaMetrics() {
         const savedPostsCount = await collectPostsMetrics(clinic_id, access_token, instagram_id, metricDate, apiVersion)
         if (savedPostsCount > 0) {
           console.log(`  ✅ Clinic ${clinic_id}: Saved ${savedPostsCount} post snapshots`)
+        }
+
+        // Coletar métricas de stories ativas (antes de expirarem em 24h)
+        const savedStoriesCount = await collectStoriesMetrics(clinic_id, access_token, instagram_id, metricDate, apiVersion)
+        if (savedStoriesCount > 0) {
+          console.log(`  ✅ Clinic ${clinic_id}: Saved ${savedStoriesCount} story snapshots`)
+        }
+
+        // Coletar dados demográficos da audiência
+        const savedDemographics = await collectAudienceDemographics(clinic_id, access_token, instagram_id, metricDate, apiVersion)
+        if (savedDemographics) {
+          console.log(`  ✅ Clinic ${clinic_id}: Saved audience demographics`)
         }
 
         successCount++

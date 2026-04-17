@@ -1167,6 +1167,52 @@ router.post('/stories/:clinicId', requirePermission('canEditMarketing'), async (
 })
 
 // ================================
+// POSTS METRICS - Historical tracking
+// ================================
+
+router.get('/posts/:clinicId', requirePermission('canViewMarketing'), async (req: AuthedRequest, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!req.auth) return res.status(401).json({ error: 'Not authenticated' })
+    if (!canReadClinic(req, clinicId)) return res.status(403).json({ error: 'Forbidden' })
+
+    const { start, end, limit = '50' } = req.query as { start?: string; end?: string; limit?: string }
+
+    const params: any[] = [clinicId]
+    let where = `clinic_id = $1`
+
+    if (start) {
+      params.push(start)
+      where += ` AND posted_at >= $${params.length}`
+    }
+    if (end) {
+      params.push(end)
+      where += ` AND posted_at <= $${params.length}`
+    }
+
+    params.push(parseInt(limit, 10) || 50)
+    const limitClause = `LIMIT $${params.length}`
+
+    const result = await query(
+      `SELECT id, clinic_id, provider, post_id, post_type, caption, permalink,
+              posted_at, metric_date,
+              reach, impressions, engagement, like_count, comments_count, saved,
+              metadata, created_at
+       FROM marketing_posts_metrics
+       WHERE ${where}
+       ORDER BY posted_at DESC, metric_date DESC
+       ${limitClause}`,
+      params
+    )
+
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Get posts error:', error)
+    res.status(500).json({ error: 'Failed to fetch posts metrics' })
+  }
+})
+
+// ================================
 // REPORTS - Monthly PDF Reports
 // ================================
 
