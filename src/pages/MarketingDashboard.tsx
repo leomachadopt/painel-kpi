@@ -60,6 +60,17 @@ export default function MarketingDashboard() {
   const [conversionsData, setConversionsData] = useState<any>(null)
   const [loadingConversions, setLoadingConversions] = useState(false)
 
+  // Estado para gerenciar abas ativas e cache
+  const [activeTab, setActiveTab] = useState('overview')
+  const [postsLoaded, setPostsLoaded] = useState(false)
+  const [audienceLoaded, setAudienceLoaded] = useState(false)
+  const [conversionsLoaded, setConversionsLoaded] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<{
+    posts?: Date
+    audience?: Date
+    conversions?: Date
+  }>({})
+
   const API_URL = import.meta.env.VITE_API_URL || '/api'
 
   useEffect(() => {
@@ -73,6 +84,19 @@ export default function MarketingDashboard() {
       fetchMetrics()
     }
   }, [metaConnected, period, user?.clinicId])
+
+  // Auto-fetch quando mudar de aba (apenas se não tiver cache)
+  useEffect(() => {
+    if (!metaConnected || !user?.clinicId) return
+
+    if (activeTab === 'posts' && !postsLoaded) {
+      fetchPostsFromDatabase()
+    } else if (activeTab === 'audience' && !audienceLoaded) {
+      fetchAudience()
+    } else if (activeTab === 'conversions' && !conversionsLoaded) {
+      fetchConversions()
+    }
+  }, [activeTab, metaConnected, user?.clinicId])
 
   const checkMetaConnection = async () => {
     try {
@@ -149,6 +173,53 @@ export default function MarketingDashboard() {
     }
   }
 
+  // Buscar posts salvos no banco (rápido, sempre disponível)
+  const fetchPostsFromDatabase = async () => {
+    try {
+      setLoadingPosts(true)
+      const token = localStorage.getItem('kpi_token')
+      const url = `${API_URL}/marketing/posts/${user?.clinicId}?limit=25`
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Mapear dados do banco para formato esperado
+        const formattedPosts = data.map((post: any) => ({
+          id: post.post_id,
+          caption: post.caption || '',
+          media_type: post.post_type,
+          media_url: '',
+          permalink: post.permalink,
+          timestamp: post.posted_at,
+          like_count: post.like_count || 0,
+          comments_count: post.comments_count || 0,
+          reach: post.reach || 0,
+          engagement: post.engagement || 0,
+          impressions: post.impressions || 0,
+          saved: post.saved || 0,
+          engagement_rate: post.engagement && post.reach
+            ? ((post.engagement / post.reach) * 100).toFixed(2) + '%'
+            : '0%',
+        }))
+        setPosts(formattedPosts)
+        setPostsLoaded(true)
+        setLastUpdated(prev => ({ ...prev, posts: new Date() }))
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erro ao buscar posts')
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+      toast.error('Erro ao buscar posts')
+    } finally {
+      setLoadingPosts(false)
+    }
+  }
+
+  // Forçar atualização manual (busca da API do Meta)
   const fetchPosts = async () => {
     try {
       setLoadingPosts(true)
@@ -162,6 +233,9 @@ export default function MarketingDashboard() {
       if (response.ok) {
         const data = await response.json()
         setPosts(data.posts || [])
+        setPostsLoaded(true)
+        setLastUpdated(prev => ({ ...prev, posts: new Date() }))
+        toast.success('Posts atualizados com sucesso')
       } else {
         const error = await response.json()
         toast.error(error.error || 'Erro ao buscar posts')
@@ -187,6 +261,8 @@ export default function MarketingDashboard() {
       if (response.ok) {
         const data = await response.json()
         setAudienceData(data)
+        setAudienceLoaded(true)
+        setLastUpdated(prev => ({ ...prev, audience: new Date() }))
       } else {
         const error = await response.json()
         toast.error(error.error || 'Erro ao buscar dados de audiência')
@@ -215,6 +291,8 @@ export default function MarketingDashboard() {
       if (response.ok) {
         const data = await response.json()
         setConversionsData(data)
+        setConversionsLoaded(true)
+        setLastUpdated(prev => ({ ...prev, conversions: new Date() }))
       } else {
         const error = await response.json()
         toast.error(error.error || 'Erro ao buscar dados de conversão')
@@ -225,6 +303,21 @@ export default function MarketingDashboard() {
     } finally {
       setLoadingConversions(false)
     }
+  }
+
+  // Função helper para formatar tempo relativo
+  const getTimeAgo = (date?: Date) => {
+    if (!date) return null
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'agora mesmo'
+    if (diffMins < 60) return `há ${diffMins} min`
+    if (diffHours < 24) return `há ${diffHours}h`
+    return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`
   }
 
   if (!metaConnected) {
@@ -310,7 +403,7 @@ export default function MarketingDashboard() {
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-7 lg:w-auto">
           <TabsTrigger value="overview" className="gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -557,7 +650,14 @@ export default function MarketingDashboard() {
         <TabsContent value="posts" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Análise de Posts</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Análise de Posts</h3>
+                {lastUpdated.posts && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    Atualizado {getTimeAgo(lastUpdated.posts)}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">Performance individual dos últimos 25 posts</p>
             </div>
             <Button onClick={fetchPosts} disabled={loadingPosts}>
@@ -704,7 +804,14 @@ export default function MarketingDashboard() {
         <TabsContent value="audience" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Demografia da Audiência</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Demografia da Audiência</h3>
+                {lastUpdated.audience && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    Atualizado {getTimeAgo(lastUpdated.audience)}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">Perfil completo dos seus seguidores</p>
             </div>
             <Button onClick={fetchAudience} disabled={loadingAudience}>
@@ -825,7 +932,14 @@ export default function MarketingDashboard() {
         <TabsContent value="conversions" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Conversões de Marketing</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold">Conversões de Marketing</h3>
+                {lastUpdated.conversions && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    Atualizado {getTimeAgo(lastUpdated.conversions)}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">Rastreamento de origem de pacientes e agendamentos</p>
             </div>
             <Button onClick={fetchConversions} disabled={loadingConversions}>
