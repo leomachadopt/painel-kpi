@@ -1339,8 +1339,8 @@ export default function Agenda() {
               }
 
               return (
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
+                <div className="border rounded-lg overflow-x-auto">
+                  <div className="min-w-fit">
                     <div
                       className="grid"
                       style={{
@@ -1543,8 +1543,8 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
+                <div className="border rounded-lg overflow-x-auto">
+                  <div className="min-w-fit">
                     <div
                       className="grid"
                       style={{
@@ -1780,10 +1780,11 @@ export default function Agenda() {
 
               {/* Multi-day Grid */}
               <div className="overflow-x-auto">
-                <div
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: `80px repeat(${getDateRange().length}, minmax(200px, 1fr))`,
+                <div className="min-w-fit">
+                  <div
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: `80px repeat(${getDateRange().length}, minmax(200px, 1fr))`,
                     gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
                   }}
                 >
@@ -1966,6 +1967,7 @@ export default function Agenda() {
       })}
     </React.Fragment>
   ))}
+                  </div>
                 </div>
               </div>
             </div>
