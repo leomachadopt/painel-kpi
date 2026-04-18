@@ -67,6 +67,59 @@ async function canDoctorEditAppointment(
   return true
 }
 
+/**
+ * Middleware to check if user can edit appointments
+ * - GESTOR_CLINICA and MENTOR: can edit all appointments
+ * - MEDICO: can edit only their own appointments
+ * - COLABORADOR: needs canEditAppointments permission
+ */
+async function requireAppointmentEditPermission(req: any, res: any, next: any) {
+  try {
+    const { userId, role } = getUserInfo(req)
+    const clinicId = req.params.clinicId
+
+    console.log('[requireAppointmentEditPermission] Checking permission:', { userId, role, clinicId })
+
+    // GESTOR and MENTOR always have permission
+    if (role === 'GESTOR_CLINICA' || role === 'MENTOR') {
+      console.log('[requireAppointmentEditPermission] GESTOR/MENTOR - allowed')
+      return next()
+    }
+
+    // MEDICO always has permission to edit (their own appointments will be validated in each endpoint)
+    if (role === 'MEDICO') {
+      console.log('[requireAppointmentEditPermission] MEDICO - allowed')
+      return next()
+    }
+
+    // COLABORADOR needs explicit permission
+    if (role === 'COLABORADOR') {
+      const permissionResult = await query(
+        `SELECT can_edit_appointments FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
+        [userId, clinicId]
+      )
+
+      const hasPermission = permissionResult.rows.length > 0 &&
+                           permissionResult.rows[0].can_edit_appointments === true
+
+      if (hasPermission) {
+        console.log('[requireAppointmentEditPermission] COLABORADOR with permission - allowed')
+        return next()
+      }
+
+      console.log('[requireAppointmentEditPermission] COLABORADOR without permission - denied')
+      return res.status(403).json({ error: 'Forbidden: No permission to edit appointments' })
+    }
+
+    // Unknown role
+    console.log('[requireAppointmentEditPermission] Unknown role - denied')
+    return res.status(403).json({ error: 'Forbidden' })
+  } catch (error) {
+    console.error('[requireAppointmentEditPermission] Error:', error)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
 // Helper function to update metrics based on appointment status changes
 async function updateMetricsOnStatusChange(
   clinicId: string,
@@ -424,7 +477,7 @@ router.get('/:clinicId/week', requirePermission('canViewAppointments'), async (r
 })
 
 // POST /api/appointments/:clinicId - Create new appointment
-router.post('/:clinicId', requirePermission('canEditAppointments'), async (req, res) => {
+router.post('/:clinicId', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId } = req.params
     const {
@@ -945,7 +998,7 @@ router.delete('/:clinicId/types/:typeId', requirePermission('canEditClinicConfig
 })
 
 // POST /api/appointments/:clinicId/:appointmentId/reschedule - Reschedule appointment (envia para banco)
-router.post('/:clinicId/:appointmentId/reschedule', requirePermission('canEditAppointments'), async (req, res) => {
+router.post('/:clinicId/:appointmentId/reschedule', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
     const { reason } = req.body
@@ -1044,7 +1097,7 @@ router.get('/:clinicId/patients/search', requirePermission('canViewAppointments'
 })
 
 // Update appointment (for drag & drop / resize)
-router.put('/:clinicId/:appointmentId', requirePermission('canEditAppointments'), async (req, res) => {
+router.put('/:clinicId/:appointmentId', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
     const { scheduledStart, scheduledEnd, status, confirmedAt, actualArrival, actualStart, actualEnd, roomFreedAt } = req.body
@@ -1188,7 +1241,7 @@ router.put('/:clinicId/:appointmentId', requirePermission('canEditAppointments')
 })
 
 // Delete appointment (contabiliza como cancelamento)
-router.delete('/:clinicId/:appointmentId', requirePermission('canEditAppointments'), async (req, res) => {
+router.delete('/:clinicId/:appointmentId', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
 
@@ -1591,7 +1644,7 @@ router.post('/:clinicId/:appointmentId/procedures/:procedureId/execute', async (
  * POST /api/appointments/:clinicId/:appointmentId/create-consultation-entry
  * Creates a consultation entry for an existing appointment that doesn't have one yet
  */
-router.post('/:clinicId/:appointmentId/create-consultation-entry', requirePermission('canEditAppointments'), async (req, res) => {
+router.post('/:clinicId/:appointmentId/create-consultation-entry', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId, appointmentId } = req.params
 
@@ -1855,7 +1908,7 @@ router.get('/:clinicId/pending-reschedules/count', requirePermission('canViewApp
  * POST /api/appointments/:clinicId/pending-reschedules
  * Adiciona uma remarcação ao banco
  */
-router.post('/:clinicId/pending-reschedules', requirePermission('canEditAppointments'), async (req, res) => {
+router.post('/:clinicId/pending-reschedules', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId } = req.params
     const {
@@ -1910,7 +1963,7 @@ router.post('/:clinicId/pending-reschedules', requirePermission('canEditAppointm
  * DELETE /api/appointments/:clinicId/pending-reschedules/:rescheduleId
  * Remove uma remarcação do banco (usado quando agendamento é criado ou cancelado)
  */
-router.delete('/:clinicId/pending-reschedules/:rescheduleId', requirePermission('canEditAppointments'), async (req, res) => {
+router.delete('/:clinicId/pending-reschedules/:rescheduleId', requireAppointmentEditPermission, async (req, res) => {
   try {
     const { clinicId, rescheduleId } = req.params
 

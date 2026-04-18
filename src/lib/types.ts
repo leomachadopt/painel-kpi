@@ -641,6 +641,7 @@ export interface UserPermissions {
   canManageInsuranceProviders: boolean
   hasSpecialAccountsPayableAccess: boolean
   canViewAllDoctorsConsultations: boolean
+  canEditAppointments: boolean
 }
 
 export interface User {

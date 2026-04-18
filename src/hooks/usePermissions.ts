@@ -145,15 +145,21 @@ export function usePermissions() {
     | 'canEditAdvances'
     | 'canBillAdvances'
     | 'canManageInsuranceProviders'
+    | 'canEditAppointments'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
-    
+
+    // MEDICO can always edit appointments (their own)
+    if (resource === 'canEditAppointments' && user.role === 'MEDICO') {
+      return true
+    }
+
     // Para contas a pagar, apenas colaboradores com permissão especial podem editar
     if (resource === 'canEditAccountsPayable') {
       return permissions.hasSpecialAccountsPayableAccess === true
     }
-    
+
     const value = permissions[resource]
     return value === true || value === 1
   }
@@ -187,6 +193,9 @@ export function usePermissions() {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
 
+    // MEDICO can edit appointments
+    if (user.role === 'MEDICO') return true
+
     return (
       permissions.canEditFinancial ||
       permissions.canEditConsultations ||
@@ -207,7 +216,8 @@ export function usePermissions() {
       permissions.canEditMarketing ||
       permissions.canEditAdvances ||
       permissions.canBillAdvances ||
-      permissions.canManageInsuranceProviders
+      permissions.canManageInsuranceProviders ||
+      permissions.canEditAppointments
     )
   }
 
@@ -274,6 +284,7 @@ function createEmptyPermissions(): UserPermissions {
     canBillAdvances: false,
     canManageInsuranceProviders: false,
     canViewAllDoctorsConsultations: false,
+    canEditAppointments: false,
   }
 }
 
@@ -328,5 +339,6 @@ function createFullPermissions(): UserPermissions {
     canBillAdvances: true,
     canManageInsuranceProviders: true,
     canViewAllDoctorsConsultations: true,
+    canEditAppointments: true,
   }
 }
