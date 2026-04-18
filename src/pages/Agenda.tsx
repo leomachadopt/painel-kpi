@@ -1055,9 +1055,9 @@ export default function Agenda() {
   }
 
   return (
-    <div className="p-6 space-y-6 overflow-hidden">
+    <div className="p-4 space-y-4 overflow-hidden">
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">📅 Agenda Clínica</CardTitle>
             <Button onClick={handleReloadData} variant="outline" size="sm">
@@ -1066,7 +1066,7 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 overflow-hidden max-w-full">
+        <CardContent className="p-4 pt-0 space-y-4 overflow-hidden max-w-full">
           {/* Patient Search in Agenda */}
           <div className="border-b pb-4 min-w-0">
             <Label className="text-sm font-medium mb-2 block">Buscar Paciente na Agenda</Label>
@@ -1151,15 +1151,15 @@ export default function Agenda() {
           </div>
 
           {/* Doctor Selector and View Mode */}
-          <div className="flex gap-3 min-w-0 max-w-full">
+          <div className="flex gap-2 min-w-0 max-w-full">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2 min-w-0 gap-2">
-                <Label className="shrink-0 text-sm">Médicos</Label>
+              <div className="flex items-center justify-between mb-2 min-w-0 gap-1">
+                <Label className="shrink-0 text-xs">Médicos</Label>
                 {doctors.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-xs shrink-0"
+                    className="h-6 text-xs px-2 max-w-[80px] truncate"
                     onClick={() => {
                       if (selectedDoctors.length === doctors.length) {
                         setSelectedDoctors([])
@@ -1168,16 +1168,16 @@ export default function Agenda() {
                       }
                     }}
                   >
-                    {selectedDoctors.length === doctors.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                    {selectedDoctors.length === doctors.length ? 'Limpar' : 'Todos'}
                   </Button>
                 )}
               </div>
-              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto min-w-0">
+              <div className="border rounded-md p-2 space-y-1.5 max-h-40 overflow-y-auto min-w-0">
                 {doctors.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum médico disponível</p>
+                  <p className="text-xs text-muted-foreground">Nenhum médico disponível</p>
                 ) : (
                   doctors.map((doc) => (
-                    <div key={doc.id} className="flex items-center space-x-2 min-w-0">
+                    <div key={doc.id} className="flex items-center space-x-1.5 min-w-0">
                       <Checkbox
                         id={`doctor-${doc.id}`}
                         checked={selectedDoctors.includes(doc.id)}
@@ -1188,9 +1188,9 @@ export default function Agenda() {
                             setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
                           }
                         }}
-                        className="shrink-0"
+                        className="shrink-0 h-4 w-4"
                       />
-                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-sm">
+                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs">
                         {doc.name}
                       </Label>
                     </div>
@@ -1199,16 +1199,16 @@ export default function Agenda() {
               </div>
             </div>
 
-            <div className="w-36 shrink-0">
-              <Label className="text-sm">Visualização</Label>
+            <div className="w-28 shrink-0">
+              <Label className="text-xs block mb-1">Visualização</Label>
               <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">1 Dia</SelectItem>
                   <SelectItem value="3days">3 Dias</SelectItem>
-                  <SelectItem value="week">Semana (7 dias)</SelectItem>
+                  <SelectItem value="week">Semana</SelectItem>
                 </SelectContent>
               </Select>
             </div>
