@@ -310,25 +310,33 @@ export default function Agenda() {
         const dates = getDateRange()
         const allAppointments: any[] = []
 
-        // Load appointments for each date and each doctor
+        // Create all fetch promises to run in parallel
+        const fetchPromises: Promise<any>[] = []
+
         for (const date of dates) {
           const dateStr = format(date, 'yyyy-MM-dd')
 
           for (const doctorId of selectedDoctors) {
             const url = `/api/appointments/${clinicId}?date=${dateStr}&doctorId=${doctorId}`
 
-            const response = await fetch(url, {
+            const fetchPromise = fetch(url, {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
               },
               signal: abortController.signal,
-            })
+            }).then(response => response.json())
 
-            const data = await response.json()
+            fetchPromises.push(fetchPromise)
+          }
+        }
 
-            if (data.appointments) {
-              allAppointments.push(...data.appointments)
-            }
+        // Execute all requests in parallel
+        const results = await Promise.all(fetchPromises)
+
+        // Collect all appointments from results
+        for (const data of results) {
+          if (data.appointments) {
+            allAppointments.push(...data.appointments)
           }
         }
 
@@ -1339,15 +1347,16 @@ export default function Agenda() {
               }
 
               return (
-                <div className="border rounded-lg overflow-x-auto">
-                  <div className="min-w-fit">
-                    <div
-                      className="grid"
-                      style={{
-                        gridTemplateColumns: `80px repeat(${visibleDoctors.length}, minmax(200px, 1fr))`,
-                        gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
-                      }}
-                    >
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div className="min-w-fit">
+                      <div
+                        className="grid"
+                        style={{
+                          gridTemplateColumns: `80px repeat(${visibleDoctors.length}, minmax(200px, 1fr))`,
+                          gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                        }}
+                      >
                       {/* Time column header (empty) */}
                       <div className="border-b border-r" />
 
@@ -1511,9 +1520,10 @@ export default function Agenda() {
                       })}
                     </React.Fragment>
                   ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
               )
             })()
           ) : viewMode === '3days' ? (
@@ -1543,15 +1553,16 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg overflow-x-auto">
-                  <div className="min-w-fit">
-                    <div
-                      className="grid"
-                      style={{
-                        gridTemplateColumns: `80px repeat(${totalDoctorColumns}, minmax(180px, 1fr))`,
-                        gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
-                      }}
-                    >
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div className="min-w-fit">
+                      <div
+                        className="grid"
+                        style={{
+                          gridTemplateColumns: `80px repeat(${totalDoctorColumns}, minmax(180px, 1fr))`,
+                          gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                        }}
+                      >
                       {/* Time column header (empty) */}
                       <div className="border-b border-r" />
 
@@ -1764,6 +1775,7 @@ export default function Agenda() {
                           })}
                         </React.Fragment>
                       ))}
+                      </div>
                     </div>
                   </div>
                 </div>
