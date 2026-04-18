@@ -1151,15 +1151,15 @@ export default function Agenda() {
           </div>
 
           {/* Doctor Selector and View Mode */}
-          <div className="flex gap-4">
-            <div className="flex-1">
+          <div className="flex gap-4 min-w-0">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <Label>Médicos</Label>
                 {doctors.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-xs"
+                    className="h-6 text-xs shrink-0"
                     onClick={() => {
                       if (selectedDoctors.length === doctors.length) {
                         setSelectedDoctors([])
@@ -1198,7 +1198,7 @@ export default function Agenda() {
               </div>
             </div>
 
-            <div className="w-48">
+            <div className="w-48 shrink-0">
               <Label>Visualização</Label>
               <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
                 <SelectTrigger>
