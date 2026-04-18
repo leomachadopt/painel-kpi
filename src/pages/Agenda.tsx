@@ -19,11 +19,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { useAuth } from '@/stores/useAuthStore'
-import { format, addDays, subDays } from 'date-fns'
+import { format, addDays, subDays, isAfter, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import api from '@/services/api'
 import { AddProceduresModal } from '@/components/agenda/AddProceduresModal'
@@ -88,6 +94,14 @@ export default function Agenda() {
   const [addProceduresConsultationId, setAddProceduresConsultationId] = useState<string | null>(null)
   const [addProceduresPriceTableType, setAddProceduresPriceTableType] = useState<string>('')
   const [addProceduresInsuranceProviderId, setAddProceduresInsuranceProviderId] = useState<string>('')
+
+  // Date picker calendar
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  // Patient search in agenda
+  const [patientAgendaSearch, setPatientAgendaSearch] = useState('')
+  const [patientAgendaResults, setPatientAgendaResults] = useState<any[]>([])
+  const [searchingPatientAgenda, setSearchingPatientAgenda] = useState(false)
 
   // Patient search
   const [patientSearch, setPatientSearch] = useState('')
@@ -534,6 +548,88 @@ export default function Agenda() {
     setSelectedDate(addDays(selectedDate, daysToAdd))
   }
 
+  // Weekly navigation functions
+  const navigatePreviousWeek = () => {
+    setSelectedDate(subDays(selectedDate, 7))
+  }
+
+  const navigateNextWeek = () => {
+    setSelectedDate(addDays(selectedDate, 7))
+  }
+
+  // Search patient future appointments
+  const searchPatientInAgenda = async (searchTerm: string) => {
+    if (!clinicId || !searchTerm || searchTerm.length < 2) {
+      setPatientAgendaResults([])
+      return
+    }
+
+    try {
+      setSearchingPatientAgenda(true)
+      const today = format(startOfDay(new Date()), 'yyyy-MM-dd')
+
+      // Search in all future dates (next 90 days)
+      const futureAppointments: any[] = []
+
+      for (let i = 0; i < 90; i++) {
+        const searchDate = addDays(new Date(), i)
+        const dateStr = format(searchDate, 'yyyy-MM-dd')
+
+        // Search for each selected doctor
+        for (const doctorId of selectedDoctors.length > 0 ? selectedDoctors : doctors.map(d => d.id)) {
+          const response = await fetch(
+            `/api/appointments/${clinicId}?date=${dateStr}&doctorId=${doctorId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+              },
+            }
+          )
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.appointments) {
+              futureAppointments.push(...data.appointments)
+            }
+          }
+        }
+      }
+
+      // Filter by patient code or name
+      const filtered = futureAppointments.filter(apt => {
+        const matchesCode = apt.patientCode?.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesName = apt.patientName?.toLowerCase().includes(searchTerm.toLowerCase())
+        return matchesCode || matchesName
+      })
+
+      // Sort by date and time
+      const sorted = filtered.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date)
+        if (dateCompare !== 0) return dateCompare
+        return a.scheduledStart.localeCompare(b.scheduledStart)
+      })
+
+      setPatientAgendaResults(sorted)
+    } catch (error) {
+      console.error('Error searching patient in agenda:', error)
+      toast.error('Erro ao buscar paciente na agenda')
+    } finally {
+      setSearchingPatientAgenda(false)
+    }
+  }
+
+  const goToAppointmentDate = (appointment: any) => {
+    // Parse the date string (YYYY-MM-DD)
+    const [year, month, day] = appointment.date.split('-').map(Number)
+    const appointmentDate = new Date(year, month - 1, day)
+
+    setSelectedDate(appointmentDate)
+    setPatientAgendaSearch('')
+    setPatientAgendaResults([])
+
+    toast.success(`Navegando para ${format(appointmentDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`)
+  }
+
   const handleSlotClick = (timeStr: string, date: Date, doctorId?: string) => {
     if (selectedDoctors.length === 0) {
       toast.error('Selecione pelo menos um médico primeiro')
@@ -961,6 +1057,89 @@ export default function Agenda() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Patient Search in Agenda */}
+          <div className="border-b pb-4">
+            <Label className="text-sm font-medium mb-2 block">Buscar Paciente na Agenda</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Digite o código ou nome do paciente"
+                value={patientAgendaSearch}
+                onChange={(e) => {
+                  setPatientAgendaSearch(e.target.value)
+                  searchPatientInAgenda(e.target.value)
+                }}
+                className="pl-9 pr-9"
+              />
+              {patientAgendaSearch && (
+                <button
+                  onClick={() => {
+                    setPatientAgendaSearch('')
+                    setPatientAgendaResults([])
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results */}
+            {searchingPatientAgenda && (
+              <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Buscando...
+              </div>
+            )}
+
+            {patientAgendaResults.length > 0 && (
+              <div className="mt-3 space-y-2 max-h-60 overflow-y-auto border rounded-md p-3 bg-muted/30">
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  {patientAgendaResults.length} {patientAgendaResults.length === 1 ? 'agendamento encontrado' : 'agendamentos encontrados'}
+                </div>
+                {patientAgendaResults.map((apt, idx) => (
+                  <div
+                    key={`${apt.id}-${idx}`}
+                    className="border rounded-md p-3 bg-background hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {apt.patientCode} - {apt.patientName}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          📅 {format(new Date(apt.date.split('-').map(Number)[0], apt.date.split('-').map(Number)[1] - 1, apt.date.split('-').map(Number)[2]), "EEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          🕐 {apt.scheduledStart.substring(0, 5)} - {apt.scheduledEnd.substring(0, 5)}
+                        </div>
+                        {apt.doctor && (
+                          <div className="text-xs text-muted-foreground">
+                            👨‍⚕️ {apt.doctor.name}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => goToAppointmentDate(apt)}
+                        className="shrink-0"
+                      >
+                        Ir para data
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!searchingPatientAgenda && patientAgendaSearch.length >= 2 && patientAgendaResults.length === 0 && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Nenhum agendamento futuro encontrado para "{patientAgendaSearch}"
+              </div>
+            )}
+          </div>
+
           {/* Doctor Selector and View Mode */}
           <div className="flex gap-4">
             <div className="flex-1">
@@ -1026,20 +1205,64 @@ export default function Agenda() {
 
           {/* Date Navigator */}
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={navigatePrevious}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Weekly navigation - Previous */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigatePreviousWeek}
+                title="Voltar 1 semana"
+              >
+                <span className="text-sm font-bold">&lt;&lt;</span>
+              </Button>
+
+              {/* Daily navigation - Previous */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigatePrevious}
+                title={viewMode === 'day' ? 'Voltar 1 dia' : viewMode === '3days' ? 'Voltar 3 dias' : 'Voltar 7 dias'}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
 
             <div className="flex flex-col items-center">
-              <div className="text-lg font-medium">
-                {viewMode === 'day'
-                  ? format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })
-                  : `${format(selectedDate, "d 'de' MMM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d 'de' MMM 'de' yyyy", { locale: ptBR })}`
-                }
+              <div className="flex items-center gap-2">
+                <div className="text-lg font-medium">
+                  {viewMode === 'day'
+                    ? format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })
+                    : `${format(selectedDate, "d 'de' MMM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d 'de' MMM 'de' yyyy", { locale: ptBR })}`
+                  }
+                </div>
+
+                {/* Date Picker */}
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      title="Selecionar data"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date)
+                          setIsCalendarOpen(false)
+                        }
+                      }}
+                      locale={ptBR}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               {appointments.length > 0 && (
                 <div className="text-xs text-muted-foreground mt-1">
@@ -1048,13 +1271,27 @@ export default function Agenda() {
               )}
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={navigateNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Daily navigation - Next */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigateNext}
+                title={viewMode === 'day' ? 'Avançar 1 dia' : viewMode === '3days' ? 'Avançar 3 dias' : 'Avançar 7 dias'}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+
+              {/* Weekly navigation - Next */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigateNextWeek}
+                title="Avançar 1 semana"
+              >
+                <span className="text-sm font-bold">&gt;&gt;</span>
+              </Button>
+            </div>
           </div>
 
           <Button
