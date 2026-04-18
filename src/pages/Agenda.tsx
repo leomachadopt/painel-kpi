@@ -1151,10 +1151,10 @@ export default function Agenda() {
           </div>
 
           {/* Doctor Selector and View Mode */}
-          <div className="flex gap-4 min-w-0">
+          <div className="flex gap-3 min-w-0 max-w-full">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2 min-w-0">
-                <Label className="shrink-0">Médicos</Label>
+              <div className="flex items-center justify-between mb-2 min-w-0 gap-2">
+                <Label className="shrink-0 text-sm">Médicos</Label>
                 {doctors.length > 0 && (
                   <Button
                     variant="ghost"
@@ -1190,7 +1190,7 @@ export default function Agenda() {
                         }}
                         className="shrink-0"
                       />
-                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate">
+                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-sm">
                         {doc.name}
                       </Label>
                     </div>
@@ -1199,10 +1199,10 @@ export default function Agenda() {
               </div>
             </div>
 
-            <div className="w-48 shrink-0">
-              <Label>Visualização</Label>
+            <div className="w-36 shrink-0">
+              <Label className="text-sm">Visualização</Label>
               <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
