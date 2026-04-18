@@ -690,6 +690,26 @@ export default function Agenda() {
     return colors[status] || colors.scheduled
   }
 
+  // Get current status of appointment with label, color, and icon
+  const getAppointmentCurrentStatus = (appointment: any) => {
+    if (appointment.status === 'no_show') {
+      return { label: 'Falta', color: 'bg-red-600 text-white', icon: '✗' }
+    }
+    if (appointment.actualEnd) {
+      return { label: 'Concluído', color: 'bg-green-600 text-white', icon: '✓' }
+    }
+    if (appointment.actualStart) {
+      return { label: 'Atendimento iniciou', color: 'bg-yellow-600 text-white', icon: '▶' }
+    }
+    if (appointment.actualArrival) {
+      return { label: 'Paciente chegou', color: 'bg-purple-600 text-white', icon: '👤' }
+    }
+    if (appointment.confirmedAt) {
+      return { label: 'Confirmado', color: 'bg-blue-600 text-white', icon: '✓' }
+    }
+    return { label: 'Agendado', color: 'bg-gray-500 text-white', icon: '📅' }
+  }
+
   // Calculate appointment duration in minutes
   const getAppointmentDuration = (start: string, end: string): number => {
     return timeToMinutes(end) - timeToMinutes(start)
@@ -1148,15 +1168,22 @@ export default function Agenda() {
                     const duration = endMinutes - startMinutes
                     const offsetFromTop = ((startMinutes - CLINIC_START) / SLOT_DURATION) * 60
                     const height = (duration / SLOT_DURATION) * 60
+                    const status = getAppointmentCurrentStatus(appointment)
+
+                    // Get appointment type color with opacity for background
+                    const appointmentTypeColor = appointment.appointmentType?.color || '#1D9E75'
+                    const rgbColor = appointmentTypeColor.startsWith('#')
+                      ? `${appointmentTypeColor}20` // Add 20 (12.5% opacity) to hex color
+                      : appointmentTypeColor
 
                     return (
                       <div
                         key={appointment.id}
-                        className={`absolute left-0 right-0 pointer-events-auto cursor-move ${getStatusColor(appointment.status)} bg-opacity-20 border-l-4 rounded-r p-2 group hover:shadow-lg transition-shadow overflow-hidden`}
+                        className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
                         style={{
                           top: `${offsetFromTop}px`,
                           height: `${height}px`,
-                          borderLeftColor: appointment.appointmentType?.color || '#1D9E75',
+                          backgroundColor: rgbColor,
                         }}
                         draggable
                         onClick={(e) => {
@@ -1213,46 +1240,17 @@ export default function Agenda() {
                             Código: {appointment.patientCode}
                           </div>
                         )}
-                        {appointment.appointmentType && (
-                          <div className="text-xs text-muted-foreground">
-                            {appointment.appointmentType.name}
-                          </div>
-                        )}
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {appointment.scheduledStart.substring(0, 5)} - {appointment.scheduledEnd.substring(0, 5)}
+
+                        {/* Status badge */}
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
+                            <span className="mr-1">{status.icon}</span>
+                            {status.label}
+                          </span>
                         </div>
 
-                        {/* Metrics badges */}
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {appointment.status === 'no_show' && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-800" title="Paciente não compareceu">
-                              ✗ Falta
-                            </span>
-                          )}
-                          {appointment.status !== 'no_show' && (
-                            <>
-                              {appointment.confirmedAt && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800" title="Consulta confirmada">
-                                  ✓ Confirmada
-                                </span>
-                              )}
-                              {appointment.actualArrival && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-800" title="Paciente chegou">
-                                  ✓ Chegou
-                                </span>
-                              )}
-                              {appointment.actualStart && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-800" title="Atendimento iniciou">
-                                  ✓ Iniciou
-                                </span>
-                              )}
-                              {appointment.actualEnd && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-green-100 text-green-800" title="Atendimento concluído">
-                                  ✓ Concluído
-                                </span>
-                              )}
-                            </>
-                          )}
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {appointment.scheduledStart.substring(0, 5)} - {appointment.scheduledEnd.substring(0, 5)}
                         </div>
 
                         {/* Resize handle */}
