@@ -1066,20 +1066,20 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0 space-y-4 overflow-hidden max-w-full">
+        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden max-w-full">
           {/* Patient Search in Agenda */}
-          <div className="border-b pb-4 min-w-0">
-            <Label className="text-sm font-medium mb-2 block">Buscar Paciente na Agenda</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="border-b pb-3 min-w-0">
+            <Label className="text-xs font-medium mb-1.5 block">Buscar Paciente</Label>
+            <div className="relative max-w-sm">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Digite o código ou nome do paciente"
+                placeholder="Código ou nome do paciente"
                 value={patientAgendaSearch}
                 onChange={(e) => {
                   setPatientAgendaSearch(e.target.value)
                   searchPatientInAgenda(e.target.value)
                 }}
-                className="pl-9 pr-9"
+                className="pl-8 pr-8 h-8 text-xs"
               />
               {patientAgendaSearch && (
                 <button
@@ -1087,9 +1087,9 @@ export default function Agenda() {
                     setPatientAgendaSearch('')
                     setPatientAgendaResults([])
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -1151,15 +1151,15 @@ export default function Agenda() {
           </div>
 
           {/* Doctor Selector and View Mode */}
-          <div className="flex gap-2 min-w-0 max-w-full">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2 min-w-0 gap-1">
+          <div className="flex gap-2 min-w-0">
+            <div className="w-56 shrink-0">
+              <div className="flex items-center justify-between mb-1.5 gap-1">
                 <Label className="shrink-0 text-xs">Médicos</Label>
                 {doctors.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-xs px-2 max-w-[80px] truncate"
+                    className="h-5 text-xs px-1.5 hover:bg-accent"
                     onClick={() => {
                       if (selectedDoctors.length === doctors.length) {
                         setSelectedDoctors([])
@@ -1172,12 +1172,12 @@ export default function Agenda() {
                   </Button>
                 )}
               </div>
-              <div className="border rounded-md p-2 space-y-1.5 max-h-40 overflow-y-auto min-w-0">
+              <div className="border rounded-md p-1.5 space-y-1 max-h-32 overflow-y-auto">
                 {doctors.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhum médico disponível</p>
+                  <p className="text-xs text-muted-foreground">Nenhum médico</p>
                 ) : (
                   doctors.map((doc) => (
-                    <div key={doc.id} className="flex items-center space-x-1.5 min-w-0">
+                    <div key={doc.id} className="flex items-center space-x-1.5">
                       <Checkbox
                         id={`doctor-${doc.id}`}
                         checked={selectedDoctors.includes(doc.id)}
@@ -1188,9 +1188,9 @@ export default function Agenda() {
                             setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
                           }
                         }}
-                        className="shrink-0 h-4 w-4"
+                        className="shrink-0 h-3.5 w-3.5"
                       />
-                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs">
+                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs leading-tight">
                         {doc.name}
                       </Label>
                     </div>
@@ -1200,7 +1200,7 @@ export default function Agenda() {
             </div>
 
             <div className="w-28 shrink-0">
-              <Label className="text-xs block mb-1">Visualização</Label>
+              <Label className="text-xs block mb-1.5">Visualização</Label>
               <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
