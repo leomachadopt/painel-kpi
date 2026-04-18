@@ -1571,6 +1571,28 @@ export default function Agenda() {
               </>
             )}
 
+            {/* Doctor Selection (only for GESTOR and MENTOR) */}
+            {(user?.role === 'GESTOR_CLINICA' || user?.role === 'MENTOR') && (
+              <div>
+                <Label>Médico Responsável *</Label>
+                <Select
+                  value={selectedDoctorForAppointment}
+                  onValueChange={(val) => setSelectedDoctorForAppointment(val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o médico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Conditional: New Patient Form OR Reschedule Search OR Existing Patient Search */}
             {newAppointment.isNewPatient ? (
               <>
