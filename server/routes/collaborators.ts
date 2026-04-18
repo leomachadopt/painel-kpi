@@ -659,6 +659,200 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
 })
 
 /**
+ * GET /api/collaborators/doctors
+ * List all doctors for the clinic
+ */
+router.get('/doctors', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    // Get doctors from users table (with role MEDICO)
+    const usersResult = await query(
+      `SELECT id, name, email, whatsapp, active, created_at
+       FROM users
+       WHERE clinic_id = $1 AND role = 'MEDICO'
+       ORDER BY name ASC`,
+      [clinicId]
+    )
+
+    // Get doctors from clinic_doctors table
+    const doctorsResult = await query(
+      `SELECT id, name, email, whatsapp
+       FROM clinic_doctors
+       WHERE clinic_id = $1
+       ORDER BY name ASC`,
+      [clinicId]
+    )
+
+    // Merge both lists - users have priority
+    const doctorsMap = new Map()
+
+    // Add from clinic_doctors first
+    for (const doctor of doctorsResult.rows) {
+      doctorsMap.set(doctor.id, {
+        id: doctor.id,
+        name: doctor.name,
+        email: doctor.email || '',
+        whatsapp: doctor.whatsapp || '',
+        active: true, // clinic_doctors doesn't have active field
+        hasUserAccount: false,
+        userId: null,
+      })
+    }
+
+    // Override/add from users table
+    for (const user of usersResult.rows) {
+      // Find matching doctor by email
+      const doctorEntry = doctorsResult.rows.find(d => d.email === user.email)
+
+      if (doctorEntry) {
+        // Update existing doctor with user info
+        doctorsMap.set(doctorEntry.id, {
+          id: doctorEntry.id,
+          name: user.name,
+          email: user.email,
+          whatsapp: user.whatsapp || '',
+          active: user.active,
+          hasUserAccount: true,
+          userId: user.id,
+          createdAt: user.created_at,
+        })
+      } else {
+        // User without matching clinic_doctors entry (shouldn't happen but handle it)
+        doctorsMap.set(user.id, {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          whatsapp: user.whatsapp || '',
+          active: user.active,
+          hasUserAccount: true,
+          userId: user.id,
+          createdAt: user.created_at,
+        })
+      }
+    }
+
+    const doctors = Array.from(doctorsMap.values())
+
+    res.json(doctors)
+  } catch (error) {
+    console.error('Get doctors error:', error)
+    res.status(500).json({ error: 'Failed to get doctors' })
+  }
+})
+
+/**
+ * PUT /api/collaborators/doctors/:id
+ * Update doctor basic info (updates both users and clinic_doctors tables)
+ */
+router.put('/doctors/:id', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+    const userId = req.auth?.sub
+    const doctorId = req.params.id
+
+    if (!clinicId || !userId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    const { name, email, whatsapp, active, password } = req.body
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' })
+    }
+
+    // Check if doctor exists in clinic_doctors
+    const doctorCheck = await query(
+      'SELECT id, email as old_email FROM clinic_doctors WHERE id = $1 AND clinic_id = $2',
+      [doctorId, clinicId]
+    )
+
+    if (doctorCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Doctor not found' })
+    }
+
+    const oldEmail = doctorCheck.rows[0].old_email
+
+    // Check if new email is already in use by another user
+    if (email !== oldEmail) {
+      const existingUser = await query(
+        'SELECT id FROM users WHERE email = $1 AND clinic_id = $2',
+        [email, clinicId]
+      )
+
+      // Allow if it's the same doctor's user account
+      const existingDoctor = await query(
+        'SELECT id FROM users WHERE email = $1 AND clinic_id = $2 AND role = $3',
+        [oldEmail, clinicId, 'MEDICO']
+      )
+
+      if (existingUser.rows.length > 0 && existingDoctor.rows.length === 0) {
+        return res.status(400).json({ error: 'Email already in use' })
+      }
+    }
+
+    // Update clinic_doctors table
+    await query(
+      `UPDATE clinic_doctors
+       SET name = $1, email = $2, whatsapp = $3
+       WHERE id = $4 AND clinic_id = $5`,
+      [name, email, whatsapp || null, doctorId, clinicId]
+    )
+
+    // Update users table if doctor has a user account
+    const userResult = await query(
+      'SELECT id FROM users WHERE email = $1 AND clinic_id = $2 AND role = $3',
+      [oldEmail, clinicId, 'MEDICO']
+    )
+
+    if (userResult.rows.length > 0) {
+      const doctorUserId = userResult.rows[0].id
+
+      // Update user with optional password
+      if (password && password.trim() !== '') {
+        await query(
+          `UPDATE users
+           SET name = $1, email = $2, whatsapp = $3, active = $4, password_hash = $5, updated_at = NOW()
+           WHERE id = $6`,
+          [name, email, whatsapp || null, active !== undefined ? active : true, password, doctorUserId]
+        )
+      } else {
+        await query(
+          `UPDATE users
+           SET name = $1, email = $2, whatsapp = $3, active = $4, updated_at = NOW()
+           WHERE id = $5`,
+          [name, email, whatsapp || null, active !== undefined ? active : true, doctorUserId]
+        )
+      }
+    }
+
+    // Log audit
+    const auditData: any = { name, email, whatsapp }
+    if (password) {
+      auditData.passwordChanged = true
+    }
+    await logAudit(
+      userId,
+      clinicId,
+      'UPDATE',
+      'doctor',
+      doctorId,
+      auditData,
+      req.ip
+    )
+
+    res.json({ message: 'Doctor updated successfully' })
+  } catch (error) {
+    console.error('Update doctor error:', error)
+    res.status(500).json({ error: 'Failed to update doctor' })
+  }
+})
+
+/**
  * DELETE /api/collaborators/:id
  * Delete a collaborator
  */

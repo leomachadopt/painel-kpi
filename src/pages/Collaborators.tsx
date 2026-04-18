@@ -53,12 +53,16 @@ export default function Collaborators() {
     : RESOURCE_PERMISSIONS.filter(r => r.id !== 'advances')
   
   const [collaborators, setCollaborators] = useState<any[]>([])
+  const [doctors, setDoctors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingDoctors, setLoadingDoctors] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showEditDoctorModal, setShowEditDoctorModal] = useState(false)
   const [selectedCollaborator, setSelectedCollaborator] = useState<any | null>(null)
+  const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   // Create form state
@@ -78,6 +82,15 @@ export default function Collaborators() {
     password: '',
   })
 
+  // Edit doctor form state
+  const [editDoctorForm, setEditDoctorForm] = useState({
+    name: '',
+    email: '',
+    whatsapp: '',
+    active: true,
+    password: '',
+  })
+
   // Resource permissions form state (new format)
   const [resourcePermissions, setResourcePermissions] = useState<ResourcePermissions>({})
   
@@ -85,9 +98,10 @@ export default function Collaborators() {
   const [hasSpecialAccountsPayableAccess, setHasSpecialAccountsPayableAccess] = useState(false)
   const [canViewAllDoctorsConsultations, setCanViewAllDoctorsConsultations] = useState(false)
 
-  // Load collaborators
+  // Load collaborators and doctors
   useEffect(() => {
     loadCollaborators()
+    loadDoctors()
   }, [])
 
   const loadCollaborators = async () => {
@@ -100,6 +114,19 @@ export default function Collaborators() {
       toast.error(t('collaborators.errorLoadingCollaborators'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadDoctors = async () => {
+    try {
+      setLoadingDoctors(true)
+      const data = await collaboratorsApi.listDoctors()
+      setDoctors(data)
+    } catch (error) {
+      console.error('Failed to load doctors:', error)
+      toast.error('Erro ao carregar médicos')
+    } finally {
+      setLoadingDoctors(false)
     }
   }
 
@@ -236,6 +263,52 @@ export default function Collaborators() {
     }
   }
 
+  const handleOpenEditDoctor = (doctor: any) => {
+    setSelectedDoctor(doctor)
+    setEditDoctorForm({
+      name: doctor.name || '',
+      email: doctor.email || '',
+      whatsapp: doctor.whatsapp || '',
+      active: doctor.active !== undefined ? doctor.active : true,
+      password: '',
+    })
+    setShowEditDoctorModal(true)
+  }
+
+  const handleUpdateDoctor = async () => {
+    if (!selectedDoctor) return
+
+    if (!editDoctorForm.name || !editDoctorForm.email) {
+      toast.error('Preencha os campos obrigatórios')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const updateData: { name: string; email: string; whatsapp?: string; active: boolean; password?: string } = {
+        name: editDoctorForm.name,
+        email: editDoctorForm.email,
+        whatsapp: editDoctorForm.whatsapp || undefined,
+        active: editDoctorForm.active,
+      }
+
+      if (editDoctorForm.password && editDoctorForm.password.trim() !== '') {
+        updateData.password = editDoctorForm.password
+      }
+
+      await collaboratorsApi.updateDoctor(selectedDoctor.id, updateData)
+      toast.success('Médico atualizado com sucesso')
+      setShowEditDoctorModal(false)
+      setSelectedDoctor(null)
+      setEditDoctorForm({ name: '', email: '', whatsapp: '', active: true, password: '' })
+      loadDoctors()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar médico')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (!isGestor()) {
     return (
       <div className="p-8">
@@ -329,6 +402,68 @@ export default function Collaborators() {
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
                         {t('collaborators.remove')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Doctors Card */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Médicos</CardTitle>
+          <CardDescription>
+            Gerir informações dos médicos da clínica
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingDoctors ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : doctors.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              Nenhum médico cadastrado
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>WhatsApp</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {doctors.map((doctor) => (
+                  <TableRow key={doctor.id}>
+                    <TableCell className="font-medium">{doctor.name}</TableCell>
+                    <TableCell>{doctor.email || '-'}</TableCell>
+                    <TableCell>{doctor.whatsapp || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={doctor.active ? 'default' : 'secondary'}>
+                        {doctor.active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                      {doctor.hasUserAccount && (
+                        <Badge variant="outline" className="ml-2">
+                          Tem acesso ao sistema
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenEditDoctor(doctor)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Editar
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -563,6 +698,86 @@ export default function Collaborators() {
             <Button variant="destructive" onClick={handleDeleteCollaborator} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('collaborators.remove')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Doctor Modal */}
+      <Dialog open={showEditDoctorModal} onOpenChange={setShowEditDoctorModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Médico</DialogTitle>
+            <DialogDescription>
+              Atualizar informações do médico
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-doctor-name">Nome</Label>
+              <Input
+                id="edit-doctor-name"
+                value={editDoctorForm.name}
+                onChange={(e) => setEditDoctorForm({ ...editDoctorForm, name: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-doctor-email">Email</Label>
+              <Input
+                id="edit-doctor-email"
+                type="email"
+                value={editDoctorForm.email}
+                onChange={(e) => setEditDoctorForm({ ...editDoctorForm, email: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-doctor-whatsapp">WhatsApp (opcional)</Label>
+              <Input
+                id="edit-doctor-whatsapp"
+                value={editDoctorForm.whatsapp}
+                onChange={(e) => setEditDoctorForm({ ...editDoctorForm, whatsapp: e.target.value })}
+                placeholder="Ex: +351 912 345 678"
+              />
+            </div>
+            {selectedDoctor?.hasUserAccount && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-doctor-password">Nova senha (opcional)</Label>
+                  <Input
+                    id="edit-doctor-password"
+                    type="password"
+                    value={editDoctorForm.password}
+                    onChange={(e) => setEditDoctorForm({ ...editDoctorForm, password: e.target.value })}
+                    placeholder="Deixe em branco para manter a senha atual"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deixe em branco se não quiser alterar a senha
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit-doctor-active"
+                    checked={editDoctorForm.active}
+                    onCheckedChange={(checked) =>
+                      setEditDoctorForm({ ...editDoctorForm, active: checked === true })
+                    }
+                  />
+                  <Label htmlFor="edit-doctor-active" className="cursor-pointer">
+                    Médico ativo no sistema
+                  </Label>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDoctorModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateDoctor} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar alterações
             </Button>
           </DialogFooter>
         </DialogContent>

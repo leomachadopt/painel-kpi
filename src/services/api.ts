@@ -1151,6 +1151,15 @@ export const collaboratorsApi = {
     apiCall<{ message: string }>(`/collaborators/${id}`, {
       method: 'DELETE',
     }),
+
+  // Doctors API
+  listDoctors: () => apiCall<any[]>('/collaborators/doctors'),
+
+  updateDoctor: (id: string, data: { name: string; email: string; whatsapp?: string; active?: boolean; password?: string }) =>
+    apiCall<{ message: string }>(`/collaborators/doctors/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 }
 
 // ================================
