@@ -1562,7 +1562,7 @@ export default function Agenda() {
                         className="grid"
                         style={{
                           gridTemplateColumns: `80px repeat(${totalDoctorColumns}, minmax(180px, 1fr))`,
-                          gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                          gridTemplateRows: `32px 32px repeat(${timeSlots.length}, 60px)`,
                         }}
                       >
                       {/* Time column header (empty) */}
@@ -1817,7 +1817,7 @@ export default function Agenda() {
                         className="grid"
                         style={{
                           gridTemplateColumns: `80px repeat(${totalDoctorColumns}, minmax(180px, 1fr))`,
-                          gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                          gridTemplateRows: `32px 32px repeat(${timeSlots.length}, 60px)`,
                         }}
                       >
                       {/* Time column header (empty) */}
