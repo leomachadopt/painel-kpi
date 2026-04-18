@@ -29,6 +29,7 @@ import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Search, X }
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { useAuth } from '@/stores/useAuthStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { format, addDays, subDays, isAfter, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import api from '@/services/api'
@@ -43,6 +44,7 @@ export default function Agenda() {
   const { clinicId } = useParams<{ clinicId: string }>()
   const { clinics, reloadClinics } = useDataStore()
   const { user } = useAuth()
+  const { canEdit } = usePermissions()
   const clinic = clinics.find((c) => c.id === clinicId)
 
   // Start with today's date
@@ -1782,207 +1784,260 @@ export default function Agenda() {
               )
             })()
           ) : (
-            /* ========== WEEK VIEW: Grid by Days (Original) ========== */
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-muted px-4 py-2 font-medium">
-                {selectedDoctors.length === 1
-                  ? doctors.find(d => d.id === selectedDoctors[0])?.name
-                  : `${selectedDoctors.length} médicos selecionados`}
-              </div>
+            /* ========== WEEK VIEW (7 DAYS): Grid by Days with Doctor Columns ========== */
+            (() => {
+              const dateRange = getDateRange()
 
-              {/* Multi-day Grid */}
-              <div className="overflow-x-auto">
-                <div className="min-w-fit">
-                  <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: `80px repeat(${getDateRange().length}, minmax(200px, 1fr))`,
-                    gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
-                  }}
-                >
-                  {/* Time column header (empty) */}
-                  <div className="border-b border-r" />
+              // For each day, get doctors with appointments
+              const dayDoctorsMap = dateRange.map(date => {
+                const dayAppointments = getAppointmentsForDate(date)
+                const doctorsWithAppointments = new Set(
+                  dayAppointments
+                    .map(apt => apt.doctor?.id)
+                    .filter(Boolean)
+                )
+                return {
+                  date,
+                  doctors: selectedDoctors.filter(doctorId => doctorsWithAppointments.has(doctorId)),
+                  isClosed: !getClinicHoursForDate(date)
+                }
+              })
 
-                  {/* Day headers */}
-                  {getDateRange().map((date) => {
-                    const dateStr = format(date, 'yyyy-MM-dd')
-                    const isToday = dateStr === format(new Date(), 'yyyy-MM-dd')
-                    return (
+              // Calculate total columns needed
+              const totalDoctorColumns = dayDoctorsMap.reduce((sum, day) => {
+                if (day.isClosed || day.doctors.length === 0) return sum + 1 // Empty or closed day = 1 column
+                return sum + day.doctors.length
+              }, 0)
+
+              return (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div className="min-w-fit">
                       <div
-                        key={dateStr}
-                        className={`border-b border-r px-2 text-center text-sm font-medium flex items-center justify-center ${
-                          isToday ? 'bg-primary/10 text-primary' : ''
-                        }`}
+                        className="grid"
+                        style={{
+                          gridTemplateColumns: `80px repeat(${totalDoctorColumns}, minmax(180px, 1fr))`,
+                          gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                        }}
                       >
-                        {format(date, 'EEE, dd/MM', { locale: ptBR })}
-                        {isToday && <span className="ml-1 text-xs">(Hoje)</span>}
-                      </div>
-                    )
-                  })}
+                      {/* Time column header (empty) */}
+                      <div className="border-b border-r" />
 
-                  {/* Time slots */}
-                  {timeSlots.map((slot, slotIndex) => (
-                    <React.Fragment key={`slot-${slotIndex}-${slot.time}`}>
-                      {/* Time label */}
-                      <div
-                        className="border-b border-r flex items-center justify-center text-sm text-muted-foreground"
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        {slot.time}
-                      </div>
-
-                      {/* Day slots */}
-                      {getDateRange().map((date) => {
-                        const dayAppointments = getAppointmentsForDate(date)
-                        const dateStr = format(date, 'yyyy-MM-dd')
-                        const dayHours = getClinicHoursForDate(date)
-                        const isClosed = !dayHours
+                      {/* Day + Doctor headers */}
+                      {dayDoctorsMap.map((dayInfo, dayIdx) => {
+                        const dateStr = format(dayInfo.date, 'yyyy-MM-dd')
+                        const isToday = dateStr === format(new Date(), 'yyyy-MM-dd')
+                        const numCols = dayInfo.isClosed || dayInfo.doctors.length === 0 ? 1 : dayInfo.doctors.length
 
                         return (
-                          <div key={`${dateStr}-${slot.time}`} className="border-b border-r relative">
-                            {isClosed && slotIndex === 0 ? (
-                              <div
-                                className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-muted/30"
-                                style={{
-                                  gridRow: `2 / ${timeSlots.length + 2}`,
-                                  gridColumn: 'span 1',
-                                }}
-                              >
-                                <div className="text-center">
-                                  <div className="mb-2">🔒</div>
-                                  <div>Clínica Fechada</div>
-                                </div>
-                              </div>
-                            ) : !isClosed ? (
-                              <>
-                                <button
-                                  onClick={() => handleSlotClick(slot.time, date)}
-                                  className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
-                                />
+                          <React.Fragment key={dateStr}>
+                            {/* Day header spanning all doctor columns */}
+                            <div
+                              className={`border-b border-r px-2 text-center text-sm font-semibold flex items-center justify-center ${
+                                isToday ? 'bg-primary/10 text-primary' : 'bg-muted'
+                              }`}
+                              style={{ gridColumn: `span ${numCols}` }}
+                            >
+                              {format(dayInfo.date, 'EEE, dd/MM', { locale: ptBR })}
+                              {isToday && <span className="ml-1 text-xs">(Hoje)</span>}
+                            </div>
+                          </React.Fragment>
+                        )
+                      })}
 
-                                {/* Appointments overlay - only render on first slot */}
-                                {slotIndex === 0 && (
-                                  <div
-                                    className="absolute pointer-events-none z-10"
-                                    style={{
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      height: `${timeSlots.length * 60}px`,
-                                    }}
-                                  >
-                          {dayAppointments.map((appointment) => {
-                    const startMinutes = timeToMinutes(appointment.scheduledStart)
-                    const endMinutes = timeToMinutes(appointment.scheduledEnd)
-                    const duration = endMinutes - startMinutes
-                    const offsetFromTop = ((startMinutes - CLINIC_START) / SLOT_DURATION) * 60
-                    const height = (duration / SLOT_DURATION) * 60
-                    const status = getAppointmentCurrentStatus(appointment)
+                      {/* Doctor sub-headers */}
+                      <div className="border-b border-r" /> {/* Empty cell for time column */}
+                      {dayDoctorsMap.map((dayInfo, dayIdx) => {
+                        if (dayInfo.isClosed || dayInfo.doctors.length === 0) {
+                          return (
+                            <div
+                              key={`${format(dayInfo.date, 'yyyy-MM-dd')}-empty`}
+                              className="border-b border-r px-2 text-center text-xs text-muted-foreground flex items-center justify-center bg-muted/30"
+                            >
+                              {dayInfo.isClosed ? '🔒 Fechado' : ''}
+                            </div>
+                          )
+                        }
 
-                    // Get appointment type color with opacity for background
-                    const appointmentTypeColor = appointment.appointmentType?.color || '#1D9E75'
-                    const rgbColor = appointmentTypeColor.startsWith('#')
-                      ? `${appointmentTypeColor}20` // Add 20 (12.5% opacity) to hex color
-                      : appointmentTypeColor
+                        return dayInfo.doctors.map((doctorId) => {
+                          const doctor = doctors.find(d => d.id === doctorId)
+                          return (
+                            <div
+                              key={`${format(dayInfo.date, 'yyyy-MM-dd')}-${doctorId}`}
+                              className="border-b border-r px-2 text-center text-xs font-medium flex items-center justify-center bg-muted/50"
+                            >
+                              {doctor?.name || 'Médico'}
+                            </div>
+                          )
+                        })
+                      })}
 
-                    return (
-                      <div
-                        key={appointment.id}
-                        className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
-                        style={{
-                          top: `${offsetFromTop}px`,
-                          height: `${height}px`,
-                          backgroundColor: rgbColor,
-                        }}
-                        draggable
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setEditingAppointment(appointment)
-                          setIsEditModalOpen(true)
-                          loadRescheduleHistory(appointment)
-                          loadPlanProcedures(appointment)
-                        }}
-                        onDragStart={(e) => {
-                          setDraggingAppointment(appointment)
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          setDragOffset(e.clientY - rect.top)
-                        }}
-                        onDragEnd={(e) => {
-                          if (!draggingAppointment) return
-
-                          // Calculate new time based on drop position
-                          const container = e.currentTarget.parentElement
-                          if (!container) return
-
-                          const rect = container.getBoundingClientRect()
-                          const y = e.clientY - rect.top - dragOffset
-
-                          // Calculate which slot we're in (rounded to nearest 15min slot)
-                          const pixelsFromTop = Math.max(0, y)
-                          const slotIndex = Math.round(pixelsFromTop / 60)
-                          const newStartMinutes = CLINIC_START + (slotIndex * SLOT_DURATION)
-                          const newEndMinutes = newStartMinutes + duration
-
-                          // Ensure we don't go outside clinic hours
-                          if (newStartMinutes >= CLINIC_START && newEndMinutes <= CLINIC_END) {
-                            // Update appointment
-                            updateAppointmentTime(
-                              appointment.id,
-                              minutesToTime(newStartMinutes),
-                              minutesToTime(newEndMinutes)
-                            )
-                          }
-
-                          setDraggingAppointment(null)
-                        }}
-                      >
-                        {/* Patient code and name */}
-                        <div className="font-medium text-sm">
-                          {appointment.patientCode ? `${appointment.patientCode} - ${appointment.patientName}` : appointment.patientName}
-                        </div>
-
-                        {/* Doctor badge (only if multiple doctors selected) */}
-                        {selectedDoctors.length > 1 && appointment.doctor && (
-                          <div className="text-[10px] font-semibold text-primary bg-primary/10 inline-block px-1.5 py-0.5 rounded mt-0.5">
-                            {appointment.doctor.name}
+                      {/* Time slots */}
+                      {timeSlots.map((slot, slotIndex) => (
+                        <React.Fragment key={`slot-${slotIndex}-${slot.time}`}>
+                          {/* Time label */}
+                          <div className="border-b border-r flex items-center justify-center text-sm text-muted-foreground">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {slot.time}
                           </div>
-                        )}
 
-                        {/* Status badge */}
-                        <div className="mt-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
-                            <span className="mr-1">{status.icon}</span>
-                            {status.label}
-                          </span>
-                        </div>
+                          {/* Day-Doctor cells */}
+                          {dayDoctorsMap.map((dayInfo) => {
+                            const dateStr = format(dayInfo.date, 'yyyy-MM-dd')
 
-                        {/* Resize handle */}
-                        <div
-                          className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
-                          onMouseDown={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            setResizingAppointment(appointment)
-                            setResizeStartY(e.clientY)
-                            setResizeStartHeight(height)
-                          }}
-                        />
+                            if (dayInfo.isClosed) {
+                              return (
+                                <div key={`${dateStr}-${slot.time}-closed`} className="border-b border-r relative">
+                                  {slotIndex === 0 && (
+                                    <div
+                                      className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-muted/30"
+                                      style={{
+                                        gridRow: `3 / ${timeSlots.length + 3}`,
+                                        gridColumn: 'span 1',
+                                      }}
+                                    >
+                                      <div className="text-center">
+                                        <div className="mb-2">🔒</div>
+                                        <div>Clínica Fechada</div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            }
+
+                            if (dayInfo.doctors.length === 0) {
+                              return (
+                                <div key={`${dateStr}-${slot.time}-empty`} className="border-b border-r relative">
+                                  <button
+                                    onClick={() => handleSlotClick(slot.time, dayInfo.date)}
+                                    className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                  />
+                                </div>
+                              )
+                            }
+
+                            return dayInfo.doctors.map((doctorId) => {
+                              const doctorAppointments = getAppointmentsForDate(dayInfo.date).filter(
+                                apt => apt.doctor?.id === doctorId
+                              )
+
+                              return (
+                                <div key={`${dateStr}-${slot.time}-${doctorId}`} className="border-b border-r relative">
+                                  <button
+                                    onClick={() => handleSlotClick(slot.time, dayInfo.date, doctorId)}
+                                    className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                  />
+
+                                  {/* Appointments overlay - only render on first slot */}
+                                  {slotIndex === 0 && (
+                                    <div
+                                      className="absolute pointer-events-none z-10"
+                                      style={{
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: `${timeSlots.length * 60}px`,
+                                      }}
+                                    >
+                                      {doctorAppointments.map((appointment) => {
+                                        const startMinutes = timeToMinutes(appointment.scheduledStart)
+                                        const endMinutes = timeToMinutes(appointment.scheduledEnd)
+                                        const duration = endMinutes - startMinutes
+                                        const offsetFromTop = ((startMinutes - CLINIC_START) / SLOT_DURATION) * 60
+                                        const height = (duration / SLOT_DURATION) * 60
+                                        const status = getAppointmentCurrentStatus(appointment)
+
+                                        const appointmentTypeColor = appointment.appointmentType?.color || '#1D9E75'
+                                        const rgbColor = appointmentTypeColor.startsWith('#')
+                                          ? `${appointmentTypeColor}20`
+                                          : appointmentTypeColor
+
+                                        return (
+                                          <div
+                                            key={appointment.id}
+                                            className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
+                                            style={{
+                                              top: `${offsetFromTop}px`,
+                                              height: `${height}px`,
+                                              backgroundColor: rgbColor,
+                                            }}
+                                            draggable
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setEditingAppointment(appointment)
+                                              setIsEditModalOpen(true)
+                                              loadRescheduleHistory(appointment)
+                                              loadPlanProcedures(appointment)
+                                            }}
+                                            onDragStart={(e) => {
+                                              setDraggingAppointment(appointment)
+                                              const rect = e.currentTarget.getBoundingClientRect()
+                                              setDragOffset(e.clientY - rect.top)
+                                            }}
+                                            onDragEnd={(e) => {
+                                              if (!draggingAppointment) return
+
+                                              const container = e.currentTarget.parentElement
+                                              if (!container) return
+
+                                              const rect = container.getBoundingClientRect()
+                                              const y = e.clientY - rect.top - dragOffset
+
+                                              const pixelsFromTop = Math.max(0, y)
+                                              const slotIndex = Math.round(pixelsFromTop / 60)
+                                              const newStartMinutes = CLINIC_START + (slotIndex * SLOT_DURATION)
+                                              const newEndMinutes = newStartMinutes + duration
+
+                                              if (newStartMinutes >= CLINIC_START && newEndMinutes <= CLINIC_END) {
+                                                updateAppointmentTime(
+                                                  appointment.id,
+                                                  minutesToTime(newStartMinutes),
+                                                  minutesToTime(newEndMinutes)
+                                                )
+                                              }
+
+                                              setDraggingAppointment(null)
+                                            }}
+                                          >
+                                            <div className="font-medium text-sm">
+                                              {appointment.patientCode ? `${appointment.patientCode} - ${appointment.patientName}` : appointment.patientName}
+                                            </div>
+
+                                            <div className="mt-1">
+                                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
+                                                <span className="mr-1">{status.icon}</span>
+                                                {status.label}
+                                              </span>
+                                            </div>
+
+                                            <div
+                                              className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation()
+                                                e.preventDefault()
+                                                setResizingAppointment(appointment)
+                                                setResizeStartY(e.clientY)
+                                                setResizeStartHeight(height)
+                                              }}
+                                            />
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })
+                          })}
+                        </React.Fragment>
+                      ))}
                       </div>
-                    )
-                  })}
-                  </div>
-                )}
-              </>
-            ) : null}
-          </div>
-        )
-      })}
-    </React.Fragment>
-  ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )
+            })()
           )}
         </CardContent>
       </Card>
@@ -2075,8 +2130,8 @@ export default function Agenda() {
               </>
             )}
 
-            {/* Doctor Selection (only for GESTOR and MENTOR) */}
-            {(user?.role === 'GESTOR_CLINICA' || user?.role === 'MENTOR') && (
+            {/* Doctor Selection (for GESTOR, MENTOR, and COLABORADOR with canEditAppointments) */}
+            {(user?.role === 'GESTOR_CLINICA' || user?.role === 'MENTOR' || canEdit('canEditAppointments')) && (
               <div>
                 <Label>Médico Responsável *</Label>
                 <Select
