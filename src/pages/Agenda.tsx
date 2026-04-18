@@ -1153,8 +1153,8 @@ export default function Agenda() {
           {/* Doctor Selector and View Mode */}
           <div className="flex gap-4 min-w-0">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <Label>Médicos</Label>
+              <div className="flex items-center justify-between mb-2 min-w-0">
+                <Label className="shrink-0">Médicos</Label>
                 {doctors.length > 0 && (
                   <Button
                     variant="ghost"
@@ -1172,12 +1172,12 @@ export default function Agenda() {
                   </Button>
                 )}
               </div>
-              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto min-w-0">
                 {doctors.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum médico disponível</p>
                 ) : (
                   doctors.map((doc) => (
-                    <div key={doc.id} className="flex items-center space-x-2">
+                    <div key={doc.id} className="flex items-center space-x-2 min-w-0">
                       <Checkbox
                         id={`doctor-${doc.id}`}
                         checked={selectedDoctors.includes(doc.id)}
@@ -1188,8 +1188,9 @@ export default function Agenda() {
                             setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
                           }
                         }}
+                        className="shrink-0"
                       />
-                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal">
+                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate">
                         {doc.name}
                       </Label>
                     </div>
