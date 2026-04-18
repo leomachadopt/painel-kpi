@@ -1074,7 +1074,185 @@ export default function Agenda() {
             <div className="text-center py-8 text-muted-foreground">
               Carregando...
             </div>
+          ) : viewMode === 'day' ? (
+            /* ========== DAY VIEW: Grid by Doctors ========== */
+            <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <div
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: `80px repeat(${selectedDoctors.length}, minmax(200px, 1fr))`,
+                    gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                  }}
+                >
+                  {/* Time column header (empty) */}
+                  <div className="border-b border-r" />
+
+                  {/* Doctor headers */}
+                  {selectedDoctors.map((doctorId) => {
+                    const doctor = doctors.find(d => d.id === doctorId)
+                    return (
+                      <div
+                        key={doctorId}
+                        className="border-b border-r px-2 text-center text-sm font-medium flex items-center justify-center bg-muted"
+                      >
+                        {doctor?.name || 'Médico'}
+                      </div>
+                    )
+                  })}
+
+                  {/* Time slots */}
+                  {timeSlots.map((slot, slotIndex) => (
+                    <React.Fragment key={`slot-${slotIndex}-${slot.time}`}>
+                      {/* Time label */}
+                      <div className="border-b border-r flex items-center justify-center text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {slot.time}
+                      </div>
+
+                      {/* Doctor columns */}
+                      {selectedDoctors.map((doctorId) => {
+                        const doctorAppointments = getAppointmentsForDate(selectedDate).filter(
+                          apt => apt.doctorId === doctorId
+                        )
+                        const dayHours = getClinicHoursForDate(selectedDate)
+                        const isClosed = !dayHours
+
+                        return (
+                          <div key={`${doctorId}-${slot.time}`} className="border-b border-r relative">
+                            {isClosed && slotIndex === 0 ? (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-muted/30"
+                                style={{
+                                  gridRow: `2 / ${timeSlots.length + 2}`,
+                                  gridColumn: 'span 1',
+                                }}
+                              >
+                                <div className="text-center">
+                                  <div className="mb-2">🔒</div>
+                                  <div>Fechado</div>
+                                </div>
+                              </div>
+                            ) : !isClosed ? (
+                              <>
+                                <button
+                                  onClick={() => handleSlotClick(slot.time, selectedDate, doctorId)}
+                                  className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                />
+
+                                {/* Appointments overlay - only render on first slot */}
+                                {slotIndex === 0 && (
+                                  <div
+                                    className="absolute pointer-events-none z-10"
+                                    style={{
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      height: `${timeSlots.length * 60}px`,
+                                    }}
+                                  >
+                                    {doctorAppointments.map((appointment) => {
+                                      const startMinutes = timeToMinutes(appointment.scheduledStart)
+                                      const endMinutes = timeToMinutes(appointment.scheduledEnd)
+                                      const duration = endMinutes - startMinutes
+                                      const offsetFromTop = ((startMinutes - CLINIC_START) / SLOT_DURATION) * 60
+                                      const height = (duration / SLOT_DURATION) * 60
+                                      const status = getAppointmentCurrentStatus(appointment)
+
+                                      // Get appointment type color with opacity for background
+                                      const appointmentTypeColor = appointment.appointmentType?.color || '#1D9E75'
+                                      const rgbColor = appointmentTypeColor.startsWith('#')
+                                        ? `${appointmentTypeColor}20`
+                                        : appointmentTypeColor
+
+                                      return (
+                                        <div
+                                          key={appointment.id}
+                                          className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
+                                          style={{
+                                            top: `${offsetFromTop}px`,
+                                            height: `${height}px`,
+                                            backgroundColor: rgbColor,
+                                          }}
+                                          draggable
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingAppointment(appointment)
+                                            setIsEditModalOpen(true)
+                                            loadRescheduleHistory(appointment)
+                                            loadPlanProcedures(appointment)
+                                          }}
+                                          onDragStart={(e) => {
+                                            setDraggingAppointment(appointment)
+                                            const rect = e.currentTarget.getBoundingClientRect()
+                                            setDragOffset(e.clientY - rect.top)
+                                          }}
+                                          onDragEnd={(e) => {
+                                            if (!draggingAppointment) return
+
+                                            const container = e.currentTarget.parentElement
+                                            if (!container) return
+
+                                            const rect = container.getBoundingClientRect()
+                                            const y = e.clientY - rect.top - dragOffset
+
+                                            const pixelsFromTop = Math.max(0, y)
+                                            const slotIndex = Math.round(pixelsFromTop / 60)
+                                            const newStartMinutes = CLINIC_START + (slotIndex * SLOT_DURATION)
+                                            const newEndMinutes = newStartMinutes + duration
+
+                                            if (newStartMinutes >= CLINIC_START && newEndMinutes <= CLINIC_END) {
+                                              updateAppointmentTime(
+                                                appointment.id,
+                                                minutesToTime(newStartMinutes),
+                                                minutesToTime(newEndMinutes)
+                                              )
+                                            }
+
+                                            setDraggingAppointment(null)
+                                          }}
+                                        >
+                                          {/* Patient code and name */}
+                                          <div className="font-medium text-sm">
+                                            {appointment.patientCode ? `${appointment.patientCode} - ${appointment.patientName}` : appointment.patientName}
+                                          </div>
+
+                                          {/* Status badge */}
+                                          <div className="mt-1">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
+                                              <span className="mr-1">{status.icon}</span>
+                                              {status.label}
+                                            </span>
+                                          </div>
+
+                                          {/* Resize handle */}
+                                          <div
+                                            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
+                                            onMouseDown={(e) => {
+                                              e.stopPropagation()
+                                              e.preventDefault()
+                                              setResizingAppointment(appointment)
+                                              setResizeStartY(e.clientY)
+                                              setResizeStartHeight(height)
+                                            }}
+                                          />
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
+            /* ========== MULTI-DAY VIEW: Grid by Days ========== */
             <div className="border rounded-lg overflow-hidden">
               <div className="bg-muted px-4 py-2 font-medium">
                 {selectedDoctors.length === 1
