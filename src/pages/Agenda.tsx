@@ -1227,17 +1227,15 @@ export default function Agenda() {
                           setDraggingAppointment(null)
                         }}
                       >
+                        {/* Patient code and name */}
                         <div className="font-medium text-sm">
-                          {appointment.patientName}
+                          {appointment.patientCode ? `${appointment.patientCode} - ${appointment.patientName}` : appointment.patientName}
                         </div>
+
+                        {/* Doctor badge (only if multiple doctors selected) */}
                         {selectedDoctors.length > 1 && appointment.doctor && (
                           <div className="text-[10px] font-semibold text-primary bg-primary/10 inline-block px-1.5 py-0.5 rounded mt-0.5">
                             {appointment.doctor.name}
-                          </div>
-                        )}
-                        {appointment.patientCode && (
-                          <div className="text-xs text-muted-foreground">
-                            Código: {appointment.patientCode}
                           </div>
                         )}
 
@@ -1247,10 +1245,6 @@ export default function Agenda() {
                             <span className="mr-1">{status.icon}</span>
                             {status.label}
                           </span>
-                        </div>
-
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {appointment.scheduledStart.substring(0, 5)} - {appointment.scheduledEnd.substring(0, 5)}
                         </div>
 
                         {/* Resize handle */}
