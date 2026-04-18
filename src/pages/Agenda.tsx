@@ -1113,7 +1113,7 @@ export default function Agenda() {
                       {/* Doctor columns */}
                       {selectedDoctors.map((doctorId) => {
                         const doctorAppointments = getAppointmentsForDate(selectedDate).filter(
-                          apt => apt.doctorId === doctorId
+                          apt => apt.doctor?.id === doctorId
                         )
                         const dayHours = getClinicHoursForDate(selectedDate)
                         const isClosed = !dayHours
