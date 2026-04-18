@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Shield, Loader2, Mail, Pencil } from 'lucide-react'
+import { Shield, Loader2, Mail, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
 import useAuthStore from '@/stores/useAuthStore'
@@ -49,6 +49,7 @@ export default function DoctorsTab() {
   const [loading, setLoading] = useState(true)
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -117,6 +118,28 @@ export default function DoctorsTab() {
       loadDoctors()
     } catch (error: any) {
       toast.error(error.message || 'Erro ao atualizar médico')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleOpenDeleteDoctor = (doctor: Doctor) => {
+    setSelectedDoctor(doctor)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteDoctor = async () => {
+    if (!selectedDoctor) return
+
+    try {
+      setSubmitting(true)
+      await collaboratorsApi.deleteDoctor(selectedDoctor.id)
+      toast.success('Médico removido com sucesso')
+      setShowDeleteModal(false)
+      setSelectedDoctor(null)
+      loadDoctors()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao remover médico')
     } finally {
       setSubmitting(false)
     }
@@ -218,6 +241,14 @@ export default function DoctorsTab() {
                             <Pencil className="h-4 w-4 mr-1" />
                             Editar
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDeleteDoctor(doctor)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1 text-destructive" />
+                            Remover
+                          </Button>
                           {hasAccount && (
                             <Button
                               variant="ghost"
@@ -316,6 +347,28 @@ export default function DoctorsTab() {
             <Button onClick={handleUpdateDoctor} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remover Médico</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover <strong>{selectedDoctor?.name}</strong>?
+              {' '}Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteDoctor} disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remover
             </Button>
           </DialogFooter>
         </DialogContent>

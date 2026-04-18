@@ -1160,6 +1160,11 @@ export const collaboratorsApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+
+  deleteDoctor: (id: string) =>
+    apiCall<{ message: string }>(`/collaborators/doctors/${id}`, {
+      method: 'DELETE',
+    }),
 }
 
 // ================================

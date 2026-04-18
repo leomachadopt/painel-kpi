@@ -853,6 +853,89 @@ router.put('/doctors/:id', requireGestor, async (req: AuthedRequest, res) => {
 })
 
 /**
+ * DELETE /api/collaborators/doctors/:id
+ * Delete a doctor (only if they have no associated data)
+ */
+router.delete('/doctors/:id', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+    const userId = req.auth?.sub
+    const doctorId = req.params.id
+
+    if (!clinicId || !userId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    // Check if doctor exists in clinic_doctors
+    const doctorCheck = await query(
+      'SELECT id, name, email FROM clinic_doctors WHERE id = $1 AND clinic_id = $2',
+      [doctorId, clinicId]
+    )
+
+    if (doctorCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Doctor not found' })
+    }
+
+    const doctor = doctorCheck.rows[0]
+
+    // Check if doctor has any associated consultations
+    const consultationsCheck = await query(
+      'SELECT COUNT(*) as count FROM daily_consultation_entries WHERE doctor_id = $1',
+      [doctorId]
+    )
+
+    if (parseInt(consultationsCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete doctor with associated consultations. Please reassign consultations first.'
+      })
+    }
+
+    // Check if doctor has any associated appointments
+    const appointmentsCheck = await query(
+      'SELECT COUNT(*) as count FROM appointments WHERE doctor_id = $1',
+      [doctorId]
+    )
+
+    if (parseInt(appointmentsCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete doctor with associated appointments. Please reassign appointments first.'
+      })
+    }
+
+    // Delete from clinic_doctors table
+    await query('DELETE FROM clinic_doctors WHERE id = $1', [doctorId])
+
+    // If doctor has a user account, delete it too
+    if (doctor.email) {
+      const userResult = await query(
+        'SELECT id FROM users WHERE email = $1 AND clinic_id = $2 AND role = $3',
+        [doctor.email, clinicId, 'MEDICO']
+      )
+
+      if (userResult.rows.length > 0) {
+        await query('DELETE FROM users WHERE id = $1', [userResult.rows[0].id])
+      }
+    }
+
+    // Log audit
+    await logAudit(
+      userId,
+      clinicId,
+      'DELETE',
+      'doctor',
+      doctorId,
+      { name: doctor.name, email: doctor.email },
+      req.ip
+    )
+
+    res.json({ message: 'Doctor deleted successfully' })
+  } catch (error) {
+    console.error('Delete doctor error:', error)
+    res.status(500).json({ error: 'Failed to delete doctor' })
+  }
+})
+
+/**
  * DELETE /api/collaborators/:id
  * Delete a collaborator
  */

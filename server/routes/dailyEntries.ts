@@ -673,7 +673,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
 
     // If user is COLABORADOR or MEDICO, check permissions and apply appropriate filters
     if ((userRole === 'COLABORADOR' || userRole === 'MEDICO') && userId) {
-      // Check if user has permission to view all doctors' consultations or edit consultations
+      // Check if user has permission to view all doctors' consultations
       const permissionResult = await query(
         `SELECT can_view_all_doctors_consultations, can_edit_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
         [userId, clinicId]
@@ -696,8 +696,8 @@ router.get('/consultation/:clinicId', async (req, res) => {
       if (canViewAllDoctors) {
         console.log('✅ User has permission to view all doctors - no filter applied')
       }
-      // If user can edit consultations (but not view all), filter by their doctor_id
-      else if (canEditConsultations) {
+      // If user is MEDICO or COLABORADOR with can_edit_consultations, filter by their doctor_id
+      else if (userRole === 'MEDICO' || canEditConsultations) {
         // Get user email to find their doctor_id
         const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
         console.log('📧 User email lookup:', userResult.rows[0])
@@ -716,7 +716,7 @@ router.get('/consultation/:clinicId', async (req, res) => {
             const doctorId = doctorResult.rows[0].id
             sqlQuery += ` AND doctor_id = $2`
             params.push(doctorId)
-            console.log('✅ Applying doctor filter (canEditConsultations):', doctorId)
+            console.log('✅ Applying doctor filter (role MEDICO or canEditConsultations):', doctorId)
           } else {
             // Doctor not found, return empty array
             console.log('⚠️ Doctor not found for email:', userEmail)
@@ -727,9 +727,9 @@ router.get('/consultation/:clinicId', async (req, res) => {
           return res.json([])
         }
       }
-      // User has no permission to view consultations
+      // COLABORADOR without can_edit_consultations has no permission to view consultations
       else {
-        console.log('⛔ User has no permission to view consultations')
+        console.log('⛔ COLABORADOR has no permission to view consultations')
         return res.json([])
       }
     } else {
@@ -808,9 +808,9 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
     let sqlQuery = `SELECT * FROM daily_consultation_entries WHERE clinic_id = $1 AND code = $2`
     let params: any[] = [clinicId, code]
 
-    // If user is COLABORADOR, check permissions and apply appropriate filters
-    if (userRole === 'COLABORADOR' && userId) {
-      // Check if user has permission to view all doctors' consultations or edit consultations
+    // If user is COLABORADOR or MEDICO, check permissions and apply appropriate filters
+    if ((userRole === 'COLABORADOR' || userRole === 'MEDICO') && userId) {
+      // Check if user has permission to view all doctors' consultations
       const permissionResult = await query(
         `SELECT can_view_all_doctors_consultations, can_edit_consultations FROM user_permissions WHERE user_id = $1 AND clinic_id = $2`,
         [userId, clinicId]
@@ -825,8 +825,8 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
       if (canViewAllDoctors) {
         // No filter
       }
-      // If user can edit consultations (but not view all), filter by their doctor_id
-      else if (canEditConsultations) {
+      // If user is MEDICO or COLABORADOR with can_edit_consultations, filter by their doctor_id
+      else if (userRole === 'MEDICO' || canEditConsultations) {
         const userResult = await query(`SELECT email FROM users WHERE id = $1`, [userId])
 
         if (userResult.rows.length > 0) {
@@ -847,7 +847,7 @@ router.get('/consultation/:clinicId/code/:code', async (req, res) => {
           return res.status(404).json({ error: 'Consultation entry not found' })
         }
       }
-      // User has no permission to view consultations
+      // COLABORADOR without can_edit_consultations has no permission to view consultations
       else {
         return res.status(404).json({ error: 'Consultation entry not found' })
       }
