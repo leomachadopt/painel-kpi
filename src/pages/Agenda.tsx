@@ -1066,9 +1066,9 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 overflow-hidden">
+        <CardContent className="space-y-4 overflow-hidden max-w-full">
           {/* Patient Search in Agenda */}
-          <div className="border-b pb-4">
+          <div className="border-b pb-4 min-w-0">
             <Label className="text-sm font-medium mb-2 block">Buscar Paciente na Agenda</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
