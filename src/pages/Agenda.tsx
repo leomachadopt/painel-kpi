@@ -1076,20 +1076,46 @@ export default function Agenda() {
             </div>
           ) : viewMode === 'day' ? (
             /* ========== DAY VIEW: Grid by Doctors ========== */
-            <div className="border rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <div
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: `80px repeat(${selectedDoctors.length}, minmax(200px, 1fr))`,
-                    gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
-                  }}
-                >
-                  {/* Time column header (empty) */}
-                  <div className="border-b border-r" />
+            (() => {
+              // Filter to show only doctors with appointments on this day
+              const dayAppointments = getAppointmentsForDate(selectedDate)
+              const doctorsWithAppointments = new Set(
+                dayAppointments
+                  .map(apt => apt.doctor?.id)
+                  .filter(Boolean)
+              )
 
-                  {/* Doctor headers */}
-                  {selectedDoctors.map((doctorId) => {
+              // Only show doctors that have appointments today
+              const visibleDoctors = selectedDoctors.filter(doctorId =>
+                doctorsWithAppointments.has(doctorId)
+              )
+
+              // If no doctors have appointments, show message
+              if (visibleDoctors.length === 0) {
+                return (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nenhum agendamento encontrado para {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div
+                      className="grid"
+                      style={{
+                        gridTemplateColumns: `80px repeat(${visibleDoctors.length}, minmax(200px, 1fr))`,
+                        gridTemplateRows: `32px repeat(${timeSlots.length}, 60px)`,
+                      }}
+                    >
+                      {/* Time column header (empty) */}
+                      <div className="border-b border-r" />
+
+                      {/* Doctor headers */}
+                      {visibleDoctors.map((doctorId) => {
                     const doctor = doctors.find(d => d.id === doctorId)
                     return (
                       <div
@@ -1111,7 +1137,7 @@ export default function Agenda() {
                       </div>
 
                       {/* Doctor columns */}
-                      {selectedDoctors.map((doctorId) => {
+                      {visibleDoctors.map((doctorId) => {
                         const doctorAppointments = getAppointmentsForDate(selectedDate).filter(
                           apt => apt.doctor?.id === doctorId
                         )
@@ -1251,6 +1277,8 @@ export default function Agenda() {
                 </div>
               </div>
             </div>
+              )
+            })()
           ) : (
             /* ========== MULTI-DAY VIEW: Grid by Days ========== */
             <div className="border rounded-lg overflow-hidden">
