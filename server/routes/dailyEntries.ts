@@ -1,8 +1,12 @@
 import { Router } from 'express'
 import { query } from '../db.js'
+import { authRequired } from '../middleware/auth.js'
 import { getUserPermissions, requirePermission } from '../middleware/permissions.js'
 
 const router = Router()
+
+// Apply authentication to all daily entries routes
+router.use(authRequired)
 
 // Debug endpoint - temporário
 router.get('/debug/:clinicId', async (req, res) => {

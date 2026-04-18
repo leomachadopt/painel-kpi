@@ -1,8 +1,12 @@
 import { Router } from 'express'
 import { query } from '../db.js'
+import { authRequired } from '../middleware/auth.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 
 const router = Router()
+
+// Apply authentication to all plan procedures routes
+router.use(authRequired)
 
 /**
  * Helper function to check if user can edit consultations

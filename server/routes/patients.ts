@@ -1,10 +1,14 @@
 import { Router } from 'express'
 import { query, getClient } from '../db.js'
+import { authRequired } from '../middleware/auth.js'
 import { getUserPermissions } from '../middleware/permissions.js'
 import crypto from 'crypto'
 import { uploadToCloudinary, deleteFromCloudinary, getCloudinarySignedUrl } from '../utils/cloudinary.js'
 
 const router = Router()
+
+// Apply authentication to all patient routes
+router.use(authRequired)
 
 /**
  * Helper function to format date to YYYY-MM-DD
