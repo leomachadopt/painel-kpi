@@ -1066,151 +1066,149 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden max-w-full">
-          {/* Patient Search in Agenda */}
-          <div className="border-b pb-3 min-w-0">
-            <Label className="text-xs font-medium mb-1.5 block">Buscar Paciente</Label>
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Código ou nome do paciente"
-                value={patientAgendaSearch}
-                onChange={(e) => {
-                  setPatientAgendaSearch(e.target.value)
-                  searchPatientInAgenda(e.target.value)
-                }}
-                className="pl-8 pr-8 h-8 text-xs"
-              />
-              {patientAgendaSearch && (
-                <button
-                  onClick={() => {
-                    setPatientAgendaSearch('')
-                    setPatientAgendaResults([])
+        <CardContent className="p-3 pt-0 space-y-2 overflow-hidden max-w-full">
+          {/* Compact Search and Controls */}
+          <div className="space-y-2">
+            {/* Search Field */}
+            <div className="border-b pb-2">
+              <Label className="text-xs mb-1 block">Buscar Paciente</Label>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Código ou nome"
+                  value={patientAgendaSearch}
+                  onChange={(e) => {
+                    setPatientAgendaSearch(e.target.value)
+                    searchPatientInAgenda(e.target.value)
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  className="pl-7 pr-7 h-7 text-xs"
+                />
+                {patientAgendaSearch && (
+                  <button
+                    onClick={() => {
+                      setPatientAgendaSearch('')
+                      setPatientAgendaResults([])
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Results */}
+              {searchingPatientAgenda && (
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  Buscando...
+                </div>
+              )}
+
+              {patientAgendaResults.length > 0 && (
+                <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto border rounded p-2 bg-muted/30">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {patientAgendaResults.length} {patientAgendaResults.length === 1 ? 'agendamento' : 'agendamentos'}
+                  </div>
+                  {patientAgendaResults.map((apt, idx) => (
+                    <div
+                      key={`${apt.id}-${idx}`}
+                      className="border rounded p-2 bg-background hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-xs truncate">
+                            {apt.patientCode} - {apt.patientName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            📅 {format(new Date(apt.date.split('-').map(Number)[0], apt.date.split('-').map(Number)[1] - 1, apt.date.split('-').map(Number)[2]), "d/MM/yyyy", { locale: ptBR })}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            🕐 {apt.scheduledStart.substring(0, 5)} - {apt.scheduledEnd.substring(0, 5)}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => goToAppointmentDate(apt)}
+                          className="shrink-0 h-7 text-xs"
+                        >
+                          Ir
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!searchingPatientAgenda && patientAgendaSearch.length >= 2 && patientAgendaResults.length === 0 && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Nenhum agendamento encontrado
+                </div>
               )}
             </div>
 
-            {/* Search Results */}
-            {searchingPatientAgenda && (
-              <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
-                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                Buscando...
-              </div>
-            )}
-
-            {patientAgendaResults.length > 0 && (
-              <div className="mt-3 space-y-2 max-h-60 overflow-y-auto border rounded-md p-3 bg-muted/30">
-                <div className="text-xs font-medium text-muted-foreground mb-2">
-                  {patientAgendaResults.length} {patientAgendaResults.length === 1 ? 'agendamento encontrado' : 'agendamentos encontrados'}
+            {/* Doctor Selector and View Mode */}
+            <div className="flex gap-2">
+              <div className="w-52 shrink-0">
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs">Médicos</Label>
+                  {doctors.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 text-xs px-1 hover:bg-accent"
+                      onClick={() => {
+                        if (selectedDoctors.length === doctors.length) {
+                          setSelectedDoctors([])
+                        } else {
+                          setSelectedDoctors(doctors.map(d => d.id))
+                        }
+                      }}
+                    >
+                      {selectedDoctors.length === doctors.length ? 'Limpar' : 'Todos'}
+                    </Button>
+                  )}
                 </div>
-                {patientAgendaResults.map((apt, idx) => (
-                  <div
-                    key={`${apt.id}-${idx}`}
-                    className="border rounded-md p-3 bg-background hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {apt.patientCode} - {apt.patientName}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          📅 {format(new Date(apt.date.split('-').map(Number)[0], apt.date.split('-').map(Number)[1] - 1, apt.date.split('-').map(Number)[2]), "EEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          🕐 {apt.scheduledStart.substring(0, 5)} - {apt.scheduledEnd.substring(0, 5)}
-                        </div>
-                        {apt.doctor && (
-                          <div className="text-xs text-muted-foreground">
-                            👨‍⚕️ {apt.doctor.name}
-                          </div>
-                        )}
+                <div className="border rounded p-1 space-y-0.5 max-h-28 overflow-y-auto">
+                  {doctors.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum médico</p>
+                  ) : (
+                    doctors.map((doc) => (
+                      <div key={doc.id} className="flex items-center space-x-1">
+                        <Checkbox
+                          id={`doctor-${doc.id}`}
+                          checked={selectedDoctors.includes(doc.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedDoctors([...selectedDoctors, doc.id])
+                            } else {
+                              setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
+                            }
+                          }}
+                          className="h-3 w-3"
+                        />
+                        <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs leading-tight">
+                          {doc.name}
+                        </Label>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => goToAppointmentDate(apt)}
-                        className="shrink-0"
-                      >
-                        Ir para data
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    ))
+                  )}
+                </div>
               </div>
-            )}
 
-            {!searchingPatientAgenda && patientAgendaSearch.length >= 2 && patientAgendaResults.length === 0 && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                Nenhum agendamento futuro encontrado para "{patientAgendaSearch}"
+              <div className="w-24 shrink-0">
+                <Label className="text-xs block mb-1">Visualização</Label>
+                <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">1 Dia</SelectItem>
+                    <SelectItem value="3days">3 Dias</SelectItem>
+                    <SelectItem value="week">Semana</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-
-          {/* Doctor Selector and View Mode */}
-          <div className="flex gap-2 min-w-0">
-            <div className="w-56 shrink-0">
-              <div className="flex items-center justify-between mb-1.5 gap-1">
-                <Label className="shrink-0 text-xs">Médicos</Label>
-                {doctors.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 text-xs px-1.5 hover:bg-accent"
-                    onClick={() => {
-                      if (selectedDoctors.length === doctors.length) {
-                        setSelectedDoctors([])
-                      } else {
-                        setSelectedDoctors(doctors.map(d => d.id))
-                      }
-                    }}
-                  >
-                    {selectedDoctors.length === doctors.length ? 'Limpar' : 'Todos'}
-                  </Button>
-                )}
-              </div>
-              <div className="border rounded-md p-1.5 space-y-1 max-h-32 overflow-y-auto">
-                {doctors.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhum médico</p>
-                ) : (
-                  doctors.map((doc) => (
-                    <div key={doc.id} className="flex items-center space-x-1.5">
-                      <Checkbox
-                        id={`doctor-${doc.id}`}
-                        checked={selectedDoctors.includes(doc.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedDoctors([...selectedDoctors, doc.id])
-                          } else {
-                            setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
-                          }
-                        }}
-                        className="shrink-0 h-3.5 w-3.5"
-                      />
-                      <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs leading-tight">
-                        {doc.name}
-                      </Label>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="w-28 shrink-0">
-              <Label className="text-xs block mb-1.5">Visualização</Label>
-              <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">1 Dia</SelectItem>
-                  <SelectItem value="3days">3 Dias</SelectItem>
-                  <SelectItem value="week">Semana</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
