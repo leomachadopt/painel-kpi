@@ -1055,8 +1055,8 @@ export default function Agenda() {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <Card>
+    <div className="p-4 space-y-4 overflow-hidden">
+      <Card className="overflow-hidden">
         <CardHeader className="p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">📅 Agenda Clínica</CardTitle>
@@ -1066,9 +1066,9 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0 space-y-3">
+        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden">
           {/* Search and Controls - Fixed width to prevent overflow */}
-          <div className="space-y-3 max-w-full">
+          <div className="space-y-3 max-w-full overflow-hidden">
             {/* Search Field */}
             <div className="border-b pb-3">
               <Label className="text-sm mb-1.5 block">Buscar Paciente</Label>
@@ -1354,7 +1354,7 @@ export default function Agenda() {
               }
 
               return (
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
@@ -1560,7 +1560,7 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
@@ -1815,7 +1815,7 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
