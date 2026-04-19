@@ -1066,9 +1066,9 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden">
+        <CardContent className="p-4 pt-0 space-y-3">
           {/* Search and Controls - Fixed width to prevent overflow */}
-          <div className="space-y-3 max-w-full overflow-hidden">
+          <div className="space-y-3">
             {/* Search Field */}
             <div className="border-b pb-3">
               <Label className="text-sm mb-1.5 block">Buscar Paciente</Label>
@@ -1212,7 +1212,7 @@ export default function Agenda() {
             </div>
 
             {/* Date Navigator */}
-            <div className="flex items-center justify-between gap-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 shrink-0">
                 {/* Weekly navigation - Previous */}
                 <Button
