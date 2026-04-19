@@ -1055,8 +1055,8 @@ export default function Agenda() {
   }
 
   return (
-    <div className="p-4 space-y-4 overflow-hidden">
-      <Card>
+    <div className="p-4 space-y-4">
+      <Card className="overflow-hidden">
         <CardHeader className="p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">📅 Agenda Clínica</CardTitle>
@@ -1066,7 +1066,7 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden">
+        <CardContent className="p-4 pt-0 space-y-3">
           {/* Search and Controls - Fixed width to prevent overflow */}
           <div className="space-y-3 max-w-full">
             {/* Search Field */}
@@ -1210,110 +1210,110 @@ export default function Agenda() {
                 </Select>
               </div>
             </div>
-          </div>
 
-          {/* Date Navigator */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              {/* Weekly navigation - Previous */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={navigatePreviousWeek}
-                title="Voltar 1 semana"
-                className="h-8 w-8 p-0"
-              >
-                <span className="text-sm">&lt;&lt;</span>
-              </Button>
+            {/* Date Navigator */}
+            <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Weekly navigation - Previous */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={navigatePreviousWeek}
+                  title="Voltar 1 semana"
+                  className="h-8 w-8 p-0"
+                >
+                  <span className="text-sm">&lt;&lt;</span>
+                </Button>
 
-              {/* Daily navigation - Previous */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={navigatePrevious}
-                title={viewMode === 'day' ? 'Voltar 1 dia' : viewMode === '3days' ? 'Voltar 3 dias' : 'Voltar 7 dias'}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-2">
-                <div className="text-base font-medium whitespace-nowrap">
-                  {viewMode === 'day'
-                    ? format(selectedDate, "EEE, d/MM/yyyy", { locale: ptBR })
-                    : `${format(selectedDate, "d/MM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d/MM/yyyy", { locale: ptBR })}`
-                  }
-                </div>
-
-                {/* Date Picker */}
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      title="Selecionar data"
-                    >
-                      <CalendarIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          setSelectedDate(date)
-                          setIsCalendarOpen(false)
-                        }
-                      }}
-                      locale={ptBR}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                {/* Daily navigation - Previous */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={navigatePrevious}
+                  title={viewMode === 'day' ? 'Voltar 1 dia' : viewMode === '3days' ? 'Voltar 3 dias' : 'Voltar 7 dias'}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
               </div>
-              {appointments.length > 0 && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {appointments.length} {appointments.length === 1 ? 'consulta' : 'consultas'}
+
+              <div className="flex flex-col items-center min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="text-base font-medium truncate">
+                    {viewMode === 'day'
+                      ? format(selectedDate, "EEE, d/MM/yyyy", { locale: ptBR })
+                      : `${format(selectedDate, "d/MM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d/MM/yyyy", { locale: ptBR })}`
+                    }
+                  </div>
+
+                  {/* Date Picker */}
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 shrink-0"
+                        title="Selecionar data"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSelectedDate(date)
+                            setIsCalendarOpen(false)
+                          }
+                        }}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              )}
-            </div>
+                {appointments.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {appointments.length} {appointments.length === 1 ? 'consulta' : 'consultas'}
+                  </div>
+                )}
+              </div>
 
-            <div className="flex items-center gap-1.5">
-              {/* Daily navigation - Next */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={navigateNext}
-                title={viewMode === 'day' ? 'Avançar 1 dia' : viewMode === '3days' ? 'Avançar 3 dias' : 'Avançar 7 dias'}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Daily navigation - Next */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={navigateNext}
+                  title={viewMode === 'day' ? 'Avançar 1 dia' : viewMode === '3days' ? 'Avançar 3 dias' : 'Avançar 7 dias'}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
 
-              {/* Weekly navigation - Next */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={navigateNextWeek}
-                title="Avançar 1 semana"
-                className="h-8 w-8 p-0"
-              >
-                <span className="text-sm">&gt;&gt;</span>
-              </Button>
+                {/* Weekly navigation - Next */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={navigateNextWeek}
+                  title="Avançar 1 semana"
+                  className="h-8 w-8 p-0"
+                >
+                  <span className="text-sm">&gt;&gt;</span>
+                </Button>
 
-              {/* Today button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedDate(new Date())}
-                className="h-8 px-3 text-sm"
-              >
-                Hoje
-              </Button>
+                {/* Today button */}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedDate(new Date())}
+                  className="h-8 px-3 text-sm"
+                >
+                  Hoje
+                </Button>
+              </div>
             </div>
           </div>
 
