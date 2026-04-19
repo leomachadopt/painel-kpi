@@ -1066,22 +1066,22 @@ export default function Agenda() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-3 pt-0 space-y-2 overflow-hidden max-w-full">
-          {/* Compact Search and Controls */}
-          <div className="space-y-2">
+        <CardContent className="p-4 pt-0 space-y-3 overflow-hidden">
+          {/* Search and Controls - Fixed width to prevent overflow */}
+          <div className="space-y-3 max-w-full">
             {/* Search Field */}
-            <div className="border-b pb-2">
-              <Label className="text-xs mb-1 block">Buscar Paciente</Label>
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <div className="border-b pb-3">
+              <Label className="text-sm mb-1.5 block">Buscar Paciente</Label>
+              <div className="relative max-w-md">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Código ou nome"
+                  placeholder="Código ou nome do paciente"
                   value={patientAgendaSearch}
                   onChange={(e) => {
                     setPatientAgendaSearch(e.target.value)
                     searchPatientInAgenda(e.target.value)
                   }}
-                  className="pl-7 pr-7 h-7 text-xs"
+                  className="pl-9 pr-9 h-9"
                 />
                 {patientAgendaSearch && (
                   <button
@@ -1089,37 +1089,37 @@ export default function Agenda() {
                       setPatientAgendaSearch('')
                       setPatientAgendaResults([])
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
 
               {/* Search Results */}
               {searchingPatientAgenda && (
-                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                  <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   Buscando...
                 </div>
               )}
 
               {patientAgendaResults.length > 0 && (
-                <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto border rounded p-2 bg-muted/30">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    {patientAgendaResults.length} {patientAgendaResults.length === 1 ? 'agendamento' : 'agendamentos'}
+                <div className="mt-3 space-y-2 max-h-60 overflow-y-auto border rounded-md p-3 bg-muted/30">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    {patientAgendaResults.length} {patientAgendaResults.length === 1 ? 'agendamento encontrado' : 'agendamentos encontrados'}
                   </div>
                   {patientAgendaResults.map((apt, idx) => (
                     <div
                       key={`${apt.id}-${idx}`}
-                      className="border rounded p-2 bg-background hover:bg-accent/50 transition-colors"
+                      className="border rounded-md p-3 bg-background hover:bg-accent/50 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs truncate">
+                          <div className="font-medium text-sm truncate">
                             {apt.patientCode} - {apt.patientName}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground mt-1">
                             📅 {format(new Date(apt.date.split('-').map(Number)[0], apt.date.split('-').map(Number)[1] - 1, apt.date.split('-').map(Number)[2]), "d/MM/yyyy", { locale: ptBR })}
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -1130,7 +1130,7 @@ export default function Agenda() {
                           size="sm"
                           variant="outline"
                           onClick={() => goToAppointmentDate(apt)}
-                          className="shrink-0 h-7 text-xs"
+                          className="shrink-0"
                         >
                           Ir
                         </Button>
@@ -1141,22 +1141,22 @@ export default function Agenda() {
               )}
 
               {!searchingPatientAgenda && patientAgendaSearch.length >= 2 && patientAgendaResults.length === 0 && (
-                <div className="mt-2 text-xs text-muted-foreground">
+                <div className="mt-2 text-sm text-muted-foreground">
                   Nenhum agendamento encontrado
                 </div>
               )}
             </div>
 
-            {/* Doctor Selector and View Mode */}
-            <div className="flex gap-2">
-              <div className="w-52 shrink-0">
-                <div className="flex items-center justify-between mb-1">
-                  <Label className="text-xs">Médicos</Label>
+            {/* Doctor Selector and View Mode - Fixed widths */}
+            <div className="flex gap-3 max-w-full">
+              <div className="w-64 shrink-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-sm">Médicos</Label>
                   {doctors.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-4 text-xs px-1 hover:bg-accent"
+                      className="h-6 text-xs px-2"
                       onClick={() => {
                         if (selectedDoctors.length === doctors.length) {
                           setSelectedDoctors([])
@@ -1169,12 +1169,12 @@ export default function Agenda() {
                     </Button>
                   )}
                 </div>
-                <div className="border rounded p-1 space-y-0.5 max-h-28 overflow-y-auto">
+                <div className="border rounded-md p-2 space-y-1 max-h-36 overflow-y-auto">
                   {doctors.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">Nenhum médico</p>
+                    <p className="text-sm text-muted-foreground">Nenhum médico</p>
                   ) : (
                     doctors.map((doc) => (
-                      <div key={doc.id} className="flex items-center space-x-1">
+                      <div key={doc.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`doctor-${doc.id}`}
                           checked={selectedDoctors.includes(doc.id)}
@@ -1185,9 +1185,9 @@ export default function Agenda() {
                               setSelectedDoctors(selectedDoctors.filter((id) => id !== doc.id))
                             }
                           }}
-                          className="h-3 w-3"
+                          className="h-4 w-4"
                         />
-                        <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-xs leading-tight">
+                        <Label htmlFor={`doctor-${doc.id}`} className="cursor-pointer font-normal truncate text-sm">
                           {doc.name}
                         </Label>
                       </div>
@@ -1196,10 +1196,10 @@ export default function Agenda() {
                 </div>
               </div>
 
-              <div className="w-24 shrink-0">
-                <Label className="text-xs block mb-1">Visualização</Label>
+              <div className="w-32 shrink-0">
+                <Label className="text-sm block mb-1.5">Visualização</Label>
                 <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
-                  <SelectTrigger className="h-7 text-xs">
+                  <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1214,16 +1214,16 @@ export default function Agenda() {
 
           {/* Date Navigator */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {/* Weekly navigation - Previous */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={navigatePreviousWeek}
                 title="Voltar 1 semana"
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
-                <span className="text-xs">&lt;&lt;</span>
+                <span className="text-sm">&lt;&lt;</span>
               </Button>
 
               {/* Daily navigation - Previous */}
@@ -1232,15 +1232,15 @@ export default function Agenda() {
                 size="sm"
                 onClick={navigatePrevious}
                 title={viewMode === 'day' ? 'Voltar 1 dia' : viewMode === '3days' ? 'Voltar 3 dias' : 'Voltar 7 dias'}
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="flex flex-col items-center min-w-0">
-              <div className="flex items-center gap-1">
-                <div className="text-sm font-medium truncate">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-2">
+                <div className="text-base font-medium whitespace-nowrap">
                   {viewMode === 'day'
                     ? format(selectedDate, "EEE, d/MM/yyyy", { locale: ptBR })
                     : `${format(selectedDate, "d/MM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d/MM/yyyy", { locale: ptBR })}`
@@ -1253,10 +1253,10 @@ export default function Agenda() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-6 w-6 p-0"
+                      className="h-8 w-8 p-0"
                       title="Selecionar data"
                     >
-                      <CalendarIcon className="h-3 w-3" />
+                      <CalendarIcon className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="center">
@@ -1276,22 +1276,22 @@ export default function Agenda() {
                 </Popover>
               </div>
               {appointments.length > 0 && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   {appointments.length} {appointments.length === 1 ? 'consulta' : 'consultas'}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {/* Daily navigation - Next */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={navigateNext}
                 title={viewMode === 'day' ? 'Avançar 1 dia' : viewMode === '3days' ? 'Avançar 3 dias' : 'Avançar 7 dias'}
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
-                <ChevronRight className="h-3 w-3" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
 
               {/* Weekly navigation - Next */}
@@ -1300,9 +1300,9 @@ export default function Agenda() {
                 size="sm"
                 onClick={navigateNextWeek}
                 title="Avançar 1 semana"
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
-                <span className="text-xs">&gt;&gt;</span>
+                <span className="text-sm">&gt;&gt;</span>
               </Button>
 
               {/* Today button */}
@@ -1310,7 +1310,7 @@ export default function Agenda() {
                 variant="secondary"
                 size="sm"
                 onClick={() => setSelectedDate(new Date())}
-                className="h-7 px-2 text-xs"
+                className="h-8 px-3 text-sm"
               >
                 Hoje
               </Button>
