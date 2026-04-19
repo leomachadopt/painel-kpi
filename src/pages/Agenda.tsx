@@ -1212,18 +1212,17 @@ export default function Agenda() {
             </div>
 
             {/* Date Navigator */}
-            <div className="overflow-x-auto">
-              <div className="flex items-center justify-between gap-2 min-w-fit">
-              <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {/* Weekly navigation - Previous */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={navigatePreviousWeek}
                   title="Voltar 1 semana"
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 p-0"
                 >
-                  <span className="text-sm">&lt;&lt;</span>
+                  <span className="text-xs">&lt;&lt;</span>
                 </Button>
 
                 {/* Daily navigation - Previous */}
@@ -1232,15 +1231,15 @@ export default function Agenda() {
                   size="sm"
                   onClick={navigatePrevious}
                   title={viewMode === 'day' ? 'Voltar 1 dia' : viewMode === '3days' ? 'Voltar 3 dias' : 'Voltar 7 dias'}
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 p-0"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
               <div className="flex flex-col items-center min-w-0 flex-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="text-base font-medium truncate">
+                <div className="flex items-center gap-1 min-w-0">
+                  <div className="text-sm font-medium truncate">
                     {viewMode === 'day'
                       ? format(selectedDate, "EEE, d/MM/yyyy", { locale: ptBR })
                       : `${format(selectedDate, "d/MM", { locale: ptBR })} - ${format(addDays(selectedDate, viewMode === '3days' ? 2 : 6), "d/MM/yyyy", { locale: ptBR })}`
@@ -1253,10 +1252,10 @@ export default function Agenda() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 w-8 p-0 shrink-0"
+                        className="h-7 w-7 p-0 shrink-0"
                         title="Selecionar data"
                       >
-                        <CalendarIcon className="h-4 w-4" />
+                        <CalendarIcon className="h-3.5 w-3.5" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="center">
@@ -1282,16 +1281,16 @@ export default function Agenda() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {/* Daily navigation - Next */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={navigateNext}
                   title={viewMode === 'day' ? 'Avançar 1 dia' : viewMode === '3days' ? 'Avançar 3 dias' : 'Avançar 7 dias'}
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 p-0"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
 
                 {/* Weekly navigation - Next */}
@@ -1300,9 +1299,9 @@ export default function Agenda() {
                   size="sm"
                   onClick={navigateNextWeek}
                   title="Avançar 1 semana"
-                  className="h-8 w-8 p-0"
+                  className="h-7 w-7 p-0"
                 >
-                  <span className="text-sm">&gt;&gt;</span>
+                  <span className="text-xs">&gt;&gt;</span>
                 </Button>
 
                 {/* Today button */}
@@ -1310,11 +1309,10 @@ export default function Agenda() {
                   variant="secondary"
                   size="sm"
                   onClick={() => setSelectedDate(new Date())}
-                  className="h-8 px-3 text-sm"
+                  className="h-7 px-2 text-xs"
                 >
                   Hoje
                 </Button>
-              </div>
               </div>
             </div>
           </div>
