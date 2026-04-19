@@ -1055,7 +1055,7 @@ export default function Agenda() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 overflow-hidden">
       <Card className="overflow-hidden">
         <CardHeader className="p-4">
           <div className="flex items-center justify-between">
