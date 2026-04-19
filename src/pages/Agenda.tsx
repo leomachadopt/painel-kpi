@@ -1212,7 +1212,8 @@ export default function Agenda() {
             </div>
 
             {/* Date Navigator */}
-            <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="overflow-x-auto">
+              <div className="flex items-center justify-between gap-2 min-w-fit">
               <div className="flex items-center gap-1.5 shrink-0">
                 {/* Weekly navigation - Previous */}
                 <Button
@@ -1313,6 +1314,7 @@ export default function Agenda() {
                 >
                   Hoje
                 </Button>
+              </div>
               </div>
             </div>
           </div>
