@@ -1055,8 +1055,8 @@ export default function Agenda() {
   }
 
   return (
-    <div className="p-4 space-y-4 overflow-hidden">
-      <Card className="overflow-hidden">
+    <div className="p-4 space-y-4">
+      <Card>
         <CardHeader className="p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">📅 Agenda Clínica</CardTitle>
@@ -1354,7 +1354,7 @@ export default function Agenda() {
               }
 
               return (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
@@ -1560,7 +1560,7 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
@@ -1815,7 +1815,7 @@ export default function Agenda() {
               }, 0)
 
               return (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg">
                   <div className="overflow-x-auto">
                     <div className="min-w-fit">
                       <div
