@@ -72,14 +72,15 @@ export function NewRevenuePlanDialog({
     if (open) {
       if (editingPlan) {
         // Populate form with existing plan data
+        // Only fill totalValue (not installmentValue) to allow editing
         setFormData({
           patientCode: editingPlan.patientCode,
           patientName: editingPlan.patientName,
           description: editingPlan.description,
           totalValue: editingPlan.totalValue.toString(),
-          installmentValue: editingPlan.installmentValue.toString(),
+          installmentValue: '', // Leave empty to enable totalValue field
           installmentCount: editingPlan.installmentCount.toString(),
-          startDate: editingPlan.startDate,
+          startDate: editingPlan.startDate.split('T')[0], // Ensure YYYY-MM-DD format
           paymentDay: editingPlan.paymentDay.toString(),
           categoryId: editingPlan.categoryId || '',
           alreadyPaidAmount: editingPlan.alreadyPaidAmount?.toString() || '',
