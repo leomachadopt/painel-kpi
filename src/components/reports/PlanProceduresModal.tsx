@@ -38,6 +38,7 @@ interface SelectedProcedure extends ProcedureCatalogItem {
   quantity: number
   editedValue: number
   editedDescription: string
+  toothRegion: string
 }
 
 export function PlanProceduresModal({
@@ -97,6 +98,7 @@ export function PlanProceduresModal({
               quantity: 1, // Cada linha já representa 1 unidade
               editedValue: proc.priceAtCreation,
               editedDescription: proc.procedureDescription,
+              toothRegion: proc.toothRegion || '',
             }))
 
             setSelectedProcedures(loadedProcedures)
@@ -158,6 +160,7 @@ export function PlanProceduresModal({
       quantity: 1,
       editedValue: procedure.value,
       editedDescription: procedure.description,
+      toothRegion: '',
     }
     setSelectedProcedures([...selectedProcedures, newProcedure])
     setSearchTerm('')
@@ -190,6 +193,14 @@ export function PlanProceduresModal({
     )
   }
 
+  const handleUpdateToothRegion = (procedureId: string, toothRegion: string) => {
+    setSelectedProcedures(
+      selectedProcedures.map((p) =>
+        p.id === procedureId ? { ...p, toothRegion } : p
+      )
+    )
+  }
+
   const handleRemoveProcedure = (procedureId: string) => {
     setSelectedProcedures(selectedProcedures.filter((p) => p.id !== procedureId))
   }
@@ -215,6 +226,7 @@ export function PlanProceduresModal({
         procedures: selectedProcedures.map((p, index) => ({
           procedureCode: p.code,
           procedureDescription: p.editedDescription,
+          toothRegion: p.toothRegion || null,
           priceAtCreation: p.editedValue,
           quantity: p.quantity,
           procedureBaseId: p.procedureBaseId,
@@ -379,62 +391,76 @@ export function PlanProceduresModal({
                   selectedProcedures.map((proc) => (
                     <div
                       key={proc.id}
-                      className="flex items-center gap-2 p-3 bg-muted rounded-md"
+                      className="p-3 bg-muted rounded-md space-y-2"
                     >
-                      {/* Código */}
-                      <div className="flex-shrink-0 w-24">
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {proc.code}
-                        </Badge>
-                      </div>
-
-                      {/* Descrição editável */}
-                      <Input
-                        value={proc.editedDescription}
-                        onChange={(e) => handleUpdateDescription(proc.id, e.target.value)}
-                        placeholder="Descrição do procedimento"
-                        className="flex-1 h-9 text-sm"
-                      />
-
-                      {/* Quantidade */}
-                      <div className="flex-shrink-0 w-16">
+                      {/* Primeira linha: Código, Descrição */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-shrink-0 w-24">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {proc.code}
+                          </Badge>
+                        </div>
                         <Input
-                          type="number"
-                          min="1"
-                          value={proc.quantity}
-                          onChange={(e) => handleUpdateQuantity(proc.id, parseInt(e.target.value) || 1)}
-                          className="w-full h-9 text-sm text-center"
-                          title="Quantidade"
+                          value={proc.editedDescription}
+                          onChange={(e) => handleUpdateDescription(proc.id, e.target.value)}
+                          placeholder="Descrição do procedimento"
+                          className="flex-1 h-9 text-sm"
                         />
                       </div>
 
-                      {/* Valor */}
-                      <div className="flex-shrink-0 w-24">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={proc.editedValue}
-                          onChange={(e) => handleUpdateValue(proc.id, parseFloat(e.target.value) || 0)}
-                          className="w-full h-9 text-sm text-right"
-                          title="Valor unitário"
-                        />
-                      </div>
+                      {/* Segunda linha: Dente/Região, Quantidade, Valor, Total, Remover */}
+                      <div className="flex items-center gap-2">
+                        {/* Dente/Região */}
+                        <div className="flex-1">
+                          <Input
+                            value={proc.toothRegion}
+                            onChange={(e) => handleUpdateToothRegion(proc.id, e.target.value)}
+                            placeholder="Ex: 16, 11-21, Superior direito..."
+                            className="h-8 text-xs"
+                            title="Dente/Região (opcional)"
+                          />
+                        </div>
 
-                      {/* Total */}
-                      <div className="flex-shrink-0 w-28 text-sm font-semibold h-9 flex items-center justify-end bg-background px-3 rounded border">
-                        {formatCurrency(proc.editedValue * proc.quantity)}
-                      </div>
+                        {/* Quantidade */}
+                        <div className="flex-shrink-0 w-16">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={proc.quantity}
+                            onChange={(e) => handleUpdateQuantity(proc.id, parseInt(e.target.value) || 1)}
+                            className="w-full h-8 text-xs text-center"
+                            title="Quantidade"
+                          />
+                        </div>
 
-                      {/* Botão Remover */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 flex-shrink-0"
-                        onClick={() => handleRemoveProcedure(proc.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                        {/* Valor */}
+                        <div className="flex-shrink-0 w-24">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={proc.editedValue}
+                            onChange={(e) => handleUpdateValue(proc.id, parseFloat(e.target.value) || 0)}
+                            className="w-full h-8 text-xs text-right"
+                            title="Valor unitário"
+                          />
+                        </div>
+
+                        {/* Total */}
+                        <div className="flex-shrink-0 w-28 text-xs font-semibold h-8 flex items-center justify-end bg-background px-3 rounded border">
+                          {formatCurrency(proc.editedValue * proc.quantity)}
+                        </div>
+
+                        {/* Botão Remover */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={() => handleRemoveProcedure(proc.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}

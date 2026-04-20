@@ -75,6 +75,7 @@ router.get('/:clinicId/patients', async (req, res) => {
             pt.category_id,
             cc.name as category_name,
             pt.status,
+            pt.tooth_region,
             pt.created_at
           FROM pending_treatments pt
           LEFT JOIN clinic_categories cc ON pt.category_id = cc.id
@@ -99,6 +100,7 @@ router.get('/:clinicId/patients', async (req, res) => {
           categoryId: t.category_id,
           categoryName: t.category_name,
           status: t.status,
+          toothRegion: t.tooth_region,
           createdAt: t.created_at,
         }))
 
@@ -169,7 +171,7 @@ router.post('/:clinicId/patients', async (req, res) => {
     const createdTreatments = []
 
     for (const treatment of treatments) {
-      const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId } = treatment
+      const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId, toothRegion } = treatment
 
       if (!description || !unitValue || !totalQuantity) {
         throw new Error('Invalid treatment data')
@@ -182,8 +184,8 @@ router.post('/:clinicId/patients', async (req, res) => {
         `INSERT INTO pending_treatments (
           id, pending_treatment_patient_id, clinic_id, description,
           unit_value, total_quantity, pending_quantity, category_id, status,
-          procedure_code, procedure_base_id, insurance_provider_procedure_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+          procedure_code, procedure_base_id, insurance_provider_procedure_id, tooth_region
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [
           treatmentId,
           finalPatientId,
@@ -197,6 +199,7 @@ router.post('/:clinicId/patients', async (req, res) => {
           procedureCode || null,
           procedureBaseId || null,
           insuranceProviderProcedureId || null,
+          toothRegion || null,
         ]
       )
 
@@ -236,7 +239,7 @@ router.post('/:clinicId/patients', async (req, res) => {
 router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
   try {
     const { clinicId, patientId } = req.params
-    const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId } = req.body
+    const { description, unitValue, totalQuantity, categoryId, procedureCode, procedureBaseId, insuranceProviderProcedureId, toothRegion } = req.body
 
     if (!await canManagePendingTreatments(req, clinicId)) {
       return res.status(403).json({ error: 'Permission denied' })
@@ -254,8 +257,8 @@ router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
       `INSERT INTO pending_treatments (
         id, pending_treatment_patient_id, clinic_id, description,
         unit_value, total_quantity, pending_quantity, category_id, status,
-        procedure_code, procedure_base_id, insurance_provider_procedure_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        procedure_code, procedure_base_id, insurance_provider_procedure_id, tooth_region
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         treatmentId,
         patientId,
@@ -269,6 +272,7 @@ router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
         procedureCode || null,
         procedureBaseId || null,
         insuranceProviderProcedureId || null,
+        toothRegion || null,
       ]
     )
 

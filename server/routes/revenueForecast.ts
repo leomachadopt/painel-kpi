@@ -438,6 +438,123 @@ router.delete('/:clinicId/installments/:installmentId', async (req, res) => {
 })
 
 /**
+ * Update revenue plan
+ */
+router.patch('/:clinicId/plans/:planId', async (req, res) => {
+  try {
+    const { clinicId, planId } = req.params
+    const {
+      patientCode,
+      patientName,
+      description,
+      totalValue,
+      installmentValue,
+      installmentCount,
+      startDate,
+      paymentDay,
+      categoryId,
+      alreadyPaidAmount,
+    } = req.body
+
+    if (!await canManageRevenueForecast(req, clinicId)) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Build update query dynamically
+    const updates: string[] = []
+    const values: any[] = []
+    let paramCount = 1
+
+    if (patientCode !== undefined) {
+      updates.push(`patient_code = $${paramCount++}`)
+      values.push(patientCode)
+    }
+
+    if (patientName !== undefined) {
+      updates.push(`patient_name = $${paramCount++}`)
+      values.push(patientName)
+    }
+
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount++}`)
+      values.push(description)
+    }
+
+    if (totalValue !== undefined) {
+      updates.push(`total_value = $${paramCount++}`)
+      values.push(totalValue)
+    }
+
+    if (installmentValue !== undefined) {
+      updates.push(`installment_value = $${paramCount++}`)
+      values.push(installmentValue)
+    }
+
+    if (installmentCount !== undefined) {
+      updates.push(`installment_count = $${paramCount++}`)
+      values.push(installmentCount)
+    }
+
+    if (startDate !== undefined) {
+      updates.push(`start_date = $${paramCount++}`)
+      values.push(startDate)
+    }
+
+    if (paymentDay !== undefined) {
+      updates.push(`payment_day = $${paramCount++}`)
+      values.push(paymentDay)
+    }
+
+    if (categoryId !== undefined) {
+      updates.push(`category_id = $${paramCount++}`)
+      values.push(categoryId || null)
+    }
+
+    if (alreadyPaidAmount !== undefined) {
+      updates.push(`already_paid_amount = $${paramCount++}`)
+      values.push(alreadyPaidAmount)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' })
+    }
+
+    values.push(planId, clinicId)
+
+    const result = await query(
+      `UPDATE revenue_plans
+       SET ${updates.join(', ')}
+       WHERE id = $${paramCount++} AND clinic_id = $${paramCount++}
+       RETURNING *`,
+      values
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Revenue plan not found' })
+    }
+
+    const updated = result.rows[0]
+
+    res.json({
+      id: updated.id,
+      patientCode: updated.patient_code,
+      patientName: updated.patient_name,
+      description: updated.description,
+      totalValue: parseFloat(updated.total_value),
+      installmentValue: parseFloat(updated.installment_value),
+      installmentCount: updated.installment_count,
+      startDate: updated.start_date,
+      paymentDay: updated.payment_day,
+      categoryId: updated.category_id,
+      alreadyPaidAmount: parseFloat(updated.already_paid_amount || '0'),
+    })
+  } catch (error: any) {
+    console.error('Update revenue plan error:', error)
+    res.status(500).json({ error: 'Failed to update revenue plan' })
+  }
+})
+
+/**
  * Delete entire revenue plan (and all its installments)
  */
 router.delete('/:clinicId/plans/:planId', async (req, res) => {

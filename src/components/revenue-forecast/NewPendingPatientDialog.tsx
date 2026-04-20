@@ -37,6 +37,7 @@ interface SelectedTreatment {
   editedValue: number
   editedDescription: string
   categoryId: string
+  toothRegion: string
 }
 
 interface ProcedureResult {
@@ -182,6 +183,7 @@ export function NewPendingPatientDialog({
       editedValue: procedure.value,
       editedDescription: procedure.description,
       categoryId: '',
+      toothRegion: '',
     }
 
     setSelectedTreatments([...selectedTreatments, newTreatment])
@@ -211,6 +213,14 @@ export function NewPendingPatientDialog({
     setSelectedTreatments(
       selectedTreatments.map((t) =>
         t.id === treatmentId ? { ...t, editedDescription: description } : t
+      )
+    )
+  }
+
+  const handleUpdateToothRegion = (treatmentId: string, toothRegion: string) => {
+    setSelectedTreatments(
+      selectedTreatments.map((t) =>
+        t.id === treatmentId ? { ...t, toothRegion } : t
       )
     )
   }
@@ -268,6 +278,7 @@ export function NewPendingPatientDialog({
           procedureCode: t.code,
           procedureBaseId: t.procedureBaseId || undefined,
           insuranceProviderProcedureId: t.insuranceProviderProcedureId || undefined,
+          toothRegion: t.toothRegion || undefined,
         })),
       }
 
@@ -424,19 +435,6 @@ export function NewPendingPatientDialog({
                     <Badge variant="secondary">Total: {formatCurrency(totalPendingValue)}</Badge>
                   </div>
 
-                  {/* Column Headers */}
-                  {selectedTreatments.length > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-t-md border-b text-xs font-semibold text-muted-foreground">
-                      <div className="flex-shrink-0 w-20">Código</div>
-                      <div className="flex-1">Descrição</div>
-                      <div className="flex-shrink-0 w-32">Categoria</div>
-                      <div className="flex-shrink-0 w-16 text-center">Qtd</div>
-                      <div className="flex-shrink-0 w-24 text-right">Valor</div>
-                      <div className="flex-shrink-0 w-28 text-right">Total</div>
-                      <div className="flex-shrink-0 w-9"></div>
-                    </div>
-                  )}
-
                   <ScrollArea className="h-[250px] border rounded-md">
                     <div className="p-2 space-y-2">
                       {selectedTreatments.length === 0 ? (
@@ -447,87 +445,101 @@ export function NewPendingPatientDialog({
                         selectedTreatments.map((treatment) => (
                           <div
                             key={treatment.id}
-                            className="flex items-center gap-2 p-3 bg-muted rounded-md"
+                            className="p-3 bg-muted rounded-md space-y-2"
                           >
-                            {/* Code */}
-                            <div className="flex-shrink-0 w-20">
-                              <Badge variant="outline" className="font-mono text-xs">
-                                {treatment.code}
-                              </Badge>
+                            {/* Primeira linha: Código, Descrição */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-shrink-0 w-20">
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {treatment.code}
+                                </Badge>
+                              </div>
+                              <Input
+                                value={treatment.editedDescription}
+                                onChange={(e) =>
+                                  handleUpdateDescription(treatment.id, e.target.value)
+                                }
+                                placeholder="Descrição"
+                                className="flex-1 h-9 text-sm"
+                              />
                             </div>
 
-                            {/* Description */}
-                            <Input
-                              value={treatment.editedDescription}
-                              onChange={(e) =>
-                                handleUpdateDescription(treatment.id, e.target.value)
-                              }
-                              placeholder="Descrição"
-                              className="flex-1 h-9 text-sm"
-                            />
+                            {/* Segunda linha: Dente/Região, Categoria, Quantidade, Valor, Total, Remover */}
+                            <div className="flex items-center gap-2">
+                              {/* Dente/Região */}
+                              <div className="flex-1">
+                                <Input
+                                  value={treatment.toothRegion}
+                                  onChange={(e) => handleUpdateToothRegion(treatment.id, e.target.value)}
+                                  placeholder="Ex: 16, 11-21, Superior direito..."
+                                  className="h-8 text-xs"
+                                  title="Dente/Região (opcional)"
+                                />
+                              </div>
 
-                            {/* Category */}
-                            <div className="flex-shrink-0 w-32">
-                              <Select
-                                value={treatment.categoryId || undefined}
-                                onValueChange={(value) => handleUpdateCategory(treatment.id, value)}
+                              {/* Categoria */}
+                              <div className="flex-shrink-0 w-32">
+                                <Select
+                                  value={treatment.categoryId || undefined}
+                                  onValueChange={(value) => handleUpdateCategory(treatment.id, value)}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Categoria" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {clinic?.configuration?.categories?.map((cat: any) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Quantidade */}
+                              <div className="flex-shrink-0 w-16">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={treatment.quantity}
+                                  onChange={(e) =>
+                                    handleUpdateQuantity(treatment.id, parseInt(e.target.value) || 1)
+                                  }
+                                  className="w-full h-8 text-xs text-center"
+                                  title="Quantidade"
+                                />
+                              </div>
+
+                              {/* Valor unitário */}
+                              <div className="flex-shrink-0 w-24">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={treatment.editedValue}
+                                  onChange={(e) =>
+                                    handleUpdateValue(treatment.id, parseFloat(e.target.value) || 0)
+                                  }
+                                  className="w-full h-8 text-xs text-right"
+                                  title="Valor unitário"
+                                />
+                              </div>
+
+                              {/* Total */}
+                              <div className="flex-shrink-0 w-28 text-xs font-semibold h-8 flex items-center justify-end bg-background px-3 rounded border">
+                                {formatCurrency(treatment.editedValue * treatment.quantity)}
+                              </div>
+
+                              {/* Remover */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 flex-shrink-0"
+                                onClick={() => handleRemoveTreatment(treatment.id)}
                               >
-                                <SelectTrigger className="h-9 text-sm">
-                                  <SelectValue placeholder="Categoria" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {clinic?.configuration?.categories?.map((cat: any) => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                      {cat.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                <X className="h-3 w-3" />
+                              </Button>
                             </div>
-
-                            {/* Quantity */}
-                            <div className="flex-shrink-0 w-16">
-                              <Input
-                                type="number"
-                                min="1"
-                                value={treatment.quantity}
-                                onChange={(e) =>
-                                  handleUpdateQuantity(treatment.id, parseInt(e.target.value) || 1)
-                                }
-                                className="w-full h-9 text-sm text-center"
-                                title="Quantidade"
-                              />
-                            </div>
-
-                            {/* Unit Value */}
-                            <div className="flex-shrink-0 w-24">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={treatment.editedValue}
-                                onChange={(e) =>
-                                  handleUpdateValue(treatment.id, parseFloat(e.target.value) || 0)
-                                }
-                                className="w-full h-9 text-sm text-right"
-                                title="Valor unitário"
-                              />
-                            </div>
-
-                            {/* Total */}
-                            <div className="flex-shrink-0 w-28 text-sm font-semibold h-9 flex items-center justify-end bg-background px-3 rounded border">
-                              {formatCurrency(treatment.editedValue * treatment.quantity)}
-                            </div>
-
-                            {/* Remove Button */}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 flex-shrink-0"
-                              onClick={() => handleRemoveTreatment(treatment.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
                           </div>
                         ))
                       )}

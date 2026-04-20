@@ -1294,6 +1294,23 @@ const revenueForecastApi = {
       body: JSON.stringify(data),
     }),
 
+  updatePlan: (clinicId: string, planId: string, data: {
+    patientCode?: string
+    patientName?: string
+    description?: string
+    totalValue?: number
+    installmentValue?: number
+    installmentCount?: number
+    startDate?: string
+    paymentDay?: number
+    categoryId?: string
+    alreadyPaidAmount?: number
+  }) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/plans/${planId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
   updateInstallment: (clinicId: string, installmentId: string, data: {
     value?: number
     dueDate?: string

@@ -272,6 +272,7 @@ export interface PlanProcedure {
   insuranceProviderProcedureId?: string | null
   procedureCode: string
   procedureDescription: string
+  toothRegion?: string | null
   priceAtCreation: number
   priceTableType: 'clinica' | 'operadora'
   completed: boolean

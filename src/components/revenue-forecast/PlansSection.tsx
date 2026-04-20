@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { NewRevenuePlanDialog } from './NewRevenuePlanDialog'
 
 interface RevenueForecastPlansSectionProps {
   clinicId: string
@@ -53,6 +54,8 @@ export function RevenueForecastPlansSection({
     status: '',
     receivedDate: '',
   })
+  const [editingPlan, setEditingPlan] = useState<any | null>(null)
+  const [editPlanDialogOpen, setEditPlanDialogOpen] = useState(false)
 
   useEffect(() => {
     loadPlans()
@@ -76,6 +79,21 @@ export function RevenueForecastPlansSection({
 
   const togglePlan = (planId: string) => {
     setExpandedPlan(expandedPlan === planId ? null : planId)
+  }
+
+  const handleOpenEditPlanDialog = (plan: any) => {
+    setEditingPlan(plan)
+    setEditPlanDialogOpen(true)
+  }
+
+  const handleCloseEditPlanDialog = () => {
+    setEditingPlan(null)
+    setEditPlanDialogOpen(false)
+  }
+
+  const handleEditPlanSuccess = () => {
+    handleCloseEditPlanDialog()
+    onRefresh()
   }
 
   const handleMarkAsReceived = async (installmentId: string) => {
@@ -358,16 +376,30 @@ export function RevenueForecastPlansSection({
                       })()}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDeleteConfirm({ type: 'plan', id: plan.id })
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleOpenEditPlanDialog(plan)
+                      }}
+                      title="Editar plano"
+                    >
+                      <Pencil className="w-4 h-4 text-blue-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteConfirm({ type: 'plan', id: plan.id })
+                      }}
+                      title="Excluir plano"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Installments List */}
@@ -539,6 +571,15 @@ export function RevenueForecastPlansSection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Plan Dialog */}
+      <NewRevenuePlanDialog
+        open={editPlanDialogOpen}
+        onOpenChange={setEditPlanDialogOpen}
+        clinicId={clinicId}
+        onSuccess={handleEditPlanSuccess}
+        editingPlan={editingPlan}
+      />
     </>
   )
 }

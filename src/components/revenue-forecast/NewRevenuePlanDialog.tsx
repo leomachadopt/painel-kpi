@@ -27,6 +27,19 @@ interface NewRevenuePlanDialogProps {
   onOpenChange: (open: boolean) => void
   clinicId: string
   onSuccess: () => void
+  editingPlan?: {
+    id: string
+    patientCode: string
+    patientName: string
+    description: string
+    totalValue: number
+    installmentValue: number
+    installmentCount: number
+    startDate: string
+    paymentDay: number
+    categoryId?: string
+    alreadyPaidAmount?: number
+  } | null
 }
 
 export function NewRevenuePlanDialog({
@@ -34,6 +47,7 @@ export function NewRevenuePlanDialog({
   onOpenChange,
   clinicId,
   onSuccess,
+  editingPlan = null,
 }: NewRevenuePlanDialogProps) {
   const { toast } = useToast()
   const { getClinic } = useDataStore()
@@ -53,23 +67,40 @@ export function NewRevenuePlanDialog({
     alreadyPaidAmount: '',
   })
 
-  // Reset form when dialog opens
+  // Reset or populate form when dialog opens
   useEffect(() => {
     if (open) {
-      setFormData({
-        patientCode: '',
-        patientName: '',
-        description: '',
-        totalValue: '',
-        installmentValue: '',
-        installmentCount: '',
-        startDate: '',
-        paymentDay: '',
-        categoryId: '',
-        alreadyPaidAmount: '',
-      })
+      if (editingPlan) {
+        // Populate form with existing plan data
+        setFormData({
+          patientCode: editingPlan.patientCode,
+          patientName: editingPlan.patientName,
+          description: editingPlan.description,
+          totalValue: editingPlan.totalValue.toString(),
+          installmentValue: editingPlan.installmentValue.toString(),
+          installmentCount: editingPlan.installmentCount.toString(),
+          startDate: editingPlan.startDate,
+          paymentDay: editingPlan.paymentDay.toString(),
+          categoryId: editingPlan.categoryId || '',
+          alreadyPaidAmount: editingPlan.alreadyPaidAmount?.toString() || '',
+        })
+      } else {
+        // Reset form for new plan
+        setFormData({
+          patientCode: '',
+          patientName: '',
+          description: '',
+          totalValue: '',
+          installmentValue: '',
+          installmentCount: '',
+          startDate: '',
+          paymentDay: '',
+          categoryId: '',
+          alreadyPaidAmount: '',
+        })
+      }
     }
-  }, [open])
+  }, [open, editingPlan])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,19 +162,28 @@ export function NewRevenuePlanDialog({
         data.alreadyPaidAmount = parseFloat(formData.alreadyPaidAmount)
       }
 
-      await api.revenueForecast.createPlan(clinicId, data)
-
-      toast({
-        title: 'Sucesso',
-        description: `Plano de receita criado com ${installmentCount} parcelas`,
-      })
+      if (editingPlan) {
+        // Update existing plan
+        await api.revenueForecast.updatePlan(clinicId, editingPlan.id, data)
+        toast({
+          title: 'Sucesso',
+          description: 'Plano de receita atualizado com sucesso',
+        })
+      } else {
+        // Create new plan
+        await api.revenueForecast.createPlan(clinicId, data)
+        toast({
+          title: 'Sucesso',
+          description: `Plano de receita criado com ${installmentCount} parcelas`,
+        })
+      }
 
       onOpenChange(false)
       onSuccess()
     } catch (error: any) {
       toast({
         title: 'Erro',
-        description: error.message || 'Falha ao criar plano de receita',
+        description: error.message || `Falha ao ${editingPlan ? 'atualizar' : 'criar'} plano de receita`,
         variant: 'destructive',
       })
     } finally {
@@ -164,9 +204,9 @@ export function NewRevenuePlanDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nova Receita Recorrente</DialogTitle>
+          <DialogTitle>{editingPlan ? 'Editar Receita Recorrente' : 'Nova Receita Recorrente'}</DialogTitle>
           <DialogDescription>
-            Cadastre um plano de receita com parcelas mensais
+            {editingPlan ? 'Altere os dados do plano de receita abaixo' : 'Cadastre um plano de receita com parcelas mensais'}
           </DialogDescription>
         </DialogHeader>
 
@@ -330,7 +370,7 @@ export function NewRevenuePlanDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Gerando...' : 'Gerar Parcelas'}
+              {loading ? (editingPlan ? 'Salvando...' : 'Gerando...') : (editingPlan ? 'Salvar Alterações' : 'Gerar Parcelas')}
             </Button>
           </DialogFooter>
         </form>
