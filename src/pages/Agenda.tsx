@@ -73,11 +73,15 @@ export default function Agenda() {
   const [dragOffset, setDragOffset] = useState(0)
   const [resizeStartY, setResizeStartY] = useState(0)
   const [resizeStartHeight, setResizeStartHeight] = useState(0)
+  const [resizePreviewHeight, setResizePreviewHeight] = useState<number | null>(null)
 
   // Edit appointment modal
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [originalAppointment, setOriginalAppointment] = useState<any | null>(null)
+  const [isEditingTime, setIsEditingTime] = useState(false)
+  const [editedStartTime, setEditedStartTime] = useState('')
+  const [editedEndTime, setEditedEndTime] = useState('')
   const [rescheduledAppointment, setRescheduledAppointment] = useState<any | null>(null)
 
   // Plan procedures for the appointment
@@ -201,9 +205,9 @@ export default function Agenda() {
 
       const deltaY = e.clientY - resizeStartY
       const newHeight = Math.max(60, resizeStartHeight + deltaY) // Minimum 1 slot (60px)
-      const newDuration = Math.round((newHeight / 60) * SLOT_DURATION)
 
-      // Update visual feedback (you can add a preview here)
+      // Update visual feedback
+      setResizePreviewHeight(newHeight)
     }
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -212,12 +216,26 @@ export default function Agenda() {
       const deltaY = e.clientY - resizeStartY
       const newHeight = Math.max(60, resizeStartHeight + deltaY)
 
+      console.log('[RESIZE] MouseUp:', {
+        deltaY,
+        resizeStartHeight,
+        newHeight,
+        direction: deltaY > 0 ? 'down (increase)' : 'up (decrease)'
+      })
+
       // Calculate duration in slots (15 min each) and round to nearest slot
       const slots = Math.round(newHeight / 60)
       const newDuration = slots * SLOT_DURATION
 
       const startMinutes = timeToMinutes(resizingAppointment.scheduledStart)
       const newEndMinutes = startMinutes + newDuration
+
+      console.log('[RESIZE] New time:', {
+        slots,
+        newDuration,
+        oldEnd: resizingAppointment.scheduledEnd,
+        newEnd: minutesToTime(newEndMinutes)
+      })
 
       // Update appointment
       updateAppointmentTime(
@@ -227,6 +245,7 @@ export default function Agenda() {
       )
 
       setResizingAppointment(null)
+      setResizePreviewHeight(null)
     }
 
     if (resizingAppointment) {
@@ -1452,14 +1471,20 @@ export default function Agenda() {
                                         ? `${appointmentTypeColor}20`
                                         : appointmentTypeColor
 
+                                      const isResizing = resizingAppointment?.id === appointment.id
+                                      const displayHeight = isResizing && resizePreviewHeight !== null
+                                        ? resizePreviewHeight
+                                        : height
+
                                       return (
                                         <div
                                           key={appointment.id}
                                           className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
                                           style={{
                                             top: `${offsetFromTop}px`,
-                                            height: `${height}px`,
+                                            height: `${displayHeight}px`,
                                             backgroundColor: rgbColor,
+                                            transition: isResizing ? 'none' : 'height 0.2s ease',
                                           }}
                                           draggable
                                           onClick={(e) => {
@@ -1514,15 +1539,23 @@ export default function Agenda() {
 
                                           {/* Resize handle */}
                                           <div
-                                            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
+                                            className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
                                             onMouseDown={(e) => {
                                               e.stopPropagation()
                                               e.preventDefault()
+                                              console.log('[RESIZE] MouseDown - Starting resize', {
+                                                appointmentId: appointment.id,
+                                                currentHeight: height,
+                                                scheduledStart: appointment.scheduledStart,
+                                                scheduledEnd: appointment.scheduledEnd
+                                              })
                                               setResizingAppointment(appointment)
                                               setResizeStartY(e.clientY)
                                               setResizeStartHeight(height)
                                             }}
-                                          />
+                                          >
+                                            <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                          </div>
                                         </div>
                                       )
                                     })}
@@ -1711,14 +1744,20 @@ export default function Agenda() {
                                           ? `${appointmentTypeColor}20`
                                           : appointmentTypeColor
 
+                                        const isResizing = resizingAppointment?.id === appointment.id
+                                        const displayHeight = isResizing && resizePreviewHeight !== null
+                                          ? resizePreviewHeight
+                                          : height
+
                                         return (
                                           <div
                                             key={appointment.id}
                                             className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
                                             style={{
                                               top: `${offsetFromTop}px`,
-                                              height: `${height}px`,
+                                              height: `${displayHeight}px`,
                                               backgroundColor: rgbColor,
+                                              transition: isResizing ? 'none' : 'height 0.2s ease',
                                             }}
                                             draggable
                                             onClick={(e) => {
@@ -1770,15 +1809,23 @@ export default function Agenda() {
                                             </div>
 
                                             <div
-                                              className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
+                                              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
                                               onMouseDown={(e) => {
                                                 e.stopPropagation()
                                                 e.preventDefault()
+                                                console.log('[RESIZE] MouseDown - Starting resize', {
+                                                  appointmentId: appointment.id,
+                                                  currentHeight: height,
+                                                  scheduledStart: appointment.scheduledStart,
+                                                  scheduledEnd: appointment.scheduledEnd
+                                                })
                                                 setResizingAppointment(appointment)
                                                 setResizeStartY(e.clientY)
                                                 setResizeStartHeight(height)
                                               }}
-                                            />
+                                            >
+                                              <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                            </div>
                                           </div>
                                         )
                                       })}
@@ -1966,14 +2013,20 @@ export default function Agenda() {
                                           ? `${appointmentTypeColor}20`
                                           : appointmentTypeColor
 
+                                        const isResizing = resizingAppointment?.id === appointment.id
+                                        const displayHeight = isResizing && resizePreviewHeight !== null
+                                          ? resizePreviewHeight
+                                          : height
+
                                         return (
                                           <div
                                             key={appointment.id}
                                             className="absolute left-0 right-0 pointer-events-auto cursor-move border rounded p-2 group hover:shadow-lg transition-shadow overflow-hidden"
                                             style={{
                                               top: `${offsetFromTop}px`,
-                                              height: `${height}px`,
+                                              height: `${displayHeight}px`,
                                               backgroundColor: rgbColor,
+                                              transition: isResizing ? 'none' : 'height 0.2s ease',
                                             }}
                                             draggable
                                             onClick={(e) => {
@@ -2025,15 +2078,23 @@ export default function Agenda() {
                                             </div>
 
                                             <div
-                                              className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/20 transition-opacity"
+                                              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
                                               onMouseDown={(e) => {
                                                 e.stopPropagation()
                                                 e.preventDefault()
+                                                console.log('[RESIZE] MouseDown - Starting resize', {
+                                                  appointmentId: appointment.id,
+                                                  currentHeight: height,
+                                                  scheduledStart: appointment.scheduledStart,
+                                                  scheduledEnd: appointment.scheduledEnd
+                                                })
                                                 setResizingAppointment(appointment)
                                                 setResizeStartY(e.clientY)
                                                 setResizeStartHeight(height)
                                               }}
-                                            />
+                                            >
+                                              <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                            </div>
                                           </div>
                                         )
                                       })}
@@ -2412,11 +2473,97 @@ export default function Agenda() {
                     {new Date(editingAppointment.date || selectedDate).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm text-muted-foreground">Horário da Consulta</Label>
-                  <p className="text-sm font-medium">
-                    {editingAppointment.scheduledStart?.substring(0, 5)} - {editingAppointment.scheduledEnd?.substring(0, 5)}
-                  </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-muted-foreground">Horário da Consulta</Label>
+                    {!isEditingTime && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingTime(true)
+                          setEditedStartTime(editingAppointment.scheduledStart?.substring(0, 5) || '')
+                          setEditedEndTime(editingAppointment.scheduledEnd?.substring(0, 5) || '')
+                        }}
+                      >
+                        Editar Horário
+                      </Button>
+                    )}
+                  </div>
+
+                  {!isEditingTime ? (
+                    <p className="text-sm font-medium">
+                      {editingAppointment.scheduledStart?.substring(0, 5)} - {editingAppointment.scheduledEnd?.substring(0, 5)}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <Label className="text-xs">Início</Label>
+                          <Input
+                            type="time"
+                            value={editedStartTime}
+                            onChange={(e) => setEditedStartTime(e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Fim</Label>
+                          <Input
+                            type="time"
+                            value={editedEndTime}
+                            onChange={(e) => setEditedEndTime(e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (!editedStartTime || !editedEndTime) {
+                              toast.error('Preencha ambos os horários')
+                              return
+                            }
+
+                            const startMinutes = timeToMinutes(editedStartTime)
+                            const endMinutes = timeToMinutes(editedEndTime)
+
+                            if (startMinutes >= endMinutes) {
+                              toast.error('Horário de término deve ser após o início')
+                              return
+                            }
+
+                            await updateAppointmentTime(
+                              editingAppointment.id,
+                              editedStartTime,
+                              editedEndTime
+                            )
+
+                            setEditingAppointment({
+                              ...editingAppointment,
+                              scheduledStart: editedStartTime,
+                              scheduledEnd: editedEndTime
+                            })
+                            setIsEditingTime(false)
+                          }}
+                        >
+                          Salvar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingTime(false)
+                            setEditedStartTime('')
+                            setEditedEndTime('')
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
