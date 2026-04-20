@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { EditTreatmentDialog } from './EditTreatmentDialog'
+import { AddTreatmentsDialog } from './AddTreatmentsDialog'
 
 interface PendingTreatmentsSectionProps {
   clinicId: string
@@ -44,6 +46,10 @@ export function PendingTreatmentsSection({
   const [patients, setPatients] = useState<any[]>([])
   const [expandedPatient, setExpandedPatient] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deletePatientConfirm, setDeletePatientConfirm] = useState<{
+    patientId: string
+    patientName: string
+  } | null>(null)
   const [completeDialog, setCompleteDialog] = useState<{
     treatmentId: string
     description: string
@@ -54,6 +60,16 @@ export function PendingTreatmentsSection({
   const [executionDate, setExecutionDate] = useState('')
   const [executionTime, setExecutionTime] = useState('')
   const [executionNotes, setExecutionNotes] = useState('')
+
+  // Edit treatment modal
+  const [editTreatmentDialog, setEditTreatmentDialog] = useState<any | null>(null)
+
+  // Add treatments modal
+  const [addTreatmentsDialog, setAddTreatmentsDialog] = useState<{
+    id: string
+    patientCode: string
+    patientName: string
+  } | null>(null)
 
   useEffect(() => {
     loadPatients()
@@ -142,6 +158,26 @@ export function PendingTreatmentsSection({
     }
   }
 
+  const handleDeletePatient = async () => {
+    if (!deletePatientConfirm) return
+
+    try {
+      await api.pendingTreatments.deletePatient(clinicId, deletePatientConfirm.patientId)
+      toast({
+        title: 'Sucesso',
+        description: 'Paciente e todos os tratamentos foram excluídos',
+      })
+      setDeletePatientConfirm(null)
+      onRefresh()
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao excluir paciente',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     const variants = {
       PENDENTE: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
@@ -215,6 +251,38 @@ export function PendingTreatmentsSection({
                       </div>
                     </div>
                   </div>
+
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setAddTreatmentsDialog({
+                          id: patient.id,
+                          patientCode: patient.patientCode,
+                          patientName: patient.patientName,
+                        })
+                      }}
+                      title="Adicionar tratamentos"
+                    >
+                      <Plus className="w-4 h-4 text-green-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeletePatientConfirm({
+                          patientId: patient.id,
+                          patientName: patient.patientName,
+                        })
+                      }}
+                      title="Excluir paciente e todos os tratamentos"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Treatments List */}
@@ -254,30 +322,40 @@ export function PendingTreatmentsSection({
                             <div>{getStatusBadge(treatment.status)}</div>
                             <div className="flex justify-end gap-1">
                               {!isCompleted && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Initialize with current date/time
-                                    const now = new Date()
-                                    const dateStr = now.toISOString().split('T')[0]
-                                    const timeStr = now.toTimeString().slice(0, 5)
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditTreatmentDialog(treatment)}
+                                    title="Editar tratamento"
+                                  >
+                                    <Pencil className="w-4 h-4 text-blue-600" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Initialize with current date/time
+                                      const now = new Date()
+                                      const dateStr = now.toISOString().split('T')[0]
+                                      const timeStr = now.toTimeString().slice(0, 5)
 
-                                    setCompleteDialog({
-                                      treatmentId: treatment.id,
-                                      description: treatment.description,
-                                      pendingQuantity: treatment.pendingQuantity,
-                                      unitValue: treatment.unitValue,
-                                    })
-                                    setCompletedQuantity('')
-                                    setExecutionDate(dateStr)
-                                    setExecutionTime(timeStr)
-                                    setExecutionNotes('')
-                                  }}
-                                  title="Marcar como realizado"
-                                >
-                                  <Check className="w-4 h-4 text-green-600" />
-                                </Button>
+                                      setCompleteDialog({
+                                        treatmentId: treatment.id,
+                                        description: treatment.description,
+                                        pendingQuantity: treatment.pendingQuantity,
+                                        unitValue: treatment.unitValue,
+                                      })
+                                      setCompletedQuantity('')
+                                      setExecutionDate(dateStr)
+                                      setExecutionTime(timeStr)
+                                      setExecutionNotes('')
+                                    }}
+                                    title="Marcar como realizado"
+                                  >
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </Button>
+                                </>
                               )}
                               <Button
                                 variant="ghost"
@@ -425,6 +503,51 @@ export function PendingTreatmentsSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete Patient Confirmation Dialog */}
+      <AlertDialog open={!!deletePatientConfirm} onOpenChange={() => setDeletePatientConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão do Paciente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <span className="font-semibold">{deletePatientConfirm?.patientName}</span> e <span className="font-semibold">todos os seus tratamentos</span>?
+              <br />
+              <br />
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePatient} className="bg-destructive text-destructive-foreground">
+              Excluir Tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Treatment Dialog */}
+      <EditTreatmentDialog
+        open={!!editTreatmentDialog}
+        onOpenChange={(open) => !open && setEditTreatmentDialog(null)}
+        clinicId={clinicId}
+        treatment={editTreatmentDialog}
+        onSuccess={() => {
+          setEditTreatmentDialog(null)
+          onRefresh()
+        }}
+      />
+
+      {/* Add Treatments Dialog */}
+      <AddTreatmentsDialog
+        open={!!addTreatmentsDialog}
+        onOpenChange={(open) => !open && setAddTreatmentsDialog(null)}
+        clinicId={clinicId}
+        patient={addTreatmentsDialog}
+        onSuccess={() => {
+          setAddTreatmentsDialog(null)
+          onRefresh()
+        }}
+      />
     </>
   )
 }

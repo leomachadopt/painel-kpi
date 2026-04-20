@@ -1411,6 +1411,7 @@ const pendingTreatmentsApi = {
     unitValue: number
     totalQuantity: number
     categoryId?: string
+    toothRegion?: string
   }) =>
     apiCall<any>(`/pending-treatments/${clinicId}/patients/${patientId}/treatments`, {
       method: 'POST',
@@ -1423,6 +1424,7 @@ const pendingTreatmentsApi = {
     totalQuantity?: number
     pendingQuantity?: number
     categoryId?: string
+    toothRegion?: string
   }) =>
     apiCall<any>(`/pending-treatments/${clinicId}/treatments/${treatmentId}`, {
       method: 'PATCH',
@@ -1442,6 +1444,12 @@ const pendingTreatmentsApi = {
   deleteTreatment: (clinicId: string, treatmentId: string) =>
     apiCall<{ success: boolean; patientHasRemainingTreatments: boolean }>(
       `/pending-treatments/${clinicId}/treatments/${treatmentId}`,
+      { method: 'DELETE' }
+    ),
+
+  deletePatient: (clinicId: string, patientId: string) =>
+    apiCall<{ success: boolean }>(
+      `/pending-treatments/${clinicId}/patients/${patientId}`,
       { method: 'DELETE' }
     ),
 

@@ -298,7 +298,7 @@ router.post('/:clinicId/patients/:patientId/treatments', async (req, res) => {
 router.patch('/:clinicId/treatments/:treatmentId', async (req, res) => {
   try {
     const { clinicId, treatmentId } = req.params
-    const { description, unitValue, totalQuantity, pendingQuantity, categoryId } = req.body
+    const { description, unitValue, totalQuantity, pendingQuantity, categoryId, toothRegion } = req.body
 
     if (!await canManagePendingTreatments(req, clinicId)) {
       return res.status(403).json({ error: 'Permission denied' })
@@ -349,6 +349,11 @@ router.patch('/:clinicId/treatments/:treatmentId', async (req, res) => {
       values.push(categoryId || null)
     }
 
+    if (toothRegion !== undefined) {
+      updates.push(`tooth_region = $${paramCount++}`)
+      values.push(toothRegion || null)
+    }
+
     if (updates.length === 0) {
       return res.status(400).json({ error: 'No fields to update' })
     }
@@ -377,6 +382,7 @@ router.patch('/:clinicId/treatments/:treatmentId', async (req, res) => {
       pendingValue: parseFloat(updated.pending_value),
       categoryId: updated.category_id,
       status: updated.status,
+      toothRegion: updated.tooth_region,
     })
   } catch (error: any) {
     console.error('Update treatment error:', error)
@@ -518,6 +524,7 @@ router.post('/:clinicId/treatments/:treatmentId/complete', async (req, res) => {
       pendingValue: parseFloat(updated.pending_value),
       categoryId: updated.category_id,
       status: updated.status,
+      toothRegion: updated.tooth_region,
     })
   } catch (error: any) {
     console.error('Complete treatment error:', error)
@@ -562,6 +569,43 @@ router.delete('/:clinicId/treatments/:treatmentId', async (req, res) => {
   } catch (error: any) {
     console.error('Delete treatment error:', error)
     res.status(500).json({ error: 'Failed to delete treatment' })
+  }
+})
+
+/**
+ * Delete patient and all their treatments
+ */
+router.delete('/:clinicId/patients/:patientId', async (req, res) => {
+  try {
+    const { clinicId, patientId } = req.params
+
+    if (!await canManagePendingTreatments(req, clinicId)) {
+      return res.status(403).json({ error: 'Permission denied' })
+    }
+
+    // Delete all treatments for this patient (cascade should handle this, but explicit is better)
+    await query(
+      `DELETE FROM pending_treatments
+       WHERE pending_treatment_patient_id = $1 AND clinic_id = $2`,
+      [patientId, clinicId]
+    )
+
+    // Delete the patient
+    const result = await query(
+      `DELETE FROM pending_treatment_patients
+       WHERE id = $1 AND clinic_id = $2
+       RETURNING id`,
+      [patientId, clinicId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' })
+    }
+
+    res.json({ success: true })
+  } catch (error: any) {
+    console.error('Delete patient error:', error)
+    res.status(500).json({ error: 'Failed to delete patient' })
   }
 })
 
