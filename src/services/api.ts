@@ -1412,6 +1412,9 @@ const pendingTreatmentsApi = {
     totalQuantity: number
     categoryId?: string
     toothRegion?: string
+    procedureCode?: string
+    procedureBaseId?: string
+    insuranceProviderProcedureId?: string
   }) =>
     apiCall<any>(`/pending-treatments/${clinicId}/patients/${patientId}/treatments`, {
       method: 'POST',

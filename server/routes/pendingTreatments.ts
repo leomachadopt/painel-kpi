@@ -68,6 +68,7 @@ router.get('/:clinicId/patients', async (req, res) => {
           `SELECT
             pt.id,
             pt.description,
+            pt.procedure_code,
             pt.unit_value,
             pt.total_quantity,
             pt.pending_quantity,
@@ -93,6 +94,7 @@ router.get('/:clinicId/patients', async (req, res) => {
         const treatments = treatmentsResult.rows.map((t) => ({
           id: t.id,
           description: t.description,
+          procedureCode: t.procedure_code,
           unitValue: parseFloat(t.unit_value),
           totalQuantity: t.total_quantity,
           pendingQuantity: t.pending_quantity,

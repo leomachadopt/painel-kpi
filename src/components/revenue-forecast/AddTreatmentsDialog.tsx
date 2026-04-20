@@ -267,6 +267,9 @@ export function AddTreatmentsDialog({
           totalQuantity: treatment.quantity,
           categoryId: treatment.categoryId || undefined,
           toothRegion: treatment.toothRegion || undefined,
+          procedureCode: treatment.code || undefined,
+          procedureBaseId: treatment.procedureBaseId || undefined,
+          insuranceProviderProcedureId: treatment.insuranceProviderProcedureId || undefined,
         })
       }
 
