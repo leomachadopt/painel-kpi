@@ -670,12 +670,20 @@ export default function Agenda() {
   }
 
   // Check for overlapping appointments
-  const checkOverlap = (start: string, end: string, excludeId?: string): boolean => {
+  const checkOverlap = (start: string, end: string, excludeId?: string, doctorId?: string | null, cabinetId?: string | null): boolean => {
     const startMinutes = timeToMinutes(start)
     const endMinutes = timeToMinutes(end)
 
     return appointments.some((apt) => {
       if (excludeId && apt.id === excludeId) return false // Exclude current appointment when editing
+
+      // Filter by doctor OR cabinet
+      // Only check conflicts for appointments that share the same doctor or cabinet
+      const sameDoctor = doctorId && apt.doctor?.id === doctorId
+      const sameCabinet = cabinetId && apt.cabinet?.id === cabinetId
+
+      // If neither doctor nor cabinet match, no conflict
+      if (!sameDoctor && !sameCabinet) return false
 
       const aptStart = timeToMinutes(apt.scheduledStart)
       const aptEnd = timeToMinutes(apt.scheduledEnd)
@@ -709,9 +717,9 @@ export default function Agenda() {
       }
     }
 
-    // Check for overlapping appointments
-    if (checkOverlap(selectedSlot, newAppointment.scheduledEnd)) {
-      toast.error('Já existe um agendamento neste horário')
+    // Check for overlapping appointments for the same doctor or cabinet
+    if (checkOverlap(selectedSlot, newAppointment.scheduledEnd, undefined, selectedDoctorForAppointment, newAppointment.cabinetId)) {
+      toast.error('Já existe um agendamento neste horário para este médico ou consultório')
       return
     }
 
