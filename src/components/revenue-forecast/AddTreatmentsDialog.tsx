@@ -172,6 +172,13 @@ export function AddTreatmentsDialog({
       return
     }
 
+    // Debug: log procedure code
+    console.log('🔍 Procedimento selecionado:', {
+      code: procedure.code,
+      description: procedure.description,
+      value: procedure.value,
+    })
+
     const newTreatment: SelectedTreatment = {
       id: procedure.id,
       code: procedure.code,
@@ -261,7 +268,7 @@ export function AddTreatmentsDialog({
     try {
       // Add each treatment individually
       for (const treatment of selectedTreatments) {
-        await api.pendingTreatments.addTreatment(clinicId, patient.id, {
+        const payload = {
           description: treatment.editedDescription,
           unitValue: treatment.editedValue,
           totalQuantity: treatment.quantity,
@@ -270,7 +277,12 @@ export function AddTreatmentsDialog({
           procedureCode: treatment.code || undefined,
           procedureBaseId: treatment.procedureBaseId || undefined,
           insuranceProviderProcedureId: treatment.insuranceProviderProcedureId || undefined,
-        })
+        }
+
+        // Debug: log what's being sent
+        console.log('📤 Enviando tratamento:', payload)
+
+        await api.pendingTreatments.addTreatment(clinicId, patient.id, payload)
       }
 
       toast({
