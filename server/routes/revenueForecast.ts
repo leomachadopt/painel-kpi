@@ -535,6 +535,33 @@ router.patch('/:clinicId/plans/:planId', async (req, res) => {
 
     const updated = result.rows[0]
 
+    // If totalValue or installmentValue changed, update pending installments
+    if (totalValue !== undefined || installmentValue !== undefined) {
+      // Get pending (not received) installments
+      const pendingInstallmentsResult = await query(
+        `SELECT id FROM revenue_installments
+         WHERE revenue_plan_id = $1 AND status != 'RECEBIDO'`,
+        [planId]
+      )
+
+      const pendingCount = pendingInstallmentsResult.rows.length
+
+      if (pendingCount > 0) {
+        // Calculate new value per pending installment
+        const newTotalValue = parseFloat(updated.total_value)
+        const newInstallmentValue = parseFloat(updated.installment_value)
+        const valuePerInstallment = newInstallmentValue || (newTotalValue / updated.installment_count)
+
+        // Update all pending installments with new value
+        await query(
+          `UPDATE revenue_installments
+           SET value = $1
+           WHERE revenue_plan_id = $2 AND status != 'RECEBIDO'`,
+          [valuePerInstallment, planId]
+        )
+      }
+    }
+
     res.json({
       id: updated.id,
       patientCode: updated.patient_code,
