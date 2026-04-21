@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { query } from '../db.js'
+import { query, getClient } from '../db.js'
 
 const router = Router()
 
@@ -466,9 +466,11 @@ router.put('/:id/targets', async (req, res) => {
 
 // Create new clinic
 router.post('/', async (req, res) => {
-  const client = await query('BEGIN')
+  const client = await getClient()
 
   try {
+    await client.query('BEGIN')
+
     const {
       name,
       ownerName,
@@ -482,22 +484,29 @@ router.post('/', async (req, res) => {
     console.log('Creating clinic:', { name, ownerName, email, country })
 
     if (!name || !ownerName) {
+      await client.query('ROLLBACK')
+      client.release()
       return res.status(400).json({ error: 'Name and owner name are required' })
     }
 
     if (!email || !password) {
+      await client.query('ROLLBACK')
+      client.release()
       return res.status(400).json({ error: 'Email and password are required' })
     }
 
     // Validar country
     if (country && !['PT-BR', 'PT-PT'].includes(country)) {
+      await client.query('ROLLBACK')
+      client.release()
       return res.status(400).json({ error: 'Invalid country. Must be PT-BR or PT-PT' })
     }
 
     // Check if email already exists
-    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email])
+    const existingUser = await client.query('SELECT id FROM users WHERE email = $1', [email])
     if (existingUser.rows.length > 0) {
-      await query('ROLLBACK')
+      await client.query('ROLLBACK')
+      client.release()
       return res.status(400).json({ error: 'Email already in use' })
     }
 
@@ -508,7 +517,7 @@ router.post('/', async (req, res) => {
     // Try to insert with country field, fallback to without if column doesn't exist
     try {
       console.log('Inserting clinic into database...')
-      await query(
+      await client.query(
         `INSERT INTO clinics (
           id, name, owner_name, active, country,
           target_revenue, target_aligners_min, target_aligners_max,
@@ -538,7 +547,7 @@ router.post('/', async (req, res) => {
       // If country column doesn't exist, try without it
       if (insertError.message?.includes('country') || insertError.code === '42703') {
         console.warn('Country column does not exist, inserting without it')
-        await query(
+        await client.query(
           `INSERT INTO clinics (
             id, name, owner_name, active,
             target_revenue, target_aligners_min, target_aligners_max,
@@ -571,6 +580,7 @@ router.post('/', async (req, res) => {
     }
 
     // Insert default categories
+    console.log('Inserting default categories...')
     const defaultCategories = [
       'Alinhadores',
       'Odontopediatria',
@@ -579,55 +589,60 @@ router.post('/', async (req, res) => {
       'Outros'
     ]
     for (const cat of defaultCategories) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_categories (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-cat-${cat.toLowerCase()}`, clinicId, cat]
       )
     }
 
     // Insert default cabinets
+    console.log('Inserting default cabinets...')
     const defaultCabinets = [
       { name: 'Gabinete 1', hours: 8 },
       { name: 'Gabinete 2', hours: 8 }
     ]
     for (const cab of defaultCabinets) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_cabinets (id, clinic_id, name, standard_hours) VALUES ($1, $2, $3, $4)',
         [`${clinicId}-cab-${cab.name.replace(/\s/g, '-').toLowerCase()}`, clinicId, cab.name, cab.hours]
       )
     }
 
     // Insert default doctors
+    console.log('Inserting default doctors...')
     const defaultDoctors = ['Dr. João Silva', 'Dra. Maria Santos']
     for (const doc of defaultDoctors) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_doctors (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-doc-${doc.replace(/\s/g, '-').toLowerCase()}`, clinicId, doc]
       )
     }
 
     // Insert default sources
+    console.log('Inserting default sources...')
     const defaultSources = ['Google', 'Facebook', 'Instagram', 'Referência', 'Website', 'Outro']
     for (const src of defaultSources) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_sources (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-src-${src.toLowerCase()}`, clinicId, src]
       )
     }
 
     // Insert default campaigns
+    console.log('Inserting default campaigns...')
     const defaultCampaigns = ['Alinhadores 2024', 'Branqueamento', 'Ortodontia']
     for (const camp of defaultCampaigns) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_campaigns (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-camp-${camp.replace(/\s/g, '-').toLowerCase()}`, clinicId, camp]
       )
     }
 
     // Insert default aligner brands
+    console.log('Inserting default aligner brands...')
     const defaultAlignerBrands = ['Invisalign', 'ClearCorrect', 'Spark', 'Outro']
     for (const brand of defaultAlignerBrands) {
-      await query(
+      await client.query(
         'INSERT INTO clinic_aligner_brands (id, clinic_id, name) VALUES ($1, $2, $3)',
         [`${clinicId}-brand-${brand.replace(/\s/g, '-').toLowerCase()}`, clinicId, brand]
       )
@@ -636,7 +651,7 @@ router.post('/', async (req, res) => {
     // Create user for clinic manager
     console.log('Creating user for clinic manager...')
     const userId = `user-${clinicId}`
-    await query(
+    await client.query(
       `INSERT INTO users (id, name, email, password_hash, role, clinic_id, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
       [userId, ownerName, email, password, 'GESTOR_CLINICA', clinicId]
@@ -644,8 +659,9 @@ router.post('/', async (req, res) => {
     console.log('User created successfully:', userId)
 
     // Commit transaction
-    await query('COMMIT')
+    await client.query('COMMIT')
     console.log('Transaction committed successfully')
+    client.release()
 
     res.json({
       id: clinicId,
@@ -666,10 +682,12 @@ router.post('/', async (req, res) => {
 
     // Rollback transaction on error
     try {
-      await query('ROLLBACK')
+      await client.query('ROLLBACK')
       console.log('Transaction rolled back')
     } catch (rollbackError) {
       console.error('Rollback failed:', rollbackError)
+    } finally {
+      client.release()
     }
 
     res.status(500).json({
