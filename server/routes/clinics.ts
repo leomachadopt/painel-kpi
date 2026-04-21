@@ -610,11 +610,14 @@ router.post('/', async (req, res) => {
 
     // Insert default doctors
     console.log('Inserting default doctors...')
-    const defaultDoctors = ['Dr. João Silva', 'Dra. Maria Santos']
+    const defaultDoctors = [
+      { name: 'Dr. João Silva', email: 'joao.silva@example.com' },
+      { name: 'Dra. Maria Santos', email: 'maria.santos@example.com' }
+    ]
     for (const doc of defaultDoctors) {
       await client.query(
-        'INSERT INTO clinic_doctors (id, clinic_id, name) VALUES ($1, $2, $3)',
-        [`${clinicId}-doc-${doc.replace(/\s/g, '-').toLowerCase()}`, clinicId, doc]
+        'INSERT INTO clinic_doctors (id, clinic_id, name, email) VALUES ($1, $2, $3, $4)',
+        [`${clinicId}-doc-${doc.name.replace(/\s/g, '-').toLowerCase()}`, clinicId, doc.name, doc.email]
       )
     }
 
