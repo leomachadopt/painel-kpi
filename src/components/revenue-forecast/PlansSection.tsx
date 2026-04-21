@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Check, Pencil, Trash2, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react'
+import { Check, Pencil, Trash2, ChevronDown, ChevronRight, RotateCcw, Search, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +26,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { NewRevenuePlanDialog } from './NewRevenuePlanDialog'
 
 interface RevenueForecastPlansSectionProps {
@@ -56,6 +63,11 @@ export function RevenueForecastPlansSection({
   })
   const [editingPlan, setEditingPlan] = useState<any | null>(null)
   const [editPlanDialogOpen, setEditPlanDialogOpen] = useState(false)
+
+  // Search and filters
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all') // all, active, completed, overdue
+  const [installmentStatusFilter, setInstallmentStatusFilter] = useState('all') // all, on-time, overdue, due-7days, due-30days
 
   useEffect(() => {
     loadPlans()
@@ -95,6 +107,110 @@ export function RevenueForecastPlansSection({
     handleCloseEditPlanDialog()
     onRefresh()
   }
+
+  // Filter and search logic
+  const filteredPlans = plans.filter((plan) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase()
+      const matchesName = plan.patientName?.toLowerCase().includes(search)
+      const matchesCode = plan.patientCode?.toLowerCase().includes(search)
+      const matchesDescription = plan.description?.toLowerCase().includes(search)
+      const matchesCategory = plan.categoryName?.toLowerCase().includes(search)
+
+      if (!matchesName && !matchesCode && !matchesDescription && !matchesCategory) {
+        return false
+      }
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      const pendingInstallments = plan.installments?.filter((i: any) => i.status !== 'RECEBIDO') || []
+      const hasOverdue = pendingInstallments.some((i: any) => {
+        const dueDate = new Date(i.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        return dueDate < today
+      })
+
+      if (statusFilter === 'active' && pendingInstallments.length === 0) return false
+      if (statusFilter === 'completed' && pendingInstallments.length > 0) return false
+      if (statusFilter === 'overdue' && !hasOverdue) return false
+    }
+
+    // Installment status filter
+    if (installmentStatusFilter !== 'all') {
+      const pendingInstallments = plan.installments?.filter((i: any) => i.status !== 'RECEBIDO') || []
+
+      if (installmentStatusFilter === 'overdue') {
+        const hasOverdue = pendingInstallments.some((i: any) => {
+          const dueDate = new Date(i.dueDate)
+          dueDate.setHours(0, 0, 0, 0)
+          return dueDate < today
+        })
+        if (!hasOverdue) return false
+      }
+
+      if (installmentStatusFilter === 'on-time') {
+        const hasOverdue = pendingInstallments.some((i: any) => {
+          const dueDate = new Date(i.dueDate)
+          dueDate.setHours(0, 0, 0, 0)
+          return dueDate < today
+        })
+        if (hasOverdue) return false
+      }
+
+      if (installmentStatusFilter === 'due-7days') {
+        const sevenDaysFromNow = new Date(today)
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
+
+        const hasDueSoon = pendingInstallments.some((i: any) => {
+          const dueDate = new Date(i.dueDate)
+          dueDate.setHours(0, 0, 0, 0)
+          return dueDate >= today && dueDate <= sevenDaysFromNow
+        })
+        if (!hasDueSoon) return false
+      }
+
+      if (installmentStatusFilter === 'due-30days') {
+        const thirtyDaysFromNow = new Date(today)
+        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+
+        const hasDueSoon = pendingInstallments.some((i: any) => {
+          const dueDate = new Date(i.dueDate)
+          dueDate.setHours(0, 0, 0, 0)
+          return dueDate >= today && dueDate <= thirtyDaysFromNow
+        })
+        if (!hasDueSoon) return false
+      }
+    }
+
+    return true
+  })
+
+  // Get overdue installments count for a plan
+  const getOverdueCount = (plan: any) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return plan.installments?.filter((i: any) => {
+      if (i.status === 'RECEBIDO') return false
+      const dueDate = new Date(i.dueDate)
+      dueDate.setHours(0, 0, 0, 0)
+      return dueDate < today
+    }).length || 0
+  }
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('all')
+    setInstallmentStatusFilter('all')
+  }
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || installmentStatusFilter !== 'all'
 
   const handleMarkAsReceived = async (installmentId: string) => {
     const receivedDate = new Date().toISOString().split('T')[0]
@@ -315,9 +431,73 @@ export function RevenueForecastPlansSection({
           <CardTitle>Receitas Recorrentes (Mensalidades)</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Search and Filter Bar */}
+          <div className="mb-4 space-y-3 pb-4 border-b">
+            <div className="flex flex-wrap gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por paciente, código, descrição..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os planos</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="completed">Completos</SelectItem>
+                  <SelectItem value="overdue">Com atraso</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Installment Status Filter */}
+              <Select value={installmentStatusFilter} onValueChange={setInstallmentStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Parcelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas parcelas</SelectItem>
+                  <SelectItem value="on-time">Em dia</SelectItem>
+                  <SelectItem value="overdue">Atrasadas</SelectItem>
+                  <SelectItem value="due-7days">Vencem em 7 dias</SelectItem>
+                  <SelectItem value="due-30days">Vencem em 30 dias</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
+
+            {/* Results Counter */}
+            <div className="text-sm text-muted-foreground">
+              Mostrando <span className="font-medium text-foreground">{filteredPlans.length}</span> de{' '}
+              <span className="font-medium text-foreground">{plans.length}</span> planos
+            </div>
+          </div>
+
           <div className="space-y-3">
-            {plans.map((plan) => (
-              <div key={plan.id} className="border rounded-lg">
+            {filteredPlans.map((plan) => {
+              const overdueCount = getOverdueCount(plan)
+              return (
+              <div key={plan.id} className={`border rounded-lg ${overdueCount > 0 ? 'border-red-300 bg-red-50/30' : ''}`}>
                 {/* Plan Header */}
                 <div
                   className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -330,11 +510,18 @@ export function RevenueForecastPlansSection({
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     )}
                     <div>
-                      <div className="font-semibold">
-                        {plan.patientName && (
-                          <span className="text-primary">{plan.patientName} </span>
+                      <div className="font-semibold flex items-center gap-2">
+                        <div>
+                          {plan.patientName && (
+                            <span className="text-primary">{plan.patientName} </span>
+                          )}
+                          <span className="text-muted-foreground">• {plan.description}</span>
+                        </div>
+                        {overdueCount > 0 && (
+                          <Badge variant="destructive" className="ml-2">
+                            {overdueCount} atrasada{overdueCount > 1 ? 's' : ''}
+                          </Badge>
                         )}
-                        <span className="text-muted-foreground">• {plan.description}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {plan.patientCode && `#${plan.patientCode} • `}
@@ -484,7 +671,8 @@ export function RevenueForecastPlansSection({
                   </div>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
