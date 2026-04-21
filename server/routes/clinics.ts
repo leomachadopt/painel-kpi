@@ -466,6 +466,8 @@ router.put('/:id/targets', async (req, res) => {
 
 // Create new clinic
 router.post('/', async (req, res) => {
+  const client = await query('BEGIN')
+
   try {
     const {
       name,
@@ -476,6 +478,8 @@ router.post('/', async (req, res) => {
       targetNPS = 80,
       country = 'PT-BR',
     } = req.body
+
+    console.log('Creating clinic:', { name, ownerName, email, country })
 
     if (!name || !ownerName) {
       return res.status(400).json({ error: 'Name and owner name are required' })
@@ -493,14 +497,17 @@ router.post('/', async (req, res) => {
     // Check if email already exists
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email])
     if (existingUser.rows.length > 0) {
+      await query('ROLLBACK')
       return res.status(400).json({ error: 'Email already in use' })
     }
 
     // Generate clinic ID
     const clinicId = `clinic-${Date.now()}`
+    console.log('Generated clinic ID:', clinicId)
 
     // Try to insert with country field, fallback to without if column doesn't exist
     try {
+      console.log('Inserting clinic into database...')
       await query(
         `INSERT INTO clinics (
           id, name, owner_name, active, country,
@@ -526,6 +533,7 @@ router.post('/', async (req, res) => {
         )`,
         [clinicId, name, ownerName, country || 'PT-BR', targetRevenue, targetNPS]
       )
+      console.log('Clinic inserted successfully')
     } catch (insertError: any) {
       // If country column doesn't exist, try without it
       if (insertError.message?.includes('country') || insertError.code === '42703') {
@@ -555,7 +563,9 @@ router.post('/', async (req, res) => {
           )`,
           [clinicId, name, ownerName, targetRevenue, targetNPS]
         )
+        console.log('Clinic inserted successfully (without country)')
       } else {
+        console.error('Failed to insert clinic:', insertError)
         throw insertError
       }
     }
@@ -624,12 +634,18 @@ router.post('/', async (req, res) => {
     }
 
     // Create user for clinic manager
+    console.log('Creating user for clinic manager...')
     const userId = `user-${clinicId}`
     await query(
       `INSERT INTO users (id, name, email, password_hash, role, clinic_id, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
       [userId, ownerName, email, password, 'GESTOR_CLINICA', clinicId]
     )
+    console.log('User created successfully:', userId)
+
+    // Commit transaction
+    await query('COMMIT')
+    console.log('Transaction committed successfully')
 
     res.json({
       id: clinicId,
@@ -647,6 +663,15 @@ router.post('/', async (req, res) => {
       detail: error.detail,
       stack: error.stack
     })
+
+    // Rollback transaction on error
+    try {
+      await query('ROLLBACK')
+      console.log('Transaction rolled back')
+    } catch (rollbackError) {
+      console.error('Rollback failed:', rollbackError)
+    }
+
     res.status(500).json({
       error: 'Failed to create clinic',
       message: error.message,
