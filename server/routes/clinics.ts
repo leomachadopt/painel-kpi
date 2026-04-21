@@ -499,31 +499,66 @@ router.post('/', async (req, res) => {
     // Generate clinic ID
     const clinicId = `clinic-${Date.now()}`
 
-    await query(
-      `INSERT INTO clinics (
-        id, name, owner_name, active, country,
-        target_revenue, target_aligners_min, target_aligners_max,
-        target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
-        target_nps, target_integration_rate, target_attendance_rate,
-        target_follow_up_rate, target_wait_time, target_complaints,
-        target_leads_min, target_leads_max, target_revenue_per_cabinet,
-        target_plans_presented_adults, target_plans_presented_kids,
-        target_agenda_operational, target_agenda_planning,
-        target_agenda_sales, target_agenda_leadership,
-        created_at, last_update
-      ) VALUES (
-        $1, $2, $3, true, $4,
-        $5, 11, 15,
-        1500, 0.70, 0.85,
-        $6, 0.90, 0.95,
-        0.80, 15, 5,
-        50, 80, 50000,
-        25, 15,
-        0.40, 0.20, 0.30, 0.10,
-        NOW(), NOW()
-      )`,
-      [clinicId, name, ownerName, country || 'PT-BR', targetRevenue, targetNPS]
-    )
+    // Try to insert with country field, fallback to without if column doesn't exist
+    try {
+      await query(
+        `INSERT INTO clinics (
+          id, name, owner_name, active, country,
+          target_revenue, target_aligners_min, target_aligners_max,
+          target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+          target_nps, target_integration_rate, target_attendance_rate,
+          target_follow_up_rate, target_wait_time, target_complaints,
+          target_leads_min, target_leads_max, target_revenue_per_cabinet,
+          target_plans_presented_adults, target_plans_presented_kids,
+          target_agenda_operational, target_agenda_planning,
+          target_agenda_sales, target_agenda_leadership,
+          created_at, last_update
+        ) VALUES (
+          $1, $2, $3, true, $4,
+          $5, 11, 15,
+          1500, 0.70, 0.85,
+          $6, 0.90, 0.95,
+          0.80, 15, 5,
+          50, 80, 50000,
+          25, 15,
+          0.40, 0.20, 0.30, 0.10,
+          NOW(), NOW()
+        )`,
+        [clinicId, name, ownerName, country || 'PT-BR', targetRevenue, targetNPS]
+      )
+    } catch (insertError: any) {
+      // If country column doesn't exist, try without it
+      if (insertError.message?.includes('country') || insertError.code === '42703') {
+        console.warn('Country column does not exist, inserting without it')
+        await query(
+          `INSERT INTO clinics (
+            id, name, owner_name, active,
+            target_revenue, target_aligners_min, target_aligners_max,
+            target_avg_ticket, target_acceptance_rate, target_occupancy_rate,
+            target_nps, target_integration_rate, target_attendance_rate,
+            target_follow_up_rate, target_wait_time, target_complaints,
+            target_leads_min, target_leads_max, target_revenue_per_cabinet,
+            target_plans_presented_adults, target_plans_presented_kids,
+            target_agenda_operational, target_agenda_planning,
+            target_agenda_sales, target_agenda_leadership,
+            created_at, last_update
+          ) VALUES (
+            $1, $2, $3, true,
+            $4, 11, 15,
+            1500, 0.70, 0.85,
+            $5, 0.90, 0.95,
+            0.80, 15, 5,
+            50, 80, 50000,
+            25, 15,
+            0.40, 0.20, 0.30, 0.10,
+            NOW(), NOW()
+          )`,
+          [clinicId, name, ownerName, targetRevenue, targetNPS]
+        )
+      } else {
+        throw insertError
+      }
+    }
 
     // Insert default categories
     const defaultCategories = [
@@ -604,9 +639,19 @@ router.post('/', async (req, res) => {
         clinicId
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create clinic error:', error)
-    res.status(500).json({ error: 'Failed to create clinic' })
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack
+    })
+    res.status(500).json({
+      error: 'Failed to create clinic',
+      message: error.message,
+      detail: error.detail || error.toString()
+    })
   }
 })
 
