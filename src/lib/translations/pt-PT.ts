@@ -335,5 +335,8 @@ export const ptPT = {
     errorMarkingUnpaid: 'Erro ao marcar como não paga',
     noPermission: 'Não tem permissão para aceder a esta página',
   },
+  settings: {
+    whatsappFormatHelp: 'Formato internacional com código de país (ex: +351 912 345 678)',
+  },
 }
 

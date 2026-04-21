@@ -42,7 +42,7 @@ import { PERMISSION_PROFILES } from '@/lib/permissionProfiles'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function CollaboratorsTab() {
-  const { t } = useTranslation()
+  const { t, getPhonePlaceholder } = useTranslation()
   const { isGestor } = usePermissions()
   const { user, refreshPermissions } = useAuthStore()
   const { getClinic } = useDataStore()
@@ -360,7 +360,7 @@ export default function CollaboratorsTab() {
                 id="whatsapp"
                 value={createForm.whatsapp}
                 onChange={(e) => setCreateForm({ ...createForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">
@@ -491,7 +491,7 @@ export default function CollaboratorsTab() {
                 id="edit-whatsapp"
                 value={editForm.whatsapp}
                 onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">

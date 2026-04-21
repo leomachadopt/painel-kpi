@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useTranslation } from '@/hooks/useTranslation'
 import {
   Select,
   SelectContent,
@@ -79,6 +80,7 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
 }
 
 export function MarketingLeadsContent({ clinicId }: { clinicId: string }) {
+  const { getPhonePlaceholder } = useTranslation()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('')
@@ -279,7 +281,7 @@ export function MarketingLeadsContent({ clinicId }: { clinicId: string }) {
                   <Input
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+351 xxx xxx xxx"
+                    placeholder={getPhonePlaceholder()}
                   />
                 </div>
                 <div className="space-y-2">

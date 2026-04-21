@@ -65,17 +65,14 @@ export function useTranslation() {
     return value.toLocaleString(localeMap[effectiveLanguage] || 'pt-BR')
   }
 
-  // Formatação de moeda baseada no idioma efetivo
+  // Formatação de moeda baseada no país da clínica (não no idioma)
   const formatCurrency = (value: number): string => {
-    const currencyMap: Record<string, { locale: string; currency: string }> = {
-      'pt-BR': { locale: 'pt-BR', currency: 'BRL' },
-      'pt-PT': { locale: 'pt-PT', currency: 'EUR' },
-      'it': { locale: 'it-IT', currency: 'EUR' },
-      'es': { locale: 'es-ES', currency: 'EUR' },
-      'en': { locale: 'en-US', currency: 'USD' },
-      'fr': { locale: 'fr-FR', currency: 'EUR' }
-    }
-    const config = currencyMap[effectiveLanguage] || currencyMap['pt-BR']
+    // Usar o país da clínica para determinar a moeda
+    const isBrazil = currentClinic?.country === 'PT-BR'
+    const config = isBrazil
+      ? { locale: 'pt-BR', currency: 'BRL' }
+      : { locale: 'pt-PT', currency: 'EUR' }
+
     return new Intl.NumberFormat(config.locale, {
       style: 'currency',
       currency: config.currency
@@ -162,6 +159,18 @@ export function useTranslation() {
     return localeMap[effectiveLanguage] || 'pt-BR'
   }
 
+  // Obter placeholder de telefone baseado no país da clínica
+  const getPhonePlaceholder = (): string => {
+    const isBrazil = currentClinic?.country === 'PT-BR'
+    return isBrazil ? '+55 (00) 00000-0000' : '+351 912 345 678'
+  }
+
+  // Obter símbolo de moeda baseado no país da clínica
+  const getCurrencySymbol = (): string => {
+    const isBrazil = currentClinic?.country === 'PT-BR'
+    return isBrazil ? 'R$' : '€'
+  }
+
   return {
     t,
     locale,
@@ -171,6 +180,8 @@ export function useTranslation() {
     formatDateTime,
     formatDateWithTime,
     getLocaleString,
+    getPhonePlaceholder,
+    getCurrencySymbol,
     currentClinic,
     // Também retornar o i18n para compatibilidade
     i18n,

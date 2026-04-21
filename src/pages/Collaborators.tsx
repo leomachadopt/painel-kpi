@@ -40,7 +40,7 @@ import useDataStore from '@/stores/useDataStore'
 import { useTranslation } from '@/hooks/useTranslation'
 
 export default function Collaborators() {
-  const { t } = useTranslation()
+  const { t, getPhonePlaceholder } = useTranslation()
   const { isGestor } = usePermissions()
   const { user, refreshPermissions } = useAuthStore()
   const { getClinic } = useDataStore()
@@ -509,7 +509,7 @@ export default function Collaborators() {
                 id="whatsapp"
                 value={createForm.whatsapp}
                 onChange={(e) => setCreateForm({ ...createForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">
@@ -640,7 +640,7 @@ export default function Collaborators() {
                 id="edit-whatsapp"
                 value={editForm.whatsapp}
                 onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">
@@ -738,7 +738,7 @@ export default function Collaborators() {
                 id="edit-doctor-whatsapp"
                 value={editDoctorForm.whatsapp}
                 onChange={(e) => setEditDoctorForm({ ...editDoctorForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             {selectedDoctor?.hasUserAccount && (

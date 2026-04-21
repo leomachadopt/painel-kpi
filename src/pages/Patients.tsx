@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Patient } from '@/lib/types'
 import { patientsApi } from '@/services/api'
 import { usePatients } from '@/hooks/usePatients'
+import { useTranslation } from '@/hooks/useTranslation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PatientDocuments } from '@/components/patients/PatientDocuments'
 
 export default function Patients() {
+  const { getPhonePlaceholder } = useTranslation()
   const { user } = useAuthStore()
   const { clinicId } = useParams<{ clinicId: string }>()
   const [searchTerm, setSearchTerm] = useState('')
@@ -818,7 +820,7 @@ export default function Patients() {
                 type="tel"
                 value={newPatientForm.phone}
                 onChange={(e) => setNewPatientForm({ ...newPatientForm, phone: e.target.value })}
-                placeholder="+351 900 000 000"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
 
@@ -918,7 +920,7 @@ export default function Patients() {
                 type="tel"
                 value={editForm.phone}
                 onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                placeholder="+351 900 000 000"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
 

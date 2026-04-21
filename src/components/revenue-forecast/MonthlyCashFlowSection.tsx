@@ -300,8 +300,8 @@ export function MonthlyCashFlowSection({ clinicId, refreshTrigger }: MonthlyCash
   const handleExportToExcel = async () => {
     try {
       // Determinar símbolo da moeda
-      const currencySymbol = clinic?.country === 'BR' ? 'R$' : '€'
-      const currencyFormat = clinic?.country === 'BR' ? 'R$ #,##0.00' : '€ #,##0.00'
+      const currencySymbol = clinic?.country === 'PT-BR' ? 'R$' : '€'
+      const currencyFormat = clinic?.country === 'PT-BR' ? 'R$ #,##0.00' : '€ #,##0.00'
 
       // Criar workbook e worksheet
       const workbook = new ExcelJS.Workbook()

@@ -44,7 +44,7 @@ interface Doctor {
 }
 
 export default function DoctorsTab() {
-  const { t } = useTranslation()
+  const { t, getPhonePlaceholder } = useTranslation()
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [doctors, setDoctors] = useState<Doctor[]>([])
@@ -307,7 +307,7 @@ export default function DoctorsTab() {
                 id="edit-doctor-whatsapp"
                 value={editForm.whatsapp}
                 onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             {selectedDoctor?.hasUserAccount && (

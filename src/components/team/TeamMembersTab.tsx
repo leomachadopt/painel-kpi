@@ -53,7 +53,7 @@ interface TeamMember {
 }
 
 export default function TeamMembersTab() {
-  const { t } = useTranslation()
+  const { t, getPhonePlaceholder } = useTranslation()
   const { user, refreshPermissions } = useAuthStore()
   const { getClinic } = useDataStore()
   const clinic = user?.clinicId ? getClinic(user.clinicId) : undefined
@@ -433,7 +433,7 @@ export default function TeamMembersTab() {
                 id="create-whatsapp"
                 value={createForm.whatsapp}
                 onChange={(e) => setCreateForm({ ...createForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">
@@ -523,7 +523,7 @@ export default function TeamMembersTab() {
                 id="edit-whatsapp"
                 value={editForm.whatsapp}
                 onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
-                placeholder="Ex: +351 912 345 678"
+                placeholder={getPhonePlaceholder()}
               />
             </div>
             <div className="space-y-2">

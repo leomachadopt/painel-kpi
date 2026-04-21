@@ -789,7 +789,7 @@ const ProceduresBaseTab = ({
 }
 
 export default function Settings() {
-  const { t, locale } = useTranslation()
+  const { t, locale, getPhonePlaceholder } = useTranslation()
   const { user } = useAuthStore()
   const { canEdit } = usePermissions()
   const { clinics, reloadClinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
@@ -1761,11 +1761,11 @@ export default function Settings() {
                       id="owner-whatsapp"
                       value={ownerWhatsapp}
                       onChange={(e) => setOwnerWhatsapp(e.target.value)}
-                      placeholder="+351 9XX XXX XXX"
+                      placeholder={getPhonePlaceholder()}
                       className="max-w-md"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Formato internacional com código de país (ex: +351 912345678)
+                      {t('settings.whatsappFormatHelp')}
                     </p>
                   </div>
 
