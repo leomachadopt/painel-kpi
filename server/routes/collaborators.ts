@@ -982,4 +982,375 @@ router.delete('/:id', requireGestor, async (req: AuthedRequest, res) => {
   }
 })
 
+// ================================
+// UNIFIED TEAM MANAGEMENT ROUTES
+// ================================
+
+/**
+ * GET /api/collaborators/team
+ * List ALL team members unified (owners, doctors, collaborators)
+ * Includes role badges and links to clinic_doctors
+ */
+router.get('/team', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+
+    if (!clinicId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    // Get all users from the clinic
+    const usersResult = await query(
+      `SELECT
+        u.id,
+        u.name,
+        u.email,
+        u.whatsapp,
+        u.role,
+        u.is_owner,
+        u.active,
+        u.created_at,
+        cd.id as doctor_id,
+        p.can_view_dashboard_overview,
+        p.can_view_dashboard_financial,
+        p.can_view_dashboard_commercial,
+        p.can_view_dashboard_operational,
+        p.can_view_dashboard_marketing,
+        p.can_view_reports,
+        p.can_view_report_financial,
+        p.can_view_report_billing,
+        p.can_view_report_consultations,
+        p.can_view_report_aligners,
+        p.can_view_report_prospecting,
+        p.can_view_report_cabinets,
+        p.can_view_report_service_time,
+        p.can_view_report_sources,
+        p.can_view_report_consultation_control,
+        p.can_view_report_marketing,
+        p.can_view_report_advance_invoice,
+        p.can_view_targets,
+        p.can_view_orders,
+        p.can_view_suppliers,
+        p.can_edit_financial,
+        p.can_edit_consultations,
+        p.can_edit_prospecting,
+        p.can_edit_cabinets,
+        p.can_edit_service_time,
+        p.can_edit_sources,
+        p.can_edit_consultation_control,
+        p.can_edit_aligners,
+        p.can_edit_orders,
+        p.can_edit_advance_invoice,
+        p.can_edit_accounts_payable,
+        p.can_view_accounts_payable,
+        p.can_edit_patients,
+        p.can_edit_clinic_config,
+        p.can_edit_targets,
+        p.can_view_tickets,
+        p.can_edit_tickets,
+        p.can_view_nps,
+        p.can_edit_nps,
+        p.can_edit_suppliers,
+        p.can_view_marketing,
+        p.can_edit_marketing,
+        p.can_view_alerts,
+        p.can_view_advances,
+        p.can_edit_advances,
+        p.can_bill_advances,
+        p.can_manage_insurance_providers,
+        p.has_special_accounts_payable_access,
+        p.can_view_all_doctors_consultations,
+        p.can_view_appointments,
+        p.can_edit_appointments
+      FROM users u
+      LEFT JOIN user_permissions p ON u.id = p.user_id AND p.clinic_id = u.clinic_id
+      LEFT JOIN clinic_doctors cd ON u.id = cd.user_id
+      WHERE u.clinic_id = $1 AND u.role != 'MENTOR'
+      ORDER BY u.is_owner DESC, u.created_at DESC`,
+      [clinicId]
+    )
+
+    const teamMembers = usersResult.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      whatsapp: row.whatsapp,
+      role: row.role,
+      isOwner: row.is_owner || false,
+      isDoctor: !!row.doctor_id,
+      doctorId: row.doctor_id,
+      active: row.active,
+      createdAt: row.created_at,
+      permissions: {
+        canViewDashboardOverview: row.can_view_dashboard_overview || false,
+        canViewDashboardFinancial: row.can_view_dashboard_financial || false,
+        canViewDashboardCommercial: row.can_view_dashboard_commercial || false,
+        canViewDashboardOperational: row.can_view_dashboard_operational || false,
+        canViewDashboardMarketing: row.can_view_dashboard_marketing || false,
+        canViewReports: row.can_view_reports || false,
+        canViewReportFinancial: row.can_view_report_financial || false,
+        canViewReportBilling: row.can_view_report_billing || false,
+        canViewReportConsultations: row.can_view_report_consultations || false,
+        canViewReportAligners: row.can_view_report_aligners || false,
+        canViewReportProspecting: row.can_view_report_prospecting || false,
+        canViewReportCabinets: row.can_view_report_cabinets || false,
+        canViewReportServiceTime: row.can_view_report_service_time || false,
+        canViewReportSources: row.can_view_report_sources || false,
+        canViewReportConsultationControl: row.can_view_report_consultation_control || false,
+        canViewReportMarketing: row.can_view_report_marketing || false,
+        canViewReportAdvanceInvoice: row.can_view_report_advance_invoice || false,
+        canViewTargets: row.can_view_targets || false,
+        canViewOrders: row.can_view_orders || false,
+        canViewSuppliers: row.can_view_suppliers || false,
+        canEditFinancial: row.can_edit_financial || false,
+        canEditConsultations: row.can_edit_consultations || false,
+        canEditProspecting: row.can_edit_prospecting || false,
+        canEditCabinets: row.can_edit_cabinets || false,
+        canEditServiceTime: row.can_edit_service_time || false,
+        canEditSources: row.can_edit_sources || false,
+        canEditConsultationControl: row.can_edit_consultation_control || false,
+        canEditAligners: row.can_edit_aligners || false,
+        canEditOrders: row.can_edit_orders || false,
+        canEditAdvanceInvoice: row.can_edit_advance_invoice || false,
+        canEditAccountsPayable: row.can_edit_accounts_payable || false,
+        canViewAccountsPayable: row.can_view_accounts_payable || false,
+        canEditPatients: row.can_edit_patients || false,
+        canEditClinicConfig: row.can_edit_clinic_config || false,
+        canEditTargets: row.can_edit_targets || false,
+        canViewTickets: row.can_view_tickets || false,
+        canEditTickets: row.can_edit_tickets || false,
+        canViewNPS: row.can_view_nps || false,
+        canEditNPS: row.can_edit_nps || false,
+        canEditSuppliers: row.can_edit_suppliers || false,
+        canViewMarketing: row.can_view_marketing || false,
+        canEditMarketing: row.can_edit_marketing || false,
+        canViewAlerts: row.can_view_alerts || false,
+        canViewAdvances: row.can_view_advances || false,
+        canEditAdvances: row.can_edit_advances || false,
+        canBillAdvances: row.can_bill_advances || false,
+        canManageInsuranceProviders: row.can_manage_insurance_providers || false,
+        hasSpecialAccountsPayableAccess: row.has_special_accounts_payable_access || false,
+        canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
+        canViewAppointments: Boolean(row.can_view_appointments),
+        canEditAppointments: Boolean(row.can_edit_appointments),
+      },
+    }))
+
+    res.json(teamMembers)
+  } catch (error) {
+    console.error('Get team members error:', error)
+    res.status(500).json({ error: 'Failed to get team members' })
+  }
+})
+
+/**
+ * POST /api/collaborators/team
+ * Create new team member with multiple roles support
+ */
+router.post('/team', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+    const userId = req.auth?.sub
+
+    if (!clinicId || !userId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    const { name, email, password, whatsapp, isOwner, isDoctor, role } = req.body
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' })
+    }
+
+    // Check if email already exists
+    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email])
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Email already in use' })
+    }
+
+    // Determine role: if isOwner, use GESTOR_CLINICA, else if isDoctor use MEDICO, else COLABORADOR
+    let userRole = role || 'COLABORADOR'
+    if (isOwner) {
+      userRole = 'GESTOR_CLINICA'
+    } else if (isDoctor && !role) {
+      userRole = 'MEDICO'
+    }
+
+    // Create user
+    const newUserId = `user-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+    await query(
+      `INSERT INTO users (id, name, email, whatsapp, password_hash, role, clinic_id, is_owner, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)`,
+      [newUserId, name, email, whatsapp || null, password, userRole, clinicId, isOwner || false]
+    )
+
+    // Create default permissions if not owner
+    if (!isOwner) {
+      const permissionsId = `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+      // If doctor, apply default doctor permissions
+      if (userRole === 'MEDICO') {
+        await query(
+          `INSERT INTO user_permissions (
+            id, user_id, clinic_id,
+            can_edit_consultations, can_view_reports, can_edit_patients
+          ) VALUES ($1, $2, $3, true, true, true)`,
+          [permissionsId, newUserId, clinicId]
+        )
+      } else {
+        // Empty permissions for collaborators
+        await query(
+          `INSERT INTO user_permissions (id, user_id, clinic_id)
+           VALUES ($1, $2, $3)`,
+          [permissionsId, newUserId, clinicId]
+        )
+      }
+    }
+
+    // If isDoctor, create entry in clinic_doctors linked to user
+    let doctorId = null
+    if (isDoctor) {
+      doctorId = `${clinicId}-doc-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      await query(
+        `INSERT INTO clinic_doctors (id, clinic_id, name, email, whatsapp, user_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [doctorId, clinicId, name, email, whatsapp || null, newUserId]
+      )
+    }
+
+    // Log audit
+    await logAudit(
+      userId,
+      clinicId,
+      'CREATE',
+      'team_member',
+      newUserId,
+      { name, email, role: userRole, isOwner, isDoctor },
+      req.ip
+    )
+
+    res.status(201).json({
+      message: 'Team member created successfully',
+      member: {
+        id: newUserId,
+        name,
+        email,
+        whatsapp: whatsapp || null,
+        role: userRole,
+        isOwner: isOwner || false,
+        isDoctor: isDoctor || false,
+        doctorId,
+        active: true,
+      },
+    })
+  } catch (error) {
+    console.error('Create team member error:', error)
+    res.status(500).json({ error: 'Failed to create team member' })
+  }
+})
+
+/**
+ * PUT /api/collaborators/team/:id/roles
+ * Update team member roles (promote/demote owner/doctor)
+ */
+router.put('/team/:id/roles', requireGestor, async (req: AuthedRequest, res) => {
+  try {
+    const clinicId = req.auth?.clinicId
+    const userId = req.auth?.sub
+    const memberId = req.params.id
+
+    if (!clinicId || !userId) {
+      return res.status(400).json({ error: 'Clinic ID is required' })
+    }
+
+    const { isOwner, isDoctor } = req.body
+
+    // Check if member belongs to this clinic
+    const checkResult = await query(
+      'SELECT id, name, email, whatsapp, role, is_owner FROM users WHERE id = $1 AND clinic_id = $2',
+      [memberId, clinicId]
+    )
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Team member not found' })
+    }
+
+    const member = checkResult.rows[0]
+
+    // Update is_owner flag
+    if (isOwner !== undefined) {
+      await query(
+        'UPDATE users SET is_owner = $1, updated_at = NOW() WHERE id = $2',
+        [isOwner, memberId]
+      )
+
+      // If promoting to owner, change role to GESTOR_CLINICA
+      if (isOwner) {
+        await query(
+          'UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2',
+          ['GESTOR_CLINICA', memberId]
+        )
+      }
+    }
+
+    // Handle doctor role
+    if (isDoctor !== undefined) {
+      if (isDoctor) {
+        // Check if already a doctor in clinic_doctors
+        const doctorCheck = await query(
+          'SELECT id FROM clinic_doctors WHERE user_id = $1',
+          [memberId]
+        )
+
+        if (doctorCheck.rows.length === 0) {
+          // Create doctor entry linked to user
+          const doctorId = `${clinicId}-doc-${Date.now()}-${Math.random().toString(36).slice(2)}`
+          await query(
+            `INSERT INTO clinic_doctors (id, clinic_id, name, email, whatsapp, user_id)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [doctorId, clinicId, member.name, member.email, member.whatsapp, memberId]
+          )
+        }
+
+        // Update role to MEDICO if not owner
+        if (!member.is_owner && !isOwner) {
+          await query(
+            'UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2',
+            ['MEDICO', memberId]
+          )
+        }
+      } else {
+        // Remove doctor entry
+        await query('DELETE FROM clinic_doctors WHERE user_id = $1', [memberId])
+
+        // Change role to COLABORADOR if not owner
+        if (!member.is_owner) {
+          await query(
+            'UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2',
+            ['COLABORADOR', memberId]
+          )
+        }
+      }
+    }
+
+    // Log audit
+    await logAudit(
+      userId,
+      clinicId,
+      'UPDATE_ROLES',
+      'team_member',
+      memberId,
+      { isOwner, isDoctor },
+      req.ip
+    )
+
+    res.json({ message: 'Team member roles updated successfully' })
+  } catch (error) {
+    console.error('Update team member roles error:', error)
+    res.status(500).json({ error: 'Failed to update team member roles' })
+  }
+})
+
 export default router

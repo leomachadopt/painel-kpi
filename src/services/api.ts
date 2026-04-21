@@ -1165,6 +1165,29 @@ export const collaboratorsApi = {
     apiCall<{ message: string }>(`/collaborators/doctors/${id}`, {
       method: 'DELETE',
     }),
+
+  // Unified Team Management API
+  listTeam: () => apiCall<any[]>('/collaborators/team'),
+
+  createTeamMember: (data: {
+    name: string
+    email: string
+    password: string
+    whatsapp?: string
+    isOwner?: boolean
+    isDoctor?: boolean
+    role?: string
+  }) =>
+    apiCall<{ member: any; message: string }>('/collaborators/team', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTeamMemberRoles: (id: string, data: { isOwner?: boolean; isDoctor?: boolean }) =>
+    apiCall<{ message: string }>(`/collaborators/team/${id}/roles`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 }
 
 // ================================
