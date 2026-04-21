@@ -20,8 +20,36 @@ router.get('/:clinicId/:year/:month', requirePermission('canViewTargets'), async
     console.log('📋 Query result:', { rowCount: result.rows.length, rows: result.rows })
 
     if (result.rows.length === 0) {
-      console.log('❌ No targets found for:', { clinicId, year, month })
-      return res.status(404).json({ error: 'Targets not found' })
+      console.log('ℹ️  No targets found for:', { clinicId, year, month }, '- returning defaults')
+
+      // Return default targets instead of 404 to avoid console errors
+      // This allows the UI to load smoothly with default values
+      return res.json({
+        id: `${clinicId}-${year}-${month}`,
+        clinicId,
+        month: parseInt(month),
+        year: parseInt(year),
+        targetRevenue: 50000,
+        targetAlignersRange: { min: 10, max: 15 },
+        targetAvgTicket: 2500,
+        targetAcceptanceRate: 70,
+        targetOccupancyRate: 80,
+        targetNPS: 90,
+        targetIntegrationRate: 85,
+        targetAgendaDistribution: {
+          operational: 60,
+          planning: 15,
+          sales: 15,
+          leadership: 10
+        },
+        targetAttendanceRate: 90,
+        targetFollowUpRate: 80,
+        targetWaitTime: 10,
+        targetComplaints: 5,
+        targetLeadsRange: { min: 50, max: 80 },
+        targetRevenuePerCabinet: 25000,
+        targetPlansPresented: { adults: 20, kids: 10 }
+      })
     }
 
     const row = result.rows[0]

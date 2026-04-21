@@ -970,7 +970,10 @@ export default function Settings() {
       await configApi.update(clinic.id, config)
       // Recarregar a clínica completa do banco para garantir dados atualizados
       const updatedClinic = await clinicsApi.getById(clinic.id)
-      await updateClinicConfig(clinic.id, updatedClinic.configuration)
+
+      // Atualizar o store diretamente (sem fazer nova chamada getById)
+      await reloadClinics()
+
       // Atualizar o estado local incluindo agendaEnabled (que vem na raiz da clínica, não em configuration)
       setConfig({
         ...updatedClinic.configuration,
