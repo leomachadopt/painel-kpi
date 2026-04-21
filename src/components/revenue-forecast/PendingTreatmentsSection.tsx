@@ -310,16 +310,15 @@ export function PendingTreatmentsSection({
                             }`}
                           >
                             <div className={`col-span-2 ${isCompleted ? 'line-through' : ''}`}>
-                              <div className="font-medium">{treatment.description}</div>
-                              {(treatment.procedureCode || treatment.toothRegion) && (
+                              <div className="font-medium">
+                                {treatment.procedureCode && (
+                                  <span className="font-mono">{treatment.procedureCode} - </span>
+                                )}
+                                {treatment.description}
+                              </div>
+                              {treatment.toothRegion && (
                                 <div className="text-xs text-muted-foreground mt-0.5">
-                                  {treatment.procedureCode && (
-                                    <span className="font-mono">{treatment.procedureCode}</span>
-                                  )}
-                                  {treatment.procedureCode && treatment.toothRegion && ' • '}
-                                  {treatment.toothRegion && (
-                                    <span>Dente: {treatment.toothRegion}</span>
-                                  )}
+                                  Dente: {treatment.toothRegion}
                                 </div>
                               )}
                             </div>
