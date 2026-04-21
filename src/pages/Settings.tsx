@@ -789,7 +789,7 @@ const ProceduresBaseTab = ({
 }
 
 export default function Settings() {
-  const { t, locale, getPhonePlaceholder } = useTranslation()
+  const { t, locale, getPhonePlaceholder, getCurrencySymbol } = useTranslation()
   const { user } = useAuthStore()
   const { canEdit } = usePermissions()
   const { clinics, reloadClinics, updateClinicConfig, getMonthlyTargets, loadMonthlyTargets, updateMonthlyTargets } = useDataStore()
@@ -1282,7 +1282,7 @@ export default function Settings() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('financial.monthlyBilling')} ({locale === 'PT-BR' ? 'R$' : '€'})</Label>
+                  <Label>{t('financial.monthlyBilling')} ({getCurrencySymbol()})</Label>
                   <Input
                     type="number"
                     value={targets.targetRevenue || ''}
@@ -1356,7 +1356,7 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Ticket Médio (€)</Label>
+                  <Label>Ticket Médio ({getCurrencySymbol()})</Label>
                   <Input
                     type="number"
                     value={targets.targetAvgTicket || ''}
@@ -1407,7 +1407,7 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t('financial.billingPerCabinet')} ({locale === 'PT-BR' ? 'R$' : '€'})</Label>
+                  <Label>{t('financial.billingPerCabinet')} ({getCurrencySymbol()})</Label>
                   <Input
                     type="number"
                     value={targets.targetRevenuePerCabinet || ''}
