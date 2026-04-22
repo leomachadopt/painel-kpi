@@ -107,35 +107,39 @@ router.post('/:clinicId/:doctorId', requirePermission('canEditClinicConfig'), as
     }
 
     // Validate that doctor's schedule is within clinic operating hours
-    const clinicSchedule = await query(
-      `SELECT start_time, end_time FROM clinic_schedules
-       WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true`,
+    // Let PostgreSQL handle TIME comparison so string formats like "09:00" and "09:00:00" work interchangeably
+    const clinicDayCheck = await query(
+      `SELECT 1 FROM clinic_schedules
+       WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true
+       LIMIT 1`,
       [clinicId, dayOfWeek]
     )
 
-    if (clinicSchedule.rows.length === 0) {
+    if (clinicDayCheck.rows.length === 0) {
       return res.status(400).json({
         error: 'Clínica não funciona neste dia da semana. Configure primeiro os horários da clínica.'
       })
     }
 
-    // Check if doctor's times are within ANY of the clinic's shifts for this day
-    const isWithinClinicHours = clinicSchedule.rows.some((shift) => {
-      return startTime >= shift.start_time && endTime <= shift.end_time
-    })
+    const withinCheck = await query(
+      `SELECT 1 FROM clinic_schedules
+       WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true
+         AND start_time <= $3::TIME AND end_time >= $4::TIME
+       LIMIT 1`,
+      [clinicId, dayOfWeek, startTime, endTime]
+    )
 
-    if (!isWithinClinicHours) {
+    if (withinCheck.rows.length === 0) {
       return res.status(400).json({
         error: 'Horário do médico deve estar dentro do horário de funcionamento da clínica'
       })
     }
 
     // Check for overlapping shifts on the same day for this doctor
-    console.log('[DOCTOR_SCHEDULE] Checking overlap for:', { clinicId, doctorId, dayOfWeek, startTime, endTime })
     const overlap = await query(
-      `SELECT id, start_time, end_time FROM clinic_doctor_schedule
+      `SELECT id FROM clinic_doctor_schedule
        WHERE clinic_id = $1 AND doctor_id = $2 AND day_of_week = $3 AND is_active = true
-         AND start_time < $5 AND end_time > $4`,
+         AND start_time < $5::TIME AND end_time > $4::TIME`,
       [clinicId, doctorId, dayOfWeek, startTime, endTime]
     )
 
@@ -183,24 +187,29 @@ router.put('/:clinicId/:doctorId/:scheduleId', requirePermission('canEditClinicC
       const finalStartTime = startTime !== undefined ? startTime : current.rows[0].start_time
       const finalEndTime = endTime !== undefined ? endTime : current.rows[0].end_time
 
-      // Validate against clinic schedule
-      const clinicSchedule = await query(
-        `SELECT start_time, end_time FROM clinic_schedules
-         WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true`,
+      // Validate against clinic schedule (PostgreSQL handles TIME comparison)
+      const clinicDayCheck = await query(
+        `SELECT 1 FROM clinic_schedules
+         WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true
+         LIMIT 1`,
         [clinicId, finalDayOfWeek]
       )
 
-      if (clinicSchedule.rows.length === 0) {
+      if (clinicDayCheck.rows.length === 0) {
         return res.status(400).json({
           error: 'Clínica não funciona neste dia da semana'
         })
       }
 
-      const isWithinClinicHours = clinicSchedule.rows.some((shift) => {
-        return finalStartTime >= shift.start_time && finalEndTime <= shift.end_time
-      })
+      const withinCheck = await query(
+        `SELECT 1 FROM clinic_schedules
+         WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true
+           AND start_time <= $3::TIME AND end_time >= $4::TIME
+         LIMIT 1`,
+        [clinicId, finalDayOfWeek, finalStartTime, finalEndTime]
+      )
 
-      if (!isWithinClinicHours) {
+      if (withinCheck.rows.length === 0) {
         return res.status(400).json({
           error: 'Horário do médico deve estar dentro do horário de funcionamento da clínica'
         })
