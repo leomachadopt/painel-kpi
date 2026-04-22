@@ -381,10 +381,10 @@ router.put('/:id', requireGestor, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: 'Name and email are required' })
     }
 
-    // Check if collaborator belongs to this clinic
+    // Check if member belongs to this clinic (any role — endpoint used by unified Team page)
     const checkResult = await query(
-      'SELECT id FROM users WHERE id = $1 AND clinic_id = $2 AND role = $3',
-      [collaboratorId, clinicId, 'COLABORADOR']
+      'SELECT id FROM users WHERE id = $1 AND clinic_id = $2',
+      [collaboratorId, clinicId]
     )
 
     if (checkResult.rows.length === 0) {
