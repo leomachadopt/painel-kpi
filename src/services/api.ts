@@ -1387,7 +1387,9 @@ const revenueForecastApi = {
     apiCall<{
       totalPending: { count: number; value: number }
       next30Days: { count: number; value: number }
+      thisMonth: { count: number; value: number }
       overdue: { count: number; value: number }
+      financialPendencies: { count: number; value: number }
     }>(`/revenue-forecast/${clinicId}/dashboard`),
 
   getPendencies: (clinicId: string) =>

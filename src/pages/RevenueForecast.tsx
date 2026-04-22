@@ -188,10 +188,10 @@ export default function RevenueForecast() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-700">
-              {formatCurrency(treatmentsDashboard?.totalPendingValue || 0)}
+              {formatCurrency(dashboardData?.financialPendencies?.value || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {treatmentsDashboard?.treatmentCount || 0} procedimentos pendentes
+              {dashboardData?.financialPendencies?.count || 0} pacientes com saldo devedor
             </p>
           </CardContent>
         </Card>

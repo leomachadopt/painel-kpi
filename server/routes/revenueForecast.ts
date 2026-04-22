@@ -959,42 +959,81 @@ router.get('/:clinicId/dashboard', async (req, res) => {
       return res.status(403).json({ error: 'Permission denied' })
     }
 
-    const result = await query(
-      `SELECT
-        COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') THEN 1 END) as total_pending_count,
-        COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') THEN value END), 0) as total_pending_value,
+    const [installmentsResult, pendenciesResult] = await Promise.all([
+      query(
+        `SELECT
+          COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') THEN 1 END) as total_pending_count,
+          COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') THEN value END), 0) as total_pending_value,
 
-        COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN 1 END) as next_30_days_count,
-        COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN value END), 0) as next_30_days_value,
+          COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN 1 END) as next_30_days_count,
+          COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN value END), 0) as next_30_days_value,
 
-        COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN 1 END) as this_month_count,
-        COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN value END), 0) as this_month_value,
+          COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN 1 END) as this_month_count,
+          COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN value END), 0) as this_month_value,
 
-        COUNT(CASE WHEN status = 'ATRASADO' THEN 1 END) as overdue_count,
-        COALESCE(SUM(CASE WHEN status = 'ATRASADO' THEN value END), 0) as overdue_value
-      FROM revenue_installments
-      WHERE clinic_id = $1`,
-      [clinicId]
-    )
+          COUNT(CASE WHEN status = 'ATRASADO' THEN 1 END) as overdue_count,
+          COALESCE(SUM(CASE WHEN status = 'ATRASADO' THEN value END), 0) as overdue_value
+        FROM revenue_installments
+        WHERE clinic_id = $1`,
+        [clinicId]
+      ),
+      query(
+        `WITH patient_payments AS (
+          SELECT
+            code as patient_code,
+            COALESCE(SUM(value), 0) as total_payments
+          FROM daily_financial_entries
+          WHERE clinic_id = $1
+            AND code IS NOT NULL
+            AND code != ''
+          GROUP BY code
+        ),
+        patient_procedures AS (
+          SELECT
+            dce.code as patient_code,
+            COALESCE(SUM(pp.price_at_creation), 0) as total_procedures
+          FROM plan_procedures pp
+          INNER JOIN daily_consultation_entries dce ON pp.consultation_entry_id = dce.id
+          WHERE dce.clinic_id = $1
+            AND pp.completed = true
+            AND dce.code IS NOT NULL
+            AND dce.code != ''
+          GROUP BY dce.code
+        )
+        SELECT
+          COUNT(*) as pendencies_count,
+          COALESCE(SUM(ABS(COALESCE(pay.total_payments, 0) - COALESCE(proc.total_procedures, 0))), 0) as pendencies_value
+        FROM patient_payments pay
+        FULL OUTER JOIN patient_procedures proc
+          ON pay.patient_code = proc.patient_code
+        WHERE COALESCE(pay.total_payments, 0) - COALESCE(proc.total_procedures, 0) < 0`,
+        [clinicId]
+      )
+    ])
 
-    const row = result.rows[0]
+    const installmentsRow = installmentsResult.rows[0]
+    const pendenciesRow = pendenciesResult.rows[0]
 
     res.json({
       totalPending: {
-        count: parseInt(row.total_pending_count),
-        value: parseFloat(row.total_pending_value),
+        count: parseInt(installmentsRow.total_pending_count),
+        value: parseFloat(installmentsRow.total_pending_value),
       },
       next30Days: {
-        count: parseInt(row.next_30_days_count),
-        value: parseFloat(row.next_30_days_value),
+        count: parseInt(installmentsRow.next_30_days_count),
+        value: parseFloat(installmentsRow.next_30_days_value),
       },
       thisMonth: {
-        count: parseInt(row.this_month_count),
-        value: parseFloat(row.this_month_value),
+        count: parseInt(installmentsRow.this_month_count),
+        value: parseFloat(installmentsRow.this_month_value),
       },
       overdue: {
-        count: parseInt(row.overdue_count),
-        value: parseFloat(row.overdue_value),
+        count: parseInt(installmentsRow.overdue_count),
+        value: parseFloat(installmentsRow.overdue_value),
+      },
+      financialPendencies: {
+        count: parseInt(pendenciesRow.pendencies_count || 0),
+        value: parseFloat(pendenciesRow.pendencies_value || 0),
       },
     })
   } catch (error: any) {
