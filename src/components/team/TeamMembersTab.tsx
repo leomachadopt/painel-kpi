@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Shield, Loader2, Plus, Pencil, Trash2, Crown, Stethoscope, Users } from 'lucide-react'
+import { Shield, Loader2, Plus, Pencil, Trash2, Crown, Stethoscope, Users, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
 import useAuthStore from '@/stores/useAuthStore'
@@ -71,6 +71,7 @@ export default function TeamMembersTab() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showPermissionsModal, setShowPermissionsModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -368,6 +369,19 @@ export default function TeamMembersTab() {
                           <Pencil className="h-4 w-4 mr-1" />
                           Editar
                         </Button>
+                        {member.isDoctor && member.doctorId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedMember(member)
+                              setShowScheduleModal(true)
+                            }}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            Horário
+                          </Button>
+                        )}
                         {!member.isOwner && (
                           <Button
                             variant="ghost"
@@ -491,7 +505,7 @@ export default function TeamMembersTab() {
 
       {/* Edit Modal */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className={editForm.isDoctor ? 'max-w-3xl max-h-[90vh] overflow-y-auto' : undefined}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Membro</DialogTitle>
             <DialogDescription>
@@ -579,14 +593,6 @@ export default function TeamMembersTab() {
               </Label>
             </div>
 
-            {editForm.isDoctor && selectedMember?.doctorId && user?.clinicId && (
-              <div className="border-t pt-4">
-                <DoctorScheduleEditor
-                  clinicId={user.clinicId}
-                  doctorId={selectedMember.doctorId}
-                />
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditModal(false)}>
@@ -595,6 +601,31 @@ export default function TeamMembersTab() {
             <Button onClick={handleUpdateMember} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Modal */}
+      <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Horário de atendimento — {selectedMember?.name}</DialogTitle>
+            <DialogDescription>
+              Defina os dias e horários em que o médico atende. Os horários precisam estar dentro do funcionamento da clínica.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedMember?.doctorId && user?.clinicId && (
+            <div className="py-4">
+              <DoctorScheduleEditor
+                clinicId={user.clinicId}
+                doctorId={selectedMember.doctorId}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowScheduleModal(false)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
