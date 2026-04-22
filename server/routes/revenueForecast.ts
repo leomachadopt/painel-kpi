@@ -967,6 +967,9 @@ router.get('/:clinicId/dashboard', async (req, res) => {
         COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN 1 END) as next_30_days_count,
         COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= CURRENT_DATE + INTERVAL '30 days' THEN value END), 0) as next_30_days_value,
 
+        COUNT(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN 1 END) as this_month_count,
+        COALESCE(SUM(CASE WHEN status IN ('A_RECEBER', 'ATRASADO') AND due_date <= DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month - 1 day' THEN value END), 0) as this_month_value,
+
         COUNT(CASE WHEN status = 'ATRASADO' THEN 1 END) as overdue_count,
         COALESCE(SUM(CASE WHEN status = 'ATRASADO' THEN value END), 0) as overdue_value
       FROM revenue_installments
@@ -984,6 +987,10 @@ router.get('/:clinicId/dashboard', async (req, res) => {
       next30Days: {
         count: parseInt(row.next_30_days_count),
         value: parseFloat(row.next_30_days_value),
+      },
+      thisMonth: {
+        count: parseInt(row.this_month_count),
+        value: parseFloat(row.this_month_value),
       },
       overdue: {
         count: parseInt(row.overdue_count),

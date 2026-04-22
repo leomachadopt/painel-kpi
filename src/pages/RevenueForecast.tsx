@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Plus, TrendingUp, Clock, AlertCircle, Calendar } from 'lucide-react'
+import { Plus, TrendingUp, Clock, AlertCircle, Calendar, CalendarClock, FileWarning } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -98,7 +98,7 @@ export default function RevenueForecast() {
       </div>
 
       {/* Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Total A Receber */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -147,6 +147,22 @@ export default function RevenueForecast() {
           </CardContent>
         </Card>
 
+        {/* Vence Este Mês */}
+        <Card className="border-blue-500/50 bg-blue-50/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vence Este Mês</CardTitle>
+            <CalendarClock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-700">
+              {formatCurrency(dashboardData?.thisMonth?.value || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardData?.thisMonth?.count || 0} parcelas
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Tratamentos Pendentes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -160,6 +176,22 @@ export default function RevenueForecast() {
             <p className="text-xs text-muted-foreground">
               {treatmentsDashboard?.patientCount || 0} pacientes •{' '}
               {treatmentsDashboard?.treatmentCount || 0} tratamentos
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Pendências de Cobrança */}
+        <Card className="border-amber-500/50 bg-amber-50/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pendências de Cobrança</CardTitle>
+            <FileWarning className="h-4 w-4 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-700">
+              {formatCurrency(treatmentsDashboard?.totalPendingValue || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {treatmentsDashboard?.treatmentCount || 0} procedimentos pendentes
             </p>
           </CardContent>
         </Card>
