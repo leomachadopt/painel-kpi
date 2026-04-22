@@ -64,7 +64,7 @@ export function AddInstallmentDialog({
     }
 
     const value = parseFloat(formData.value)
-    if (value <= 0) {
+    if (value <= 0 || isNaN(value)) {
       toast({
         title: 'Erro',
         description: 'Valor deve ser maior que zero',
@@ -90,7 +90,7 @@ export function AddInstallmentDialog({
     } catch (error: any) {
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao adicionar parcela',
+        description: error.message || error.toString() || 'Erro ao adicionar parcela',
         variant: 'destructive',
       })
     } finally {

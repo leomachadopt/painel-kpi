@@ -241,9 +241,12 @@ router.post('/:clinicId/plans', async (req, res) => {
 /**
  * Helper function to recalculate plan totals based on installments
  */
-async function recalculatePlanTotals(planId: string) {
+async function recalculatePlanTotals(planId: string, client?: any) {
+  // Use provided client (for transactions) or global query
+  const queryFn = client ? client.query.bind(client) : query
+
   // Get all installments for this plan
-  const installmentsResult = await query(
+  const installmentsResult = await queryFn(
     `SELECT value FROM revenue_installments WHERE revenue_plan_id = $1 ORDER BY installment_number ASC`,
     [planId]
   )
@@ -258,7 +261,7 @@ async function recalculatePlanTotals(planId: string) {
   const installmentCount = installments.length
 
   // Update the plan
-  await query(
+  await queryFn(
     `UPDATE revenue_plans
      SET total_value = $1,
          installment_value = $2,
@@ -614,32 +617,35 @@ router.delete('/:clinicId/plans/:planId', async (req, res) => {
  * Add a single installment to an existing plan
  */
 router.post('/:clinicId/plans/:planId/add-installment', async (req, res) => {
+  const { clinicId, planId } = req.params
+  const { value, dueDate, notes } = req.body
+
+  const hasPermission = await canManageRevenueForecast(req, clinicId)
+
+  if (!hasPermission) {
+    return res.status(403).json({ error: 'Permission denied' })
+  }
+
+  // Validation
+  if (!value || !dueDate) {
+    return res.status(400).json({ error: 'Missing required fields: value, dueDate' })
+  }
+
+  if (value <= 0) {
+    return res.status(400).json({ error: 'Value must be greater than 0' })
+  }
+
   const client = await getClient()
 
   try {
-    const { clinicId, planId } = req.params
-    const { value, dueDate, notes } = req.body
-
-    if (!await canManageRevenueForecast(req, clinicId)) {
-      return res.status(403).json({ error: 'Permission denied' })
-    }
-
-    // Validation
-    if (!value || !dueDate) {
-      return res.status(400).json({ error: 'Missing required fields: value, dueDate' })
-    }
-
-    if (value <= 0) {
-      return res.status(400).json({ error: 'Value must be greater than 0' })
-    }
-
     // Check if plan exists
-    const planResult = await query(
+    const planResult = await client.query(
       `SELECT id, installment_count, total_value FROM revenue_plans WHERE id = $1 AND clinic_id = $2`,
       [planId, clinicId]
     )
 
     if (planResult.rows.length === 0) {
+      client.release()
       return res.status(404).json({ error: 'Revenue plan not found' })
     }
 
@@ -685,11 +691,11 @@ router.post('/:clinicId/plans/:planId/add-installment', async (req, res) => {
     )
 
     // Recalculate average installment value
-    await recalculatePlanTotals(planId)
+    await recalculatePlanTotals(planId, client)
 
     await client.query('COMMIT')
 
-    res.status(201).json({
+    const result = {
       id: installmentId,
       installmentNumber: nextInstallmentNumber,
       dueDate: parsedDueDate,
@@ -697,11 +703,13 @@ router.post('/:clinicId/plans/:planId/add-installment', async (req, res) => {
       status,
       isHistorical: false,
       receivedDate: null,
-    })
+    }
+
+    res.status(201).json(result)
   } catch (error: any) {
     await client.query('ROLLBACK')
-    console.error('Add installment error:', error)
-    res.status(500).json({ error: 'Failed to add installment' })
+    console.error('[AddInstallment] Error:', error)
+    res.status(500).json({ error: 'Failed to add installment', details: error.message })
   } finally {
     client.release()
   }
