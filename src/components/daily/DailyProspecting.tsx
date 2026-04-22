@@ -223,17 +223,19 @@ export function DailyProspecting({ clinic }: { clinic: Clinic }) {
             />
           </div>
 
-          <div className="space-y-3">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase">
-              {t('prospecting.conversionTitle')}
-            </h3>
-            <CounterRow
-              label={t('prospecting.scheduledConsultations')}
-              value={counters.scheduled}
-              onIncrement={handlers.scheduled.increment}
-              onDecrement={handlers.scheduled.decrement}
-            />
-          </div>
+          {!clinic.agendaEnabled && (
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase">
+                {t('prospecting.conversionTitle')}
+              </h3>
+              <CounterRow
+                label={t('prospecting.scheduledConsultations')}
+                value={counters.scheduled}
+                onIncrement={handlers.scheduled.increment}
+                onDecrement={handlers.scheduled.decrement}
+              />
+            </div>
+          )}
 
           <Button onClick={handleSave} className="w-full">
             <Save className="mr-2 h-4 w-4" /> {t('prospecting.saveDayTotals')}

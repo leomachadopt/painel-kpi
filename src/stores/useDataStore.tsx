@@ -380,8 +380,9 @@ export const DataProvider = ({ children }: { children: React.ReactNode }) => {
       // Total leads
       data.leads += (entry.email || 0) + (entry.sms || 0) + (entry.whatsapp || 0) + (entry.instagram || 0) + (entry.phone || 0)
 
-      // Scheduled consultations
-      if (entry.scheduled > 0) {
+      // Scheduled consultations - só conta se agenda NÃO está ativa
+      // Quando agendaEnabled=true, as consultas agendadas vêm do sistema de agenda (consultation_entries)
+      if (entry.scheduled > 0 && !clinic?.agendaEnabled) {
         data.firstConsultationsScheduled += entry.scheduled
       }
     })
