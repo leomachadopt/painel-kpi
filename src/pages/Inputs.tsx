@@ -57,7 +57,7 @@ export default function Inputs() {
   // Verificar permissões
   const hasFinancial = canEdit('canEditFinancial')
   const hasBilling = canEdit('canEditBilling') || canEdit('canEditAdvances') || canEdit('canEditAdvanceInvoice')
-  const hasConsultations = canEdit('canEditConsultations')
+  const hasConsultations = canEdit('canEditConsultations') && !clinic?.agendaEnabled
   const hasProspecting = canEdit('canEditProspecting')
   const hasCabinets = canEdit('canEditCabinets') && !clinic?.agendaEnabled
   const hasServiceTime = canEdit('canEditServiceTime') && !clinic?.agendaEnabled
