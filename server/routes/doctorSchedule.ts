@@ -108,14 +108,19 @@ router.post('/:clinicId/:doctorId', requirePermission('canEditClinicConfig'), as
 
     // Validate that doctor's schedule is within clinic operating hours
     // Let PostgreSQL handle TIME comparison so string formats like "09:00" and "09:00:00" work interchangeably
-    const clinicDayCheck = await query(
-      `SELECT 1 FROM clinic_schedules
+    const clinicShifts = await query(
+      `SELECT
+         to_char(start_time, 'HH24:MI') AS start_time,
+         to_char(end_time, 'HH24:MI') AS end_time
+       FROM clinic_schedules
        WHERE clinic_id = $1 AND day_of_week = $2 AND is_active = true
-       LIMIT 1`,
+       ORDER BY start_time ASC`,
       [clinicId, dayOfWeek]
     )
 
-    if (clinicDayCheck.rows.length === 0) {
+    console.log('[DOCTOR_SCHEDULE] Clinic shifts for day', dayOfWeek, ':', clinicShifts.rows, 'doctor request:', { startTime, endTime })
+
+    if (clinicShifts.rows.length === 0) {
       return res.status(400).json({
         error: 'Clínica não funciona neste dia da semana. Configure primeiro os horários da clínica.'
       })
@@ -130,8 +135,9 @@ router.post('/:clinicId/:doctorId', requirePermission('canEditClinicConfig'), as
     )
 
     if (withinCheck.rows.length === 0) {
+      const hoursList = clinicShifts.rows.map((r) => `${r.start_time}–${r.end_time}`).join(', ')
       return res.status(400).json({
-        error: 'Horário do médico deve estar dentro do horário de funcionamento da clínica'
+        error: `Horário do médico deve estar dentro do funcionamento da clínica (${hoursList}). Solicitado: ${startTime}–${endTime}`
       })
     }
 
