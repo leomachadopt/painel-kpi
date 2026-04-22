@@ -37,6 +37,7 @@ import { mapLegacyPermissionsToResources, mapResourcePermissionsToLegacy, RESOUR
 import { isBrazilClinic } from '@/lib/clinicUtils'
 import useDataStore from '@/stores/useDataStore'
 import type { ResourcePermissions } from '@/lib/types'
+import { DoctorScheduleEditor } from '@/components/team/DoctorScheduleEditor'
 
 interface TeamMember {
   id: string
@@ -490,7 +491,7 @@ export default function TeamMembersTab() {
 
       {/* Edit Modal */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent>
+        <DialogContent className={editForm.isDoctor ? 'max-w-3xl max-h-[90vh] overflow-y-auto' : undefined}>
           <DialogHeader>
             <DialogTitle>Editar Membro</DialogTitle>
             <DialogDescription>
@@ -577,6 +578,15 @@ export default function TeamMembersTab() {
                 Membro ativo no sistema
               </Label>
             </div>
+
+            {editForm.isDoctor && selectedMember?.doctorId && user?.clinicId && (
+              <div className="border-t pt-4">
+                <DoctorScheduleEditor
+                  clinicId={user.clinicId}
+                  doctorId={selectedMember.doctorId}
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditModal(false)}>

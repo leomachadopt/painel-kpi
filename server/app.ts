@@ -29,6 +29,7 @@ import pendingTreatmentsRoutes from './routes/pendingTreatments.js'
 import n8nRoutes from './routes/n8n.js'
 import appointmentsRoutes from './routes/appointments.js'
 import clinicScheduleRoutes from './routes/clinicSchedule.js'
+import doctorScheduleRoutes from './routes/doctorSchedule.js'
 import planProceduresRoutes from './routes/planProcedures.js'
 import proceduresCatalogRoutes from './routes/proceduresCatalog.js'
 import proceduresManagementRoutes from './routes/proceduresManagement.js'
@@ -154,6 +155,7 @@ export function createApp() {
   app.use('/api/n8n', n8nRoutes)
   app.use('/api/appointments', appointmentsRoutes)
   app.use('/api/clinic-schedule', clinicScheduleRoutes)
+  app.use('/api/doctor-schedule', doctorScheduleRoutes)
   app.use('/api/plan-procedures', planProceduresRoutes)
   app.use('/api/procedures-catalog', proceduresCatalogRoutes)
   app.use('/api/procedures-management', proceduresManagementRoutes)

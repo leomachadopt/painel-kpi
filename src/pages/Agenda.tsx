@@ -58,6 +58,8 @@ export default function Agenda() {
   const [cabinets, setCabinets] = useState<any[]>([])
   const [appointmentTypes, setAppointmentTypes] = useState<any[]>([])
   const [clinicSchedules, setClinicSchedules] = useState<any[]>([])
+  const [doctorSchedules, setDoctorSchedules] = useState<any[]>([])
+  const [agendaMode, setAgendaMode] = useState<'withAppointments' | 'available'>('withAppointments')
   const [sources, setSources] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedDoctors, setSelectedDoctors] = useState<string[]>([])
@@ -194,9 +196,53 @@ export default function Agenda() {
       loadCabinets()
       loadAppointmentTypes()
       loadClinicSchedules()
+      loadDoctorSchedules()
       loadSources()
     }
   }, [clinicId])
+
+  // Returns the set of doctorIds with an active schedule on the given date's weekday
+  const getScheduledDoctorsForDate = (date: Date): Set<string> => {
+    const dayOfWeek = date.getDay()
+    const set = new Set<string>()
+    for (const s of doctorSchedules) {
+      if (s.isActive && s.dayOfWeek === dayOfWeek) {
+        set.add(s.doctorId)
+      }
+    }
+    return set
+  }
+
+  // Returns visible doctor IDs for a date according to current agendaMode
+  const getVisibleDoctorsForDate = (date: Date): string[] => {
+    const dayAppointments = appointments.filter((apt) => {
+      const aptDate = apt.date.split('T')[0]
+      const dateStr = format(date, 'yyyy-MM-dd')
+      return aptDate === dateStr
+    })
+    const withAppt = new Set(dayAppointments.map((apt) => apt.doctor?.id).filter(Boolean))
+
+    if (agendaMode === 'withAppointments') {
+      return selectedDoctors.filter((id) => withAppt.has(id))
+    }
+
+    // available mode: scheduled doctors + any with existing appointments (safety net)
+    const scheduled = getScheduledDoctorsForDate(date)
+    return selectedDoctors.filter((id) => scheduled.has(id) || withAppt.has(id))
+  }
+
+  // Returns true if the given time slot falls inside the doctor's schedule for that date
+  const isSlotInDoctorSchedule = (doctorId: string, slotTime: string, date: Date): boolean => {
+    if (doctorSchedules.length === 0) return true // No schedule configured: don't shade anything
+    const dayOfWeek = date.getDay()
+    const slotMinutes = timeToMinutes(slotTime)
+    return doctorSchedules.some((s) => {
+      if (!s.isActive || s.doctorId !== doctorId || s.dayOfWeek !== dayOfWeek) return false
+      const startMin = timeToMinutes(s.startTime.substring(0, 5))
+      const endMin = timeToMinutes(s.endTime.substring(0, 5))
+      return slotMinutes >= startMin && slotMinutes < endMin
+    })
+  }
 
   // Handle mouse move for resize
   useEffect(() => {
@@ -452,6 +498,21 @@ export default function Agenda() {
       setClinicSchedules(data.schedules || [])
     } catch (error) {
       console.error('[AGENDA] Error loading clinic schedules:', error)
+    }
+  }
+
+  const loadDoctorSchedules = async () => {
+    if (!clinicId) return
+    try {
+      const response = await fetch(`/api/doctor-schedule/${clinicId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      })
+      const data = await response.json()
+      setDoctorSchedules(data.schedules || [])
+    } catch (error) {
+      console.error('[AGENDA] Error loading doctor schedules:', error)
     }
   }
 
@@ -1223,6 +1284,19 @@ export default function Agenda() {
                 </div>
               </div>
 
+              <div className="w-48 shrink-0">
+                <Label className="text-sm block mb-1.5">Filtro</Label>
+                <Select value={agendaMode} onValueChange={(value: 'withAppointments' | 'available') => setAgendaMode(value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="withAppointments">Médicos com marcações</SelectItem>
+                    <SelectItem value="available">Médicos disponíveis</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="w-32 shrink-0">
                 <Label className="text-sm block mb-1.5">Visualização</Label>
                 <Select value={viewMode} onValueChange={(value: 'day' | '3days' | 'week') => setViewMode(value)}>
@@ -1356,25 +1430,16 @@ export default function Agenda() {
           ) : viewMode === 'day' ? (
             /* ========== DAY VIEW: Grid by Doctors ========== */
             (() => {
-              // Filter to show only doctors with appointments on this day
-              const dayAppointments = getAppointmentsForDate(selectedDate)
-              const doctorsWithAppointments = new Set(
-                dayAppointments
-                  .map(apt => apt.doctor?.id)
-                  .filter(Boolean)
-              )
+              const visibleDoctors = getVisibleDoctorsForDate(selectedDate)
 
-              // Only show doctors that have appointments today
-              const visibleDoctors = selectedDoctors.filter(doctorId =>
-                doctorsWithAppointments.has(doctorId)
-              )
-
-              // If no doctors have appointments, show message
+              // If no doctors to show, render a mode-aware empty state
               if (visibleDoctors.length === 0) {
                 return (
                   <div className="border rounded-lg overflow-hidden">
                     <div className="text-center py-8 text-muted-foreground">
-                      Nenhum agendamento encontrado para {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+                      {agendaMode === 'available'
+                        ? `Nenhum médico escalado para ${format(selectedDate, "d 'de' MMMM", { locale: ptBR })}`
+                        : `Nenhum agendamento encontrado para ${format(selectedDate, "d 'de' MMMM", { locale: ptBR })}`}
                     </div>
                   </div>
                 )
@@ -1423,9 +1488,10 @@ export default function Agenda() {
                         )
                         const dayHours = getClinicHoursForDate(selectedDate)
                         const isClosed = !dayHours
+                        const isOffHours = agendaMode === 'available' && !isSlotInDoctorSchedule(doctorId, slot.time, selectedDate)
 
                         return (
-                          <div key={`${doctorId}-${slot.time}`} className="border-b border-r relative">
+                          <div key={`${doctorId}-${slot.time}`} className={`border-b border-r relative ${isOffHours ? 'bg-muted/40' : ''}`}>
                             {isClosed && slotIndex === 0 ? (
                               <div
                                 className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-muted/30"
@@ -1441,10 +1507,12 @@ export default function Agenda() {
                               </div>
                             ) : !isClosed ? (
                               <>
-                                <button
-                                  onClick={() => handleSlotClick(slot.time, selectedDate, doctorId)}
-                                  className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
-                                />
+                                {!isOffHours && (
+                                  <button
+                                    onClick={() => handleSlotClick(slot.time, selectedDate, doctorId)}
+                                    className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                  />
+                                )}
 
                                 {/* Appointments overlay - only render on first slot */}
                                 {slotIndex === 0 && (
@@ -1579,20 +1647,11 @@ export default function Agenda() {
             (() => {
               const dateRange = getDateRange()
 
-              // For each day, get doctors with appointments
-              const dayDoctorsMap = dateRange.map(date => {
-                const dayAppointments = getAppointmentsForDate(date)
-                const doctorsWithAppointments = new Set(
-                  dayAppointments
-                    .map(apt => apt.doctor?.id)
-                    .filter(Boolean)
-                )
-                return {
-                  date,
-                  doctors: selectedDoctors.filter(doctorId => doctorsWithAppointments.has(doctorId)),
-                  isClosed: !getClinicHoursForDate(date)
-                }
-              })
+              const dayDoctorsMap = dateRange.map(date => ({
+                date,
+                doctors: getVisibleDoctorsForDate(date),
+                isClosed: !getClinicHoursForDate(date)
+              }))
 
               // Calculate total columns needed
               const totalDoctorColumns = dayDoctorsMap.reduce((sum, day) => {
@@ -1712,13 +1771,16 @@ export default function Agenda() {
                               const doctorAppointments = getAppointmentsForDate(dayInfo.date).filter(
                                 apt => apt.doctor?.id === doctorId
                               )
+                              const isOffHours = agendaMode === 'available' && !isSlotInDoctorSchedule(doctorId, slot.time, dayInfo.date)
 
                               return (
-                                <div key={`${dateStr}-${slot.time}-${doctorId}`} className="border-b border-r relative">
-                                  <button
-                                    onClick={() => handleSlotClick(slot.time, dayInfo.date, doctorId)}
-                                    className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
-                                  />
+                                <div key={`${dateStr}-${slot.time}-${doctorId}`} className={`border-b border-r relative ${isOffHours ? 'bg-muted/40' : ''}`}>
+                                  {!isOffHours && (
+                                    <button
+                                      onClick={() => handleSlotClick(slot.time, dayInfo.date, doctorId)}
+                                      className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                    />
+                                  )}
 
                                   {/* Appointments overlay - only render on first slot */}
                                   {slotIndex === 0 && (
@@ -1848,20 +1910,11 @@ export default function Agenda() {
             (() => {
               const dateRange = getDateRange()
 
-              // For each day, get doctors with appointments
-              const dayDoctorsMap = dateRange.map(date => {
-                const dayAppointments = getAppointmentsForDate(date)
-                const doctorsWithAppointments = new Set(
-                  dayAppointments
-                    .map(apt => apt.doctor?.id)
-                    .filter(Boolean)
-                )
-                return {
-                  date,
-                  doctors: selectedDoctors.filter(doctorId => doctorsWithAppointments.has(doctorId)),
-                  isClosed: !getClinicHoursForDate(date)
-                }
-              })
+              const dayDoctorsMap = dateRange.map(date => ({
+                date,
+                doctors: getVisibleDoctorsForDate(date),
+                isClosed: !getClinicHoursForDate(date)
+              }))
 
               // Calculate total columns needed
               const totalDoctorColumns = dayDoctorsMap.reduce((sum, day) => {
@@ -1981,13 +2034,16 @@ export default function Agenda() {
                               const doctorAppointments = getAppointmentsForDate(dayInfo.date).filter(
                                 apt => apt.doctor?.id === doctorId
                               )
+                              const isOffHours = agendaMode === 'available' && !isSlotInDoctorSchedule(doctorId, slot.time, dayInfo.date)
 
                               return (
-                                <div key={`${dateStr}-${slot.time}-${doctorId}`} className="border-b border-r relative">
-                                  <button
-                                    onClick={() => handleSlotClick(slot.time, dayInfo.date, doctorId)}
-                                    className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
-                                  />
+                                <div key={`${dateStr}-${slot.time}-${doctorId}`} className={`border-b border-r relative ${isOffHours ? 'bg-muted/40' : ''}`}>
+                                  {!isOffHours && (
+                                    <button
+                                      onClick={() => handleSlotClick(slot.time, dayInfo.date, doctorId)}
+                                      className="absolute inset-0 w-full h-full hover:bg-accent/30 cursor-pointer transition-colors z-0"
+                                    />
+                                  )}
 
                                   {/* Appointments overlay - only render on first slot */}
                                   {slotIndex === 0 && (
