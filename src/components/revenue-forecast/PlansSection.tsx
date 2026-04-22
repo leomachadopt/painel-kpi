@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Check, Pencil, Trash2, ChevronDown, ChevronRight, RotateCcw, Search, X } from 'lucide-react'
+import { Check, Pencil, Trash2, ChevronDown, ChevronRight, RotateCcw, Search, X, Plus, RotateCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -34,6 +34,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { NewRevenuePlanDialog } from './NewRevenuePlanDialog'
+import { AddInstallmentDialog } from './AddInstallmentDialog'
+import { ReparcelInstallmentsDialog } from './ReparcelInstallmentsDialog'
 
 interface RevenueForecastPlansSectionProps {
   clinicId: string
@@ -63,6 +65,14 @@ export function RevenueForecastPlansSection({
   })
   const [editingPlan, setEditingPlan] = useState<any | null>(null)
   const [editPlanDialogOpen, setEditPlanDialogOpen] = useState(false)
+
+  // Add installment dialog
+  const [addInstallmentDialogOpen, setAddInstallmentDialogOpen] = useState(false)
+  const [selectedPlanForAddInstallment, setSelectedPlanForAddInstallment] = useState<string | null>(null)
+
+  // Reparcel dialog
+  const [reparcelDialogOpen, setReparcelDialogOpen] = useState(false)
+  const [selectedPlanForReparcel, setSelectedPlanForReparcel] = useState<{ planId: string; pendingValue: number } | null>(null)
 
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('')
@@ -105,6 +115,38 @@ export function RevenueForecastPlansSection({
 
   const handleEditPlanSuccess = () => {
     handleCloseEditPlanDialog()
+    onRefresh()
+  }
+
+  const handleOpenAddInstallmentDialog = (planId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedPlanForAddInstallment(planId)
+    setAddInstallmentDialogOpen(true)
+  }
+
+  const handleCloseAddInstallmentDialog = () => {
+    setSelectedPlanForAddInstallment(null)
+    setAddInstallmentDialogOpen(false)
+  }
+
+  const handleAddInstallmentSuccess = () => {
+    handleCloseAddInstallmentDialog()
+    onRefresh()
+  }
+
+  const handleOpenReparcelDialog = (planId: string, pendingValue: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedPlanForReparcel({ planId, pendingValue })
+    setReparcelDialogOpen(true)
+  }
+
+  const handleCloseReparcelDialog = () => {
+    setSelectedPlanForReparcel(null)
+    setReparcelDialogOpen(false)
+  }
+
+  const handleReparcelSuccess = () => {
+    handleCloseReparcelDialog()
     onRefresh()
   }
 
@@ -523,25 +565,44 @@ export function RevenueForecastPlansSection({
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {plan.patientCode && `#${plan.patientCode} • `}
+                      <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <span>
+                          {plan.patientCode && `#${plan.patientCode} • `}
+                          {(() => {
+                            // Calculate received and pending amounts
+                            const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO') || []
+                            const pendingInstallments = plan.installments?.filter((i: any) => i.status !== 'RECEBIDO') || []
+
+                            const receivedCount = receivedInstallments.length
+                            const pendingCount = pendingInstallments.length
+
+                            // Sum actual values of pending installments
+                            const remainingBalance = pendingInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
+
+                            return (
+                              <>
+                                {pendingCount} parcelas •
+                                Saldo pendente: {formatCurrency(remainingBalance)}
+                                {plan.categoryName && ` • ${plan.categoryName}`}
+                              </>
+                            )
+                          })()}
+                        </span>
                         {(() => {
-                          // Calculate received and pending amounts
-                          const receivedInstallments = plan.installments?.filter((i: any) => i.status === 'RECEBIDO') || []
                           const pendingInstallments = plan.installments?.filter((i: any) => i.status !== 'RECEBIDO') || []
-
-                          const receivedCount = receivedInstallments.length
-                          const pendingCount = pendingInstallments.length
-
-                          // Sum actual values of pending installments
                           const remainingBalance = pendingInstallments.reduce((sum: number, i: any) => sum + parseFloat(i.value), 0)
 
-                          return (
-                            <>
-                              {pendingCount} parcelas •
-                              Saldo pendente: {formatCurrency(remainingBalance)}
-                              {plan.categoryName && ` • ${plan.categoryName}`}
-                            </>
+                          return pendingInstallments.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-xs gap-1"
+                              onClick={(e) => handleOpenReparcelDialog(plan.id, remainingBalance, e)}
+                              title="Reparcelar saldo pendente"
+                            >
+                              <RotateCw className="w-3 h-3" />
+                              Reparcelar
+                            </Button>
                           )
                         })()}
                       </div>
@@ -667,6 +728,19 @@ export function RevenueForecastPlansSection({
                           </div>
                         </div>
                       ))}
+
+                      {/* Add Installment Button */}
+                      <div className="pt-3 border-t mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={(e) => handleOpenAddInstallmentDialog(plan.id, e)}
+                        >
+                          <Plus className="w-4 h-4" />
+                          Adicionar Parcela
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -768,6 +842,29 @@ export function RevenueForecastPlansSection({
         onSuccess={handleEditPlanSuccess}
         editingPlan={editingPlan}
       />
+
+      {/* Add Installment Dialog */}
+      {selectedPlanForAddInstallment && (
+        <AddInstallmentDialog
+          open={addInstallmentDialogOpen}
+          onOpenChange={setAddInstallmentDialogOpen}
+          planId={selectedPlanForAddInstallment}
+          clinicId={clinicId}
+          onSuccess={handleAddInstallmentSuccess}
+        />
+      )}
+
+      {/* Reparcel Installments Dialog */}
+      {selectedPlanForReparcel && (
+        <ReparcelInstallmentsDialog
+          open={reparcelDialogOpen}
+          onOpenChange={setReparcelDialogOpen}
+          planId={selectedPlanForReparcel.planId}
+          clinicId={clinicId}
+          pendingValue={selectedPlanForReparcel.pendingValue}
+          onSuccess={handleReparcelSuccess}
+        />
+      )}
     </>
   )
 }
