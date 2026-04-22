@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Calendar } from '@/components/ui/calendar'
 import {
   Popover,
@@ -1284,17 +1285,26 @@ export default function Agenda() {
                 </div>
               </div>
 
-              <div className="w-48 shrink-0">
+              <div className="shrink-0">
                 <Label className="text-sm block mb-1.5">Filtro</Label>
-                <Select value={agendaMode} onValueChange={(value: 'withAppointments' | 'available') => setAgendaMode(value)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="withAppointments">Médicos com marcações</SelectItem>
-                    <SelectItem value="available">Médicos disponíveis</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ToggleGroup
+                  type="single"
+                  value={agendaMode}
+                  onValueChange={(value) => {
+                    if (value === 'withAppointments' || value === 'available') {
+                      setAgendaMode(value)
+                    }
+                  }}
+                  variant="outline"
+                  className="h-9 gap-0"
+                >
+                  <ToggleGroupItem value="withAppointments" className="h-9 text-xs px-3 rounded-r-none data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                    Com marcações
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="available" className="h-9 text-xs px-3 rounded-l-none border-l-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                    Disponíveis
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
               <div className="w-32 shrink-0">
