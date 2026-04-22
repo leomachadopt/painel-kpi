@@ -61,7 +61,7 @@ export function AppSidebar() {
   const { t } = useTranslation()
   const { language, userLanguage, clinicLanguage } = useLanguage()
 
-  const clinicId = location.pathname.split('/')[2]
+  const clinicId = location.pathname.split('/')[2] || user?.clinicId
   const currentClinic = clinics.find((c) => c.id === clinicId)
 
   const isMentor = user?.role === 'MENTOR'
