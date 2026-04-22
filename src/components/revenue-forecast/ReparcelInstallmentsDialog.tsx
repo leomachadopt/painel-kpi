@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import useDataStore from '@/stores/useDataStore'
 import { getCurrencySymbol, formatCurrency } from '@/lib/utils'
+import api from '@/services/api'
 
 interface ReparcelInstallmentsDialogProps {
   open: boolean
@@ -70,18 +71,9 @@ export function ReparcelInstallmentsDialog({
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/revenue-forecast/${clinicId}/plans/${planId}/reparcel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          newInstallmentCount: count,
-        }),
+      await api.revenueForecast.reparcelInstallments(clinicId, planId, {
+        newInstallmentCount: count,
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao reparcelar')
-      }
 
       toast({
         title: 'Sucesso',

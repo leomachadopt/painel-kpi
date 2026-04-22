@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import useDataStore from '@/stores/useDataStore'
 import { getCurrencySymbol } from '@/lib/utils'
+import api from '@/services/api'
 
 interface AddInstallmentDialogProps {
   open: boolean
@@ -74,19 +75,10 @@ export function AddInstallmentDialog({
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/revenue-forecast/${clinicId}/plans/${planId}/add-installment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          value,
-          dueDate: formData.dueDate,
-        }),
+      await api.revenueForecast.addInstallment(clinicId, planId, {
+        value,
+        dueDate: formData.dueDate,
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao adicionar parcela')
-      }
 
       toast({
         title: 'Sucesso',

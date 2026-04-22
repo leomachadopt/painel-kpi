@@ -1360,6 +1360,23 @@ const revenueForecastApi = {
       method: 'DELETE',
     }),
 
+  addInstallment: (clinicId: string, planId: string, data: {
+    value: number
+    dueDate: string
+  }) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/plans/${planId}/add-installment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  reparcelInstallments: (clinicId: string, planId: string, data: {
+    newInstallmentCount: number
+  }) =>
+    apiCall<any>(`/revenue-forecast/${clinicId}/plans/${planId}/reparcel`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   getMonthlySummary: (clinicId: string) =>
     apiCall<any[]>(`/revenue-forecast/${clinicId}/monthly-summary`),
 
