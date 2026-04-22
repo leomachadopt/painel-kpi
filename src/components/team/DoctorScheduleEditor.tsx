@@ -13,6 +13,13 @@ interface DoctorSchedule {
   isActive: boolean
 }
 
+interface ClinicShift {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isActive: boolean
+}
+
 interface DoctorScheduleEditorProps {
   clinicId: string
   doctorId: string
@@ -31,10 +38,12 @@ const DAYS_OF_WEEK = [
 
 export function DoctorScheduleEditor({ clinicId, doctorId, readOnly = false }: DoctorScheduleEditorProps) {
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([])
+  const [clinicShifts, setClinicShifts] = useState<ClinicShift[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadSchedules()
+    loadClinicShifts()
   }, [clinicId, doctorId])
 
   const loadSchedules = async () => {
@@ -52,6 +61,20 @@ export function DoctorScheduleEditor({ clinicId, doctorId, readOnly = false }: D
       toast.error('Erro ao carregar horários do médico')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadClinicShifts = async () => {
+    try {
+      const response = await fetch(`/api/clinic-schedule/${clinicId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
+        },
+      })
+      const data = await response.json()
+      setClinicShifts(data.schedules || [])
+    } catch (error) {
+      console.error('Error loading clinic shifts:', error)
     }
   }
 
@@ -151,33 +174,34 @@ export function DoctorScheduleEditor({ clinicId, doctorId, readOnly = false }: D
   const addNewSlot = (dayOfWeek: number) => {
     const daySchedules = groupedByDay[dayOfWeek] || []
 
-    let startTime = '09:00'
-    let endTime = '12:00'
+    const clinicShiftsForDay = clinicShifts
+      .filter((s) => s.isActive && s.dayOfWeek === dayOfWeek)
+      .map((s) => ({
+        start: s.startTime.substring(0, 5),
+        end: s.endTime.substring(0, 5),
+      }))
+      .sort((a, b) => a.start.localeCompare(b.start))
 
-    if (daySchedules.length > 0) {
-      const lastSchedule = daySchedules[daySchedules.length - 1]
-      const lastEnd = lastSchedule.endTime.substring(0, 5)
-      const [hours, mins] = lastEnd.split(':').map(Number)
-
-      startTime = lastEnd
-
-      let endHours = hours + 3
-      let endMins = mins
-
-      if (endHours > 20) {
-        endHours = 20
-        endMins = 0
-      }
-
-      endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`
-
-      if (startTime >= '20:00') {
-        toast.error('Não há mais espaço disponível neste dia')
-        return
-      }
+    if (clinicShiftsForDay.length === 0) {
+      toast.error('Clínica não funciona neste dia. Configure os horários da clínica primeiro.')
+      return
     }
 
-    addSchedule(dayOfWeek, startTime, endTime)
+    if (daySchedules.length === 0) {
+      const firstShift = clinicShiftsForDay[0]
+      addSchedule(dayOfWeek, firstShift.start, firstShift.end)
+      return
+    }
+
+    const lastEnd = daySchedules[daySchedules.length - 1].endTime.substring(0, 5)
+    const nextShift = clinicShiftsForDay.find((s) => s.start >= lastEnd)
+
+    if (!nextShift) {
+      toast.error('Não há mais turnos da clínica disponíveis neste dia')
+      return
+    }
+
+    addSchedule(dayOfWeek, nextShift.start, nextShift.end)
   }
 
   if (loading) {
