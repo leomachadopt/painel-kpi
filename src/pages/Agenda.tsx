@@ -35,6 +35,8 @@ import { format, addDays, subDays, isAfter, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import api from '@/services/api'
 import { AddProceduresModal } from '@/components/agenda/AddProceduresModal'
+import { PatientCodeInput } from '@/components/PatientCodeInput'
+import { usePatientLookup } from '@/hooks/usePatientLookup'
 
 interface TimeSlot {
   time: string
@@ -112,10 +114,12 @@ export default function Agenda() {
   const [patientAgendaResults, setPatientAgendaResults] = useState<any[]>([])
   const [searchingPatientAgenda, setSearchingPatientAgenda] = useState(false)
 
-  // Patient search
-  const [patientSearch, setPatientSearch] = useState('')
-  const [patientResults, setPatientResults] = useState<any[]>([])
-  const [selectedPatient, setSelectedPatient] = useState<any | null>(null)
+  // Patient lookup (inline código + nome, cria paciente se código novo)
+  const [patientCode, setPatientCode] = useState('')
+  const [patientName, setPatientName] = useState('')
+  const [isPatientNew, setIsPatientNew] = useState(false)
+  const [inlinePatientWhatsapp, setInlinePatientWhatsapp] = useState('')
+  const { createPatient: createPatientInline } = usePatientLookup()
 
   // Reschedule from queue
   const [isRescheduling, setIsRescheduling] = useState(false)
@@ -261,6 +265,14 @@ export default function Agenda() {
       if (!resizingAppointment) return
 
       const deltaY = e.clientY - resizeStartY
+
+      // Clique acidental na alça (sem arraste): não altera a duração
+      if (Math.abs(deltaY) < 5) {
+        setResizingAppointment(null)
+        setResizePreviewHeight(null)
+        return
+      }
+
       const newHeight = Math.max(60, resizeStartHeight + deltaY)
 
       console.log('[RESIZE] MouseUp:', {
@@ -447,7 +459,7 @@ export default function Agenda() {
       // Show all doctors
       setDoctors(allDoctors)
       if (allDoctors.length > 0) {
-        setSelectedDoctors([allDoctors[0].id])
+        setSelectedDoctors(allDoctors.map((d: any) => d.id))
       }
     } else if (user?.role === 'MEDICO') {
       // MEDICO can only see their own agenda - find doctor by email
@@ -462,7 +474,7 @@ export default function Agenda() {
       // COLABORADOR - show all doctors (permissions will be handled by backend)
       setDoctors(allDoctors)
       if (allDoctors.length > 0) {
-        setSelectedDoctors([allDoctors[0].id])
+        setSelectedDoctors(allDoctors.map((d: any) => d.id))
       }
     }
   }
@@ -520,40 +532,6 @@ export default function Agenda() {
   const loadSources = () => {
     if (!clinic?.configuration?.sources) return
     setSources(clinic.configuration.sources)
-  }
-
-  const searchPatients = async (search: string) => {
-    if (search.length < 2) {
-      setPatientResults([])
-      return
-    }
-
-    try {
-      const response = await fetch(
-        `/api/appointments/${clinicId}/patients/search?q=${encodeURIComponent(search)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('kpi_token')}`,
-          },
-        }
-      )
-      const data = await response.json()
-      setPatientResults(data.patients || [])
-    } catch (error) {
-      console.error('Error searching patients:', error)
-    }
-  }
-
-  const handlePatientSearch = (value: string) => {
-    setPatientSearch(value)
-    searchPatients(value)
-  }
-
-  const selectPatient = (patient: any) => {
-    setSelectedPatient(patient)
-    setPatientSearch(`${patient.code} - ${patient.name}`)
-    setPatientResults([])
-    setNewAppointment({ ...newAppointment })
   }
 
   // Reschedule queue search
@@ -733,9 +711,10 @@ export default function Agenda() {
     setSelectedDate(date) // Update selected date for the new appointment
     setSelectedSlot(timeStr)
     setSelectedDoctorForAppointment(targetDoctorId)
-    setSelectedPatient(null)
-    setPatientSearch('')
-    setPatientResults([])
+    setPatientCode('')
+    setPatientName('')
+    setIsPatientNew(false)
+    setInlinePatientWhatsapp('')
     setNewAppointment({
       scheduledEnd: '',
       cabinetId: '',
@@ -792,8 +771,16 @@ export default function Agenda() {
         return
       }
     } else {
-      if (!selectedPatient) {
-        toast.error('Selecione um paciente existente')
+      if (!patientCode || !/^\d{1,6}$/.test(patientCode)) {
+        toast.error('Informe o código do paciente (1 a 6 dígitos)')
+        return
+      }
+      if (!patientName.trim()) {
+        toast.error('Informe o nome do paciente')
+        return
+      }
+      if (isPatientNew && !inlinePatientWhatsapp.trim()) {
+        toast.error('Informe o WhatsApp do novo paciente')
         return
       }
     }
@@ -827,8 +814,20 @@ export default function Agenda() {
         requestBody.patientCode = selectedReschedule.patientCode
         requestBody.rescheduledFrom = selectedReschedule.originalAppointmentId
       } else {
-        requestBody.patientName = selectedPatient.name
-        requestBody.patientCode = selectedPatient.code
+        // Paciente existente ou novo cadastrado inline via código + WhatsApp
+        if (isPatientNew) {
+          const created = await createPatientInline(clinicId, {
+            code: patientCode,
+            name: patientName.trim(),
+            phone: inlinePatientWhatsapp.trim(),
+          })
+          if (!created) {
+            toast.error('Não foi possível cadastrar o paciente')
+            return
+          }
+        }
+        requestBody.patientName = patientName.trim()
+        requestBody.patientCode = patientCode
       }
 
       const response = await fetch(`/api/appointments/${clinicId}`, {
@@ -1615,25 +1614,27 @@ export default function Agenda() {
                                             </span>
                                           </div>
 
-                                          {/* Resize handle */}
-                                          <div
-                                            className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
-                                            onMouseDown={(e) => {
-                                              e.stopPropagation()
-                                              e.preventDefault()
-                                              console.log('[RESIZE] MouseDown - Starting resize', {
-                                                appointmentId: appointment.id,
-                                                currentHeight: height,
-                                                scheduledStart: appointment.scheduledStart,
-                                                scheduledEnd: appointment.scheduledEnd
-                                              })
-                                              setResizingAppointment(appointment)
-                                              setResizeStartY(e.clientY)
-                                              setResizeStartHeight(height)
-                                            }}
-                                          >
-                                            <div className="w-8 h-1 bg-primary/50 rounded-full" />
-                                          </div>
+                                          {/* Resize handle - apenas em cards com altura suficiente */}
+                                          {duration >= 10 && (
+                                            <div
+                                              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation()
+                                                e.preventDefault()
+                                                console.log('[RESIZE] MouseDown - Starting resize', {
+                                                  appointmentId: appointment.id,
+                                                  currentHeight: height,
+                                                  scheduledStart: appointment.scheduledStart,
+                                                  scheduledEnd: appointment.scheduledEnd
+                                                })
+                                                setResizingAppointment(appointment)
+                                                setResizeStartY(e.clientY)
+                                                setResizeStartHeight(height)
+                                              }}
+                                            >
+                                              <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                            </div>
+                                          )}
                                         </div>
                                       )
                                     })}
@@ -1880,24 +1881,26 @@ export default function Agenda() {
                                               </span>
                                             </div>
 
-                                            <div
-                                              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
-                                              onMouseDown={(e) => {
-                                                e.stopPropagation()
-                                                e.preventDefault()
-                                                console.log('[RESIZE] MouseDown - Starting resize', {
-                                                  appointmentId: appointment.id,
-                                                  currentHeight: height,
-                                                  scheduledStart: appointment.scheduledStart,
-                                                  scheduledEnd: appointment.scheduledEnd
-                                                })
-                                                setResizingAppointment(appointment)
-                                                setResizeStartY(e.clientY)
-                                                setResizeStartHeight(height)
-                                              }}
-                                            >
-                                              <div className="w-8 h-1 bg-primary/50 rounded-full" />
-                                            </div>
+                                            {duration >= 10 && (
+                                              <div
+                                                className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
+                                                onMouseDown={(e) => {
+                                                  e.stopPropagation()
+                                                  e.preventDefault()
+                                                  console.log('[RESIZE] MouseDown - Starting resize', {
+                                                    appointmentId: appointment.id,
+                                                    currentHeight: height,
+                                                    scheduledStart: appointment.scheduledStart,
+                                                    scheduledEnd: appointment.scheduledEnd
+                                                  })
+                                                  setResizingAppointment(appointment)
+                                                  setResizeStartY(e.clientY)
+                                                  setResizeStartHeight(height)
+                                                }}
+                                              >
+                                                <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                              </div>
+                                            )}
                                           </div>
                                         )
                                       })}
@@ -2143,24 +2146,26 @@ export default function Agenda() {
                                               </span>
                                             </div>
 
-                                            <div
-                                              className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
-                                              onMouseDown={(e) => {
-                                                e.stopPropagation()
-                                                e.preventDefault()
-                                                console.log('[RESIZE] MouseDown - Starting resize', {
-                                                  appointmentId: appointment.id,
-                                                  currentHeight: height,
-                                                  scheduledStart: appointment.scheduledStart,
-                                                  scheduledEnd: appointment.scheduledEnd
-                                                })
-                                                setResizingAppointment(appointment)
-                                                setResizeStartY(e.clientY)
-                                                setResizeStartHeight(height)
-                                              }}
-                                            >
-                                              <div className="w-8 h-1 bg-primary/50 rounded-full" />
-                                            </div>
+                                            {duration >= 10 && (
+                                              <div
+                                                className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-primary/30 transition-opacity flex items-center justify-center"
+                                                onMouseDown={(e) => {
+                                                  e.stopPropagation()
+                                                  e.preventDefault()
+                                                  console.log('[RESIZE] MouseDown - Starting resize', {
+                                                    appointmentId: appointment.id,
+                                                    currentHeight: height,
+                                                    scheduledStart: appointment.scheduledStart,
+                                                    scheduledEnd: appointment.scheduledEnd
+                                                  })
+                                                  setResizingAppointment(appointment)
+                                                  setResizeStartY(e.clientY)
+                                                  setResizeStartHeight(height)
+                                                }}
+                                              >
+                                                <div className="w-8 h-1 bg-primary/50 rounded-full" />
+                                              </div>
+                                            )}
                                           </div>
                                         )
                                       })}
@@ -2382,37 +2387,28 @@ export default function Agenda() {
               </>
             ) : (
               <>
-                {/* Existing Patient Search */}
-                <div>
-                  <Label>Código ou Nome do Paciente *</Label>
-                  <div className="relative">
+                {/* Código + Nome do Paciente (auto-preenche se código existir; senão, permite cadastro inline) */}
+                {clinicId && (
+                  <PatientCodeInput
+                    clinicId={clinicId}
+                    value={patientCode}
+                    onCodeChange={setPatientCode}
+                    patientName={patientName}
+                    onPatientNameChange={setPatientName}
+                    onIsNewPatientChange={setIsPatientNew}
+                  />
+                )}
+                {isPatientNew && patientCode.length > 0 && (
+                  <div>
+                    <Label>WhatsApp *</Label>
                     <Input
-                      value={patientSearch}
-                      onChange={(e) => handlePatientSearch(e.target.value)}
-                      placeholder="Digite o código ou nome"
-                      autoComplete="off"
+                      type="tel"
+                      value={inlinePatientWhatsapp}
+                      onChange={(e) => setInlinePatientWhatsapp(e.target.value)}
+                      placeholder="Digite o WhatsApp com código do país"
                     />
-                    {patientResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                        {patientResults.map((patient) => (
-                          <button
-                            key={patient.id}
-                            onClick={() => selectPatient(patient)}
-                            className="w-full text-left px-4 py-2 hover:bg-accent"
-                          >
-                            <div className="font-medium">{patient.code}</div>
-                            <div className="text-sm text-muted-foreground">{patient.name}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                  {selectedPatient && (
-                    <div className="mt-2 text-sm text-green-600">
-                      ✓ {selectedPatient.code} - {selectedPatient.name}
-                    </div>
-                  )}
-                </div>
+                )}
               </>
             )}
 
