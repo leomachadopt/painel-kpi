@@ -58,6 +58,18 @@ export function PatientCodeInput({
     onPatientNameChangeRef.current = onPatientNameChange
   }, [onPatientNameChange])
 
+  const {
+    patient,
+    patients,
+    loading,
+    error,
+    lookupByCode,
+    lookupByName,
+    createPatient,
+    clearPatient,
+    clearPatients
+  } = usePatientLookup()
+
   const onIsNewPatientChangeRef = useRef(onIsNewPatientChange)
   useEffect(() => {
     onIsNewPatientChangeRef.current = onIsNewPatientChange
@@ -75,17 +87,6 @@ export function PatientCodeInput({
   useEffect(() => {
     onPatientFoundRef.current?.(patient)
   }, [patient])
-  const {
-    patient,
-    patients,
-    loading,
-    error,
-    lookupByCode,
-    lookupByName,
-    createPatient,
-    clearPatient,
-    clearPatients
-  } = usePatientLookup()
 
   // Update local state when prop changes
   useEffect(() => {
