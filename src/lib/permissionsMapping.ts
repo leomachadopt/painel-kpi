@@ -144,6 +144,17 @@ export const RESOURCE_PERMISSIONS: ResourceConfig[] = [
     },
   },
   {
+    id: 'pettyCash',
+    name: 'Caixa do Dia',
+    description: 'Pequenas despesas diárias',
+    actions: 'Visualização + Edição + Exclusão',
+    mapsTo: {
+      view: ['canViewPettyCash'],
+      edit: ['canEditPettyCash'],
+      delete: ['canEditPettyCash'],
+    },
+  },
+  {
     id: 'orders',
     name: 'Pedidos',
     description: 'Pedidos aos fornecedores',
@@ -339,6 +350,8 @@ export function mapResourcePermissionsToLegacy(
     canViewAllDoctorsConsultations: false,
     canViewAppointments: false,
     canEditAppointments: false,
+    canViewPettyCash: false,
+    canEditPettyCash: false,
   }
 
   for (const [resourceId, level] of Object.entries(resourcePermissions)) {

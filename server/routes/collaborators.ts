@@ -81,7 +81,9 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         p.has_special_accounts_payable_access,
         p.can_view_all_doctors_consultations,
         p.can_view_appointments,
-        p.can_edit_appointments
+        p.can_edit_appointments,
+        p.can_view_petty_cash,
+        p.can_edit_petty_cash
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id AND p.clinic_id = u.clinic_id
       WHERE u.clinic_id = $1 AND u.role = 'COLABORADOR'
@@ -151,6 +153,8 @@ router.get('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
         canViewAppointments: Boolean(row.can_view_appointments),
         canEditAppointments: Boolean(row.can_edit_appointments),
+        canViewPettyCash: Boolean(row.can_view_petty_cash),
+        canEditPettyCash: Boolean(row.can_edit_petty_cash),
       },
     }))
 
@@ -278,7 +282,9 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         p.has_special_accounts_payable_access,
         p.can_view_all_doctors_consultations,
         p.can_view_appointments,
-        p.can_edit_appointments
+        p.can_edit_appointments,
+        p.can_view_petty_cash,
+        p.can_edit_petty_cash
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id
       WHERE u.id = $1`,
@@ -348,6 +354,8 @@ router.post('/', requireGestor, async (req: AuthedRequest, res) => {
         canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
         canViewAppointments: Boolean(row.can_view_appointments),
         canEditAppointments: Boolean(row.can_edit_appointments),
+        canViewPettyCash: Boolean(row.can_view_petty_cash),
+        canEditPettyCash: Boolean(row.can_edit_petty_cash),
       },
     }
 
@@ -524,9 +532,11 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         has_special_accounts_payable_access,
         can_view_all_doctors_consultations,
         can_view_appointments,
-        can_edit_appointments
+        can_edit_appointments,
+        can_view_petty_cash,
+        can_edit_petty_cash
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56
       )
       ON CONFLICT (user_id, clinic_id)
       DO UPDATE SET
@@ -581,6 +591,8 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         can_view_all_doctors_consultations = $52,
         can_view_appointments = $53,
         can_edit_appointments = $54,
+        can_view_petty_cash = $55,
+        can_edit_petty_cash = $56,
         updated_at = NOW()`,
       [
         `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -637,6 +649,8 @@ router.put('/:id/permissions', requireGestor, async (req: AuthedRequest, res) =>
         Boolean(permissions.canViewAllDoctorsConsultations),
         Boolean(permissions.canViewAppointments),
         Boolean(permissions.canEditAppointments),
+        Boolean(permissions.canViewPettyCash),
+        Boolean(permissions.canEditPettyCash),
       ]
     )
 
@@ -1061,7 +1075,9 @@ router.get('/team', requireGestor, async (req: AuthedRequest, res) => {
         p.has_special_accounts_payable_access,
         p.can_view_all_doctors_consultations,
         p.can_view_appointments,
-        p.can_edit_appointments
+        p.can_edit_appointments,
+        p.can_view_petty_cash,
+        p.can_edit_petty_cash
       FROM users u
       LEFT JOIN user_permissions p ON u.id = p.user_id AND p.clinic_id = u.clinic_id
       LEFT JOIN clinic_doctors cd ON u.id = cd.user_id
@@ -1133,6 +1149,8 @@ router.get('/team', requireGestor, async (req: AuthedRequest, res) => {
         canViewAllDoctorsConsultations: row.can_view_all_doctors_consultations || false,
         canViewAppointments: Boolean(row.can_view_appointments),
         canEditAppointments: Boolean(row.can_edit_appointments),
+        canViewPettyCash: Boolean(row.can_view_petty_cash),
+        canEditPettyCash: Boolean(row.can_edit_petty_cash),
       },
     }))
 
