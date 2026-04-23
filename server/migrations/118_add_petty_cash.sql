@@ -2,6 +2,8 @@
 -- Separate module for tracking daily small expenses per clinic.
 -- Not integrated with accounts payable or financial DRE - isolated silo.
 
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- ================================
 -- 1. petty_cash_categories
 -- ================================
