@@ -834,7 +834,14 @@ export default function Agenda() {
           const newPhone = inlinePatientWhatsapp.trim()
           if (newPhone && newPhone !== initialFoundPhone) {
             try {
-              await patientsApi.update(clinicId, foundPatient.id, { phone: newPhone })
+              await patientsApi.update(clinicId, foundPatient.id, {
+                name: foundPatient.name,
+                code: foundPatient.code,
+                email: foundPatient.email,
+                birthDate: foundPatient.birthDate,
+                notes: foundPatient.notes,
+                phone: newPhone,
+              })
             } catch (err) {
               console.error('Erro ao atualizar telefone do paciente:', err)
               // Não bloqueia a criação do agendamento
