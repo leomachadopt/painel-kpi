@@ -13,6 +13,7 @@
     "accountsPayable": "Comptes à payer",
     "insuranceProviders": "Assureurs",
     "advances": "Avances",
+    "pettyCash": "Caisse du Jour",
     "nps": "NPS",
     "alerts": "Alertes",
     "tickets": "Tickets",
@@ -102,6 +103,7 @@
     "accountsPayable": "Comptes à Payer",
     "insuranceProviders": "Assureurs",
     "advances": "Avances",
+    "pettyCash": "Caisse du Jour",
     "nps": "NPS",
     "tickets": "Tickets",
     "alerts": "Alertes",
@@ -631,5 +633,98 @@
     "permissions": "Autorisations",
     "permissionsComingSoon": "Gestion des autorisations bientôt",
     "errorLoadingDoctors": "Erreur lors du chargement des médecins"
+  },
+  "pettyCash": {
+    "title": "Caisse du Jour",
+    "description": "Suivi des petites dépenses quotidiennes de la clinique",
+    "newEntry": "Nouvelle Saisie",
+    "noCategory": "Sans catégorie",
+    "accessDeniedTitle": "Accès Refusé",
+    "accessDenied": "Vous n'avez pas la permission d'accéder à la Caisse du Jour",
+    "tabs": {
+      "entries": "Saisies",
+      "categories": "Catégories"
+    },
+    "filters": {
+      "title": "Filtres",
+      "from": "Du",
+      "to": "Au",
+      "category": "Catégorie",
+      "paymentMethod": "Mode de paiement",
+      "allCategories": "Toutes les catégories",
+      "allMethods": "Tous les modes",
+      "search": "Rechercher",
+      "searchPlaceholder": "Description ou catégorie..."
+    },
+    "paymentMethods": {
+      "cash": "Espèces",
+      "pix": "Virement Instantané",
+      "card": "Carte",
+      "transfer": "Virement",
+      "other": "Autre"
+    },
+    "summary": {
+      "total": "Total de la période",
+      "entries": "saisies",
+      "byCategory": "Par catégorie",
+      "byMethod": "Par mode de paiement",
+      "empty": "Aucune donnée sur la période"
+    },
+    "table": {
+      "title": "Saisies",
+      "empty": "Aucune saisie sur la période",
+      "date": "Date",
+      "category": "Catégorie",
+      "description": "Description",
+      "paymentMethod": "Paiement",
+      "amount": "Montant",
+      "receipt": "Justificatif",
+      "actions": "Actions",
+      "total": "Total",
+      "viewReceipt": "Voir le justificatif"
+    },
+    "dialog": {
+      "newTitle": "Nouvelle Saisie",
+      "editTitle": "Modifier la Saisie",
+      "description": "Renseignez les détails de la dépense"
+    },
+    "form": {
+      "date": "Date",
+      "amount": "Montant",
+      "category": "Catégorie",
+      "paymentMethod": "Mode de paiement",
+      "description": "Description",
+      "descriptionPlaceholder": "Bref détail de la dépense (optionnel)",
+      "receipt": "Justificatif (optionnel)",
+      "removeReceipt": "Supprimer le justificatif",
+      "receiptWillBeRemoved": "Le justificatif sera supprimé à l'enregistrement"
+    },
+    "validation": {
+      "dateRequired": "La date est obligatoire",
+      "invalidAmount": "Montant invalide"
+    },
+    "toast": {
+      "created": "Saisie créée",
+      "updated": "Saisie mise à jour",
+      "deleted": "Saisie supprimée",
+      "categoryCreated": "Catégorie créée",
+      "categoryDeleted": "Catégorie supprimée",
+      "receiptError": "Impossible d'ouvrir le justificatif"
+    },
+    "delete": {
+      "title": "Supprimer la saisie",
+      "description": "Cette action est irréversible. La saisie et le justificatif seront supprimés."
+    },
+    "categories": {
+      "title": "Catégories",
+      "description": "Gérez les catégories disponibles pour les saisies",
+      "namePlaceholder": "Nom de la nouvelle catégorie",
+      "add": "Ajouter",
+      "name": "Nom",
+      "active": "Active",
+      "empty": "Aucune catégorie. Créez la première ci-dessus.",
+      "deleteTitle": "Supprimer la catégorie",
+      "deleteDescription": "Les saisies associées resteront sans catégorie. Continuer ?"
+    }
   }
 }

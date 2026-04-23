@@ -13,6 +13,7 @@
     "accountsPayable": "Accounts Payable",
     "insuranceProviders": "Insurance Providers",
     "advances": "Advances",
+    "pettyCash": "Petty Cash",
     "nps": "NPS",
     "alerts": "Alerts",
     "tickets": "Tickets",
@@ -102,6 +103,7 @@
     "accountsPayable": "Accounts Payable",
     "insuranceProviders": "Insurance Providers",
     "advances": "Advances",
+    "pettyCash": "Petty Cash",
     "nps": "NPS",
     "tickets": "Tickets",
     "alerts": "Alerts",
@@ -631,5 +633,98 @@
     "permissions": "Permissions",
     "permissionsComingSoon": "Permissions management coming soon",
     "errorLoadingDoctors": "Error loading doctors"
+  },
+  "pettyCash": {
+    "title": "Petty Cash",
+    "description": "Track the clinic's small day-to-day expenses",
+    "newEntry": "New Entry",
+    "noCategory": "Uncategorized",
+    "accessDeniedTitle": "Access Denied",
+    "accessDenied": "You don't have permission to access Petty Cash",
+    "tabs": {
+      "entries": "Entries",
+      "categories": "Categories"
+    },
+    "filters": {
+      "title": "Filters",
+      "from": "From",
+      "to": "To",
+      "category": "Category",
+      "paymentMethod": "Payment method",
+      "allCategories": "All categories",
+      "allMethods": "All methods",
+      "search": "Search",
+      "searchPlaceholder": "Description or category..."
+    },
+    "paymentMethods": {
+      "cash": "Cash",
+      "pix": "Instant Transfer",
+      "card": "Card",
+      "transfer": "Bank Transfer",
+      "other": "Other"
+    },
+    "summary": {
+      "total": "Period total",
+      "entries": "entries",
+      "byCategory": "By category",
+      "byMethod": "By payment method",
+      "empty": "No data in period"
+    },
+    "table": {
+      "title": "Entries",
+      "empty": "No entries in period",
+      "date": "Date",
+      "category": "Category",
+      "description": "Description",
+      "paymentMethod": "Payment",
+      "amount": "Amount",
+      "receipt": "Receipt",
+      "actions": "Actions",
+      "total": "Total",
+      "viewReceipt": "View receipt"
+    },
+    "dialog": {
+      "newTitle": "New Entry",
+      "editTitle": "Edit Entry",
+      "description": "Fill in the expense details"
+    },
+    "form": {
+      "date": "Date",
+      "amount": "Amount",
+      "category": "Category",
+      "paymentMethod": "Payment method",
+      "description": "Description",
+      "descriptionPlaceholder": "Brief detail of the expense (optional)",
+      "receipt": "Receipt (optional)",
+      "removeReceipt": "Remove receipt",
+      "receiptWillBeRemoved": "The receipt will be removed on save"
+    },
+    "validation": {
+      "dateRequired": "Date is required",
+      "invalidAmount": "Invalid amount"
+    },
+    "toast": {
+      "created": "Entry created",
+      "updated": "Entry updated",
+      "deleted": "Entry deleted",
+      "categoryCreated": "Category created",
+      "categoryDeleted": "Category deleted",
+      "receiptError": "Failed to open receipt"
+    },
+    "delete": {
+      "title": "Delete entry",
+      "description": "This action cannot be undone. The entry and its receipt will be deleted."
+    },
+    "categories": {
+      "title": "Categories",
+      "description": "Manage the categories available for entries",
+      "namePlaceholder": "New category name",
+      "add": "Add",
+      "name": "Name",
+      "active": "Active",
+      "empty": "No categories. Create the first one above.",
+      "deleteTitle": "Delete category",
+      "deleteDescription": "Associated entries will become uncategorized. Continue?"
+    }
   }
 }

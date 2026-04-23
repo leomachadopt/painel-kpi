@@ -643,6 +643,41 @@ export interface UserPermissions {
   hasSpecialAccountsPayableAccess: boolean
   canViewAllDoctorsConsultations: boolean
   canEditAppointments: boolean
+  canViewPettyCash: boolean
+  canEditPettyCash: boolean
+}
+
+export type PettyCashPaymentMethod = 'cash' | 'pix' | 'card' | 'transfer' | 'other'
+
+export interface PettyCashCategory {
+  id: string
+  clinicId: string
+  name: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PettyCashReceipt {
+  filename: string
+  originalFilename: string | null
+  mimeType: string | null
+  size: number | null
+}
+
+export interface PettyCashEntry {
+  id: string
+  clinicId: string
+  date: string
+  amount: number
+  categoryId: string | null
+  categoryName: string | null
+  description: string | null
+  paymentMethod: PettyCashPaymentMethod
+  receipt: PettyCashReceipt | null
+  createdBy: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface User {

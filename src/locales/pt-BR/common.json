@@ -13,6 +13,7 @@
     "accountsPayable": "Contas a Pagar",
     "insuranceProviders": "Operadoras",
     "advances": "Adiantamentos",
+    "pettyCash": "Caixa do Dia",
     "nps": "NPS",
     "alerts": "Alertas",
     "tickets": "Tickets",
@@ -102,6 +103,7 @@
     "accountsPayable": "Contas a Pagar",
     "insuranceProviders": "Operadoras",
     "advances": "Adiantamentos",
+    "pettyCash": "Caixa do Dia",
     "nps": "NPS",
     "tickets": "Tickets",
     "alerts": "Alertas",
@@ -648,5 +650,98 @@
     "permissions": "Permissões",
     "permissionsComingSoon": "Gerenciamento de permissões em breve",
     "errorLoadingDoctors": "Erro ao carregar médicos"
+  },
+  "pettyCash": {
+    "title": "Caixa do Dia",
+    "description": "Registro de pequenas despesas diárias da clínica",
+    "newEntry": "Novo Lançamento",
+    "noCategory": "Sem categoria",
+    "accessDeniedTitle": "Acesso Negado",
+    "accessDenied": "Você não tem permissão para acessar o Caixa do Dia",
+    "tabs": {
+      "entries": "Lançamentos",
+      "categories": "Categorias"
+    },
+    "filters": {
+      "title": "Filtros",
+      "from": "De",
+      "to": "Até",
+      "category": "Categoria",
+      "paymentMethod": "Forma de pagamento",
+      "allCategories": "Todas as categorias",
+      "allMethods": "Todas as formas",
+      "search": "Buscar",
+      "searchPlaceholder": "Descrição ou categoria..."
+    },
+    "paymentMethods": {
+      "cash": "Dinheiro",
+      "pix": "Pix",
+      "card": "Cartão",
+      "transfer": "Transferência",
+      "other": "Outro"
+    },
+    "summary": {
+      "total": "Total do período",
+      "entries": "lançamentos",
+      "byCategory": "Por categoria",
+      "byMethod": "Por forma de pagamento",
+      "empty": "Sem dados no período"
+    },
+    "table": {
+      "title": "Lançamentos",
+      "empty": "Nenhum lançamento no período",
+      "date": "Data",
+      "category": "Categoria",
+      "description": "Descrição",
+      "paymentMethod": "Pagamento",
+      "amount": "Valor",
+      "receipt": "Comprovante",
+      "actions": "Ações",
+      "total": "Total",
+      "viewReceipt": "Ver comprovante"
+    },
+    "dialog": {
+      "newTitle": "Novo Lançamento",
+      "editTitle": "Editar Lançamento",
+      "description": "Preencha os dados da despesa"
+    },
+    "form": {
+      "date": "Data",
+      "amount": "Valor",
+      "category": "Categoria",
+      "paymentMethod": "Forma de pagamento",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Detalhe breve do gasto (opcional)",
+      "receipt": "Comprovante (opcional)",
+      "removeReceipt": "Remover comprovante",
+      "receiptWillBeRemoved": "O comprovante será removido ao salvar"
+    },
+    "validation": {
+      "dateRequired": "A data é obrigatória",
+      "invalidAmount": "Valor inválido"
+    },
+    "toast": {
+      "created": "Lançamento criado",
+      "updated": "Lançamento atualizado",
+      "deleted": "Lançamento excluído",
+      "categoryCreated": "Categoria criada",
+      "categoryDeleted": "Categoria excluída",
+      "receiptError": "Erro ao abrir comprovante"
+    },
+    "delete": {
+      "title": "Excluir lançamento",
+      "description": "Esta ação não pode ser desfeita. O lançamento e o comprovante serão excluídos."
+    },
+    "categories": {
+      "title": "Categorias",
+      "description": "Gerencie as categorias disponíveis nos lançamentos",
+      "namePlaceholder": "Nome da nova categoria",
+      "add": "Adicionar",
+      "name": "Nome",
+      "active": "Ativa",
+      "empty": "Nenhuma categoria. Crie a primeira acima.",
+      "deleteTitle": "Excluir categoria",
+      "deleteDescription": "Os lançamentos associados ficarão sem categoria. Continuar?"
+    }
   }
 }

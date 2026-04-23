@@ -13,6 +13,7 @@
     "accountsPayable": "Conti da Pagare",
     "insuranceProviders": "Assicurazioni",
     "advances": "Anticipi",
+    "pettyCash": "Cassa del Giorno",
     "nps": "NPS",
     "alerts": "Avvisi",
     "tickets": "Ticket",
@@ -102,6 +103,7 @@
     "accountsPayable": "Conti da Pagare",
     "insuranceProviders": "Assicurazioni",
     "advances": "Anticipi",
+    "pettyCash": "Cassa del Giorno",
     "nps": "NPS",
     "tickets": "Tickets",
     "alerts": "Avvisi",
@@ -631,5 +633,98 @@
     "permissions": "Permessi",
     "permissionsComingSoon": "Gestione permessi prossimamente",
     "errorLoadingDoctors": "Errore durante il caricamento dei medici"
+  },
+  "pettyCash": {
+    "title": "Cassa del Giorno",
+    "description": "Registrazione delle piccole spese quotidiane della clinica",
+    "newEntry": "Nuova Voce",
+    "noCategory": "Senza categoria",
+    "accessDeniedTitle": "Accesso Negato",
+    "accessDenied": "Non hai il permesso di accedere alla Cassa del Giorno",
+    "tabs": {
+      "entries": "Voci",
+      "categories": "Categorie"
+    },
+    "filters": {
+      "title": "Filtri",
+      "from": "Da",
+      "to": "A",
+      "category": "Categoria",
+      "paymentMethod": "Metodo di pagamento",
+      "allCategories": "Tutte le categorie",
+      "allMethods": "Tutti i metodi",
+      "search": "Cerca",
+      "searchPlaceholder": "Descrizione o categoria..."
+    },
+    "paymentMethods": {
+      "cash": "Contanti",
+      "pix": "Bonifico Istantaneo",
+      "card": "Carta",
+      "transfer": "Bonifico",
+      "other": "Altro"
+    },
+    "summary": {
+      "total": "Totale del periodo",
+      "entries": "voci",
+      "byCategory": "Per categoria",
+      "byMethod": "Per metodo di pagamento",
+      "empty": "Nessun dato nel periodo"
+    },
+    "table": {
+      "title": "Voci",
+      "empty": "Nessuna voce nel periodo",
+      "date": "Data",
+      "category": "Categoria",
+      "description": "Descrizione",
+      "paymentMethod": "Pagamento",
+      "amount": "Importo",
+      "receipt": "Ricevuta",
+      "actions": "Azioni",
+      "total": "Totale",
+      "viewReceipt": "Visualizza ricevuta"
+    },
+    "dialog": {
+      "newTitle": "Nuova Voce",
+      "editTitle": "Modifica Voce",
+      "description": "Compila i dati della spesa"
+    },
+    "form": {
+      "date": "Data",
+      "amount": "Importo",
+      "category": "Categoria",
+      "paymentMethod": "Metodo di pagamento",
+      "description": "Descrizione",
+      "descriptionPlaceholder": "Breve dettaglio della spesa (opzionale)",
+      "receipt": "Ricevuta (opzionale)",
+      "removeReceipt": "Rimuovi ricevuta",
+      "receiptWillBeRemoved": "La ricevuta verrà rimossa al salvataggio"
+    },
+    "validation": {
+      "dateRequired": "La data è obbligatoria",
+      "invalidAmount": "Importo non valido"
+    },
+    "toast": {
+      "created": "Voce creata",
+      "updated": "Voce aggiornata",
+      "deleted": "Voce eliminata",
+      "categoryCreated": "Categoria creata",
+      "categoryDeleted": "Categoria eliminata",
+      "receiptError": "Impossibile aprire la ricevuta"
+    },
+    "delete": {
+      "title": "Elimina voce",
+      "description": "Questa azione non può essere annullata. La voce e la ricevuta saranno eliminate."
+    },
+    "categories": {
+      "title": "Categorie",
+      "description": "Gestisci le categorie disponibili per le voci",
+      "namePlaceholder": "Nome della nuova categoria",
+      "add": "Aggiungi",
+      "name": "Nome",
+      "active": "Attiva",
+      "empty": "Nessuna categoria. Crea la prima sopra.",
+      "deleteTitle": "Elimina categoria",
+      "deleteDescription": "Le voci associate resteranno senza categoria. Continuare?"
+    }
   }
 }

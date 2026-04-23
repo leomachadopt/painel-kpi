@@ -1774,6 +1774,130 @@ export const dashboardMetricsApi = {
 }
 
 // ================================
+// PETTY CASH (Caixa do Dia)
+// ================================
+export const pettyCashApi = {
+  categories: {
+    getAll: (clinicId: string) =>
+      apiCall<any[]>(`/petty-cash/${clinicId}/categories`),
+
+    create: (clinicId: string, body: { name: string; active?: boolean }) =>
+      apiCall<any>(`/petty-cash/${clinicId}/categories`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+
+    update: (clinicId: string, categoryId: string, body: { name?: string; active?: boolean }) =>
+      apiCall<any>(`/petty-cash/${clinicId}/categories/${categoryId}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      }),
+
+    delete: (clinicId: string, categoryId: string) =>
+      apiCall<{ message: string }>(`/petty-cash/${clinicId}/categories/${categoryId}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  entries: {
+    list: (
+      clinicId: string,
+      filters?: {
+        startDate?: string
+        endDate?: string
+        categoryId?: string
+        paymentMethod?: string
+      }
+    ) => {
+      const params = new URLSearchParams()
+      if (filters?.startDate) params.set('startDate', filters.startDate)
+      if (filters?.endDate) params.set('endDate', filters.endDate)
+      if (filters?.categoryId) params.set('categoryId', filters.categoryId)
+      if (filters?.paymentMethod) params.set('paymentMethod', filters.paymentMethod)
+      const qs = params.toString()
+      return apiCall<any[]>(`/petty-cash/${clinicId}/entries${qs ? `?${qs}` : ''}`)
+    },
+
+    create: async (
+      clinicId: string,
+      body: {
+        date: string
+        amount: number
+        categoryId?: string | null
+        description?: string
+        paymentMethod: string
+        receipt?: File | null
+      }
+    ) => {
+      const formData = new FormData()
+      formData.append('date', body.date)
+      formData.append('amount', String(body.amount))
+      if (body.categoryId) formData.append('categoryId', body.categoryId)
+      if (body.description) formData.append('description', body.description)
+      formData.append('paymentMethod', body.paymentMethod)
+      if (body.receipt) formData.append('receipt', body.receipt)
+
+      const token = getAuthToken()
+      const response = await fetch(`${API_BASE_URL}/petty-cash/${clinicId}/entries`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
+        throw new Error(err.error || 'Failed to create entry')
+      }
+      return response.json()
+    },
+
+    update: async (
+      clinicId: string,
+      entryId: string,
+      body: {
+        date?: string
+        amount?: number
+        categoryId?: string | null
+        description?: string
+        paymentMethod?: string
+        receipt?: File | null
+        removeReceipt?: boolean
+      }
+    ) => {
+      const formData = new FormData()
+      if (body.date !== undefined) formData.append('date', body.date)
+      if (body.amount !== undefined) formData.append('amount', String(body.amount))
+      if (body.categoryId !== undefined) {
+        formData.append('categoryId', body.categoryId ?? '')
+      }
+      if (body.description !== undefined) formData.append('description', body.description ?? '')
+      if (body.paymentMethod !== undefined) formData.append('paymentMethod', body.paymentMethod)
+      if (body.receipt) formData.append('receipt', body.receipt)
+      if (body.removeReceipt) formData.append('removeReceipt', 'true')
+
+      const token = getAuthToken()
+      const response = await fetch(`${API_BASE_URL}/petty-cash/${clinicId}/entries/${entryId}`, {
+        method: 'PUT',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
+        throw new Error(err.error || 'Failed to update entry')
+      }
+      return response.json()
+    },
+
+    delete: (clinicId: string, entryId: string) =>
+      apiCall<{ message: string }>(`/petty-cash/${clinicId}/entries/${entryId}`, {
+        method: 'DELETE',
+      }),
+
+    getReceiptUrl: (clinicId: string, entryId: string) =>
+      `${API_BASE_URL}/petty-cash/${clinicId}/entries/${entryId}/receipt`,
+  },
+}
+
+// ================================
 // DEFAULT EXPORT
 // ================================
 export default {
@@ -1796,4 +1920,5 @@ export default {
   treatmentPlan: treatmentPlanApi,
   appointmentProcedures: appointmentProceduresApi,
   dashboardMetrics: dashboardMetricsApi,
+  pettyCash: pettyCashApi,
 }

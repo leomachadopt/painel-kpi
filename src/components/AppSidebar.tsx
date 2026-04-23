@@ -19,6 +19,7 @@ import {
   Receipt,
   TrendingUp,
   ClipboardList,
+  Wallet,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -385,6 +386,21 @@ export function AppSidebar() {
                           )}
                         </div>
                       )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {activeClinicId && (canView('canViewPettyCash') || canEdit('canEditPettyCash')) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={t('sidebar.pettyCash')}
+                    isActive={location.pathname.includes('/caixa-do-dia')}
+                  >
+                    <Link to={`/caixa-do-dia/${activeClinicId}`}>
+                      <Wallet />
+                      <span>{t('sidebar.pettyCash')}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

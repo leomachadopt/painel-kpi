@@ -62,6 +62,7 @@ export function usePermissions() {
     | 'canViewMarketing'
     | 'canViewAlerts'
     | 'canViewAdvances'
+    | 'canViewPettyCash'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -146,6 +147,7 @@ export function usePermissions() {
     | 'canBillAdvances'
     | 'canManageInsuranceProviders'
     | 'canEditAppointments'
+    | 'canEditPettyCash'
   >): boolean => {
     if (!user) return false
     if (user.role === 'MENTOR' || user.role === 'GESTOR_CLINICA') return true
@@ -217,7 +219,8 @@ export function usePermissions() {
       permissions.canEditAdvances ||
       permissions.canBillAdvances ||
       permissions.canManageInsuranceProviders ||
-      permissions.canEditAppointments
+      permissions.canEditAppointments ||
+      permissions.canEditPettyCash
     )
   }
 
@@ -285,6 +288,8 @@ function createEmptyPermissions(): UserPermissions {
     canManageInsuranceProviders: false,
     canViewAllDoctorsConsultations: false,
     canEditAppointments: false,
+    canViewPettyCash: false,
+    canEditPettyCash: false,
   }
 }
 
@@ -340,5 +345,7 @@ function createFullPermissions(): UserPermissions {
     canManageInsuranceProviders: true,
     canViewAllDoctorsConsultations: true,
     canEditAppointments: true,
+    canViewPettyCash: true,
+    canEditPettyCash: true,
   }
 }

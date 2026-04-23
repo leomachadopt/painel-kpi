@@ -34,6 +34,7 @@ import planProceduresRoutes from './routes/planProcedures.js'
 import proceduresCatalogRoutes from './routes/proceduresCatalog.js'
 import proceduresManagementRoutes from './routes/proceduresManagement.js'
 import dashboardMetricsRoutes from './routes/dashboardMetrics.js'
+import pettyCashRoutes from './routes/pettyCash.js'
 import { authOptional } from './middleware/auth.js'
 import { verifyAuthToken } from './auth/token.js'
 
@@ -160,6 +161,7 @@ export function createApp() {
   app.use('/api/procedures-catalog', proceduresCatalogRoutes)
   app.use('/api/procedures-management', proceduresManagementRoutes)
   app.use('/api/clinics', dashboardMetricsRoutes)
+  app.use('/api/petty-cash', pettyCashRoutes)
 
   // Public routes (no authentication required)
   app.use('/api/public/nps', npsPublicRoutes)

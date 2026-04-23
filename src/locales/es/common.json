@@ -13,6 +13,7 @@
     "accountsPayable": "Cuentas por Pagar",
     "insuranceProviders": "Aseguradoras",
     "advances": "Anticipos",
+    "pettyCash": "Caja del Día",
     "nps": "NPS",
     "alerts": "Alertas",
     "tickets": "Tickets",
@@ -102,6 +103,7 @@
     "accountsPayable": "Cuentas a Pagar",
     "insuranceProviders": "Aseguradoras",
     "advances": "Anticipos",
+    "pettyCash": "Caja del Día",
     "nps": "NPS",
     "tickets": "Tickets",
     "alerts": "Alertas",
@@ -631,5 +633,98 @@
     "permissions": "Permisos",
     "permissionsComingSoon": "Gestión de permisos próximamente",
     "errorLoadingDoctors": "Error al cargar médicos"
+  },
+  "pettyCash": {
+    "title": "Caja del Día",
+    "description": "Registro de pequeños gastos diarios de la clínica",
+    "newEntry": "Nuevo Registro",
+    "noCategory": "Sin categoría",
+    "accessDeniedTitle": "Acceso Denegado",
+    "accessDenied": "No tiene permiso para acceder a la Caja del Día",
+    "tabs": {
+      "entries": "Registros",
+      "categories": "Categorías"
+    },
+    "filters": {
+      "title": "Filtros",
+      "from": "Desde",
+      "to": "Hasta",
+      "category": "Categoría",
+      "paymentMethod": "Forma de pago",
+      "allCategories": "Todas las categorías",
+      "allMethods": "Todas las formas",
+      "search": "Buscar",
+      "searchPlaceholder": "Descripción o categoría..."
+    },
+    "paymentMethods": {
+      "cash": "Efectivo",
+      "pix": "Transferencia Instantánea",
+      "card": "Tarjeta",
+      "transfer": "Transferencia",
+      "other": "Otro"
+    },
+    "summary": {
+      "total": "Total del período",
+      "entries": "registros",
+      "byCategory": "Por categoría",
+      "byMethod": "Por forma de pago",
+      "empty": "Sin datos en el período"
+    },
+    "table": {
+      "title": "Registros",
+      "empty": "No hay registros en el período",
+      "date": "Fecha",
+      "category": "Categoría",
+      "description": "Descripción",
+      "paymentMethod": "Pago",
+      "amount": "Importe",
+      "receipt": "Comprobante",
+      "actions": "Acciones",
+      "total": "Total",
+      "viewReceipt": "Ver comprobante"
+    },
+    "dialog": {
+      "newTitle": "Nuevo Registro",
+      "editTitle": "Editar Registro",
+      "description": "Complete los datos del gasto"
+    },
+    "form": {
+      "date": "Fecha",
+      "amount": "Importe",
+      "category": "Categoría",
+      "paymentMethod": "Forma de pago",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Detalle breve del gasto (opcional)",
+      "receipt": "Comprobante (opcional)",
+      "removeReceipt": "Eliminar comprobante",
+      "receiptWillBeRemoved": "El comprobante se eliminará al guardar"
+    },
+    "validation": {
+      "dateRequired": "La fecha es obligatoria",
+      "invalidAmount": "Importe inválido"
+    },
+    "toast": {
+      "created": "Registro creado",
+      "updated": "Registro actualizado",
+      "deleted": "Registro eliminado",
+      "categoryCreated": "Categoría creada",
+      "categoryDeleted": "Categoría eliminada",
+      "receiptError": "Error al abrir el comprobante"
+    },
+    "delete": {
+      "title": "Eliminar registro",
+      "description": "Esta acción no se puede deshacer. El registro y el comprobante serán eliminados."
+    },
+    "categories": {
+      "title": "Categorías",
+      "description": "Gestione las categorías disponibles en los registros",
+      "namePlaceholder": "Nombre de la nueva categoría",
+      "add": "Añadir",
+      "name": "Nombre",
+      "active": "Activa",
+      "empty": "No hay categorías. Cree la primera arriba.",
+      "deleteTitle": "Eliminar categoría",
+      "deleteDescription": "Los registros asociados quedarán sin categoría. ¿Continuar?"
+    }
   }
 }

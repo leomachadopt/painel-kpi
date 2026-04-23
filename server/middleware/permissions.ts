@@ -55,6 +55,8 @@ export interface UserPermissions {
   canViewAllDoctorsConsultations: boolean
   canViewAppointments: boolean
   canEditAppointments: boolean
+  canViewPettyCash: boolean
+  canEditPettyCash: boolean
 }
 
 /**
@@ -122,6 +124,8 @@ export async function getUserPermissions(
       canViewAllDoctorsConsultations: true,
       canViewAppointments: true,
       canEditAppointments: true,
+      canViewPettyCash: true,
+      canEditPettyCash: true,
     }
   }
 
@@ -184,7 +188,9 @@ export async function getUserPermissions(
       has_special_accounts_payable_access,
       can_view_all_doctors_consultations,
       can_view_appointments,
-      can_edit_appointments
+      can_edit_appointments,
+      can_view_petty_cash,
+      can_edit_petty_cash
     FROM user_permissions
     WHERE user_id = $1 AND clinic_id = $2`,
     [userId, clinicId]
@@ -249,6 +255,8 @@ export async function getUserPermissions(
     canViewAllDoctorsConsultations: Boolean(perms.can_view_all_doctors_consultations),
     canViewAppointments: Boolean(perms.can_view_appointments),
     canEditAppointments: Boolean(perms.can_edit_appointments),
+    canViewPettyCash: Boolean(perms.can_view_petty_cash),
+    canEditPettyCash: Boolean(perms.can_edit_petty_cash),
   }
   
   // Para contas a pagar, apenas colaboradores e médicos com permissão especial têm acesso
@@ -322,6 +330,8 @@ function createEmptyPermissions(): UserPermissions {
     canViewAllDoctorsConsultations: false,
     canViewAppointments: false,
     canEditAppointments: false,
+    canViewPettyCash: false,
+    canEditPettyCash: false,
   }
 }
 

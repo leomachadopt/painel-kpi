@@ -33,6 +33,7 @@ const AccountsPayable = lazy(() => import('@/pages/AccountsPayable'))
 const Tickets = lazy(() => import('@/pages/Tickets'))
 const TicketDetail = lazy(() => import('@/pages/TicketDetail'))
 const Advances = lazy(() => import('@/pages/Advances'))
+const PettyCash = lazy(() => import('@/pages/PettyCash'))
 const InsuranceProviders = lazy(() => import('@/pages/InsuranceProviders'))
 const ProcedureBaseGlobal = lazy(() => import('@/pages/ProcedureBaseGlobal'))
 const RevenueForecast = lazy(() => import('@/pages/RevenueForecast'))
@@ -85,6 +86,7 @@ const App = () => (
                   <Route path="/contas-a-pagar/:clinicId" element={<AccountsPayable />} />
                   <Route path="/operadoras/:clinicId" element={<InsuranceProviders />} />
                   <Route path="/adiantamentos/:clinicId" element={<Advances />} />
+                  <Route path="/caixa-do-dia/:clinicId" element={<PettyCash />} />
                   <Route path="/previsao-receitas/:clinicId" element={<RevenueForecast />} />
                   <Route path="/agenda/:clinicId" element={<Agenda />} />
                   <Route path="/marketing/:clinicId" element={<MarketingDashboard />} />
