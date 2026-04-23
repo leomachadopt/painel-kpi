@@ -19,6 +19,7 @@ interface PatientCodeInputProps {
   patientNameError?: string
   codeHint?: string
   onIsNewPatientChange?: (isNew: boolean) => void
+  onPatientFound?: (patient: Patient | null) => void
 }
 
 export function PatientCodeInput({
@@ -33,6 +34,7 @@ export function PatientCodeInput({
   patientNameError,
   codeHint,
   onIsNewPatientChange,
+  onPatientFound,
 }: PatientCodeInputProps) {
   const { t } = useTranslation()
   const defaultLabel = label || t('forms.patientCode')
@@ -64,6 +66,15 @@ export function PatientCodeInput({
   useEffect(() => {
     onIsNewPatientChangeRef.current?.(isNewPatient)
   }, [isNewPatient])
+
+  const onPatientFoundRef = useRef(onPatientFound)
+  useEffect(() => {
+    onPatientFoundRef.current = onPatientFound
+  }, [onPatientFound])
+
+  useEffect(() => {
+    onPatientFoundRef.current?.(patient)
+  }, [patient])
   const {
     patient,
     patients,

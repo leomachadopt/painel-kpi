@@ -33,7 +33,7 @@ import { useAuth } from '@/stores/useAuthStore'
 import { usePermissions } from '@/hooks/usePermissions'
 import { format, addDays, subDays, isAfter, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import api from '@/services/api'
+import api, { patientsApi } from '@/services/api'
 import { AddProceduresModal } from '@/components/agenda/AddProceduresModal'
 import { PatientCodeInput } from '@/components/PatientCodeInput'
 import { usePatientLookup } from '@/hooks/usePatientLookup'
@@ -119,6 +119,8 @@ export default function Agenda() {
   const [patientName, setPatientName] = useState('')
   const [isPatientNew, setIsPatientNew] = useState(false)
   const [inlinePatientWhatsapp, setInlinePatientWhatsapp] = useState('')
+  const [foundPatient, setFoundPatient] = useState<any | null>(null)
+  const [initialFoundPhone, setInitialFoundPhone] = useState('')
   const { createPatient: createPatientInline } = usePatientLookup()
 
   // Reschedule from queue
@@ -715,6 +717,8 @@ export default function Agenda() {
     setPatientName('')
     setIsPatientNew(false)
     setInlinePatientWhatsapp('')
+    setFoundPatient(null)
+    setInitialFoundPhone('')
     setNewAppointment({
       scheduledEnd: '',
       cabinetId: '',
@@ -824,6 +828,17 @@ export default function Agenda() {
           if (!created) {
             toast.error('Não foi possível cadastrar o paciente')
             return
+          }
+        } else if (foundPatient) {
+          // Atualiza telefone do paciente existente se foi preenchido/alterado
+          const newPhone = inlinePatientWhatsapp.trim()
+          if (newPhone && newPhone !== initialFoundPhone) {
+            try {
+              await patientsApi.update(clinicId, foundPatient.id, { phone: newPhone })
+            } catch (err) {
+              console.error('Erro ao atualizar telefone do paciente:', err)
+              // Não bloqueia a criação do agendamento
+            }
           }
         }
         requestBody.patientName = patientName.trim()
@@ -2396,17 +2411,34 @@ export default function Agenda() {
                     patientName={patientName}
                     onPatientNameChange={setPatientName}
                     onIsNewPatientChange={setIsPatientNew}
+                    onPatientFound={(p) => {
+                      setFoundPatient(p)
+                      if (p) {
+                        const phone = p.phone || ''
+                        setInlinePatientWhatsapp(phone)
+                        setInitialFoundPhone(phone)
+                      } else {
+                        setInitialFoundPhone('')
+                      }
+                    }}
                   />
                 )}
-                {isPatientNew && patientCode.length > 0 && (
+                {patientCode.length > 0 && (isPatientNew || foundPatient) && (
                   <div>
-                    <Label>WhatsApp *</Label>
+                    <Label>
+                      WhatsApp{isPatientNew && <span className="text-destructive"> *</span>}
+                    </Label>
                     <Input
                       type="tel"
                       value={inlinePatientWhatsapp}
                       onChange={(e) => setInlinePatientWhatsapp(e.target.value)}
                       placeholder="Digite o WhatsApp com código do país"
                     />
+                    {!isPatientNew && !initialFoundPhone && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Paciente sem telefone cadastrado — preencha para atualizar
+                      </p>
+                    )}
                   </div>
                 )}
               </>
