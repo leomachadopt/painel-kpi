@@ -1895,6 +1895,19 @@ export const pettyCashApi = {
     getReceiptUrl: (clinicId: string, entryId: string) =>
       `${API_BASE_URL}/petty-cash/${clinicId}/entries/${entryId}/receipt`,
   },
+
+  income: {
+    list: (
+      clinicId: string,
+      filters?: { startDate?: string; endDate?: string }
+    ) => {
+      const params = new URLSearchParams()
+      if (filters?.startDate) params.set('startDate', filters.startDate)
+      if (filters?.endDate) params.set('endDate', filters.endDate)
+      const qs = params.toString()
+      return apiCall<any[]>(`/petty-cash/${clinicId}/income${qs ? `?${qs}` : ''}`)
+    },
+  },
 }
 
 // ================================

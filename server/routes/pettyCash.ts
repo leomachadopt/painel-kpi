@@ -105,6 +105,59 @@ function mapEntryRow(row) {
   }
 }
 
+function mapIncomeRow(row) {
+  return {
+    id: row.id,
+    clinicId: row.clinic_id,
+    date: row.date,
+    amount: Number(row.amount),
+    description: row.description,
+    financialEntryId: row.financial_entry_id,
+    paymentSourceId: row.payment_source_id,
+    paymentSourceName: row.payment_source_name || null,
+    patientName: row.patient_name,
+    patientCode: row.patient_code,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+// =============================
+// INCOME (auto-sincronizado de lançamentos financeiros Numerário)
+// =============================
+
+router.get('/:clinicId/income', authRequired, async (req, res) => {
+  try {
+    const { clinicId } = req.params
+    if (!(await canViewPettyCash(req, clinicId))) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+    const { startDate, endDate } = req.query
+    const params = [clinicId]
+    let where = 'i.clinic_id = $1'
+    if (startDate) {
+      params.push(startDate)
+      where += ` AND i.date >= $${params.length}`
+    }
+    if (endDate) {
+      params.push(endDate)
+      where += ` AND i.date <= $${params.length}`
+    }
+    const result = await query(
+      `SELECT i.*, ps.name AS payment_source_name
+       FROM petty_cash_income i
+       LEFT JOIN clinic_payment_sources ps ON ps.id = i.payment_source_id
+       WHERE ${where}
+       ORDER BY i.date ASC, i.created_at ASC`,
+      params
+    )
+    res.json(result.rows.map(mapIncomeRow))
+  } catch (err) {
+    console.error('Get petty cash income error:', err)
+    res.status(500).json({ error: 'Failed to fetch income' })
+  }
+})
+
 // =============================
 // CATEGORIES
 // =============================

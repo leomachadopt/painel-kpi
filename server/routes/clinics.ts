@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
             [clinic.id]
           ).catch(() => ({ rows: [] }))
           const paymentSources = await query(
-            'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+            'SELECT id, name, is_cash FROM clinic_payment_sources WHERE clinic_id = $1',
             [clinic.id]
           ).catch(() => ({ rows: [] }))
           const alignerBrands = await query(
@@ -155,7 +155,7 @@ router.get('/', async (req, res) => {
               doctors: doctors.rows.map((r) => ({ id: r.id, name: r.name, email: r.email, whatsapp: r.whatsapp })),
               sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
               campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
-              paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
+              paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name, isCash: r.is_cash === true })),
               alignerBrands: alignerBrands.rows.map((r) => ({ id: r.id, name: r.name })),
             },
           }
@@ -298,7 +298,7 @@ router.get('/:id', async (req, res) => {
       [clinic.id]
     ).catch(() => ({ rows: [] }))
     const paymentSources = await query(
-      'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+      'SELECT id, name, is_cash FROM clinic_payment_sources WHERE clinic_id = $1',
       [clinic.id]
     ).catch(() => ({ rows: [] }))
     const alignerBrands = await query(
@@ -370,7 +370,7 @@ router.get('/:id', async (req, res) => {
         doctors: doctors.rows.map((r) => ({ id: r.id, name: r.name, email: r.email, whatsapp: r.whatsapp })),
         sources: sources.rows.map((r) => ({ id: r.id, name: r.name })),
         campaigns: campaigns.rows.map((r) => ({ id: r.id, name: r.name })),
-        paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name })),
+        paymentSources: paymentSources.rows.map((r) => ({ id: r.id, name: r.name, isCash: r.is_cash === true })),
         alignerBrands: alignerBrands.rows.map((r) => ({ id: r.id, name: r.name })),
       },
     })

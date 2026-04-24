@@ -58,7 +58,7 @@ export interface ClinicConfiguration {
   doctors: { id: string; name: string }[]
   sources: { id: string; name: string }[]
   campaigns: { id: string; name: string }[]
-  paymentSources: { id: string; name: string }[]
+  paymentSources: { id: string; name: string; isCash?: boolean }[]
   alignerBrands: { id: string; name: string }[]
 }
 
@@ -676,6 +676,21 @@ export interface PettyCashEntry {
   paymentMethod: PettyCashPaymentMethod
   receipt: PettyCashReceipt | null
   createdBy: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PettyCashIncomeEntry {
+  id: string
+  clinicId: string
+  date: string
+  amount: number
+  description: string | null
+  financialEntryId: string
+  paymentSourceId: string | null
+  paymentSourceName: string | null
+  patientName: string | null
+  patientCode: string | null
   createdAt: string
   updatedAt: string
 }

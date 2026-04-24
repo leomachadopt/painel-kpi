@@ -187,22 +187,31 @@ router.put('/:clinicId', requirePermission('canEditClinicConfig'), async (req, r
         }
 
         const paymentSourceIds = paymentSources.map((ps: any) => ps.id)
-        // Delete payment sources not in the new list
+        // Delete payment sources not in the new list — nunca deleta a fonte is_cash (Numerário),
+        // que é protegida para manter a ligação com o Caixa do Dia.
         if (paymentSourceIds.length > 0) {
           await query(
-            `DELETE FROM clinic_payment_sources WHERE clinic_id = $1 AND id NOT IN (${paymentSourceIds.map((_, i) => `$${i + 2}`).join(', ')})`,
+            `DELETE FROM clinic_payment_sources
+               WHERE clinic_id = $1
+                 AND is_cash = false
+                 AND id NOT IN (${paymentSourceIds.map((_, i) => `$${i + 2}`).join(', ')})`,
             [clinicId, ...paymentSourceIds]
           )
         } else {
-          // If empty array, delete all
-          await query('DELETE FROM clinic_payment_sources WHERE clinic_id = $1', [clinicId])
+          await query(
+            'DELETE FROM clinic_payment_sources WHERE clinic_id = $1 AND is_cash = false',
+            [clinicId]
+          )
         }
-        // Upsert payment sources
+        // Upsert — is_cash é preservado no UPDATE (nunca sobrescrito a partir do payload);
+        // INSERT cria novas fontes com is_cash=false por padrão.
         for (const paymentSource of paymentSources) {
           await query(
             `INSERT INTO clinic_payment_sources (id, clinic_id, name)
              VALUES ($1, $2, $3)
-             ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+             ON CONFLICT (id) DO UPDATE SET name =
+               CASE WHEN clinic_payment_sources.is_cash THEN clinic_payment_sources.name
+                    ELSE EXCLUDED.name END`,
             [paymentSource.id, clinicId, paymentSource.name]
           )
         }

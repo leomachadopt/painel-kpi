@@ -86,6 +86,74 @@ async function canEditConsultations(req: any, clinicId: string): Promise<boolean
 }
 
 /**
+ * Sincroniza uma entrada no Caixa do Dia (petty_cash_income) a partir de um lançamento financeiro.
+ * Regra: apenas lançamentos NÃO-faturação com fonte is_cash=true geram income. Qualquer outra
+ * combinação remove o income existente (se houver), para manter o caixa consistente.
+ *
+ * Why: a decisão do negócio é que só o dinheiro ("Numerário") que entra na clínica aparece no caixa,
+ * e lançamentos de faturação não devem contaminar o saldo diário.
+ * How to apply: chamar após POST/PUT /financial, passando o registro final gravado em daily_financial_entries.
+ */
+async function syncPettyCashIncome(
+  clinicId: string,
+  entry: {
+    id: string
+    date: string | Date
+    value: number
+    patientName: string
+    code: string
+    paymentSourceId?: string | null
+    isBillingEntry?: boolean
+  }
+): Promise<void> {
+  const shouldHaveIncome = !entry.isBillingEntry && !!entry.paymentSourceId
+
+  let isCash = false
+  if (shouldHaveIncome) {
+    const src = await query(
+      `SELECT is_cash FROM clinic_payment_sources WHERE id = $1 AND clinic_id = $2`,
+      [entry.paymentSourceId, clinicId]
+    )
+    isCash = src.rows[0]?.is_cash === true
+  }
+
+  if (!isCash) {
+    await query(
+      `DELETE FROM petty_cash_income WHERE financial_entry_id = $1 AND clinic_id = $2`,
+      [entry.id, clinicId]
+    )
+    return
+  }
+
+  const description = `${entry.patientName} (#${entry.code})`
+
+  await query(
+    `INSERT INTO petty_cash_income
+       (id, clinic_id, date, amount, description, financial_entry_id, payment_source_id, patient_name, patient_code)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (financial_entry_id) DO UPDATE SET
+       date = EXCLUDED.date,
+       amount = EXCLUDED.amount,
+       description = EXCLUDED.description,
+       payment_source_id = EXCLUDED.payment_source_id,
+       patient_name = EXCLUDED.patient_name,
+       patient_code = EXCLUDED.patient_code,
+       updated_at = CURRENT_TIMESTAMP`,
+    [
+      `income-${entry.id}`,
+      clinicId,
+      entry.date,
+      entry.value,
+      description,
+      entry.id,
+      entry.paymentSourceId,
+      entry.patientName,
+      entry.code,
+    ]
+  )
+}
+
+/**
  * Helper function to check if user can create/edit prospecting entries
  * GESTOR_CLINICA always can, COLABORADOR needs canEditProspecting permission
  */
@@ -490,17 +558,32 @@ router.post('/financial/:clinicId', async (req, res) => {
 
     console.log('[Financial Entry] Insert successful:', { entryId })
 
+    const row = result.rows[0]
+    try {
+      await syncPettyCashIncome(clinicId, {
+        id: row.id,
+        date: row.date,
+        value: parseFloat(row.value),
+        patientName: row.patient_name,
+        code: row.code,
+        paymentSourceId: row.payment_source_id,
+        isBillingEntry: row.is_billing_entry || false,
+      })
+    } catch (syncErr) {
+      console.error('[Financial Entry] petty_cash_income sync failed:', syncErr)
+    }
+
     res.status(201).json({
-      id: result.rows[0].id,
-      date: result.rows[0].date,
-      patientName: result.rows[0].patient_name,
-      code: result.rows[0].code,
-      categoryId: result.rows[0].category_id,
-      value: parseFloat(result.rows[0].value),
-      cabinetId: result.rows[0].cabinet_id,
-      doctorId: result.rows[0].doctor_id || null,
-      paymentSourceId: result.rows[0].payment_source_id || null,
-      isBillingEntry: result.rows[0].is_billing_entry || false,
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      categoryId: row.category_id,
+      value: parseFloat(row.value),
+      cabinetId: row.cabinet_id,
+      doctorId: row.doctor_id || null,
+      paymentSourceId: row.payment_source_id || null,
+      isBillingEntry: row.is_billing_entry || false,
     })
   } catch (error: any) {
     const errorDetails = {
@@ -590,17 +673,32 @@ router.put('/financial/:clinicId/:entryId', async (req, res) => {
       [date, patientName, code, categoryId, value, cabinetId, doctorId || null, paymentSourceId || null, entryId, clinicId]
     )
 
+    const row = result.rows[0]
+    try {
+      await syncPettyCashIncome(clinicId, {
+        id: row.id,
+        date: row.date,
+        value: parseFloat(row.value),
+        patientName: row.patient_name,
+        code: row.code,
+        paymentSourceId: row.payment_source_id,
+        isBillingEntry: row.is_billing_entry || false,
+      })
+    } catch (syncErr) {
+      console.error('[Financial Entry] petty_cash_income sync failed:', syncErr)
+    }
+
     res.json({
-      id: result.rows[0].id,
-      date: result.rows[0].date,
-      patientName: result.rows[0].patient_name,
-      code: result.rows[0].code,
-      categoryId: result.rows[0].category_id,
-      value: parseFloat(result.rows[0].value),
-      cabinetId: result.rows[0].cabinet_id,
-      doctorId: result.rows[0].doctor_id || null,
-      paymentSourceId: result.rows[0].payment_source_id || null,
-      isBillingEntry: result.rows[0].is_billing_entry || false,
+      id: row.id,
+      date: row.date,
+      patientName: row.patient_name,
+      code: row.code,
+      categoryId: row.category_id,
+      value: parseFloat(row.value),
+      cabinetId: row.cabinet_id,
+      doctorId: row.doctor_id || null,
+      paymentSourceId: row.payment_source_id || null,
+      isBillingEntry: row.is_billing_entry || false,
     })
   } catch (error: any) {
     console.error('Update financial entry error:', error)

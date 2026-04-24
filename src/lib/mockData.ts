@@ -33,7 +33,7 @@ const DEFAULT_CONFIG = {
     { id: 'pay-1', name: 'CGD' },
     { id: 'pay-2', name: 'Santander' },
     { id: 'pay-3', name: 'Cartões BPI' },
-    { id: 'pay-4', name: 'Numerário' },
+    { id: 'pay-4', name: 'Numerário', isCash: true },
   ],
 }
 

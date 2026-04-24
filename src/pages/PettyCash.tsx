@@ -72,8 +72,31 @@ import { pettyCashApi } from '@/services/api'
 import {
   PettyCashCategory,
   PettyCashEntry,
+  PettyCashIncomeEntry,
   PettyCashPaymentMethod,
 } from '@/lib/types'
+
+type CashflowRow =
+  | {
+      kind: 'expense'
+      id: string
+      date: string
+      createdAt: string
+      description: string
+      inflow: 0
+      outflow: number
+      entry: PettyCashEntry
+    }
+  | {
+      kind: 'income'
+      id: string
+      date: string
+      createdAt: string
+      description: string
+      inflow: number
+      outflow: 0
+      income: PettyCashIncomeEntry
+    }
 
 const PAYMENT_METHODS: PettyCashPaymentMethod[] = [
   'cash',
@@ -122,6 +145,7 @@ export default function PettyCash() {
   const [searchTerm, setSearchTerm] = useState('')
 
   const [entries, setEntries] = useState<PettyCashEntry[]>([])
+  const [income, setIncome] = useState<PettyCashIncomeEntry[]>([])
   const [categories, setCategories] = useState<PettyCashCategory[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -152,7 +176,7 @@ export default function PettyCash() {
     if (!clinicId) return
     setLoading(true)
     try {
-      const [cats, list] = await Promise.all([
+      const [cats, list, incomeList] = await Promise.all([
         pettyCashApi.categories.getAll(clinicId),
         pettyCashApi.entries.list(clinicId, {
           startDate,
@@ -160,9 +184,14 @@ export default function PettyCash() {
           categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
           paymentMethod: paymentFilter !== 'all' ? paymentFilter : undefined,
         }),
+        // Income só aparece quando não há filtro de categoria/método (entradas não têm esses campos).
+        categoryFilter === 'all' && paymentFilter === 'all'
+          ? pettyCashApi.income.list(clinicId, { startDate, endDate })
+          : Promise.resolve([] as PettyCashIncomeEntry[]),
       ])
       setCategories(cats)
       setEntries(list)
+      setIncome(incomeList)
     } catch (err: any) {
       toast.error(err.message || t('common.error'))
     } finally {
@@ -175,32 +204,68 @@ export default function PettyCash() {
     [categories]
   )
 
-  const filteredEntries = useMemo(() => {
-    if (!searchTerm.trim()) return entries
-    const term = searchTerm.toLowerCase()
-    return entries.filter(
-      (e) =>
-        e.description?.toLowerCase().includes(term) ||
-        e.categoryName?.toLowerCase().includes(term)
-    )
-  }, [entries, searchTerm])
+  const cashflow = useMemo<(CashflowRow & { balance: number })[]>(() => {
+    const term = searchTerm.trim().toLowerCase()
+    const matches = (text: string | null | undefined) =>
+      !term || (text || '').toLowerCase().includes(term)
+
+    const rows: CashflowRow[] = []
+
+    for (const e of entries) {
+      if (!matches(e.description) && !matches(e.categoryName)) continue
+      rows.push({
+        kind: 'expense',
+        id: e.id,
+        date: e.date,
+        createdAt: e.createdAt,
+        description: e.description || e.categoryName || t('pettyCash.noCategory'),
+        inflow: 0,
+        outflow: Number(e.amount || 0),
+        entry: e,
+      })
+    }
+
+    for (const i of income) {
+      if (!matches(i.description) && !matches(i.patientName)) continue
+      rows.push({
+        kind: 'income',
+        id: i.id,
+        date: i.date,
+        createdAt: i.createdAt,
+        description: i.description || i.patientName || '',
+        inflow: Number(i.amount || 0),
+        outflow: 0,
+        income: i,
+      })
+    }
+
+    rows.sort((a, b) => {
+      const byDate = a.date.localeCompare(b.date)
+      if (byDate !== 0) return byDate
+      return a.createdAt.localeCompare(b.createdAt)
+    })
+
+    let balance = 0
+    return rows.map((r) => {
+      balance += r.inflow - r.outflow
+      return { ...r, balance }
+    })
+  }, [entries, income, searchTerm, t])
 
   const totals = useMemo(() => {
-    const total = filteredEntries.reduce((s, e) => s + Number(e.amount || 0), 0)
-    const byCategory = new Map<string, number>()
-    const byMethod = new Map<string, number>()
-    for (const e of filteredEntries) {
-      const catKey = e.categoryName || t('pettyCash.noCategory')
-      byCategory.set(catKey, (byCategory.get(catKey) || 0) + Number(e.amount || 0))
-      byMethod.set(e.paymentMethod, (byMethod.get(e.paymentMethod) || 0) + Number(e.amount || 0))
+    let inflow = 0
+    let outflow = 0
+    for (const r of cashflow) {
+      inflow += r.inflow
+      outflow += r.outflow
     }
     return {
-      total,
-      count: filteredEntries.length,
-      byCategory: Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1]),
-      byMethod: Array.from(byMethod.entries()).sort((a, b) => b[1] - a[1]),
+      inflow,
+      outflow,
+      balance: inflow - outflow,
+      count: cashflow.length,
     }
-  }, [filteredEntries, t])
+  }, [cashflow])
 
   const openCreateEntry = () => {
     setEditingEntry(null)
@@ -449,45 +514,33 @@ export default function PettyCash() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>{t('pettyCash.summary.total')}</CardDescription>
-                <CardTitle className="text-2xl">{formatCurrency(totals.total)}</CardTitle>
+                <CardDescription>Entradas</CardDescription>
+                <CardTitle className="text-2xl text-emerald-600">
+                  {formatCurrency(totals.inflow)}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Saídas</CardDescription>
+                <CardTitle className="text-2xl text-destructive">
+                  {formatCurrency(totals.outflow)}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Saldo do período</CardDescription>
+                <CardTitle
+                  className={`text-2xl ${totals.balance >= 0 ? 'text-emerald-600' : 'text-destructive'}`}
+                >
+                  {formatCurrency(totals.balance)}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-xs text-muted-foreground">
                   {totals.count} {t('pettyCash.summary.entries')}
                 </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>{t('pettyCash.summary.byCategory')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                {totals.byCategory.length === 0 && (
-                  <p className="text-muted-foreground">{t('pettyCash.summary.empty')}</p>
-                )}
-                {totals.byCategory.slice(0, 5).map(([name, value]) => (
-                  <div key={name} className="flex justify-between">
-                    <span className="truncate mr-2">{name}</span>
-                    <span className="font-medium">{formatCurrency(value)}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>{t('pettyCash.summary.byMethod')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm">
-                {totals.byMethod.length === 0 && (
-                  <p className="text-muted-foreground">{t('pettyCash.summary.empty')}</p>
-                )}
-                {totals.byMethod.map(([method, value]) => (
-                  <div key={method} className="flex justify-between">
-                    <span>{paymentMethodLabel(method)}</span>
-                    <span className="font-medium">{formatCurrency(value)}</span>
-                  </div>
-                ))}
               </CardContent>
             </Card>
           </div>
@@ -501,7 +554,7 @@ export default function PettyCash() {
                 <div className="flex justify-center py-10">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredEntries.length === 0 ? (
+              ) : cashflow.length === 0 ? (
                 <p className="text-center text-muted-foreground py-10">
                   {t('pettyCash.table.empty')}
                 </p>
@@ -510,40 +563,54 @@ export default function PettyCash() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('pettyCash.table.date')}</TableHead>
-                      <TableHead>{t('pettyCash.table.category')}</TableHead>
-                      <TableHead>{t('pettyCash.table.description')}</TableHead>
-                      <TableHead>{t('pettyCash.table.paymentMethod')}</TableHead>
-                      <TableHead className="text-right">{t('pettyCash.table.amount')}</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="text-right">Entrada</TableHead>
+                      <TableHead className="text-right">Saída</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
                       <TableHead className="text-center">{t('pettyCash.table.receipt')}</TableHead>
                       <TableHead className="text-right">{t('pettyCash.table.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntries.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>{format(new Date(entry.date), 'dd/MM/yyyy')}</TableCell>
-                        <TableCell>
-                          {entry.categoryName ? (
-                            <Badge variant="secondary">{entry.categoryName}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">
-                              {t('pettyCash.noCategory')}
-                            </span>
+                    {cashflow.map((row) => (
+                      <TableRow key={`${row.kind}-${row.id}`}>
+                        <TableCell>{format(new Date(row.date), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">{row.description || '-'}</span>
+                            {row.kind === 'income' ? (
+                              <Badge variant="outline" className="text-emerald-700 border-emerald-300">
+                                Lançamento
+                              </Badge>
+                            ) : row.entry.categoryName ? (
+                              <Badge variant="secondary" className="shrink-0">
+                                {row.entry.categoryName}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          {row.kind === 'expense' && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {paymentMethodLabel(row.entry.paymentMethod)}
+                            </div>
                           )}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {entry.description || '-'}
+                        <TableCell className="text-right font-medium text-emerald-600">
+                          {row.inflow > 0 ? formatCurrency(row.inflow) : '-'}
                         </TableCell>
-                        <TableCell>{paymentMethodLabel(entry.paymentMethod)}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(Number(entry.amount))}
+                        <TableCell className="text-right font-medium text-destructive">
+                          {row.outflow > 0 ? formatCurrency(row.outflow) : '-'}
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-semibold ${row.balance >= 0 ? 'text-emerald-600' : 'text-destructive'}`}
+                        >
+                          {formatCurrency(row.balance)}
                         </TableCell>
                         <TableCell className="text-center">
-                          {entry.receipt ? (
+                          {row.kind === 'expense' && row.entry.receipt ? (
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => downloadReceipt(entry)}
+                              onClick={() => downloadReceipt(row.entry)}
                               title={t('pettyCash.table.viewReceipt')}
                             >
                               <FileText className="h-4 w-4" />
@@ -553,23 +620,25 @@ export default function PettyCash() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {canEditPage && (
+                          {row.kind === 'expense' && canEditPage ? (
                             <div className="flex justify-end gap-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => openEditEntry(entry)}
+                                onClick={() => openEditEntry(row.entry)}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setEntryToDelete(entry)}
+                                onClick={() => setEntryToDelete(row.entry)}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -577,11 +646,19 @@ export default function PettyCash() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={4} className="font-semibold">
+                      <TableCell colSpan={2} className="font-semibold">
                         {t('pettyCash.table.total')}
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(totals.total)}
+                      <TableCell className="text-right font-semibold text-emerald-600">
+                        {formatCurrency(totals.inflow)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-destructive">
+                        {formatCurrency(totals.outflow)}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${totals.balance >= 0 ? 'text-emerald-600' : 'text-destructive'}`}
+                      >
+                        {formatCurrency(totals.balance)}
                       </TableCell>
                       <TableCell colSpan={2} />
                     </TableRow>

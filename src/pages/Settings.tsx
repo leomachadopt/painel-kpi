@@ -39,11 +39,15 @@ const ListEditor = ({
   items,
   onUpdate,
   readOnly = false,
+  isProtected,
+  protectedLabel,
 }: {
   title: string
-  items: { id: string; name: string; standardHours?: number }[]
+  items: { id: string; name: string; standardHours?: number; isCash?: boolean }[]
   onUpdate: (items: any[]) => void
   readOnly?: boolean
+  isProtected?: (item: any) => boolean
+  protectedLabel?: string
 }) => {
   const { t } = useTranslation()
   const [newItem, setNewItem] = useState('')
@@ -66,6 +70,10 @@ const ListEditor = ({
     // Protect hard-coded "Referência" source from deletion
     if (item?.name === 'Referência' && title === 'Fonte') {
       toast.error('A fonte "Referência" não pode ser excluída')
+      return
+    }
+    if (item && isProtected?.(item)) {
+      toast.error(`"${item.name}" ${protectedLabel || 'não pode ser excluída'}`)
       return
     }
     onUpdate(items.filter((i) => i.id !== id))
@@ -186,54 +194,69 @@ const ListEditor = ({
               </>
             ) : (
               <>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <span>{item.name}</span>
                   {item.standardHours && (
                     <span className="text-muted-foreground text-sm">
                       ({item.standardHours}h)
                     </span>
                   )}
+                  {isProtected?.(item) && (
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      {protectedLabel || 'protegida'}
+                    </span>
+                  )}
                 </div>
-                {!readOnly && (
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => moveUp(index)}
-                      disabled={index === 0 || (item.name === 'Referência' && title === 'Fonte')}
-                      title="Mover para cima"
-                    >
-                      <ArrowUp className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => moveDown(index)}
-                      disabled={index === items.length - 1 || (item.name === 'Referência' && title === 'Fonte')}
-                      title="Mover para baixo"
-                    >
-                      <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startEdit(item)}
-                      disabled={item.name === 'Referência' && title === 'Fonte'}
-                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : 'Editar'}
-                    >
-                      <Edit2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => remove(item.id)}
-                      disabled={item.name === 'Referência' && title === 'Fonte'}
-                      title={item.name === 'Referência' && title === 'Fonte' ? 'Fonte protegida' : 'Excluir'}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                )}
+                {!readOnly && (() => {
+                  const legacyProtected = item.name === 'Referência' && title === 'Fonte'
+                  const customProtected = isProtected?.(item) === true
+                  const isLocked = legacyProtected || customProtected
+                  const lockTitle = legacyProtected
+                    ? 'Fonte protegida'
+                    : customProtected
+                      ? protectedLabel || 'Item protegido'
+                      : null
+                  return (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => moveUp(index)}
+                        disabled={index === 0 || isLocked}
+                        title="Mover para cima"
+                      >
+                        <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => moveDown(index)}
+                        disabled={index === items.length - 1 || isLocked}
+                        title="Mover para baixo"
+                      >
+                        <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => startEdit(item)}
+                        disabled={isLocked}
+                        title={lockTitle || 'Editar'}
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(item.id)}
+                        disabled={isLocked}
+                        title={lockTitle || 'Excluir'}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  )
+                })()}
               </>
             )}
           </div>
@@ -1160,6 +1183,8 @@ export default function Settings() {
                   setConfig({ ...config, paymentSources: items })
                 }
                 readOnly={!canManageConfig}
+                isProtected={(item) => item.isCash === true}
+                protectedLabel="vinculada ao Caixa do Dia"
               />
             </CardContent>
           </Card>
