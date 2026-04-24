@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Search, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Search, X, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import useDataStore from '@/stores/useDataStore'
 import { useAuth } from '@/stores/useAuthStore'
@@ -178,6 +178,37 @@ export default function Agenda() {
   const CLINIC_START = clinicHours?.start ?? 8 * 60
   const CLINIC_END = clinicHours?.end ?? 20 * 60
   const SLOT_DURATION = 15 // minutes
+
+  // Gaps sub-slot: quando um agendamento termina em minuto nao alinhado a 15min,
+  // expõe uma zona clicavel entre o fim do agendamento e a proxima fronteira de slot
+  // (ou o proximo agendamento, o que vier antes). Garante que o usuario consiga
+  // criar um novo agendamento a partir do minuto exato mesmo se um card curto
+  // cobrir parte do slot.
+  const computeSubSlotGaps = (
+    apts: any[],
+    defaultEndMin: number
+  ): { start: string; offsetPx: number; heightPx: number }[] => {
+    const sorted = [...apts].sort((a, b) => a.scheduledStart.localeCompare(b.scheduledStart))
+    const gaps: { start: string; offsetPx: number; heightPx: number }[] = []
+    for (let i = 0; i < sorted.length; i++) {
+      const curr = sorted[i]
+      const currEndMin = timeToMinutes(curr.scheduledEnd)
+      if (currEndMin % SLOT_DURATION === 0) continue
+      const next = sorted[i + 1]
+      const nextStartMin = next ? timeToMinutes(next.scheduledStart) : defaultEndMin
+      const nextSlotBoundary = Math.ceil(currEndMin / SLOT_DURATION) * SLOT_DURATION
+      const gapEndMin = Math.min(nextStartMin, nextSlotBoundary)
+      const gapMinutes = gapEndMin - currEndMin
+      if (gapMinutes > 0) {
+        gaps.push({
+          start: minutesToTime(currEndMin),
+          offsetPx: ((currEndMin - CLINIC_START) / SLOT_DURATION) * 60,
+          heightPx: (gapMinutes / SLOT_DURATION) * 60,
+        })
+      }
+    }
+    return gaps
+  }
 
   // Helper to get clinic hours for any date (used in day rendering)
   const getClinicHoursForDate = (date: Date) => {
@@ -1660,6 +1691,17 @@ export default function Agenda() {
                                         </div>
                                       )
                                     })}
+                                    {computeSubSlotGaps(doctorAppointments, CLINIC_END).map((gap) => (
+                                      <div
+                                        key={`gap-${gap.start}`}
+                                        className="absolute left-0 right-0 pointer-events-auto cursor-pointer z-20 opacity-0 hover:opacity-100 bg-primary/20 border border-dashed border-primary/60 rounded flex items-center justify-center transition-opacity"
+                                        style={{ top: `${gap.offsetPx}px`, height: `${gap.heightPx}px` }}
+                                        onClick={() => handleSlotClick(gap.start, selectedDate, doctorId)}
+                                        title={`Novo agendamento às ${gap.start}`}
+                                      >
+                                        <Plus className="w-3 h-3 text-primary" />
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </>
@@ -1926,6 +1968,17 @@ export default function Agenda() {
                                           </div>
                                         )
                                       })}
+                                      {computeSubSlotGaps(doctorAppointments, CLINIC_END).map((gap) => (
+                                        <div
+                                          key={`gap-${gap.start}`}
+                                          className="absolute left-0 right-0 pointer-events-auto cursor-pointer z-20 opacity-0 hover:opacity-100 bg-primary/20 border border-dashed border-primary/60 rounded flex items-center justify-center transition-opacity"
+                                          style={{ top: `${gap.offsetPx}px`, height: `${gap.heightPx}px` }}
+                                          onClick={() => handleSlotClick(gap.start, dayInfo.date, doctorId)}
+                                          title={`Novo agendamento às ${gap.start}`}
+                                        >
+                                          <Plus className="w-3 h-3 text-primary" />
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
@@ -2191,6 +2244,17 @@ export default function Agenda() {
                                           </div>
                                         )
                                       })}
+                                      {computeSubSlotGaps(doctorAppointments, CLINIC_END).map((gap) => (
+                                        <div
+                                          key={`gap-${gap.start}`}
+                                          className="absolute left-0 right-0 pointer-events-auto cursor-pointer z-20 opacity-0 hover:opacity-100 bg-primary/20 border border-dashed border-primary/60 rounded flex items-center justify-center transition-opacity"
+                                          style={{ top: `${gap.offsetPx}px`, height: `${gap.heightPx}px` }}
+                                          onClick={() => handleSlotClick(gap.start, dayInfo.date, doctorId)}
+                                          title={`Novo agendamento às ${gap.start}`}
+                                        >
+                                          <Plus className="w-3 h-3 text-primary" />
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
