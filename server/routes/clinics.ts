@@ -78,7 +78,13 @@ router.get('/', async (req, res) => {
           const paymentSources = await query(
             'SELECT id, name, is_cash FROM clinic_payment_sources WHERE clinic_id = $1',
             [clinic.id]
-          ).catch(() => ({ rows: [] }))
+          ).catch(() =>
+            // Fallback: coluna is_cash ainda não aplicada (migração 120 pendente)
+            query(
+              'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+              [clinic.id]
+            ).catch(() => ({ rows: [] }))
+          )
           const alignerBrands = await query(
             'SELECT id, name FROM clinic_aligner_brands WHERE clinic_id = $1',
             [clinic.id]
@@ -300,7 +306,13 @@ router.get('/:id', async (req, res) => {
     const paymentSources = await query(
       'SELECT id, name, is_cash FROM clinic_payment_sources WHERE clinic_id = $1',
       [clinic.id]
-    ).catch(() => ({ rows: [] }))
+    ).catch(() =>
+      // Fallback: coluna is_cash ainda não aplicada (migração 120 pendente)
+      query(
+        'SELECT id, name FROM clinic_payment_sources WHERE clinic_id = $1',
+        [clinic.id]
+      ).catch(() => ({ rows: [] }))
+    )
     const alignerBrands = await query(
       'SELECT id, name FROM clinic_aligner_brands WHERE clinic_id = $1',
       [clinic.id]
