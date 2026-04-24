@@ -771,6 +771,7 @@ export default function Agenda() {
 
     return appointments.some((apt) => {
       if (excludeId && apt.id === excludeId) return false // Exclude current appointment when editing
+      if (apt.status === 'cancelled' || apt.status === 'no_show') return false // Mirror backend: cancelled/no-show slots are free
 
       // Filter by doctor OR cabinet
       // Only check conflicts for appointments that share the same doctor or cabinet
