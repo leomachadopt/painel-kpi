@@ -143,15 +143,23 @@ router.get('/:clinicId/income', authRequired, async (req, res) => {
       params.push(endDate)
       where += ` AND i.date <= $${params.length}`
     }
-    const result = await query(
-      `SELECT i.*, ps.name AS payment_source_name
-       FROM petty_cash_income i
-       LEFT JOIN clinic_payment_sources ps ON ps.id = i.payment_source_id
-       WHERE ${where}
-       ORDER BY i.date ASC, i.created_at ASC`,
-      params
-    )
-    res.json(result.rows.map(mapIncomeRow))
+    try {
+      const result = await query(
+        `SELECT i.*, ps.name AS payment_source_name
+         FROM petty_cash_income i
+         LEFT JOIN clinic_payment_sources ps ON ps.id = i.payment_source_id
+         WHERE ${where}
+         ORDER BY i.date ASC, i.created_at ASC`,
+        params
+      )
+      res.json(result.rows.map(mapIncomeRow))
+    } catch (err: any) {
+      // Se a tabela ainda não existe (migração 120 pendente), degrada pra lista vazia
+      if (err?.code === '42P01') {
+        return res.json([])
+      }
+      throw err
+    }
   } catch (err) {
     console.error('Get petty cash income error:', err)
     res.status(500).json({ error: 'Failed to fetch income' })
