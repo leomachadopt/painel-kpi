@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { ReactNode, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { toast } from 'sonner'
@@ -8,10 +8,10 @@ import {
   Pencil,
   Trash2,
   FileText,
-  Download,
   Search,
   Paperclip,
   XCircle,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -73,7 +73,6 @@ import {
   PettyCashCategory,
   PettyCashEntry,
   PettyCashIncomeEntry,
-  PettyCashPaymentMethod,
 } from '@/lib/types'
 
 type CashflowRow =
@@ -98,20 +97,11 @@ type CashflowRow =
       income: PettyCashIncomeEntry
     }
 
-const PAYMENT_METHODS: PettyCashPaymentMethod[] = [
-  'cash',
-  'pix',
-  'card',
-  'transfer',
-  'other',
-]
-
 type EntryFormState = {
   date: string
   amount: string
   categoryId: string
   description: string
-  paymentMethod: PettyCashPaymentMethod
   receipt: File | null
   removeExistingReceipt: boolean
 }
@@ -121,10 +111,97 @@ const emptyEntryForm = (): EntryFormState => ({
   amount: '',
   categoryId: '',
   description: '',
-  paymentMethod: 'cash',
   receipt: null,
   removeExistingReceipt: false,
 })
+
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
+      <span>{value}</span>
+    </div>
+  )
+}
+
+function ReceiptPreview({
+  url,
+  mimeType,
+  filename,
+}: {
+  url: string
+  mimeType: string | null
+  filename: string | null
+}) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('kpi_token')
+    let objectUrl: string | null = null
+    let cancelled = false
+    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.blob()
+      })
+      .then((blob) => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setBlobUrl(objectUrl)
+      })
+      .catch(() => !cancelled && setError(true))
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [url])
+
+  if (error) {
+    return (
+      <p className="text-destructive text-xs mt-1">Falha ao carregar o comprovativo.</p>
+    )
+  }
+  if (!blobUrl) {
+    return (
+      <div className="flex items-center justify-center mt-1 border rounded p-6 bg-muted/30">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  const isImage = !!mimeType && mimeType.startsWith('image/')
+
+  return (
+    <div className="mt-1 space-y-2">
+      {isImage ? (
+        <a href={blobUrl} target="_blank" rel="noopener noreferrer" className="block">
+          <img
+            src={blobUrl}
+            alt={filename || 'comprovativo'}
+            className="max-h-80 w-full object-contain rounded border"
+          />
+        </a>
+      ) : (
+        <iframe
+          src={blobUrl}
+          title={filename || 'comprovativo'}
+          className="w-full h-80 border rounded"
+        />
+      )}
+      <a
+        href={blobUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        download={filename || undefined}
+        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+      >
+        <Paperclip className="h-3 w-3" />
+        {filename || 'Abrir comprovativo'}
+      </a>
+    </div>
+  )
+}
 
 export default function PettyCash() {
   const { clinicId } = useParams<{ clinicId: string }>()
@@ -141,7 +218,6 @@ export default function PettyCash() {
   const [startDate, setStartDate] = useState(format(startOfMonth(today), 'yyyy-MM-dd'))
   const [endDate, setEndDate] = useState(format(endOfMonth(today), 'yyyy-MM-dd'))
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const [paymentFilter, setPaymentFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
   const [entries, setEntries] = useState<PettyCashEntry[]>([])
@@ -159,6 +235,9 @@ export default function PettyCash() {
   const [entryToDelete, setEntryToDelete] = useState<PettyCashEntry | null>(null)
   const [deletingEntry, setDeletingEntry] = useState(false)
 
+  // View dialog
+  const [viewingRow, setViewingRow] = useState<CashflowRow | null>(null)
+
   // Category management
   const [newCategoryName, setNewCategoryName] = useState('')
   const [editingCategory, setEditingCategory] = useState<PettyCashCategory | null>(null)
@@ -170,7 +249,7 @@ export default function PettyCash() {
       loadAll()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clinicId, startDate, endDate, categoryFilter, paymentFilter])
+  }, [clinicId, startDate, endDate, categoryFilter])
 
   const loadAll = async () => {
     if (!clinicId) return
@@ -182,10 +261,9 @@ export default function PettyCash() {
           startDate,
           endDate,
           categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
-          paymentMethod: paymentFilter !== 'all' ? paymentFilter : undefined,
         }),
-        // Income só aparece quando não há filtro de categoria/método (entradas não têm esses campos).
-        categoryFilter === 'all' && paymentFilter === 'all'
+        // Income só aparece quando não há filtro de categoria (entradas não têm categoria).
+        categoryFilter === 'all'
           ? pettyCashApi.income.list(clinicId, { startDate, endDate })
           : Promise.resolve([] as PettyCashIncomeEntry[]),
       ])
@@ -280,7 +358,6 @@ export default function PettyCash() {
       amount: String(entry.amount),
       categoryId: entry.categoryId || '',
       description: entry.description || '',
-      paymentMethod: entry.paymentMethod,
       receipt: null,
       removeExistingReceipt: false,
     })
@@ -306,7 +383,7 @@ export default function PettyCash() {
           amount: amountNum,
           categoryId: entryForm.categoryId || null,
           description: entryForm.description.trim(),
-          paymentMethod: entryForm.paymentMethod,
+          paymentMethod: 'cash',
           receipt: entryForm.receipt,
           removeReceipt: entryForm.removeExistingReceipt && !entryForm.receipt,
         })
@@ -317,7 +394,7 @@ export default function PettyCash() {
           amount: amountNum,
           categoryId: entryForm.categoryId || null,
           description: entryForm.description.trim(),
-          paymentMethod: entryForm.paymentMethod,
+          paymentMethod: 'cash',
           receipt: entryForm.receipt,
         })
         toast.success(t('pettyCash.toast.created'))
@@ -417,8 +494,6 @@ export default function PettyCash() {
     )
   }
 
-  const paymentMethodLabel = (m: string) => t(`pettyCash.paymentMethods.${m}`)
-
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -446,7 +521,7 @@ export default function PettyCash() {
               <CardTitle className="text-base">{t('pettyCash.filters.title')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <Label>{t('pettyCash.filters.from')}</Label>
                   <Input
@@ -474,22 +549,6 @@ export default function PettyCash() {
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t('pettyCash.filters.paymentMethod')}</Label>
-                  <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('pettyCash.filters.allMethods')}</SelectItem>
-                      {PAYMENT_METHODS.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {paymentMethodLabel(m)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -588,11 +647,6 @@ export default function PettyCash() {
                               </Badge>
                             ) : null}
                           </div>
-                          {row.kind === 'expense' && (
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              {paymentMethodLabel(row.entry.paymentMethod)}
-                            </div>
-                          )}
                         </TableCell>
                         <TableCell className="text-right font-medium text-emerald-600">
                           {row.inflow > 0 ? formatCurrency(row.inflow) : '-'}
@@ -620,26 +674,34 @@ export default function PettyCash() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {row.kind === 'expense' && canEditPage ? (
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditEntry(row.entry)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setEntryToDelete(row.entry)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setViewingRow(row)}
+                              title="Ver detalhes"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {row.kind === 'expense' && canEditPage && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditEntry(row.entry)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setEntryToDelete(row.entry)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -849,26 +911,6 @@ export default function PettyCash() {
               </Select>
             </div>
             <div>
-              <Label>{t('pettyCash.form.paymentMethod')}</Label>
-              <Select
-                value={entryForm.paymentMethod}
-                onValueChange={(v) =>
-                  setEntryForm({ ...entryForm, paymentMethod: v as PettyCashPaymentMethod })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {paymentMethodLabel(m)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>{t('pettyCash.form.description')}</Label>
               <Textarea
                 rows={3}
@@ -952,6 +994,89 @@ export default function PettyCash() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View entry dialog */}
+      <Dialog
+        open={!!viewingRow}
+        onOpenChange={(open) => !open && setViewingRow(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingRow?.kind === 'income' ? 'Entrada (Lançamento)' : 'Despesa'}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingRow && format(new Date(viewingRow.date), 'dd/MM/yyyy')}
+            </DialogDescription>
+          </DialogHeader>
+          {viewingRow && (
+            <div className="space-y-3 text-sm">
+              {viewingRow.kind === 'income' ? (
+                <>
+                  <DetailRow label="Paciente" value={viewingRow.income.patientName || '-'} />
+                  <DetailRow label="Código" value={viewingRow.income.patientCode || '-'} />
+                  <DetailRow
+                    label="Fonte"
+                    value={viewingRow.income.paymentSourceName || '-'}
+                  />
+                  <DetailRow
+                    label="Valor"
+                    value={
+                      <span className="font-semibold text-emerald-600">
+                        {formatCurrency(viewingRow.inflow)}
+                      </span>
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground pt-2 border-t">
+                    Gerado automaticamente pelo lançamento financeiro. Para editar, ajuste no lançamento.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <DetailRow
+                    label="Categoria"
+                    value={viewingRow.entry.categoryName || '-'}
+                  />
+                  <DetailRow
+                    label="Valor"
+                    value={
+                      <span className="font-semibold text-destructive">
+                        {formatCurrency(viewingRow.outflow)}
+                      </span>
+                    }
+                  />
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Observações</Label>
+                    <p className="mt-1 whitespace-pre-wrap">
+                      {viewingRow.entry.description || (
+                        <span className="text-muted-foreground italic">Sem observações</span>
+                      )}
+                    </p>
+                  </div>
+                  {viewingRow.entry.receipt && clinicId && (
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Comprovativo</Label>
+                      <ReceiptPreview
+                        url={pettyCashApi.entries.getReceiptUrl(clinicId, viewingRow.entry.id)}
+                        mimeType={viewingRow.entry.receipt.mimeType}
+                        filename={
+                          viewingRow.entry.receipt.originalFilename ||
+                          viewingRow.entry.receipt.filename
+                        }
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingRow(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete category confirmation */}
       <AlertDialog
